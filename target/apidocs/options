@@ -1,0 +1,24 @@
+-classpath
+'C:/Users/lfischer/.m2/repository/mzidentml/jmzidentml/1.1.3/jmzidentml-1.1.3.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'C:/Users/lfischer/Documents/NetBeansProjects/xiFDR/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2015. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'C:/Users/lfischer/Documents/NetBeansProjects/xiFDR/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'xiFDR 1.0-SNAPSHOT API'
+-linkoffline
+'http://docs.oracle.com/javase/8/docs/api' 'C:/Users/lfischer/Documents/NetBeansProjects/xiFDR/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'xiFDR 1.0-SNAPSHOT API'

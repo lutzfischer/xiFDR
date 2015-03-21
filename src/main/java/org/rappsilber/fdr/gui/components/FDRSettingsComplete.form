@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.5" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel7" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                  <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spPPIFdr" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spLinkFDR" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spProteinFDR" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spPepFDR" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spPsmFDR" alignment="0" max="32767" attributes="0"/>
+                  <Component id="jLabel9" alignment="0" pref="92" max="32767" attributes="0"/>
+                  <Component id="cbBoostWhat" pref="0" max="32767" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="jLabel23" alignment="0" max="-2" attributes="0"/>
+                  <Component id="ckDirectionalPPI" alignment="0" max="-2" attributes="0"/>
+                  <Component id="ckDirectionalLink" alignment="0" max="-2" attributes="0"/>
+                  <Component id="ckDirectionalPeptidePair" alignment="0" max="-2" attributes="0"/>
+                  <Component id="ckDirectionalPSM" alignment="0" max="-2" attributes="0"/>
+                  <Component id="jLabel1" alignment="0" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="spMaximizeSteps" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spMinPPIPepCount" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spMinLinkPepCount" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spMinProteinPepCount" alignment="0" max="32767" attributes="0"/>
+                  <Component id="jLabel28" alignment="0" pref="0" max="32767" attributes="0"/>
+                  <Component id="jLabel18" alignment="0" max="32767" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Component id="btnStopBoost" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
+                      <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Component id="spMaxLinkAmbiguity" max="32767" attributes="0"/>
+                  <Component id="jLabel8" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spMinPeptideLength" alignment="0" max="32767" attributes="0"/>
+                  <Component id="spMaxProteinAmbiguity" alignment="0" max="32767" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Component id="ckUniquePSM" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                  </Group>
+              </Group>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <EmptySpace min="19" pref="19" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="jLabel9" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spPsmFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel5" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Component id="ckDirectionalPSM" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spMinPeptideLength" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel18" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spPepFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Component id="ckDirectionalPeptidePair" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel28" alignment="1" min="-2" pref="19" max="-2" attributes="0"/>
+                  <Component id="jLabel8" alignment="1" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spProteinFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel6" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Component id="spMinProteinPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Component id="spMaxProteinAmbiguity" alignment="1" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="spMaxLinkAmbiguity" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Component id="spMinLinkPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckDirectionalLink" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spLinkFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="spMinPPIPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckDirectionalPPI" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spPPIFdr" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel4" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckUniquePSM" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace pref="19" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="btnCalc" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="cbBoostWhat" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel23" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spMaximizeSteps" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnStopBoost" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Component class="javax.swing.JLabel" name="jLabel5">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="PSM"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPsmFDR">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for PSMs"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Peptide Pair"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPepFDR">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for Peptide Pairs (including linksite within the peptide)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel6">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Protein Group"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spProteinFDR">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for protein-groups"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel3">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Link"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spLinkFDR">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="5.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for Links (Protein-group-links)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel4">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Protein Pairs"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPPIFdr">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for protein-pairs"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel7">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Report Factor"/>
+        <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spReportFactor">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="1.1" minimum="1.0" numberType="java.lang.Double" stepSize="0.1" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel8">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="Ambiguity"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel28">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="Min supporting peptide-pairs"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMaxLinkAmbiguity">
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMaxProteinAmbiguity">
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckDirectionalPeptidePair">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="Are peptide-pairs directional (E.g. is peptide1 linked to peptide2 distinct from peptide 2 linked to peptide1)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckDirectionalLink">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="Are residue-pairs directional (E.g. is residue 1 linked to residue 2 distinct from residue 2 linked to residue 1)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckDirectionalPPI">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="Are protein pairs directional (E.g. is protein 1 linked to protein 2 distinct from protein 2 linked to protein 1)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Directional"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckDirectionalPSM">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="Are PSM-matches directional (E.g. is peptide1 linked to peptide2 distinct from peptide 2 linked to peptide1)"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinPeptideLength">
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel18">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="4"/>
+        <Property name="text" type="java.lang.String" value="Min Pep. Length:"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel9">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Max FDRs"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnCalc">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Calculate"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCalcActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckMaximize">
+      <Properties>
+        <Property name="selected" type="boolean" value="true"/>
+        <Property name="text" type="java.lang.String" value="boost"/>
+        <Property name="toolTipText" type="java.lang.String" value="should we try to boost the results reported for a specified maximum FDR"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spMaximizeSteps">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="4" maximum="20" minimum="2" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="in how many steps is each FDR-level checked for each round of optimisations"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel23">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="4"/>
+        <Property name="text" type="java.lang.String" value="Steps:"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.FDRLevelComboBox" name="cbBoostWhat">
+      <Properties>
+        <Property name="selectedIndex" type="int" value="3"/>
+        <Property name="toolTipText" type="java.lang.String" value="Boost the results for the given level by modifying the lower-level FDRs"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinProteinPepCount">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="1" minimum="1" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+        <Property name="specialValue" type="java.lang.Number" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="1" type="code"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinLinkPepCount">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="1" minimum="1" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+        <Property name="specialValue" type="java.lang.Number" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="1" type="code"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinPPIPepCount">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="1" minimum="1" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+        <Property name="specialValue" type="java.lang.Number" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="1" type="code"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnStopBoost">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="stop"/>
+        <Property name="enabled" type="boolean" value="false"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnStopBoostActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckUniquePSM">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Unique PSMs"/>
+        <Property name="toolTipText" type="java.lang.String" value="only use the top match for each combination of charge peptide1, peptide2 and charge state as a PSM"/>
+      </Properties>
+    </Component>
+  </SubComponents>
+</Form>

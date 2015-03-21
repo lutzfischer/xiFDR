@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.5" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblBoost" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="ckDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                          </Group>
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="1" attributes="0">
+                                  <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spFDR" pref="103" max="32767" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="cbFDRLevel" pref="110" max="32767" attributes="0"/>
+                          </Group>
+                      </Group>
+                  </Group>
+                  <Group type="102" alignment="1" attributes="0">
+                      <Component id="btnStopBoost" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
+                      <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="cbFDRLevel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="ckDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblBoost" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace pref="22" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="btnCalc" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnStopBoost" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Component class="javax.swing.JLabel" name="jLabel7">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Report Factor"/>
+        <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spReportFactor">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="1.1" minimum="1.0" numberType="java.lang.Double" stepSize="0.1" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="FDR"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckDirectional">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="Is the Cross-linking considered directional (A links to B is different to B links to A)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnCalc">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Calculate"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCalcActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckMaximize">
+      <Properties>
+        <Property name="selected" type="boolean" value="true"/>
+        <Property name="toolTipText" type="java.lang.String" value="Use prefiltering on lower level to boost the results on the chossen level of information"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblDirectional">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Is directional"/>
+        <Property name="toolTipText" type="java.lang.String" value="Is the Cross-linking considered directional (A links to B is different to B links to A)"/>
+      </Properties>
+      <Events>
+        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="lblDirectionalMouseClicked"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblBoost">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Boost result"/>
+        <Property name="toolTipText" type="java.lang.String" value="Use prefiltering on lower level to boost the results on the chossen level of information"/>
+      </Properties>
+      <Events>
+        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="lblBoostMouseClicked"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spFDR">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="What is the maximal acceptable FDR"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.FDRLevelComboBox" name="cbFDRLevel">
+      <Properties>
+        <Property name="selectedIndex" type="int" value="3"/>
+        <Property name="toolTipText" type="java.lang.String" value="To what to apply the FDR"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnStopBoost">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="stop boost"/>
+        <Property name="enabled" type="boolean" value="false"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnStopBoostActionPerformed"/>
+      </Events>
+    </Component>
+  </SubComponents>
+</Form>
