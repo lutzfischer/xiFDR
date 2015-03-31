@@ -26,9 +26,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
+import org.rappsilber.fdr.utils.StreamReplaceWriter;
 import uk.ac.ebi.jmzidml.MzIdentMLElement;
 import uk.ac.ebi.jmzidml.model.mzidml.AbstractParam;
 import uk.ac.ebi.jmzidml.model.mzidml.AnalysisCollection;
@@ -107,17 +110,17 @@ public class MZIdentXLFDR extends OfflineFDR {
      * cvTerm used to identify modifications, that span several peptides
      * This is the cvTerm for the Modification, that holds the mass of the cross-linker
      */
-    private String crosslinkedDonorModAcc = "MS:8888881";     
+    private String crosslinkedDonorModAcc = "MS:1002509";     
     /**
      * cvTerm used to identify modifications, that span several peptides
      * This is the cvTerm for the Modification, that holds a zero mass to denote the second (third, forth ...) site a cross-linker is attached to
      */
-    private String crosslinkedReceptorModAcc = "MS:8888882";     
+    private String crosslinkedReceptorModAcc = "MS:1002510";     
 //    protected String crosslinkedSIIAcc = "MS:9999999";     
     /** 
      * cvTerm used to identify members of cross-linked PSMs 
      */
-    private String crosslinkedSIIAcc = "MS:9999999";     
+    private String crosslinkedSIIAcc = "MS:1002511";     
 //    /** 
 //     * cvTerm used to identify members of cross-linked PSMs 
 //     * This one denotes the "beta" peptide
@@ -185,6 +188,7 @@ public class MZIdentXLFDR extends OfflineFDR {
             if (isVerbose) {
                 System.out.print("About to iterate over PepEvid...");
             }
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"About to iterate over PepEvid...");
 
             Iterator<PeptideEvidence> iterPeptideEvidence = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.PeptideEvidence);
             while (iterPeptideEvidence.hasNext()) {
@@ -196,6 +200,9 @@ public class MZIdentXLFDR extends OfflineFDR {
                 System.out.println("...done");
                 System.out.print("About to iterate over uk.ac.ebi.jmzidml.model.mzidml.Peptide");
             }
+            
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"About to iterate over uk.ac.ebi.jmzidml.model.mzidml.Peptide");
+            
             Iterator<uk.ac.ebi.jmzidml.model.mzidml.Peptide> iterPeptide = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.Peptide);
             while (iterPeptide.hasNext()) {
                 uk.ac.ebi.jmzidml.model.mzidml.Peptide peptide = iterPeptide.next();
@@ -206,7 +213,8 @@ public class MZIdentXLFDR extends OfflineFDR {
                 System.out.println("...done");
                 System.out.print("About to iterate over Spectra Data");
             }
-
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"About to iterate over Spectra Data");
+            
             Iterator<SpectraData> iterSpectraData = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.SpectraData);
             while (iterSpectraData.hasNext()) {
                 SpectraData spectraData = iterSpectraData.next();
@@ -218,6 +226,8 @@ public class MZIdentXLFDR extends OfflineFDR {
                 System.out.println("...done");
                 System.out.print("About to iterate over DBsequence");
             }
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"About to iterate over DBsequence");
+            
             Iterator<DBSequence> iterDBSequence = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.DBSequence);
             while (iterDBSequence.hasNext()) {
                 DBSequence dbSequence = iterDBSequence.next();
@@ -228,6 +238,7 @@ public class MZIdentXLFDR extends OfflineFDR {
                 System.out.println("...done");
                 System.out.print("About to iterate over PDH");
             }
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"About to iterate over PDH");
             
             Iterator<ProteinDetectionHypothesis> iterPDH = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.ProteinDetectionHypothesis);
             Integer pCounter = 0;
@@ -276,6 +287,8 @@ public class MZIdentXLFDR extends OfflineFDR {
                 System.out.println("...done");
                 System.out.print("About to iterate over SIR");
             }
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"About to iterate over SIR");
+            
             Iterator<SpectrumIdentificationResult> iterSIR = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.SpectrumIdentificationResult);
 
             while (iterSIR.hasNext()) {
@@ -307,7 +320,9 @@ public class MZIdentXLFDR extends OfflineFDR {
                                 columnToScoreMap.put(counter, cvParam.getName());
                                 counter++;
                             }
-                            if (cvParam.getAccession().contentEquals(getPSMScore()) || cvParam.getName().contentEquals(getPSMScore()) || (score == null &&  cvParam.getName().endsWith(":" + getPSMScore()))) {
+                            if (cvParam.getAccession().contentEquals(getPSMScore()) || 
+                                    cvParam.getName().contentEquals(getPSMScore()) || 
+                                    (score == null &&  cvParam.getName().toLowerCase().endsWith(":" + getPSMScore().toLowerCase()))) {
                                 score = Double.parseDouble(cvParam.getValue());
                                 psmScores.put(sii, score);
                                 scoreFound =true;
@@ -335,7 +350,13 @@ public class MZIdentXLFDR extends OfflineFDR {
                 }
                 System.out.print("register linear matches");
             }
-
+            if (scoreFound) {
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO,"Scores found");
+            } else {
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO,"!!!!!!!!!!!!!! NO SCORES FOUND !!!!!!!!!!!!!!!!!");
+            }
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"register linear matches");
+            
             boolean linearDecoys = false;
             
             for (SpectrumIdentificationItem sii : linearPSM) {
@@ -380,7 +401,8 @@ public class MZIdentXLFDR extends OfflineFDR {
                         if (linkPositions.size() == 2) {
                             addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, linkPositions.get(0), linkPositions.get(1), pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, false);
                         } else {
-                            System.err.println("Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match");
+                            System.err.println(sii.getId() + ": Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match");
+                            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "{0}Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match", sii.getId());
                             addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, false);
                         }
                     } else {
@@ -399,6 +421,7 @@ public class MZIdentXLFDR extends OfflineFDR {
                 }
                 System.out.print("register cross-linked matches");
             }
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"register cross-linked matches");
             
             boolean crosslinkedDecoys = false;
             int countCrosslinkedPSM = 0;
@@ -484,11 +507,15 @@ public class MZIdentXLFDR extends OfflineFDR {
                 
             }
             
-            if (crosslinkedDecoys == false)
+            if (crosslinkedDecoys == false) {
                 System.err.println("!!!!!!!!!!! NO crosslinked decoys found !!!!!!!!!!!!!!!!!");
-            
-            if (countCrosslinkedPSM == 0)
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING,"!!!!!!!!!!! NO crosslinked decoys found !!!!!!!!!!!!!!!!!");
+            }
+            if (countCrosslinkedPSM == 0) {
                 System.err.println("!!!!!!!!!!! NO crosslinked PSM found !!!!!!!!!!!!!!!!!");
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING,"!!!!!!!!!!! NO crosslinked PSM found !!!!!!!!!!!!!!!!!");
+            }
+                
                 
             
         } catch (Exception e) {
@@ -670,7 +697,8 @@ public class MZIdentXLFDR extends OfflineFDR {
             if (!outFile.endsWith(".mzid")) {
                 outFile = outFile + ".mzid";
             }
-            FileWriter writer = new FileWriter(outFile);
+            FileWriter fwriter = new FileWriter(outFile);
+            StreamReplaceWriter writer = new StreamReplaceWriter(fwriter, "xmlns=\"http://psidev.info/psi/pi/mzIdentML/1.1\"", "");
             
             MzIdentMLMarshaller marshaller;
             marshaller = new MzIdentMLMarshaller();
