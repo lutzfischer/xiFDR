@@ -294,12 +294,13 @@
                           <Properties>
                             <Property name="editable" type="boolean" value="true"/>
                             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                              <StringArray count="5">
+                              <StringArray count="6">
                                 <StringItem index="0" value="Score"/>
                                 <StringItem index="1" value="pvalue"/>
                                 <StringItem index="2" value="FDRScore"/>
-                                <StringItem index="3" value="MS:1001143"/>
-                                <StringItem index="4" value="search engine specific score for PSMs"/>
+                                <StringItem index="3" value="xi:score"/>
+                                <StringItem index="4" value="MS:1001143"/>
+                                <StringItem index="5" value="search engine specific score for PSMs"/>
                               </StringArray>
                             </Property>
                           </Properties>

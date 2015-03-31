@@ -2269,7 +2269,7 @@ public class FDRGUI extends javax.swing.JFrame {
         });
 
         cbMZMatchScoreName.setEditable(true);
-        cbMZMatchScoreName.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Score", "pvalue", "FDRScore", "MS:1001143", "search engine specific score for PSMs" }));
+        cbMZMatchScoreName.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Score", "pvalue", "FDRScore", "xi:score", "MS:1001143", "search engine specific score for PSMs" }));
         cbMZMatchScoreName.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cbMZMatchScoreNameActionPerformed(evt);
