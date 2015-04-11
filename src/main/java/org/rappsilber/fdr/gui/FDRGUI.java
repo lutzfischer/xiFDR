@@ -77,7 +77,7 @@ public class FDRGUI extends javax.swing.JFrame {
     
     private FDRSettingsPanel fdrSettings;
     
-    public OfflineFDR m_fdr;
+    private OfflineFDR m_fdr;
 //    /** denotes required fields in the CSV */
 //    public String missingColumn = "!! !MISSING! !!";
 //    public String optionalColumn = "  OPTIONAL   ";
@@ -106,11 +106,11 @@ public class FDRGUI extends javax.swing.JFrame {
 
         
         //Logger.getLogger("rappsilber").addHandler(loggingOutput);
-        Logger.getLogger("rappsilber").setLevel(Level.ALL);
-        Logger.getLogger("rappsilber").addHandler(loggingOutput);
+        Logger.getLogger("org.rappsilber").setLevel(Level.ALL);
+        Logger.getLogger("org.rappsilber").addHandler(loggingOutput);
         
         
-        this.setTitle("xiFDR (" + OfflineFDR.version + ")");   
+        this.setTitle("");   
         txtXiFDRVersion.setText(OfflineFDR.version.toString());
         //tpInput.removeTabAt(0);
         tblPepLength.getModel().addTableModelListener(new AutoAddTableModelListener());
@@ -228,35 +228,40 @@ public class FDRGUI extends javax.swing.JFrame {
     }
     
     
+    public void setTitle(String title) {
+        super.setTitle("xiFDR (" + OfflineFDR.version + ")" + title);
+        
+    }
+    
     public void prepareFDRCalculation() throws NumberFormatException {
         ProteinGroupLink.MIN_DISTANCE_FOR_LONG = ((Number)spDistanceGroup.getValue()).intValue();
-        m_fdr.setMaximumLinkAmbiguity(fdrSettings.getMaxLinkAmbiguity());
-        m_fdr.setMaximumProteinAmbiguity(fdrSettings.getMaxProteinAmbiguity());
-        m_fdr.setMinimumPeptideLength(fdrSettings.getMinPeptideLength());
+        getFdr().setMaximumLinkAmbiguity(fdrSettings.getMaxLinkAmbiguity());
+        getFdr().setMaximumProteinAmbiguity(fdrSettings.getMaxProteinAmbiguity());
+        getFdr().setMinimumPeptideLength(fdrSettings.getMinPeptideLength());
         if (ckDBSize.isSelected()) {
-            m_fdr.setTargetDBSize((Double) spTargetDB.getValue());
-            m_fdr.setDecoyDBSize((Double) spDecoyDB.getValue());
-            m_fdr.setTargetProtDBSize((Double) spTargetDBProt.getValue());
-            m_fdr.setDecoyProtDBSize((Double) spDecoyDBProt.getValue());
-            m_fdr.setTargetProtDBSize((Double) spTargetDBProt.getValue());
-            m_fdr.setDecoyProtDBSize((Double) spDecoyDBProt.getValue());
+            getFdr().setTargetDBSize((Double) spTargetDB.getValue());
+            getFdr().setDecoyDBSize((Double) spDecoyDB.getValue());
+            getFdr().setTargetProtDBSize((Double) spTargetDBProt.getValue());
+            getFdr().setDecoyProtDBSize((Double) spDecoyDBProt.getValue());
+            getFdr().setTargetProtDBSize((Double) spTargetDBProt.getValue());
+            getFdr().setDecoyProtDBSize((Double) spDecoyDBProt.getValue());
         } else {
-            m_fdr.setTargetDBSize(999999999);
-            m_fdr.setDecoyDBSize(999999999);
-            m_fdr.setTargetProtDBSize(999999999);
-            m_fdr.setDecoyProtDBSize(999999999);
+            getFdr().setTargetDBSize(999999999);
+            getFdr().setDecoyDBSize(999999999);
+            getFdr().setTargetProtDBSize(999999999);
+            getFdr().setDecoyProtDBSize(999999999);
         }
         
-        m_fdr.setPsm_directional(fdrSettings.isPSMDirectional());
-        m_fdr.setPeptides_directional(fdrSettings.isPeptidePairDirectional());
-        m_fdr.setLinks_directional(fdrSettings.isLinkDirectional());
-        m_fdr.setPpi_directional(fdrSettings.isPPIDirectional());
+        getFdr().setPsm_directional(fdrSettings.isPSMDirectional());
+        getFdr().setPeptides_directional(fdrSettings.isPeptidePairDirectional());
+        getFdr().setLinks_directional(fdrSettings.isLinkDirectional());
+        getFdr().setPpi_directional(fdrSettings.isPPIDirectional());
         
         
 
-        m_fdr.setMinPepPerProteinGroup(fdrSettings.getMinProteinPepCount());
-        m_fdr.setMinPepPerProteinGroupLink(fdrSettings.getMinLinkPepCount());
-        m_fdr.setMinPepPerProteinGroupPair(fdrSettings.getMinPPIPepCount());
+        getFdr().setMinPepPerProteinGroup(fdrSettings.getMinProteinPepCount());
+        getFdr().setMinPepPerProteinGroupLink(fdrSettings.getMinLinkPepCount());
+        getFdr().setMinPepPerProteinGroupPair(fdrSettings.getMinPPIPepCount());
 
         int lengthSteps = tblPepLength.getRowCount();
         int[] pepLength = new int[lengthSteps];
@@ -264,7 +269,7 @@ public class FDRGUI extends javax.swing.JFrame {
             pepLength[i] = Integer.parseInt(tblPepLength.getValueAt(i, 0).toString());
         }
 
-        m_fdr.setLengthGroups(pepLength);
+        getFdr().setLengthGroups(pepLength);
     }
 
     protected String fdrLevelSummary(FDRResultLevel fdrl) {
@@ -284,6 +289,20 @@ public class FDRGUI extends javax.swing.JFrame {
             sbSummary.append(" \n");
         }
         return sbSummary.toString();
+    }
+
+    /**
+     * @return the m_fdr
+     */
+    public OfflineFDR getFdr() {
+        return m_fdr;
+    }
+
+    /**
+     * @param m_fdr the m_fdr to set
+     */
+    public void setFdr(OfflineFDR m_fdr) {
+        this.m_fdr = m_fdr;
     }
 
     private class NeededOptionalComboBoxCellEditor extends DefaultCellEditor {
@@ -348,8 +367,8 @@ public class FDRGUI extends javax.swing.JFrame {
         try {
             File f = fbMzIdentMLOut.getFile();
             // if (f.canWrite())
-            if ( m_fdr instanceof MZIdentXLFDR) {
-                ((MZIdentXLFDR) m_fdr).writeMZIdentML(f.getAbsolutePath(), m_result);
+            if ( getFdr() instanceof MZIdentXLFDR) {
+                ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), m_result);
             } else {
                 JOptionPane.showMessageDialog(this, "mzIdentML export currently only supported with mzIdentML source files");
             }
@@ -365,7 +384,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private boolean mzScoreDirectionChanged = false;
 
     protected void writeResults() {
-        final OfflineFDR ofdr = m_fdr;
+        final OfflineFDR ofdr = getFdr();
 
         setEnableRead(false);
         setEnableCalc(false);
@@ -408,9 +427,9 @@ public class FDRGUI extends javax.swing.JFrame {
 
 
 
-            m_fdr = ofdr;
+            setFdr(ofdr);
 
-            m_fdr.setPSMScoreHighBetter(csvSelect.higherIsBetter());
+            getFdr().setPSMScoreHighBetter(csvSelect.higherIsBetter());
 
 
             Runnable runnable = new Runnable() {
@@ -463,9 +482,9 @@ public class FDRGUI extends javax.swing.JFrame {
             final MZIdentXLFDR ofdr = new MZIdentXLFDR();
 
 
-            m_fdr = ofdr;
+            setFdr(ofdr);
 
-            m_fdr.setPSMScoreHighBetter(rbMZHighBetter.isSelected());
+            getFdr().setPSMScoreHighBetter(rbMZHighBetter.isSelected());
 //            ofdr.setCrosslinkedDonorModAcc(txtCrossLinkedDonorModCvParam.getText());
 //            ofdr.setCrosslinkedReceptorModAcc(txtCrossLinkedReceptorModCvParam.getText());
 //            ofdr.setCrosslinkedSIIAcc(txtCrossLinkedPepCvParam.getText());
@@ -498,7 +517,7 @@ public class FDRGUI extends javax.swing.JFrame {
     }
 
     protected void calculateFDR() {
-        final OfflineFDR ofdr = m_fdr;
+        final OfflineFDR ofdr = getFdr();
         setEnableCalc(false);
         setEnableWrite(false);
         setEnableRead(false);
@@ -671,7 +690,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
     
     private void basicCalc() {
-        if (m_fdr !=null) {
+        if (getFdr() !=null) {
             fdrSettingsComplete.setPSMDirectional(fdrSettings.isPSMDirectional());
             fdrSettingsComplete.setPeptidePairDirectional(fdrSettings.isPeptidePairDirectional());
             fdrSettingsComplete.setLinkDirectional(fdrSettings.isLinkDirectional());
@@ -737,7 +756,7 @@ public class FDRGUI extends javax.swing.JFrame {
     }
 
 
-    private void setStatus(final String status) {
+    public void setStatus(final String status) {
         m_status.write(status);
 //        m_statusmessages.put(Thread.currentThread(),status);
 //        Runnable setModel = new Runnable() {
@@ -750,14 +769,14 @@ public class FDRGUI extends javax.swing.JFrame {
 //                    }
 //                }
 //                txtStatus.setText(message.substring(3));
-//                
+//                set
 //                
 //            }
 //        };
 //        javax.swing.SwingUtilities.invokeLater(setModel);
     }
 
-    private void setEnableRead(final boolean enable) {
+    public void setEnableRead(final boolean enable) {
         Runnable setModel = new Runnable() {
             public void run() {
                 csvSelect.setEnabled(enable);
@@ -768,7 +787,7 @@ public class FDRGUI extends javax.swing.JFrame {
         javax.swing.SwingUtilities.invokeLater(setModel);
     }
     
-    private void setEnableCalc(final boolean enable) {
+    public void setEnableCalc(final boolean enable) {
         Runnable setModel = new Runnable() {
             public void run() {
                 ((JPanel) fdrSettings).setEnabled(enable);
@@ -781,8 +800,8 @@ public class FDRGUI extends javax.swing.JFrame {
         javax.swing.SwingUtilities.invokeLater(setModel);
     }
 
-    private void setEnableWrite(final boolean enable) {
-        final boolean isMzIdent = m_fdr instanceof MZIdentXLFDR;
+    protected void setEnableWrite(final boolean enable) {
+        final boolean isMzIdent = getFdr() instanceof MZIdentXLFDR;
         Runnable setModel = new Runnable() {
             public void run() {
                 btnWrite.setEnabled(enable);
@@ -1100,7 +1119,7 @@ public class FDRGUI extends javax.swing.JFrame {
             psmloop:
             for (psmfdr = maxpsmfdr; psmfdr > minpsmfdr - psmfdrStep / 2; psmfdr -= psmfdrStep) {
                 // we only need to calculate the link fdr ones for each
-                m_fdr.calculatePSMFDR(psmfdr, reportFactor, ignoreGroups, false, result, m_fdr.isPsm_directional(),filterToUniquePSM);
+                getFdr().calculatePSMFDR(psmfdr, reportFactor, ignoreGroups, false, result, getFdr().isPsm_directional(),filterToUniquePSM);
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Round {0}", optimizingRound++);
                 if (stopMaximizing) {
                     break psmloop;
@@ -1117,7 +1136,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     for (protfdr = maxprotfdr; protfdr > minprotfdr - protfdrStep / 2; protfdr -= protfdrStep) {
 
                         // calculate peptide level fdr
-                        m_fdr.calculatePeptidePairFDR(pepfdr, reportFactor, ignoreGroups, false,result,m_fdr.isPeptides_directional());
+                        getFdr().calculatePeptidePairFDR(pepfdr, reportFactor, ignoreGroups, false,result,getFdr().isPeptides_directional());
                         if (stopMaximizing) {
                             break psmloop;
                         }      
@@ -1129,13 +1148,13 @@ public class FDRGUI extends javax.swing.JFrame {
                         
                         // calculate protein level fdr
                         if (protfdr < 1) {
-                            m_fdr.calculateProteinGroupFDR(protfdr, reportFactor, ignoreGroups, minProteinPeptide, maxProteinAmbiguity, false,result);
+                            getFdr().calculateProteinGroupFDR(protfdr, reportFactor, ignoreGroups, minProteinPeptide, maxProteinAmbiguity, false,result);
                             
                             if (result.proteinGroupFDR.getResultCount() == 0) {
                                 break protloop;
                             }
                             // cut down the peptides by proteins
-                            m_fdr.filterFDRPeptidePairsByFDRProteinGroups(result);
+                            getFdr().filterFDRPeptidePairsByFDRProteinGroups(result);
                         }
 
                         if (stopMaximizing) {
@@ -1150,7 +1169,7 @@ public class FDRGUI extends javax.swing.JFrame {
                             }      
                             
                             // calculate links
-                            m_fdr.calculateLinkFDR(linkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, false, result, m_fdr.isLinks_directional());
+                            getFdr().calculateLinkFDR(linkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, false, result, getFdr().isLinks_directional());
 
                             if (result.proteinGroupLinkFDR.getResultCount() == 0) {
                                 break linkloop;
@@ -1159,8 +1178,8 @@ public class FDRGUI extends javax.swing.JFrame {
                             if (stopMaximizing) {
                                 break psmloop;
                             }      
-                            m_fdr.calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, false, result, m_fdr.isPpi_directional());
-                            m_fdr.filterFDRLinksByFDRProteinGroupPairs(result);
+                            getFdr().calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, false, result, getFdr().isPpi_directional());
+                            getFdr().filterFDRLinksByFDRProteinGroupPairs(result);
 
                             // how many links do we now have?
                             final int ppiCount = result.proteinGroupPairFDR.getResultCount();
@@ -1300,7 +1319,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     }
                 });
 
-                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, m_fdr, reportFactor, filterToUniquePSM);
+                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM);
 
                 setEnableRead(true);
                 setEnableCalc(true);
@@ -1784,7 +1803,7 @@ public class FDRGUI extends javax.swing.JFrame {
             psmloop:
             for (psmfdr = maxpsmfdr; psmfdr > minpsmfdr - psmfdrStep / 2; psmfdr -= psmfdrStep) {
                 // we only need to calculate the link fdr ones for each
-                m_fdr.calculatePSMFDR(psmfdr, reportFactor, ignoreGroups, false,result, m_fdr.isPsm_directional(),filterToUniquePSM);
+                getFdr().calculatePSMFDR(psmfdr, reportFactor, ignoreGroups, false,result, getFdr().isPsm_directional(),filterToUniquePSM);
                 if (stopMaximizing) {
                     break psmloop;
                 }      
@@ -1801,7 +1820,7 @@ public class FDRGUI extends javax.swing.JFrame {
    
                         
                         // calculate peptide level fdr
-                        m_fdr.calculatePeptidePairFDR(pepfdr, reportFactor, ignoreGroups, false,result, m_fdr.isPeptides_directional() );
+                        getFdr().calculatePeptidePairFDR(pepfdr, reportFactor, ignoreGroups, false,result, getFdr().isPeptides_directional() );
                         // if we don't get peptide pairs - stop looking at later stages
                         if (result.peptidePairFDR.getResultCount() == 0) {
                             break peploop;
@@ -1813,14 +1832,14 @@ public class FDRGUI extends javax.swing.JFrame {
                         
                         // calculate protein level fdr
                         if (protfdr < 1) {
-                            m_fdr.calculateProteinGroupFDR(protfdr, reportFactor, ignoreGroups, minProteinPeptide, maxProteinAmbiguity, false, result);
+                            getFdr().calculateProteinGroupFDR(protfdr, reportFactor, ignoreGroups, minProteinPeptide, maxProteinAmbiguity, false, result);
 
                             if (result.proteinGroupFDR.getResultCount() == 0) {
                                 break protloop;
                             }
                             
                             // cut down the peptides by proteins                           
-                            m_fdr.filterFDRPeptidePairsByFDRProteinGroups(result);
+                            getFdr().filterFDRPeptidePairsByFDRProteinGroups(result);
 
                             if (stopMaximizing) {
                                 break psmloop;
@@ -1828,7 +1847,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         }
 
                         // calculate links
-                        m_fdr.calculateLinkFDR(maxlinkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, false,result, m_fdr.isLinks_directional());
+                        getFdr().calculateLinkFDR(maxlinkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, false,result, getFdr().isLinks_directional());
 
 
                         
@@ -1841,13 +1860,13 @@ public class FDRGUI extends javax.swing.JFrame {
                             if (stopMaximizing) {
                                 break psmloop;
                             }                                  
-                            m_fdr.calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, false,result, m_fdr.isPpi_directional());
+                            getFdr().calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, false,result, getFdr().isPpi_directional());
 
                             if (result.proteinGroupPairFDR.getResultCount() == 0) {
                                 break protloop;
                             }
                             
-                            m_fdr.filterFDRLinksByFDRProteinGroupPairs(result);
+                            getFdr().filterFDRLinksByFDRProteinGroupPairs(result);
 
                   
                         }
@@ -1983,7 +2002,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     }
                 });
 
-                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, m_fdr, reportFactor, filterToUniquePSM);
+                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM);
 
                 setEnableRead(true);
                 setEnableCalc(true);
@@ -2505,7 +2524,7 @@ public class FDRGUI extends javax.swing.JFrame {
             .addGroup(pFDRGroupsLayout.createSequentialGroup()
                 .addComponent(ckIgnoreGroups1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(spPepLength, javax.swing.GroupLayout.DEFAULT_SIZE, 225, Short.MAX_VALUE)
+                .addComponent(spPepLength, javax.swing.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2971,7 +2990,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                 .addComponent(txtmzIdentOwnerLast, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(txtmzIdentOwnerEmail)
                             .addComponent(txtmzIdentOwnerOrg))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 353, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 254, Short.MAX_VALUE)
                         .addComponent(btnWriteMzIdentML)))
                 .addContainerGap())
         );
@@ -2998,7 +3017,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
-                .addContainerGap(200, Short.MAX_VALUE))
+                .addContainerGap(210, Short.MAX_VALUE))
         );
 
         jTabbedPane3.addTab("mzIdentML", jPanel14);
@@ -3007,7 +3026,7 @@ public class FDRGUI extends javax.swing.JFrame {
         pResult.setLayout(pResultLayout);
         pResultLayout.setHorizontalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane3, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(jTabbedPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 719, Short.MAX_VALUE)
         );
         pResultLayout.setVerticalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -3193,8 +3212,8 @@ public class FDRGUI extends javax.swing.JFrame {
     private void ckDefineGroupsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckDefineGroupsActionPerformed
 
         pFDRGroups.setVisible(ckDefineGroups.isSelected());
-        tblPepLength.setEnabled(!ckDefineGroups.isSelected());
-        spPepLength.setEnabled(!ckDefineGroups.isSelected());
+        tblPepLength.setEnabled(!ckIgnoreGroups1.isSelected());
+        spPepLength.setEnabled(!ckIgnoreGroups1.isSelected());
 
     }//GEN-LAST:event_ckDefineGroupsActionPerformed
 
@@ -3457,7 +3476,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JSpinner spTargetDBLinks;
     private javax.swing.JSpinner spTargetDBProt;
     private javax.swing.JTable tblPepLength;
-    private javax.swing.JTabbedPane tpInput;
+    protected javax.swing.JTabbedPane tpInput;
     private javax.swing.JTextField txtBaseName;
     private javax.swing.JTextArea txtLog;
     private javax.swing.JTextField txtStatus;

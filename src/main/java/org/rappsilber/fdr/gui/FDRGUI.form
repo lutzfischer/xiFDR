@@ -132,6 +132,9 @@
               </Layout>
               <SubComponents>
                 <Container class="javax.swing.JTabbedPane" name="tpInput">
+                  <AuxValues>
+                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+                  </AuxValues>
 
                   <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
                   <SubComponents>
@@ -588,7 +591,7 @@
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="ckIgnoreGroups1" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="spPepLength" pref="225" max="32767" attributes="0"/>
+                              <Component id="spPepLength" pref="226" max="32767" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
@@ -1324,7 +1327,7 @@
                                               <Component id="txtmzIdentOwnerEmail" max="32767" attributes="0"/>
                                               <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
                                           </Group>
-                                          <EmptySpace pref="353" max="32767" attributes="0"/>
+                                          <EmptySpace pref="254" max="32767" attributes="0"/>
                                           <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                   </Group>
@@ -1359,7 +1362,7 @@
                                       <Component id="jScrollPane1" min="-2" max="-2" attributes="0"/>
                                       <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="200" max="32767" attributes="0"/>
+                                  <EmptySpace pref="210" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
