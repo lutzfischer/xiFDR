@@ -26,11 +26,20 @@ public class Version {
     public int minor;
     /** build - svn-revision*/
     public int build;
+    /** extension */
+    public int extension;
 
     public Version(int major, int minor, int build) {
         this.major = major;
         this.minor = minor;
         this.build = build;
+        this.extension=0;
+    }
+    public Version(int major, int minor, int build, int extension) {
+        this.major = major;
+        this.minor = minor;
+        this.build = build;
+        this.extension=extension;
     }
 
     public Version(int major, int minor, String svn_refbuild) {
@@ -38,16 +47,26 @@ public class Version {
         this.minor = minor;
         this.build = Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
     }
-
+    
+    
+    
+    
+    public Version(int major, int minor, int build, String svn_refbuild) {
+        this.major = major;
+        this.minor = minor;
+        this.build = build;
+        this.extension = Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
+    }
     
     public String toString() {
         
-         return major + "." + minor + "." + build;
+         return major + "." + minor + "." + build + (extension != 0 ? "," + extension : "");
     }
 
     public String toLongString() {
-        
-         return String.format("%d.%02d.%07d", major ,minor ,build);
+        if ( extension == 0)
+            return String.format("%02d.%02d.%07d", major ,minor ,build);
+        return String.format("%02d.%02d.%02d.%07d", major ,minor ,build, extension);
     }
     
 }

@@ -111,7 +111,7 @@ public class FDRGUI extends javax.swing.JFrame {
         
         
         this.setTitle("");   
-        txtXiFDRVersion.setText(OfflineFDR.version.toString());
+        txtXiFDRVersion.setText(OfflineFDR.xiFDRVersion.toString());
         //tpInput.removeTabAt(0);
         tblPepLength.getModel().addTableModelListener(new AutoAddTableModelListener());
 
@@ -229,7 +229,7 @@ public class FDRGUI extends javax.swing.JFrame {
     
     
     public void setTitle(String title) {
-        super.setTitle("xiFDR (" + OfflineFDR.version + ")" + title);
+        super.setTitle("xiFDR (" + OfflineFDR.xiFDRVersion + ")" + title);
         
     }
     
@@ -305,6 +305,20 @@ public class FDRGUI extends javax.swing.JFrame {
         this.m_fdr = m_fdr;
     }
 
+    /**
+     * @return the m_result
+     */
+    public FDRResult getResult() {
+        return m_result;
+    }
+
+    /**
+     * @param m_result the m_result to set
+     */
+    public void setResult(FDRResult m_result) {
+        this.m_result = m_result;
+    }
+
     private class NeededOptionalComboBoxCellEditor extends DefaultCellEditor {
 
         EditorDelegate neededDelegate;
@@ -368,7 +382,7 @@ public class FDRGUI extends javax.swing.JFrame {
             File f = fbMzIdentMLOut.getFile();
             // if (f.canWrite())
             if ( getFdr() instanceof MZIdentXLFDR) {
-                ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), m_result);
+                ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), getResult());
             } else {
                 JOptionPane.showMessageDialog(this, "mzIdentML export currently only supported with mzIdentML source files");
             }
@@ -397,8 +411,8 @@ public class FDRGUI extends javax.swing.JFrame {
                 try {
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, "start writing");
                     //                    ofdr.writeFiles(txtFolder.getText(), txtBaseName.getText(), 0.05, 0.05, 0.05, 0.05, new int[]{4, 9});
-                    ofdr.writeFiles(fbFolder.getText(), txtBaseName.getText(), sep, m_result);
-                    setStatus("finished: " + ofdr.summaryString(m_result));
+                    ofdr.writeFiles(fbFolder.getText(), txtBaseName.getText(), sep, getResult());
+                    setStatus("finished: " + ofdr.summaryString(getResult()));
 
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
@@ -555,9 +569,9 @@ public class FDRGUI extends javax.swing.JFrame {
         setStatus("Calculating fdr");
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Calculating fdr");
         FDRResult result = ofdr.calculateFDR(psmfdr, pepfdr, protfdr, linkfdr, ppifdr, saftyfactor, ckIgnoreGroups1.isSelected(), true, filterToUniquePSM);
-        m_result = result;
+        setResult(result);
         setStatus("finished");
-        setStatus(ofdr.summaryString(m_result));
+        setStatus(ofdr.summaryString(getResult()));
         setEnableWrite(true);
 //        HashMap<String, Double> summary = ofdr.summaryString(m_result);
         txtSumInput.setText(Integer.toString(ofdr.getInputPSMs().size()));
@@ -570,7 +584,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int targetLinearPSM = 0;
         int decoyXLPSM = 0;
         int decoyLinearPSM = 0;
-        for (PSM psm : m_result.psmFDR) {
+        for (PSM psm : getResult().psmFDR) {
             if (psm.isLinear()) {
                 sumLinearPSM++;
                 if (!psm.isDecoy()) {
@@ -616,8 +630,8 @@ public class FDRGUI extends javax.swing.JFrame {
         int sumLinksInternalDecoy = 0;
         int sumLinksInternalTarget = 0;
         int sumLinksBetweenTarget = 0;
-        int sumLinks = m_result.proteinGroupLinkFDR.getResultCount();
-        for (ProteinGroupLink l : m_result.proteinGroupLinkFDR) {
+        int sumLinks = getResult().proteinGroupLinkFDR.getResultCount();
+        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR) {
             if (l.isDecoy()) {
                 if (l.isInternal) {
                     sumLinksInternalDecoy++;
@@ -633,12 +647,12 @@ public class FDRGUI extends javax.swing.JFrame {
         }
 
 
-        int sumProteinGroupPairs = m_result.proteinGroupPairFDR.getResultCount();
+        int sumProteinGroupPairs = getResult().proteinGroupPairFDR.getResultCount();
         int sumProteinGroupPairsBetweenDecoy = 0;
         int sumProteinGroupPairsInternalDecoy = 0;
         int sumProteinGroupPairsInternalTarget = 0;
         int sumProteinGroupPairsBetweenTarget = 0;
-        for (ProteinGroupPair pgl : m_result.proteinGroupPairFDR) {
+        for (ProteinGroupPair pgl : getResult().proteinGroupPairFDR) {
             if (pgl.isDecoy()) {
                 if (pgl.isInternal()) {
                     sumProteinGroupPairsInternalDecoy++;
@@ -673,7 +687,7 @@ public class FDRGUI extends javax.swing.JFrame {
         txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + ")");
         
         nice =  MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[] {result.proteinGroupFDR.getHigherFDR()*100, result.proteinGroupFDR.getLowerFDR()*100},1);
-        txtSumProtGroups.setText(Integer.toString(m_result.proteinGroupFDR.getResultCount()) + " [" +  nice[0] + "%," + nice[1] + "%]");
+        txtSumProtGroups.setText(Integer.toString(getResult().proteinGroupFDR.getResultCount()) + " [" +  nice[0] + "%," + nice[1] + "%]");
         txtSumProtGroups.setToolTipText(fdrLevelSummary(result.proteinGroupFDR));
         
         nice =  MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[] {result.proteinGroupPairFDR.getHigherFDR()*100, result.proteinGroupPairFDR.getLowerFDR()*100},1);
@@ -800,7 +814,7 @@ public class FDRGUI extends javax.swing.JFrame {
         javax.swing.SwingUtilities.invokeLater(setModel);
     }
 
-    protected void setEnableWrite(final boolean enable) {
+    public void setEnableWrite(final boolean enable) {
         final boolean isMzIdent = getFdr() instanceof MZIdentXLFDR;
         Runnable setModel = new Runnable() {
             public void run() {
@@ -2123,7 +2137,7 @@ public class FDRGUI extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         ckDefineGroups = new javax.swing.JCheckBox();
         pResult = new javax.swing.JPanel();
-        jTabbedPane3 = new javax.swing.JTabbedPane();
+        tpResult = new javax.swing.JTabbedPane();
         jPanel8 = new javax.swing.JPanel();
         jLabel12 = new javax.swing.JLabel();
         txtSumInput = new javax.swing.JTextField();
@@ -2835,7 +2849,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap(133, Short.MAX_VALUE))
         );
 
-        jTabbedPane3.addTab("Summary", jPanel8);
+        tpResult.addTab("Summary", jPanel8);
 
         jLabel10.setText("Base Name");
 
@@ -2913,7 +2927,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap(283, Short.MAX_VALUE))
         );
 
-        jTabbedPane3.addTab("CSV/TSV", jPanel10);
+        tpResult.addTab("CSV/TSV", jPanel10);
 
         fbMzIdentMLOut.setDescription("mzIdentML files");
         fbMzIdentMLOut.setExtensions(new String[] {"mzid"});
@@ -3020,19 +3034,19 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap(210, Short.MAX_VALUE))
         );
 
-        jTabbedPane3.addTab("mzIdentML", jPanel14);
+        tpResult.addTab("mzIdentML", jPanel14);
 
         javax.swing.GroupLayout pResultLayout = new javax.swing.GroupLayout(pResult);
         pResult.setLayout(pResultLayout);
         pResultLayout.setHorizontalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 719, Short.MAX_VALUE)
+            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING)
         );
         pResultLayout.setVerticalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pResultLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jTabbedPane3)
+                .addComponent(tpResult)
                 .addContainerGap())
         );
 
@@ -3229,28 +3243,28 @@ public class FDRGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_formMouseClicked
 
     private void btnPSMInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPSMInfoActionPerformed
-        if (m_result!= null)
-            new FDRLevelInformations(m_result.psmFDR, "PSM FDR").setVisible(true);
+        if (getResult()!= null)
+            new FDRLevelInformations(getResult().psmFDR, "PSM FDR").setVisible(true);
     }//GEN-LAST:event_btnPSMInfoActionPerformed
 
     private void btnPepInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPepInfoActionPerformed
-        if (m_result!= null)
-            new FDRLevelInformations(m_result.peptidePairFDR, "Peptide-Pair FDR").setVisible(true);
+        if (getResult()!= null)
+            new FDRLevelInformations(getResult().peptidePairFDR, "Peptide-Pair FDR").setVisible(true);
     }//GEN-LAST:event_btnPepInfoActionPerformed
 
     private void btnProtInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnProtInfoActionPerformed
-        if (m_result!= null)
-            new FDRLevelInformations(m_result.proteinGroupFDR, "Protein Group FDR").setVisible(true);
+        if (getResult()!= null)
+            new FDRLevelInformations(getResult().proteinGroupFDR, "Protein Group FDR").setVisible(true);
     }//GEN-LAST:event_btnProtInfoActionPerformed
 
     private void btnLinkInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLinkInfoActionPerformed
-        if (m_result!= null)
-            new FDRLevelInformations(m_result.proteinGroupLinkFDR, "Protein Group Link FDR").setVisible(true);
+        if (getResult()!= null)
+            new FDRLevelInformations(getResult().proteinGroupLinkFDR, "Protein Group Link FDR").setVisible(true);
     }//GEN-LAST:event_btnLinkInfoActionPerformed
 
     private void btnPPIInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPPIInfoActionPerformed
-        if (m_result!= null)
-            new FDRLevelInformations(m_result.proteinGroupPairFDR, "Protein Group Pairs FDR").setVisible(true);
+        if (getResult()!= null)
+            new FDRLevelInformations(getResult().proteinGroupPairFDR, "Protein Group Pairs FDR").setVisible(true);
     }//GEN-LAST:event_btnPPIInfoActionPerformed
 
     private void ckDBSizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckDBSizeActionPerformed
@@ -3440,7 +3454,6 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTabbedPane jTabbedPane3;
     private javax.swing.JTabbedPane jTabbedPane4;
     private javax.swing.JLabel lblDecoyDB;
     private javax.swing.JLabel lblLinkDB;
@@ -3477,6 +3490,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JSpinner spTargetDBProt;
     private javax.swing.JTable tblPepLength;
     protected javax.swing.JTabbedPane tpInput;
+    protected javax.swing.JTabbedPane tpResult;
     private javax.swing.JTextField txtBaseName;
     private javax.swing.JTextArea txtLog;
     private javax.swing.JTextField txtStatus;

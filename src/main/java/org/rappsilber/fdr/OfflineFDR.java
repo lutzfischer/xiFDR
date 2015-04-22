@@ -116,7 +116,7 @@ public abstract class OfflineFDR {
      * is a higher score better than a lower score?
      */
     protected boolean PSMScoreHighBetter = true; 
-    public static Version version = new Version(1, 0, 1 );
+    public static Version xiFDRVersion = new Version(1, 0, 1 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -302,7 +302,7 @@ public abstract class OfflineFDR {
     
     
     public static String getLongVersionString() {
-        return version.toLongString();
+        return xiFDRVersion.toLongString();
     }
     
     public void setLengthGroups(int[] peptideLengthGroups) {
@@ -1887,9 +1887,9 @@ public abstract class OfflineFDR {
 // 
     public void writeFiles(String path, String baseName, String seperator, FDRResult result) throws FileNotFoundException {
 
-        String extension = "_xiFDR" + OfflineFDR.version + ".txt";
+        String extension = "_xiFDR" + OfflineFDR.xiFDRVersion + ".txt";
         if (seperator.equals(",")) {
-            extension = "_xiFDR" + OfflineFDR.version + ".csv";
+            extension = "_xiFDR" + OfflineFDR.xiFDRVersion + ".csv";
         }
 
         CountOccurence<Integer> fdrPSMGroupCounts = new CountOccurence<Integer>();
@@ -2045,7 +2045,7 @@ public abstract class OfflineFDR {
             String xlPepsHeader = getXLPepsHeader(seperator);
             pepsOut.println(xlPepsHeader);
 
-            pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + OfflineFDR.version + extension);
+            pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + OfflineFDR.xiFDRVersion + extension);
             String linearPepsHeader = getLinearPepsHeader(seperator);
             pepsLinearOut.println(linearPepsHeader);
 
@@ -2335,7 +2335,7 @@ public abstract class OfflineFDR {
         // write out a table of all proteinpairs
         PrintWriter summaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension);
 
-        summaryOut.println("xiFDR Version:" + seperator + OfflineFDR.version);
+        summaryOut.println("xiFDR Version:" + seperator + OfflineFDR.xiFDRVersion);
         summaryOut.println("Source:" + seperator + getSource());
         summaryOut.println("\"Target FDRs:\"");
         summaryOut.println("psm" + seperator + " " + target_psm_fdr);

@@ -746,7 +746,7 @@ public class MZIdentXLFDR extends OfflineFDR {
             xiUP.setName("XiFDR");
             xiNameParam.setParam(xiUP);
             asXi.setSoftwareName(xiNameParam);
-            asXi.setVersion(OfflineFDR.version.toString());
+            asXi.setVersion(OfflineFDR.xiFDRVersion.toString());
             
             if (analysisSoftwareList != null) {
                 analysisSoftwareList.getAnalysisSoftware().add(asXi);

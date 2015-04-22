@@ -16,16 +16,10 @@
 package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
-import org.rappsilber.fdr.utils.FDRSelfAdd;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import org.rappsilber.fdr.entities.Peptide;
-import org.rappsilber.fdr.entities.PeptidePair;
-import static org.rappsilber.fdr.entities.PeptidePair.PEPTIDEPAIRCOUNT;
-import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.utils.IntArrayList;
