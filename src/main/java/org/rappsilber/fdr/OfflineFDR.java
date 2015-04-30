@@ -552,7 +552,7 @@ public abstract class OfflineFDR {
                 if (stored != null) {
                     if (stored.getScore()< psm.getScore())
                         uniquePSM.put(key, psm);
-                } else {
+                } else if (!isPsm_directional()) {
                     key = psm.getPeptide2().getSequence() + "_!xl!_" 
                                             + psm.getPeptide1().getSequence() + "_!xl!_" 
                                             + psm.getPeptideLinkSite2() + "_!xl!_" 
