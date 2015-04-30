@@ -15,6 +15,7 @@
  */
 package org.rappsilber.fdr.gui;
 
+import org.rappsilber.data.csv.CSVRandomAccess;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.result.SubGroupFdrInfo;
@@ -32,47 +33,15 @@ public class FDRLevelInformations extends javax.swing.JFrame {
     public FDRLevelInformations(FDRResultLevel level, String title) {
         initComponents();
         this.setTitle(title);
-        javax.swing.table.DefaultTableModel tm = (javax.swing.table.DefaultTableModel) tblInfo.getModel();
-        while (tm.getRowCount() >0 ) 
-            tm.removeRow(0);
+
+        CSVRandomAccess csv = new CSVRandomAccess(',', '\"');
+        csv.setHeader(new String[]{"Group","Input","TargetFDR","Next FDR","Accepted FDR", "Lower FDR","Passed","Filtered Result","Worst Score"});
+        csvLevelInfo.setCSV(csv);
         
         for (Object fg: level.keySet()) {
-            Object[] row = new Object[9];
+            String[] rowString = new String[9];
             SubGroupFdrInfo sg = (SubGroupFdrInfo) level.get(fg);
             
-//            // for pretty printing the FDRs what is the biggest decimal needed to display the difference between target passing and next higher fdr
-//            // first we need the difference
-//            double htdiff = (sg.higherFDR-sg.targteFDR)*100;
-//            double ftdiff = (sg.firstPassingFDR-sg.targteFDR)*100;
-//            double hldiff = (sg.higherFDR-sg.lowerFDR)*100;
-//            double minDiff = htdiff;
-//
-//            // get the smallest difference > 0
-//            if (minDiff >0) {
-//                if (ftdiff >0)
-//                    minDiff= Math.min(minDiff,ftdiff);
-//            } else 
-//                minDiff = ftdiff;
-//            
-//            if (minDiff > 0) {
-//                if (hldiff > 0) 
-//                    minDiff = Math.min(minDiff, hldiff);
-//            } else {
-//                minDiff = hldiff;
-//            }
-//            
-//            // turn that into the decimal by using log10 and round that down
-//            double roundingFactor = Math.round(Math.log(minDiff)/Math.log(10)-0.5);
-//            
-//            // we don't want to round away any digits before the dot
-//            if (roundingFactor>0)
-//                roundingFactor=0;
-//            double normFactor = Math.pow(10, roundingFactor);
-//            double higherFDR = Math.round(sg.higherFDR*100/normFactor)*normFactor;
-//            double firstPassingFDR = Math.round(sg.firstPassingFDR*100/normFactor)*normFactor;
-//            double lowerFDR = Math.round(sg.lowerFDR*100/normFactor)*normFactor;
-//            if (roundingFactor<0)
-//                roundingFactor=-roundingFactor;
             
             String formatString = MiscUtils.formatStringForPrettyPrintingRelatedValues(
                     new double[] {
@@ -82,19 +51,20 @@ public class FDRLevelInformations extends javax.swing.JFrame {
                         sg.firstPassingFDR*100
                     },1);
             
-            row[0]=sg.fdrGroupName;
+
+            rowString[0] = ""+ sg.fdrGroupName;
+            rowString[1] = ""+sg.inputCount;
             
-            row[1]=sg.inputCount;
+            rowString[2] = sg.targteFDR >=+ 1 ? "unrestricted" : ""+(sg.targteFDR * 100);
+            rowString[3] = String.format(formatString + "%% FP",sg.firstPassingFDR*100);
+            rowString[4] = String.format("<"+ formatString + "%% H", sg.higherFDR*100);
+            rowString[5] = String.format(">"+ formatString + "%% L", sg.lowerFDR*100);
             
-            row[2]=sg.targteFDR >= 1 ? "unrestricted" : sg.targteFDR * 100;
-            row[3]=String.format(formatString + "%% FP",sg.firstPassingFDR*100);
-            row[4]=String.format("<"+ formatString + "%% H", sg.higherFDR*100);
-            row[5]=String.format(">"+ formatString + "%% L", sg.lowerFDR*100);
+            rowString[6] = "" + sg.results.size();
+            rowString[7] = "" + sg.filteredResult.size();
+            rowString[8] = "" + sg.worstAcceptedScore;
             
-            row[6]=sg.results.size();
-            row[7] = sg.filteredResult.size();
-            row[8] = sg.worstAcceptedScore;
-            tm.addRow(row);
+            csv.insertLine(csv.getRowCount(), rowString);
         }
     }
 
@@ -108,8 +78,6 @@ public class FDRLevelInformations extends javax.swing.JFrame {
     private void initComponents() {
 
         btnOK = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        tblInfo = new javax.swing.JTable();
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
@@ -122,6 +90,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         jTextField5 = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
         jTextField6 = new javax.swing.JTextField();
+        csvLevelInfo = new org.rappsilber.gui.components.CSV.CSVPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -131,31 +100,6 @@ public class FDRLevelInformations extends javax.swing.JFrame {
                 btnOKActionPerformed(evt);
             }
         });
-
-        tblInfo.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "Group", "Input", "Target FDR", "Next FDR", "Accepted FDR", "Lower FDR", "Passed", "Filtered Result", "Worst Score"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Object.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        jScrollPane1.setViewportView(tblInfo);
 
         jLabel1.setText("Group:");
 
@@ -193,68 +137,69 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         jTextField6.setText("how many of the results passed also the higher level fdr");
         jTextField6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
+        csvLevelInfo.setCSV(null);
+        csvLevelInfo.setShowLoadPanel(false);
+        csvLevelInfo.setShowSavePanel(false);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btnOK))
-                    .addComponent(jScrollPane1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(csvLevelInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 661, Short.MAX_VALUE)
+                        .addComponent(btnOK))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel1)
                             .addComponent(jLabel2)
                             .addComponent(jLabel3)
-                            .addComponent(jLabel4))
-                        .addGap(22, 22, 22)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel6))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField4)
-                            .addComponent(jTextField3)
-                            .addComponent(jTextField2)
-                            .addComponent(jTextField1)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel5)
-                        .addGap(66, 66, 66)
-                        .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 577, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel6)
-                        .addGap(59, 59, 59)
-                        .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 577, Short.MAX_VALUE)))
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
+                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
+                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
+                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
+                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel5)
-                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel6)
-                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(csvLevelInfo, javax.swing.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel2))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel4))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel5))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel6)))
+                    .addComponent(jLabel1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnOK)
                 .addContainerGap())
@@ -269,19 +214,18 @@ public class FDRLevelInformations extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnOK;
+    private org.rappsilber.gui.components.CSV.CSVPanel csvLevelInfo;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField3;
     private javax.swing.JTextField jTextField4;
     private javax.swing.JTextField jTextField5;
     private javax.swing.JTextField jTextField6;
-    private javax.swing.JTable tblInfo;
     // End of variables declaration//GEN-END:variables
 }
