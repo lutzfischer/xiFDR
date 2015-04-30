@@ -18,40 +18,37 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
               <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                  <Component id="btnStopBoost" max="32767" attributes="0"/>
+                  <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblBoost" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel7" max="32767" attributes="0"/>
+              </Group>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" attributes="0">
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="lblDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="lblBoost" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
-                      </Group>
+                  <Group type="102" alignment="0" attributes="0">
                       <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="103" groupAlignment="1" attributes="0">
+                          <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spFDR" max="32767" attributes="0"/>
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
                                   <Component id="ckDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                          </Group>
-                          <Group type="102" attributes="0">
-                              <Group type="103" groupAlignment="1" attributes="0">
-                                  <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
-                                  <Component id="spFDR" pref="103" max="32767" attributes="0"/>
-                              </Group>
-                              <EmptySpace min="-2" max="-2" attributes="0"/>
-                              <Component id="cbFDRLevel" pref="110" max="32767" attributes="0"/>
+                              <EmptySpace pref="58" max="32767" attributes="0"/>
+                              <Component id="ckBoostBetween" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="cbFDRLevel" pref="140" max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
-                      <Component id="btnStopBoost" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="32767" attributes="0"/>
                       <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
-              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -65,21 +62,25 @@
                   <Component id="cbFDRLevel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="ckDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="lblDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="lblBoost" alignment="3" min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="ckDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblBoost" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Component id="ckBoostBetween" alignment="1" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="22" max="32767" attributes="0"/>
+              <EmptySpace pref="32" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="btnCalc" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="btnStopBoost" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -127,6 +128,9 @@
         <Property name="selected" type="boolean" value="true"/>
         <Property name="toolTipText" type="java.lang.String" value="Use prefiltering on lower level to boost the results on the chossen level of information"/>
       </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckMaximizeActionPerformed"/>
+      </Events>
     </Component>
     <Component class="javax.swing.JLabel" name="lblDirectional">
       <Properties>
@@ -164,10 +168,18 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="stop boost"/>
         <Property name="enabled" type="boolean" value="false"/>
+        <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
+          <Insets value="[2, 7, 2, 7]"/>
+        </Property>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnStopBoostActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckBoostBetween">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Between"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

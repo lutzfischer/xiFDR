@@ -60,6 +60,22 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     }
     
     
+    @Override
+    public boolean getBoostBetween() {
+        return ckBoostBetween.isSelected();
+    }
+
+    @Override
+    public void setBoostBetween(final boolean between) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ckBoostBetween.setSelected(between);
+            }
+        });
+    }
+    
+    
     private void setValueLater(final JSpinner sp, final Object value) {
         SwingUtilities.invokeLater(new Runnable() {
 
@@ -313,6 +329,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         this.setReportFactor(settings.getReportFactor());
         cbBoostWhat.getModel().setSelectedItem(settings.doOptimize());
         this.setFilterToUniquePSM(settings.filterToUniquePSM());
+        this.setBoostBetween(settings.getBoostBetween());
     }
 
     
@@ -394,6 +411,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spMinPPIPepCount = new org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner();
         btnStopBoost = new javax.swing.JButton();
         ckUniquePSM = new javax.swing.JCheckBox();
+        ckBoostBetween = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -457,6 +475,11 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckMaximize.setSelected(true);
         ckMaximize.setText("boost");
         ckMaximize.setToolTipText("should we try to boost the results reported for a specified maximum FDR");
+        ckMaximize.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckMaximizeActionPerformed(evt);
+            }
+        });
 
         spMaximizeSteps.setModel(new javax.swing.SpinnerNumberModel(4, 2, 20, 1));
         spMaximizeSteps.setToolTipText("in how many steps is each FDR-level checked for each round of optimisations");
@@ -487,6 +510,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckUniquePSM.setText("Unique PSMs");
         ckUniquePSM.setToolTipText("only use the top match for each combination of charge peptide1, peptide2 and charge state as a PSM");
 
+        ckBoostBetween.setText("Between");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -494,52 +519,55 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel5)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel6)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel7)
-                    .addComponent(ckMaximize))
-                .addGap(12, 12, 12)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(spReportFactor, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spPPIFdr, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spLinkFDR, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spProteinFDR, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spPepFDR, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spPsmFDR, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel9, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 92, Short.MAX_VALUE)
-                    .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel23)
-                    .addComponent(ckDirectionalPPI)
-                    .addComponent(ckDirectionalLink)
-                    .addComponent(ckDirectionalPeptidePair)
-                    .addComponent(ckDirectionalPSM)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spMaximizeSteps)
-                    .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(spMinLinkPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(spMinProteinPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel28, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(jLabel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel6)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel7)
+                            .addComponent(ckMaximize))
+                        .addGap(12, 12, 12)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(spReportFactor, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spPPIFdr, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spLinkFDR, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spProteinFDR, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spPepFDR, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spPsmFDR, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel9, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 92, Short.MAX_VALUE)
+                            .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel23)
+                            .addComponent(ckDirectionalPPI)
+                            .addComponent(ckDirectionalLink)
+                            .addComponent(ckDirectionalPeptidePair)
+                            .addComponent(ckDirectionalPSM)
+                            .addComponent(jLabel1))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spMaximizeSteps)
+                            .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinLinkPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinProteinPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel28, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jLabel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spMaxLinkAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinPeptideLength, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMaxProteinAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(ckUniquePSM)
+                                .addGap(0, 55, Short.MAX_VALUE))
+                            .addComponent(ckBoostBetween, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnStopBoost)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnCalc))
-                    .addComponent(spMaxLinkAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(spMinPeptideLength, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(spMaxProteinAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(ckUniquePSM)
-                        .addGap(0, 0, Short.MAX_VALUE))))
+                        .addComponent(btnCalc))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -592,14 +620,17 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                     .addComponent(spReportFactor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel7)
                     .addComponent(ckUniquePSM))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 6, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnCalc)
                     .addComponent(ckMaximize)
                     .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel23)
                     .addComponent(spMaximizeSteps, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnStopBoost))
+                    .addComponent(ckBoostBetween))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnStopBoost)
+                    .addComponent(btnCalc))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -612,10 +643,17 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         raiseStopMaximizing();
     }//GEN-LAST:event_btnStopBoostActionPerformed
 
+    private void ckMaximizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckMaximizeActionPerformed
+                ckBoostBetween.setEnabled(ckMaximize.isSelected());
+                cbBoostWhat.setEnabled(ckMaximize.isSelected());
+                spMaximizeSteps.setEnabled(ckMaximize.isSelected());
+    }//GEN-LAST:event_ckMaximizeActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCalc;
     private javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbBoostWhat;
+    private javax.swing.JCheckBox ckBoostBetween;
     private javax.swing.JCheckBox ckDirectionalLink;
     private javax.swing.JCheckBox ckDirectionalPPI;
     private javax.swing.JCheckBox ckDirectionalPSM;

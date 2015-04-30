@@ -42,7 +42,21 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private double m_ppifdr = 100;
     
     private boolean m_filterToUniquePSM = true;
-    
+
+    @Override
+    public boolean getBoostBetween() {
+        return ckBoostBetween.isSelected();
+    }
+
+    @Override
+    public void setBoostBetween(final boolean between) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ckBoostBetween.setSelected(between);
+            }
+        });
+    }    
     
     
     private void setValueLater(final JSpinner sp, final Object value) {
@@ -344,6 +358,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         this.setProteinGroupPairFDR(settings.getProteinGroupPairFDR());
         this.setReportFactor(settings.getReportFactor());
         this.setFilterToUniquePSM(settings.filterToUniquePSM());
+        this.setBoostBetween(settings.getBoostBetween());
     }
     
     
@@ -367,6 +382,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         spFDR = new javax.swing.JSpinner();
         cbFDRLevel = new org.rappsilber.fdr.gui.components.FDRLevelComboBox();
         btnStopBoost = new javax.swing.JButton();
+        ckBoostBetween = new javax.swing.JCheckBox();
 
         jLabel7.setText("Report Factor");
         jLabel7.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
@@ -387,6 +403,11 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 
         ckMaximize.setSelected(true);
         ckMaximize.setToolTipText("Use prefiltering on lower level to boost the results on the chossen level of information");
+        ckMaximize.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckMaximizeActionPerformed(evt);
+            }
+        });
 
         lblDirectional.setText("Is directional");
         lblDirectional.setToolTipText("Is the Cross-linking considered directional (A links to B is different to B links to A)");
@@ -412,11 +433,14 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 
         btnStopBoost.setText("stop boost");
         btnStopBoost.setEnabled(false);
+        btnStopBoost.setMargin(new java.awt.Insets(2, 7, 2, 7));
         btnStopBoost.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnStopBoostActionPerformed(evt);
             }
         });
+
+        ckBoostBetween.setText("Between");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -424,28 +448,27 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(btnStopBoost, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel1)
+                    .addComponent(lblDirectional)
+                    .addComponent(lblBoost)
+                    .addComponent(jLabel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(lblDirectional)
-                            .addComponent(lblBoost)
-                            .addComponent(jLabel7))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(spReportFactor, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(spFDR)
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(ckMaximize)
-                                    .addComponent(ckDirectional))
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(spReportFactor, javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(spFDR, javax.swing.GroupLayout.DEFAULT_SIZE, 103, Short.MAX_VALUE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(cbFDRLevel, javax.swing.GroupLayout.DEFAULT_SIZE, 110, Short.MAX_VALUE))))
+                                    .addComponent(ckDirectional)
+                                    .addComponent(ckMaximize))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 58, Short.MAX_VALUE)
+                                .addComponent(ckBoostBetween)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(cbFDRLevel, javax.swing.GroupLayout.DEFAULT_SIZE, 140, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(btnStopBoost)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(btnCalc)))
                 .addContainerGap())
@@ -459,18 +482,20 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                     .addComponent(spFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cbFDRLevel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(ckDirectional)
-                    .addComponent(lblDirectional))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(ckMaximize)
-                    .addComponent(lblBoost))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(ckDirectional)
+                            .addComponent(lblDirectional))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(ckMaximize)
+                            .addComponent(lblBoost)))
+                    .addComponent(ckBoostBetween, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel7)
                     .addComponent(spReportFactor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCalc)
                     .addComponent(btnStopBoost))
@@ -497,10 +522,15 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         raiseStopMaximizing();
     }//GEN-LAST:event_btnStopBoostActionPerformed
 
+    private void ckMaximizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckMaximizeActionPerformed
+        ckBoostBetween.setEnabled(ckMaximize.isSelected());
+    }//GEN-LAST:event_ckMaximizeActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCalc;
     private javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbFDRLevel;
+    private javax.swing.JCheckBox ckBoostBetween;
     private javax.swing.JCheckBox ckDirectional;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JLabel jLabel1;

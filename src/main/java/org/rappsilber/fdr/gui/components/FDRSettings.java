@@ -62,6 +62,9 @@ public interface FDRSettings {
     
     int getBoostingSteps();
 
+    boolean getBoostBetween();
+    void setBoostBetween(boolean between);
+    
     boolean isLinkDirectional();
 
     boolean isPPIDirectional();

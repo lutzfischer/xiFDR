@@ -747,7 +747,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     case PROTEINGROUPLINK:
                         Thread ml = new Thread() {
                             public void run() {
-                                maximiseLink();
+                                maximiseLink(fdrSettings.getBoostBetween());
                             }
                         };
                         ml.start();
@@ -756,7 +756,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     case PROTEINGROUPPAIR:
                         Thread mp = new Thread() {
                             public void run() {
-                                maximisePPI();
+                                maximisePPI(fdrSettings.getBoostBetween());
                             }
                         };
                         mp.start();
@@ -1048,7 +1048,7 @@ public class FDRGUI extends javax.swing.JFrame {
 //
 //    }
 
-    public void maximisePPI() {
+    public void maximisePPI(boolean between) {
         clearResults();
         double steps = fdrSettings.getBoostingSteps();
         setEnableRead(false);
@@ -1101,6 +1101,9 @@ public class FDRGUI extends javax.swing.JFrame {
         boolean optimizing = true;
 
         int maxPPICount = 0;
+        int maxPPICountBetween = 0;
+        int maxLinkCount = 0;
+        int maxLinkCountBetween = 0;
 
 
         double maxPPIPsmfdr = 0;
@@ -1197,9 +1200,19 @@ public class FDRGUI extends javax.swing.JFrame {
 
                             // how many links do we now have?
                             final int ppiCount = result.proteinGroupPairFDR.getResultCount();
+                            final int ppiCountBetween = result.proteinGroupPairFDR.getBetween();
+                            final int linkCount = result.proteinGroupPairFDR.getResultCount();
+                            final int linkCountBetween = result.proteinGroupPairFDR.getBetween();
 
+                            if ((between && ppiCountBetween > maxPPICountBetween) ||  // boost between and more between than before
+                                ((ppiCountBetween == maxPPICountBetween || !between) && ppiCount > maxPPICount) || // not between or same between but more overal
+                                ((linkCountBetween == maxLinkCountBetween || !between) && ppiCount == maxPPICount && linkCountBetween > maxLinkCountBetween) ||  //
+                                 ((!between || (ppiCountBetween == maxPPICountBetween && linkCountBetween == maxLinkCountBetween)) && linkCount > maxLinkCount)) {
+
+                                maxLinkCountBetween = linkCountBetween;
+                                maxPPICountBetween = ppiCountBetween;
                             // is it a new best?
-                            if (ppiCount > maxPPICount) {
+//                            if (ppiCount > maxPPICount) {
 
                                 // store the values for this fdr
                                 maxPPIPsmfdr = psmfdr;
@@ -1711,7 +1724,7 @@ public class FDRGUI extends javax.swing.JFrame {
 //    }
 //    
     
-    public void maximiseLink() {
+    public void maximiseLink(boolean between) {
         clearResults();
         
         double steps = fdrSettings.getBoostingSteps();
@@ -1784,7 +1797,9 @@ public class FDRGUI extends javax.swing.JFrame {
         boolean optimizing = true;
 
         int maxLinkCount = 0;
+        int maxLinkCountBetween = 0;
         int maxPPICount = 0;
+        int maxPPICountBetween = 0;
 
 
         double maxLinkPsmfdr = 0;
@@ -1861,7 +1876,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         }
 
                         // calculate links
-                        getFdr().calculateLinkFDR(maxlinkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, false,result, getFdr().isLinks_directional());
+                        getFdr().calculateLinkFDR(maxlinkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, between,result, getFdr().isLinks_directional());
 
 
                         
@@ -1874,7 +1889,7 @@ public class FDRGUI extends javax.swing.JFrame {
                             if (stopMaximizing) {
                                 break psmloop;
                             }                                  
-                            getFdr().calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, false,result, getFdr().isPpi_directional());
+                            getFdr().calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, between,result, getFdr().isPpi_directional());
 
                             if (result.proteinGroupPairFDR.getResultCount() == 0) {
                                 break protloop;
@@ -1888,11 +1903,19 @@ public class FDRGUI extends javax.swing.JFrame {
                         
                         // how many links do we now have?
                         final int linkCount = result.proteinGroupLinkFDR.getResultCount();
+                        final int linkCountBetween = result.proteinGroupLinkFDR.getBetween();
                         final int ppiCount =  result.proteinGroupPairFDR ==null ? 0 : result.proteinGroupPairFDR.getResultCount();
+                        final int ppiCountBetween =  result.proteinGroupPairFDR ==null ? 0 : result.proteinGroupPairFDR.getBetween();
 
                         // is it a new best?
-                        if (linkCount > maxLinkCount || (linkCount == maxLinkCount && ppiCount > maxPPICount)) {
+                        if ((between && linkCountBetween > maxLinkCountBetween) ||  // boost between and more between than before
+                            ((linkCountBetween == maxLinkCountBetween || !between) && linkCount > maxLinkCount) || // not between or same between but more overal
+                            ((ppiCountBetween == maxPPICountBetween || !between) && linkCount == maxLinkCount && ppiCountBetween > maxPPICountBetween) ||  //
+                             ((!between || (linkCountBetween == maxLinkCountBetween && ppiCountBetween == maxPPICountBetween)) && ppiCount > maxPPICount)) {
                             
+                            maxLinkCountBetween = linkCountBetween;
+                            maxPPICountBetween = ppiCountBetween;
+
                             // store the values for this fdr
                             maxLinkPsmfdr = psmfdr;
                             maxLinkPepfdr = pepfdr;
@@ -1909,9 +1932,9 @@ public class FDRGUI extends javax.swing.JFrame {
                             maxLinkCount = linkCount;
                             maxPPICount = ppiCount;
                             // record that we found a new top
-                            String message = "psmfdr, " + psmfdr + " ,pepfdr, " + pepfdr + " ,protfdr, " + protfdr + ", link count, " + linkCount;
+                            String message = "psmfdr, " + psmfdr + " ,pepfdr, " + pepfdr + " ,protfdr, " + protfdr + ", link count, " + linkCount + (between ? "("+maxLinkCountBetween+" between)" :"");
                             if (ppiCount > 0 )
-                                message += ", Protein Pairs, " +  ppiCount;
+                                message += ", Protein Pairs, " +  ppiCount  + (between ? "("+maxPPICountBetween+" between)" :"");
                             sb.append(message + "\n");
                             Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
 
@@ -2208,7 +2231,6 @@ public class FDRGUI extends javax.swing.JFrame {
         spLog = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
         memory2 = new org.rappsilber.gui.components.memory.Memory();
-        jButton3 = new javax.swing.JButton();
         pAbout = new javax.swing.JPanel();
         jTabbedPane4 = new javax.swing.JTabbedPane();
         pVersion = new javax.swing.JPanel();
@@ -3056,13 +3078,6 @@ public class FDRGUI extends javax.swing.JFrame {
         txtLog.setRows(5);
         spLog.setViewportView(txtLog);
 
-        jButton3.setText("Paper-Interface");
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout pLogLayout = new javax.swing.GroupLayout(pLog);
         pLog.setLayout(pLogLayout);
         pLogLayout.setHorizontalGroup(
@@ -3071,10 +3086,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(spLog)
-                    .addComponent(memory2, javax.swing.GroupLayout.DEFAULT_SIZE, 695, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pLogLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButton3)))
+                    .addComponent(memory2, javax.swing.GroupLayout.DEFAULT_SIZE, 695, Short.MAX_VALUE))
                 .addContainerGap())
         );
         pLogLayout.setVerticalGroup(
@@ -3083,9 +3095,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(memory2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(spLog, javax.swing.GroupLayout.DEFAULT_SIZE, 386, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton3)
+                .addComponent(spLog, javax.swing.GroupLayout.DEFAULT_SIZE, 417, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -3243,28 +3253,33 @@ public class FDRGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_formMouseClicked
 
     private void btnPSMInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPSMInfoActionPerformed
-        if (getResult()!= null)
+        if (getResult()!= null) {
             new FDRLevelInformations(getResult().psmFDR, "PSM FDR").setVisible(true);
+        }            
     }//GEN-LAST:event_btnPSMInfoActionPerformed
 
     private void btnPepInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPepInfoActionPerformed
-        if (getResult()!= null)
+        if (getResult()!= null) {
             new FDRLevelInformations(getResult().peptidePairFDR, "Peptide-Pair FDR").setVisible(true);
+        }
     }//GEN-LAST:event_btnPepInfoActionPerformed
 
     private void btnProtInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnProtInfoActionPerformed
-        if (getResult()!= null)
+        if (getResult()!= null) {
             new FDRLevelInformations(getResult().proteinGroupFDR, "Protein Group FDR").setVisible(true);
+        }
     }//GEN-LAST:event_btnProtInfoActionPerformed
 
     private void btnLinkInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLinkInfoActionPerformed
-        if (getResult()!= null)
+        if (getResult()!= null) {
             new FDRLevelInformations(getResult().proteinGroupLinkFDR, "Protein Group Link FDR").setVisible(true);
+        }
     }//GEN-LAST:event_btnLinkInfoActionPerformed
 
     private void btnPPIInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPPIInfoActionPerformed
-        if (getResult()!= null)
+        if (getResult()!= null) {
             new FDRLevelInformations(getResult().proteinGroupPairFDR, "Protein Group Pairs FDR").setVisible(true);
+        }
     }//GEN-LAST:event_btnPPIInfoActionPerformed
 
     private void ckDBSizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckDBSizeActionPerformed
@@ -3296,13 +3311,6 @@ public class FDRGUI extends javax.swing.JFrame {
         lblProtein.setVisible(ckDBSize.isSelected());
         
     }//GEN-LAST:event_ckDBSizeActionPerformed
-
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        
-        ckPrePostAA.setVisible(false);
-        ckPrePostAA.getParent().remove(ckPrePostAA);
-
-    }//GEN-LAST:event_jButton3ActionPerformed
 
     private void changFDRSettingsInterface(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_changFDRSettingsInterface
 
@@ -3411,7 +3419,6 @@ public class FDRGUI extends javax.swing.JFrame {
     private org.rappsilber.gui.components.FileBrowser fbMzIdentMLOut;
     private org.rappsilber.fdr.gui.components.FDRSettingsComplete fdrSettingsComplete;
     private org.rappsilber.fdr.gui.components.FDRSettingsSimple fdrSettingsSimple;
-    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
