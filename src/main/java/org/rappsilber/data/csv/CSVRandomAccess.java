@@ -475,7 +475,8 @@ public class CSVRandomAccess extends CsvParser {
      */    
     public void insertLine(int row,String[] line) {        
         m_data.add(row, line);
-        
+        if (line.length > getMaxColumns())
+            setMaxColumns(line.length);
         if (m_current >= row)
             m_current++;
     }
