@@ -20,14 +20,14 @@ package org.rappsilber.utils;
  * @author lfischer
  */
 public class Version {
-    /** the major number of the version*/
-    public int major;
-    /** the minor number of the version*/
-    public int minor;
     /** build - svn-revision*/
     public int build;
     /** extension */
     public int extension;
+    /** the major number of the version*/
+    public int major;
+    /** the minor number of the version*/
+    public int minor;
 
     public Version(int major, int minor, int build) {
         this.major = major;
@@ -58,9 +58,9 @@ public class Version {
         this.extension = Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
     }
     
-    public String toString() {
-        
-         return major + "." + minor + "." + build + (extension != 0 ? "," + extension : "");
+    public int setExtension(String svn_refbuild) {
+        this.extension = Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
+        return this.extension;
     }
 
     public String toLongString() {
@@ -68,5 +68,10 @@ public class Version {
             return String.format("%02d.%02d.%07d", major ,minor ,build);
         return String.format("%02d.%02d.%02d.%07d", major ,minor ,build, extension);
     }
-    
+
+    @Override
+    public String toString() {
+        
+        return major + "." + minor + "." + build + (extension != 0 ? "." + extension : "");
+    }
 }
