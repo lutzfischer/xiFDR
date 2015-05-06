@@ -116,7 +116,7 @@ public abstract class OfflineFDR {
      * is a higher score better than a lower score?
      */
     protected boolean PSMScoreHighBetter = true; 
-    public static Version xiFDRVersion = new Version(1, 0, 2 );
+    public static Version xiFDRVersion = new Version(1, 0, 3 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -4077,11 +4077,11 @@ public abstract class OfflineFDR {
     }
     
     protected ArrayList<String> getPSMHeader() {
-        return new ArrayList<String>(MyArrayUtils.toCollection(new String[]{ "PSMID" , "run" , "scan"  , "Protein1" , "Description1" 
+        return new ArrayList<String>(MyArrayUtils.toCollection(new String[]{ "ID" , "run" , "scan"  , "Protein1" , "Description1" 
                 , "Decoy1" , "Protein2" , "Description2" , "Decoy2" 
-                , "Peptide1" , "Peptide2" , "PeptidePosition1" , "PeptidePosition2" 
-                , "PeptideLength1" , "PeptideLength2" , "fromSite" , "ToSite" 
-                , "FromProteinSite" , "ToProteinSiteSite" , "Charge" , "Score" 
+                , "PepSeq1" , "PepSeq2" , "PepPos1" , "PepPos2" 
+                , "PeptideLength1" , "PeptideLength2" , "LinkPos1" , "LinkPos2" 
+                , "ProteinLinkPos1" , "ProteinLinkPos2" , "Charge" , "Score" 
                 , "isDecoy" , "isTT" , "isTD" , "isDD" , "fdrGroup" , "fdr" 
                 , "" , "PeptidePairFDR" , "Protein1FDR" , "Protein2FDR" 
                 , "LinkFDR" , "PPIFDR" , ""
