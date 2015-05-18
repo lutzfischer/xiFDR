@@ -2902,6 +2902,7 @@ public class FDRGUI extends javax.swing.JFrame {
         });
 
         ckPrePostAA.setText("Pre and post amino-acids");
+        ckPrePostAA.setEnabled(false);
 
         javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
         jPanel10.setLayout(jPanel10Layout);
@@ -3409,7 +3410,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox ckDBSize;
     private javax.swing.JCheckBox ckDefineGroups;
     private javax.swing.JCheckBox ckIgnoreGroups1;
-    private javax.swing.JCheckBox ckPrePostAA;
+    public javax.swing.JCheckBox ckPrePostAA;
     private org.rappsilber.fdr.gui.components.CSVSelection csvSelect;
     private javax.swing.JEditorPane editAbout;
     private javax.swing.JEditorPane editAboutCSV;
