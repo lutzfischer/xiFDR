@@ -219,7 +219,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
 
 
     public int getFDRGroup() {
-        int group = isInternal?1:0 + (m_specialOnly?2:0);
+        int group = (isInternal?1:0) + (m_specialOnly?2:0);
         if (MIN_DISTANCE_FOR_LONG > 0 && isInternal && getProteinGroup1().size() + getProteinGroup1().size() ==2) {
             for (int f : getPosition1().values().iterator().next()) {
                 for (int t : getPosition2().values().iterator().next()) {
