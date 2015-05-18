@@ -81,6 +81,19 @@ public abstract class MyArrayUtils {
         }
         return sb.toString();
     }
+
+    
+    public static String toString(Iterable a, String delim) {
+        Iterator ai = a.iterator();
+        if (!ai.hasNext())
+            return "";
+        StringBuilder sb = new StringBuilder(ai.next().toString());
+        while (ai.hasNext()) {
+            sb.append(delim);
+            sb.append(ai.next().toString());
+        }
+        return sb.toString();
+    }
     
     /**
      * Creates a static collection based on the provided array.
