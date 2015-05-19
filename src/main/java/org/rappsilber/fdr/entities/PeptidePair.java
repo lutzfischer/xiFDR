@@ -611,7 +611,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         String[] groupNames = new String[]{"Linear", "Within", "Between", "Linear Special", "Within Special", "Between Special"};
         fdrGroupNames.put(-1, "all combined");
         for (int gn = 0; gn < groupNames.length; gn++) {
-            int g = gn * (aLenghtGroup.length);
+            int g = gn * (lenghtGroup.length);
             for (int i = 0; i < lenghtGroup.length; i++) {
                 fdrGroupNames.put(g + i, groupNames[gn] + "  >" + lenghtGroup[i]);
             }
