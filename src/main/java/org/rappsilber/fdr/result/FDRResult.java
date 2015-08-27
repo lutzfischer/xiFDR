@@ -38,6 +38,8 @@ public  class FDRResult {
     public int maximumProteinAmbiguity = 0;
     public int maximumLinkAmbiguity = 0;
     public boolean uniquePSMs = false;
+    
+    public boolean scaleByLinkedNess = false;
 
 
 }

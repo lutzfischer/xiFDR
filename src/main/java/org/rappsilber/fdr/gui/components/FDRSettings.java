@@ -110,5 +110,7 @@ public interface FDRSettings {
     
     public void setAll(FDRSettings settings);
     
+    public boolean getScaleByLinkedNess();
+    public void setScaleByLinkedNess(boolean scale);
     
 }

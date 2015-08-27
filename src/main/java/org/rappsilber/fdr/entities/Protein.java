@@ -313,6 +313,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         peps = new HashSet<Peptide>();
         peppairs = new HashSet<PeptidePair>();
         m_fdr = Double.MAX_VALUE;
+        setLinkedSupport(1);
     }
     
 
@@ -374,4 +375,16 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     public boolean isBetween() {
         return false;
     }
+    
+    @Override
+    public Site getLinkSite1() {
+        return new ProteinSite(this);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        return null;
+    }
+    
+    
 }

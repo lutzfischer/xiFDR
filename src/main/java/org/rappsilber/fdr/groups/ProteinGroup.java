@@ -23,6 +23,8 @@ import java.util.Iterator;
 import org.rappsilber.fdr.entities.Peptide;
 import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
+import org.rappsilber.fdr.entities.ProteinGroupSite;
+import org.rappsilber.fdr.entities.Site;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 
 /**
@@ -76,6 +78,16 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         for (PeptidePair pp : peps) {
             addPeptidePair(pp);
         }
+    }
+
+    @Override
+    public Site getLinkSite1() {
+        return new ProteinGroupSite(this);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        return null;
     }
 
     public Collection<Protein> getProteins() {

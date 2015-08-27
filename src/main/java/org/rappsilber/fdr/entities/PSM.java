@@ -200,6 +200,20 @@ public class PSM extends AbstractFDRElement<PSM> {
         
     }
 
+    @Override
+    public Site getLinkSite1() {
+        if (peptide1 == Peptide.NOPEPTIDE)
+            return null;
+        return new PeptideSite(peptide1,pepsite1);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        if (peptide2 == Peptide.NOPEPTIDE)
+            return null;
+        return new PeptideSite(peptide2,pepsite2);
+    }
+
     /**
      * hash code of this PSM
      * @return 
@@ -582,6 +596,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     public void reset() {
         resetFdrProteinGroup();
         setFdrPeptidePair(null);
+        setLinkedSupport(1);
     }
     
     /**

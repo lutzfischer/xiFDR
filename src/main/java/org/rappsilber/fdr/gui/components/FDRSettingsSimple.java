@@ -42,6 +42,8 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private double m_ppifdr = 100;
     
     private boolean m_filterToUniquePSM = true;
+    
+    private boolean scaleByContectedness = false;
 
     @Override
     public boolean getBoostBetween() {
@@ -57,6 +59,16 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
             }
         });
     }    
+
+    @Override
+    public boolean getScaleByLinkedNess() {
+        return scaleByContectedness;
+    }
+
+    @Override
+    public void setScaleByLinkedNess(boolean scale) {
+        scaleByContectedness = scale;
+    }
     
     
     private void setValueLater(final JSpinner sp, final Object value) {

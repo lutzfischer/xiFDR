@@ -74,6 +74,21 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
             }
         });
     }
+
+    @Override
+    public boolean getScaleByLinkedNess() {
+        return ckScale.isSelected();
+    }
+
+    @Override
+    public void setScaleByLinkedNess(final boolean scale) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ckScale.setSelected(scale);
+            }
+        });
+    }
     
     
     private void setValueLater(final JSpinner sp, final Object value) {
@@ -412,6 +427,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         btnStopBoost = new javax.swing.JButton();
         ckUniquePSM = new javax.swing.JCheckBox();
         ckBoostBetween = new javax.swing.JCheckBox();
+        ckScale = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -512,6 +528,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
         ckBoostBetween.setText("Between");
 
+        ckScale.setText("scale");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -545,8 +563,11 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addComponent(ckDirectionalLink)
                             .addComponent(ckDirectionalPeptidePair)
                             .addComponent(ckDirectionalPSM)
-                            .addComponent(jLabel1))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jLabel1)))
+                    .addComponent(btnStopBoost))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(spMaximizeSteps)
                             .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -565,7 +586,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                                 .addGap(0, 55, Short.MAX_VALUE))
                             .addComponent(ckBoostBetween, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(btnStopBoost)
+                        .addComponent(ckScale)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(btnCalc))))
         );
@@ -630,7 +651,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnStopBoost)
-                    .addComponent(btnCalc))
+                    .addComponent(btnCalc)
+                    .addComponent(ckScale))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -659,6 +681,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JCheckBox ckDirectionalPSM;
     private javax.swing.JCheckBox ckDirectionalPeptidePair;
     private javax.swing.JCheckBox ckMaximize;
+    private javax.swing.JCheckBox ckScale;
     private javax.swing.JCheckBox ckUniquePSM;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel18;

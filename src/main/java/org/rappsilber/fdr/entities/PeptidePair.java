@@ -629,7 +629,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     public static int getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, boolean specialCase) {
-        int metaGroup = (isLinear ? 0 : (isInternal ? 1 :2));
+        //int metaGroup = (isLinear ? 0 : (isInternal ? 1 :2));
+        int metaGroup = (isLinear ? 0 : 1);//(isInternal ? 1 :2));
         if (specialCase)
             metaGroup+=3;
         
@@ -892,4 +893,18 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     public void setLoop(boolean isLoop) {
         this.isLoop = isLoop;
     }
+    
+    @Override
+    public Site getLinkSite1() {
+        if (peptide1 == Peptide.NOPEPTIDE)
+            return null;
+        return new PeptideSite(peptide1,pepsite1);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        if (peptide2 == Peptide.NOPEPTIDE)
+            return null;
+        return new PeptideSite(peptide2,pepsite2);
+    }    
 }

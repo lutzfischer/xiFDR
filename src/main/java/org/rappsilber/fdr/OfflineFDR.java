@@ -34,11 +34,12 @@ import org.rappsilber.fdr.entities.ProteinGroupDirectionalLink;
 import org.rappsilber.fdr.entities.ProteinGroupDirectionalPair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
+import org.rappsilber.fdr.entities.Site;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.result.SubGroupFdrInfo;
-import org.rappsilber.fdr.utils.FDRSelfAdd;
+import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.HashedArrayList;
 import org.rappsilber.fdr.utils.MiscUtils;
 import org.rappsilber.utils.AutoIncrementValueMap;
@@ -116,7 +117,7 @@ public abstract class OfflineFDR {
      * is a higher score better than a lower score?
      */
     protected boolean PSMScoreHighBetter = true; 
-    public static Version xiFDRVersion = new Version(1, 0, 4 );
+    public static Version xiFDRVersion = new Version(1, 0, 6 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -470,7 +471,7 @@ public abstract class OfflineFDR {
                                         + "\nReport-Factor:       " + String.format(format,getSafetyFactorSetting())
                                         + "\nIgnore Groups:       " + isIgnoreGroupsSetting());
 
-                                FDRResult result = this.calculateFDR(psmfdr / 1000000, pepfdr / 1000000, pgfdr / 1000000, pglfdr / 1000000, pgpfdr / 1000000, getSafetyFactorSetting(), isIgnoreGroupsSetting(), true,true);
+                                FDRResult result = this.calculateFDR(psmfdr / 1000000, pepfdr / 1000000, pgfdr / 1000000, pglfdr / 1000000, pgpfdr / 1000000, getSafetyFactorSetting(), isIgnoreGroupsSetting(), true,true, false);
 
                                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
                                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "fdr_basename: " + fdr_basename);
@@ -577,7 +578,7 @@ public abstract class OfflineFDR {
 
 //        fdrPSM = fdr(fdr, safetyFactor, inputPSM, nextFdrPSM, psmFDRGroupsInput, countFdrPSM, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups,setElementFDR);
 
-        fdr(fdr, safetyFactor, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional);
+        fdr(fdr, safetyFactor, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
         
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = PSM.getFDRGroupName(sg.fdrGroup);
@@ -609,7 +610,7 @@ public abstract class OfflineFDR {
             }
         }
             
-        fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional);
+        fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
         //fdrPeptidePairs = fdr(fdr, safetyFactor, psmPeps, nextFdrPep, pepFDRGroupsInput, countFdrPep, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = PeptidePair.getFDRGroupName(sg.fdrGroup);
@@ -688,7 +689,7 @@ public abstract class OfflineFDR {
             return;
         }
         //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
-        fdr(fdr, safetyFactor, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, false);
+        fdr(fdr, safetyFactor, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, false,result.scaleByLinkedNess);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = ProteinGroup.getFDRGroupName(sg.fdrGroup);
 
@@ -756,7 +757,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(fdr, safetyFactor, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, minPepCount, ignoreGroups, setElementFDR, directional);
+        fdr(fdr, safetyFactor, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, minPepCount, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = ProteinGroupLink.getFDRGroupName(sg.fdrGroup);
 
@@ -815,7 +816,7 @@ public abstract class OfflineFDR {
 
 //        fdrProtainGroupPair = fdr(fdr, safetyFactor, linkPPIs, nextFdrPPI, ppiFDRGroupsInput, countFdrPPI, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR);
 
-        fdr(fdr, safetyFactor, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, directional);
+        fdr(fdr, safetyFactor, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = ProteinGroupPair.getFDRGroupName(sg.fdrGroup);
 
@@ -926,8 +927,9 @@ public abstract class OfflineFDR {
         result.psmFDR.retainAll(keep);
     }
 
-    public FDRResult calculateFDR(double psmFDR, double peptidePairFDR, double ProteinGroupFDR, double linkFDR, double ppiFDR, double safetyFactor, boolean ignoreGroups,boolean setElementFDR, boolean filterToUniquePSM) {
+    public FDRResult calculateFDR(double psmFDR, double peptidePairFDR, double ProteinGroupFDR, double linkFDR, double ppiFDR, double safetyFactor, boolean ignoreGroups,boolean setElementFDR, boolean filterToUniquePSM, boolean scaleByLinkedNess) {
         FDRResult result = new FDRResult();
+        result.scaleByLinkedNess = scaleByLinkedNess;
         reset();
 
         target_psm_fdr = psmFDR;
@@ -2684,6 +2686,71 @@ public abstract class OfflineFDR {
 //        
 //    }
 
+    private <T extends AbstractFDRElement<T>> void defineConnectedness(Collection<T> list) {
+        double maxSupport = 0;
+        SelfAddHashSet<Site> supports;
+        supports = new SelfAddHashSet<Site>();
+        
+        // count how often each site was found
+        for (T e : list) {
+            Site s1 = supports.register(e.getLinkSite1());
+            if (s1.getConnectedness() > maxSupport) {
+                maxSupport = s1.getConnectedness();
+            }
+            Site s2 = e.getLinkSite2();
+            if (s2!=null) {
+                s2 = supports.register(e.getLinkSite2());
+                if (s2.getConnectedness() > maxSupport) {
+                    maxSupport = s2.getConnectedness();
+                }
+            }
+        }
+
+        // how connected are the second sites of a link
+        double maxLinkedSupport = 0;
+        SelfAddHashSet<Site> linkedSupports = new SelfAddHashSet<Site>();
+        linkedSupports.selfAdd = false;
+        for (T e : list) {
+            Site s1 = supports.get(e.getLinkSite1());
+            Site s2 = supports.get(e.getLinkSite2());
+            Site ls1 = e.getLinkSite1();
+            ls1.setConnectedness(0);
+            ls1 = linkedSupports.register(ls1);
+            if (s2 != null) {
+                Site ls2 = e.getLinkSite2();
+                ls2.setConnectedness(0);
+                ls2 = linkedSupports.register(ls2);
+                double lsc1 = ls1.getConnectedness()+s2.getConnectedness();
+                if (maxLinkedSupport < lsc1)
+                    maxLinkedSupport = lsc1;
+                double lsc2 = ls2.getConnectedness()+s1.getConnectedness();
+                if (maxLinkedSupport < lsc2)
+                    maxLinkedSupport = lsc2;
+                ls1.setConnectedness(lsc1);
+                ls1.setConnectedness(lsc2);
+            }
+        }
+        
+        // now we know the conected ness of each link site and how connected the linked link-sites are
+        // so we turn that into a metric for each link
+        for (T e : list) {
+            Site sup1 = supports.get(e.getLinkSite1());
+            Site s1 = sup1;
+            if (sup1 == null) {
+                 sup1 = s1;
+            }
+            double support = 0;
+            support = s1.getConnectedness();
+            double linkedSupport = linkedSupports.get(s1).getConnectedness();
+            Site s2 = e.getLinkSite1();
+            if (s2 != null) {
+                s2 = supports.get(s2);
+                support+=s2.getConnectedness();
+                linkedSupport += linkedSupports.get(s2).getConnectedness();
+            }
+            e.setLinkedSupport(support/(maxSupport) + linkedSupport/(2*maxLinkedSupport));
+        }
+    }
     
 //    private <T extends FDRSelfAdd<T>> HashedArrayList<T> fdr(double fdr, double safetyfactor, Collection<T> c, HashMap<Integer, SubGroupFdrInfo<T>> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR) {
 
@@ -2700,7 +2767,7 @@ public abstract class OfflineFDR {
      * @param ignoreGroups  should we ignore groups cmpletely and just calculate a joined FDR?
      * @param setElementFDR should each element be flaged up with the FDR that it group has at the given score? - is used to speed up the maximation (by not setting these)
      */
-    private <T extends FDRSelfAdd<T>> void fdr(double fdr, double safetyfactor, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR, boolean directional) {
+    private <T extends AbstractFDRElement<T>> void fdr(double fdr, double safetyfactor, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR, boolean directional, boolean scaleByLinkedness) {
         HashMap<Integer, ArrayList<T>> groupedList = new HashMap<Integer, ArrayList<T>>(4);
         HashMap<Integer, UpdateableInteger> gTT = new HashMap<Integer, UpdateableInteger>(8);
         HashMap<Integer, UpdateableInteger> gTD = new HashMap<Integer, UpdateableInteger>(8);
@@ -2708,7 +2775,10 @@ public abstract class OfflineFDR {
 
         int resultcount =0;
 //        HashedArrayList<T> ret = new HashedArrayList<T>(c.size());
-
+        if (scaleByLinkedness)
+            defineConnectedness(fdrInput);
+        
+        
         if (fdrInput.isEmpty()) {
             return;
         }
@@ -3111,7 +3181,7 @@ public abstract class OfflineFDR {
      * @param setElementFDR
      * @return
      */   
-    protected <T extends FDRSelfAdd<T>> double subFDR(ArrayList<T> group, ArrayList<T> results, boolean setElementFDR, SubGroupFdrInfo info, boolean directional) {
+    protected <T extends AbstractFDRElement<T>> double subFDR(ArrayList<T> group, ArrayList<T> results, boolean setElementFDR, SubGroupFdrInfo info, boolean directional) {
         
         HashedArrayList<T> ret = new HashedArrayList<T>();
         info.results = ret;
@@ -3181,7 +3251,7 @@ public abstract class OfflineFDR {
         Collections.sort(group, new Comparator<T>() {
 
             public int compare(T o1, T o2) {
-                return Double.compare(o2.getScore(), o1.getScore());
+                return Double.compare(o2.getScore()*o2.getLinkedSupport(), o1.getScore()*o1.getLinkedSupport());
             }
         });
 
@@ -3488,9 +3558,11 @@ public abstract class OfflineFDR {
                 + "--minPeptidesPerLink=X "
                 + "--minPeptidesPerProtein=X "
                 + "--minPeptidesPerPPI=X "
+                + "--minPeptideLength=X "
                 + "--ignoregroups "
                 + "--csvOutDir=X "
-                + "--csvBaseName=X ";
+                + "--csvBaseName=X "
+                + "--csvSummaryOnly ";
 
     }
 
@@ -3894,7 +3966,7 @@ public abstract class OfflineFDR {
             psm.setFDRGroup();
             psm.setFDR(Double.MAX_VALUE);
             psm.setFdrPeptidePair(null);
-            psm.resetFdrProteinGroup();
+            psm.reset();
         }
 
         for (Protein p : allProteins) {

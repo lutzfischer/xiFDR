@@ -101,6 +101,16 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
         }
 //        posSize = pos.length;
     }
+
+    @Override
+    public Site getLinkSite1() {
+        return new PeptideSite(this,-1);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        return null;
+    }
     
     @Override
     public int hashCode() {
@@ -381,6 +391,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
         m_fdr= Double.MAX_VALUE;
         m_peppairs = new HashSet<PeptidePair>();
         //m_positions = new HashMap<Protein, IntArrayList>();
+        setLinkedSupport(1);
     }
     
 
