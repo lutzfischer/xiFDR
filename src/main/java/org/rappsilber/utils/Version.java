@@ -23,7 +23,7 @@ public class Version {
     /** build - svn-revision*/
     public int build;
     /** extension */
-    public int extension;
+    public String extension;
     /** the major number of the version*/
     public int major;
     /** the minor number of the version*/
@@ -33,13 +33,13 @@ public class Version {
         this.major = major;
         this.minor = minor;
         this.build = build;
-        this.extension=0;
+        this.extension="";
     }
     public Version(int major, int minor, int build, int extension) {
         this.major = major;
         this.minor = minor;
         this.build = build;
-        this.extension=extension;
+        this.extension=""+extension;
     }
 
     public Version(int major, int minor, String svn_refbuild) {
@@ -55,16 +55,20 @@ public class Version {
         this.major = major;
         this.minor = minor;
         this.build = build;
-        this.extension = Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
+        this.extension = ""+Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
     }
     
-    public int setExtension(String svn_refbuild) {
-        this.extension = Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
+    public String setExtension(String svn_refbuild) {
+        if (svn_refbuild.matches("\\$Rev:\\s*[0-9]+\\s*\\$"))
+            this.extension = ""+Integer.parseInt(svn_refbuild.replaceAll("\\$Rev:\\s*", "").replaceAll("\\s*\\$", ""));
+        else {
+            this.extension = svn_refbuild;
+        }
         return this.extension;
     }
 
     public String toLongString() {
-        if ( extension == 0)
+        if (extension.isEmpty() || extension.contentEquals("0"))
             return String.format("%02d.%02d.%07d", major ,minor ,build);
         return String.format("%02d.%02d.%02d.%07d", major ,minor ,build, extension);
     }
@@ -72,6 +76,6 @@ public class Version {
     @Override
     public String toString() {
         
-        return major + "." + minor + "." + build + (extension != 0 ? "." + extension : "");
+        return major + "." + minor + "." + build + (extension.isEmpty() ? "":  "."+extension );
     }
 }
