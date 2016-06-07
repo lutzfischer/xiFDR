@@ -75,21 +75,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         });
     }
 
-    @Override
-    public boolean getScaleByLinkedNess() {
-        return ckScale.isSelected();
-    }
 
-    @Override
-    public void setScaleByLinkedNess(final boolean scale) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                ckScale.setSelected(scale);
-            }
-        });
-    }
-    
     
     private void setValueLater(final JSpinner sp, final Object value) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -291,6 +277,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         return (OfflineFDR.FDRLevel) cbBoostWhat.getSelectedItem();
     }
     
+    @Override
+    public void doOptimize(OfflineFDR.FDRLevel level) {
+        if (level == null)
+            ckMaximize.setSelected(false);
+        else { 
+            cbBoostWhat.getModel().setSelectedItem(level);
+        }
+    }
 
     public int getBoostingSteps() {
         return (Integer) spMaximizeSteps.getValue();
@@ -324,30 +318,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckUniquePSM.setSelected(filterToUniquePSM);
     }
     
-    public void setAll(FDRSettings settings) {
-        this.setBoostingSteps(settings.getBoostingSteps());
-        this.setMaxLinkAmbiguity(settings.getMaxLinkAmbiguity());
-        this.setMaxProteinAmbiguity(settings.getMaxProteinAmbiguity());
-        this.setMinLinkPepCount(settings.getMinLinkPepCount());
-        this.setMinPPIPepCount(settings.getMinPPIPepCount());
-        this.setMinPeptideLength(settings.getMinPeptideLength());
-        this.setMinProteinPepCount(settings.getMinProteinPepCount());
-        this.setPSMFDR(settings.getPSMFDR());
-        this.setPSMDirectional(settings.isPSMDirectional());
-        this.setPPIDirectional(settings.isPPIDirectional());
-        this.setLinkDirectional(settings.isLinkDirectional());
-        this.setPeptidePairDirectional(settings.isPeptidePairDirectional());
-        this.setPeptidePairFDR(settings.getPeptidePairFDR());
-        this.setProteinGroupFDR(settings.getProteinGroupFDR());
-        this.setProteinGroupLinkFDR(settings.getProteinGroupLinkFDR());
-        this.setProteinGroupPairFDR(settings.getProteinGroupPairFDR());
-        this.setReportFactor(settings.getReportFactor());
-        cbBoostWhat.getModel().setSelectedItem(settings.doOptimize());
-        this.setFilterToUniquePSM(settings.filterToUniquePSM());
-        this.setBoostBetween(settings.getBoostBetween());
-    }
 
-    
+
     
     /**
      * @param args the command line arguments
@@ -427,7 +399,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         btnStopBoost = new javax.swing.JButton();
         ckUniquePSM = new javax.swing.JCheckBox();
         ckBoostBetween = new javax.swing.JCheckBox();
-        ckScale = new javax.swing.JCheckBox();
+        btnBoostIgnores = new javax.swing.JButton();
 
         jLabel5.setText("PSM");
 
@@ -528,7 +500,12 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
         ckBoostBetween.setText("Between");
 
-        ckScale.setText("scale");
+        btnBoostIgnores.setText("Boost Ignores");
+        btnBoostIgnores.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBoostIgnoresActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -586,8 +563,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                                 .addGap(0, 55, Short.MAX_VALUE))
                             .addComponent(ckBoostBetween, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(ckScale)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(70, 70, 70)
+                        .addComponent(btnBoostIgnores)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
                         .addComponent(btnCalc))))
         );
         layout.setVerticalGroup(
@@ -652,7 +630,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnStopBoost)
                     .addComponent(btnCalc)
-                    .addComponent(ckScale))
+                    .addComponent(btnBoostIgnores))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -671,7 +649,12 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 spMaximizeSteps.setEnabled(ckMaximize.isSelected());
     }//GEN-LAST:event_ckMaximizeActionPerformed
 
+    private void btnBoostIgnoresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBoostIgnoresActionPerformed
+        setBoostIgnores();
+    }//GEN-LAST:event_btnBoostIgnoresActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnBoostIgnores;
     private javax.swing.JButton btnCalc;
     private javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbBoostWhat;
@@ -681,7 +664,6 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JCheckBox ckDirectionalPSM;
     private javax.swing.JCheckBox ckDirectionalPeptidePair;
     private javax.swing.JCheckBox ckMaximize;
-    private javax.swing.JCheckBox ckScale;
     private javax.swing.JCheckBox ckUniquePSM;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel18;

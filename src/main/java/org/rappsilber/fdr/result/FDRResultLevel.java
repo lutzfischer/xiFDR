@@ -114,7 +114,47 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
         };
 
     }
+    public Iterable<T> filteredRsults() {
+        return new Iterable<T>() {
 
+            @Override
+            public Iterator<T> iterator() {
+                return filteredIterator();
+            }
+            
+        };
+    }
+
+    public Iterator<T> filteredIterator() {
+        final Iterator<SubGroupFdrInfo<T>> gi = this.values().iterator();
+
+        return new Iterator<T>() {
+            SubGroupFdrInfo<T> ng = null;
+            Iterator<T> ngi = null;
+            public boolean hasNext() {
+                if (ngi!= null  && ngi.hasNext())
+                    return true;
+
+                while (gi.hasNext()) {
+                    ng=gi.next();
+                    ngi = ng.filteredResult.iterator();
+                    if (ngi.hasNext())
+                        return true;
+                }
+                return false;
+            }
+
+            public T next() {
+                return ngi.next();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        };
+
+    }
+    
     public boolean filteredContains(T e)  {
         for (SubGroupFdrInfo<T> g : this.values()) {
             if (g.filteredContains(e))

@@ -60,15 +60,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         });
     }    
 
-    @Override
-    public boolean getScaleByLinkedNess() {
-        return scaleByContectedness;
-    }
-
-    @Override
-    public void setScaleByLinkedNess(boolean scale) {
-        scaleByContectedness = scale;
-    }
     
     
     private void setValueLater(final JSpinner sp, final Object value) {
@@ -323,12 +314,20 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
             return null;
         else return (OfflineFDR.FDRLevel) cbFDRLevel.getSelectedItem();
     }
-    
+
+    @Override
+    public void doOptimize(OfflineFDR.FDRLevel level) {
+        if (level == null)
+            ckMaximize.setSelected(false);
+        else { 
+            cbFDRLevel.getModel().setSelectedItem(level);
+        }
+    }
     
     public int getBoostingSteps() {
         return m_boostingSteps;
     }
-
+    
     public void setBoostingSteps(int steps) {
         m_boostingSteps = steps;
     }
@@ -350,29 +349,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         m_filterToUniquePSM = filterToUniquePSM;
     }
     
-    public void setAll(FDRSettings settings) {
-        cbFDRLevel.getModel().setSelectedItem(settings.doOptimize());
-        this.setBoostingSteps(settings.getBoostingSteps());
-        this.setMaxLinkAmbiguity(settings.getMaxLinkAmbiguity());
-        this.setMaxProteinAmbiguity(settings.getMaxProteinAmbiguity());
-        this.setMinLinkPepCount(settings.getMinLinkPepCount());
-        this.setMinPPIPepCount(settings.getMinPPIPepCount());
-        this.setMinPeptideLength(settings.getMinPeptideLength());
-        this.setMinProteinPepCount(settings.getMinProteinPepCount());
-        this.setPSMFDR(settings.getPSMFDR());
-        this.setPSMDirectional(settings.isPSMDirectional());
-        this.setPPIDirectional(settings.isPPIDirectional());
-        this.setLinkDirectional(settings.isLinkDirectional());
-        this.setPeptidePairDirectional(settings.isPeptidePairDirectional());
-        this.setPeptidePairFDR(settings.getPeptidePairFDR());
-        this.setProteinGroupFDR(settings.getProteinGroupFDR());
-        this.setProteinGroupLinkFDR(settings.getProteinGroupLinkFDR());
-        this.setProteinGroupPairFDR(settings.getProteinGroupPairFDR());
-        this.setReportFactor(settings.getReportFactor());
-        this.setFilterToUniquePSM(settings.filterToUniquePSM());
-        this.setBoostBetween(settings.getBoostBetween());
-    }
-    
+
     
     /**
      * This method is called from within the constructor to initialize the form.

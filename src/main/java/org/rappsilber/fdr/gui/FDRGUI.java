@@ -42,6 +42,7 @@ import javax.swing.table.TableModel;
 import org.rappsilber.config.LocalProperties;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.fdr.CSVinFDR;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.MZIdentXLFDR;
@@ -223,7 +224,7 @@ public class FDRGUI extends javax.swing.JFrame {
         txtmzIdentOwnerLast.setText(LocalProperties.getProperty("mzIdenMLOwnerLast",txtmzIdentOwnerLast.getText()));
         txtmzIdentOwnerEmail.setText(LocalProperties.getProperty("mzIdenMLOwnerEmail",txtmzIdentOwnerEmail.getText()));
         txtmzIdentAdress.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress",txtmzIdentAdress.getText()));
-        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress",txtmzIdentOwnerOrg.getText()));
+        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerOrg",txtmzIdentOwnerOrg.getText()));
         
     }
     
@@ -376,10 +377,35 @@ public class FDRGUI extends javax.swing.JFrame {
             return super.getTableCellEditorComponent(table, value, isSelected, row, column);
         }
     }
+    
+    protected File getMzIdentMLOutput() {
+        return fbMzIdentMLOut.getFile();
+    }
 
+    protected String getMzIdentMLOwnerLast() {
+        return txtmzIdentOwnerLast.getText();
+    }
+
+    protected String getMzIdentMLOwnerFirst() {
+        return txtmzIdentOwnerFirst.getText();
+    }
+    
+    protected String getMzIdentMLOwnerEmail() {
+        return txtmzIdentOwnerEmail.getText();
+    }
+
+    protected String getMzIdentMLOwnerOrg() {
+        return txtmzIdentOwnerOrg.getText();
+    }
+
+    protected String getMzIdentMLOwnerAdress() {
+        return txtmzIdentAdress.getText();
+    }
+    
+    
     protected void writeMZIdentML() {
         try {
-            File f = fbMzIdentMLOut.getFile();
+            File f = getMzIdentMLOutput();
             // if (f.canWrite())
             if ( getFdr() instanceof MZIdentXLFDR) {
                 ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), getResult());
@@ -547,11 +573,10 @@ public class FDRGUI extends javax.swing.JFrame {
             final Double linkfdr = (Double) fdrSettings.getProteinGroupLinkFDR();
             final Double ppifdr = (Double) fdrSettings.getProteinGroupPairFDR();
             final boolean filterToUniquePSM = fdrSettings.filterToUniquePSM();
-            final boolean scale = fdrSettings.getScaleByLinkedNess();
 
             public void run() {
                 try {
-                    innerFDRCalculation(psmfdr, pepfdr, protfdr, linkfdr, ppifdr, ofdr, saftyfactor,filterToUniquePSM,scale);
+                    innerFDRCalculation(psmfdr, pepfdr, protfdr, linkfdr, ppifdr, ofdr, saftyfactor,filterToUniquePSM);
 
                 } catch (Exception e) {
                     Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, e);
@@ -565,11 +590,11 @@ public class FDRGUI extends javax.swing.JFrame {
         new Thread(runnable).start();
     }
 
-    protected void innerFDRCalculation(Double psmfdr, Double pepfdr, Double protfdr, Double linkfdr, Double ppifdr, OfflineFDR ofdr, Double saftyfactor, boolean filterToUniquePSM, boolean scaleByLinkedness) {
+    protected void innerFDRCalculation(Double psmfdr, Double pepfdr, Double protfdr, Double linkfdr, Double ppifdr, OfflineFDR ofdr, Double saftyfactor, boolean filterToUniquePSM) {
         setStatus("Start");
         setStatus("Calculating fdr");
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Calculating fdr");
-        FDRResult result = ofdr.calculateFDR(psmfdr, pepfdr, protfdr, linkfdr, ppifdr, saftyfactor, ckIgnoreGroups1.isSelected(), true, filterToUniquePSM,scaleByLinkedness);
+        FDRResult result = ofdr.calculateFDR(psmfdr, pepfdr, protfdr, linkfdr, ppifdr, saftyfactor, ckIgnoreGroups1.isSelected(), true, filterToUniquePSM);
         setResult(result);
         setStatus("finished");
         setStatus(ofdr.summaryString(getResult()));
@@ -1052,7 +1077,6 @@ public class FDRGUI extends javax.swing.JFrame {
     public void maximisePPI(boolean between) {
         clearResults();
         double steps = fdrSettings.getBoostingSteps();
-        boolean scale = fdrSettings.getScaleByLinkedNess();
         setEnableRead(false);
         setEnableCalc(false);
         setEnableWrite(false);
@@ -1130,7 +1154,6 @@ public class FDRGUI extends javax.swing.JFrame {
         int optimizingRound=1;
         while (optimizing) {
             FDRResult result = new FDRResult();
-            result.scaleByLinkedNess = scale;
             int lastMaxPPICount = maxPPICount;
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Round {0}", optimizingRound++);
             
@@ -1349,7 +1372,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     }
                 });
 
-                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM, scale);
+                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM);
 
                 setEnableRead(true);
                 setEnableCalc(true);
@@ -1730,9 +1753,11 @@ public class FDRGUI extends javax.swing.JFrame {
     public void maximiseLink(boolean between) {
         clearResults();
         
+        final FDRSettingsImpl settings = new FDRSettingsImpl();
+        settings.setAll(fdrSettings);
+        
         try {
-            double steps = fdrSettings.getBoostingSteps();
-            boolean scale = fdrSettings.getScaleByLinkedNess();
+            double steps = settings.getBoostingSteps();
             setEnableRead(false);
             setEnableCalc(false);
             setEnableWrite(false);
@@ -1741,25 +1766,25 @@ public class FDRGUI extends javax.swing.JFrame {
             // get some settings, that are constant for all calculations
             boolean ignoreGroups = ckIgnoreGroups1.isSelected();
 
-            int minLinkPeptide = fdrSettings.getMinLinkPepCount();
-            int minProteinPeptide = fdrSettings.getMinProteinPepCount();
-            int minProteinPairPeptide = fdrSettings.getMinPPIPepCount();
+            int minLinkPeptide = settings.getMinLinkPepCount();
+            int minProteinPeptide = settings.getMinProteinPepCount();
+            int minProteinPairPeptide = settings.getMinPPIPepCount();
 
-            int maxLinkAmbiguity = fdrSettings.getMaxLinkAmbiguity();
-            int maxProteinAmbiguity = fdrSettings.getMaxProteinAmbiguity();
+            int maxLinkAmbiguity = settings.getMaxLinkAmbiguity();
+            int maxProteinAmbiguity = settings.getMaxProteinAmbiguity();
 
-            double reportFactor = fdrSettings.getReportFactor();
+            double reportFactor = settings.getReportFactor();
 
 
             // get the maximum fdr values, that we can play with
-            double maxpsmfdr = fdrSettings.getPSMFDR();
-            double maxpepfdr = fdrSettings.getPeptidePairFDR();
-            double maxprotfdr = fdrSettings.getProteinGroupFDR();
-            double maxlinkfdr = fdrSettings.getProteinGroupLinkFDR();
+            double maxpsmfdr = settings.getPSMFDR();
+            double maxpepfdr = settings.getPeptidePairFDR();
+            double maxprotfdr = settings.getProteinGroupFDR();
+            double maxlinkfdr = settings.getProteinGroupLinkFDR();
 
             // the fixed fdr values
-            double maxppifdr = fdrSettings.getProteinGroupPairFDR();
-            boolean filterToUniquePSM = fdrSettings.filterToUniquePSM();
+            double maxppifdr = settings.getProteinGroupPairFDR();
+            boolean filterToUniquePSM = settings.filterToUniquePSM();
     //        int minLinkPeptide = (Integer) spMinLinkPepCount.getValue();
     //        int minProteinPeptide = (Integer) spMinProteinPepCount.getValue();
     //        int minProteinPairPeptide = (Integer) spMinPPIPepCount.getValue();
@@ -1785,14 +1810,15 @@ public class FDRGUI extends javax.swing.JFrame {
     //        double maxlinkfdr = (Double) spLinkFDR.getValue() / 100.0;
 
             // in the first round we start looking on these values to the maximum values
-            double minpsmfdr = Math.min(0.005, maxpsmfdr / steps);
-            double minpepfdr = Math.min(0.005, maxpepfdr / steps);
-            double minprotfdr = Math.min(0.005, maxprotfdr / steps);
+            double minpsmfdr = settings.boostPSMs()?Math.min(0.005, maxpsmfdr / steps):maxpsmfdr;
+            double minpepfdr = settings.boostPeptidePairs()?Math.min(0.005, maxpepfdr / steps):maxpepfdr;
+            double minprotfdr = settings.boostProteins()?Math.min(0.005, maxprotfdr / steps): maxprotfdr;
 
             // and we run through with these steps
-            double psmfdrStep = (maxpsmfdr - minpsmfdr) / steps;
-            double pepfdrStep = (maxpepfdr - minpepfdr) / steps;
-            double protfdrStep = (maxprotfdr - minprotfdr) / steps;
+            double psmfdrStep = settings.boostPSMs()?(maxpsmfdr - minpsmfdr) / steps:100;
+            double pepfdrStep = settings.boostPeptidePairs()?(maxpepfdr - minpepfdr) / steps:100;
+            double protfdrStep = settings.boostProteins()?(maxprotfdr - minprotfdr) / steps:100;
+            
 
             double psmfdr = 1;
             double pepfdr = 1;
@@ -1833,7 +1859,6 @@ public class FDRGUI extends javax.swing.JFrame {
                                                                          "\nProtein-groupfdr from  " + minprotfdr +" to " + maxprotfdr +            
                                                                          "\nSteps : " + steps);
                 FDRResult result = new FDRResult();
-                result.scaleByLinkedNess = scale;
                 // find the combinations with the maximum number of ppis
                 psmloop:
                 for (psmfdr = maxpsmfdr; psmfdr > minpsmfdr - psmfdrStep / 2; psmfdr -= psmfdrStep) {
@@ -2045,7 +2070,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         }
                     });
 
-                    innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM,scale);
+                    innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM);
 
                     setEnableRead(true);
                     setEnableCalc(true);
@@ -2064,18 +2089,21 @@ public class FDRGUI extends javax.swing.JFrame {
 
                     // so see if we make the resoltuion finer
                     // can we get a better result?
-                    maxpsmfdr = Math.min(maxLinkmaxPsmfdr + psmfdrStep, maxpsmfdrabs);
-                    maxpepfdr = Math.min(maxLinkmaxPepfdr + pepfdrStep, maxpepfdrabs);
-                    maxprotfdr = Math.min(maxLinkmaxProtfdr + protfdrStep, maxprotfdrabs);
-
-                    minpsmfdr = Math.max(maxLinkminPsmfdr - psmfdrStep, 0);
-                    minpepfdr = Math.max(maxLinkminPepfdr - pepfdrStep, 0);
-                    minprotfdr = Math.max(maxLinkminProtfdr - protfdrStep, 0);
-
-
-                    psmfdrStep = (maxpsmfdr - minpsmfdr) / steps;
-                    pepfdrStep = (maxpepfdr - minpepfdr) / steps;
-                    protfdrStep = (maxprotfdr - minprotfdr) / steps;
+                    if (settings.boostPSMs()) {
+                        maxpsmfdr = Math.min(maxLinkmaxPsmfdr + psmfdrStep, maxpsmfdrabs);
+                        minpsmfdr = Math.max(maxLinkminPsmfdr - psmfdrStep, 0);
+                        psmfdrStep = (maxpsmfdr - minpsmfdr) / steps;
+                    }
+                    if (settings.boostPeptidePairs()) {
+                        maxpepfdr = Math.min(maxLinkmaxPepfdr + pepfdrStep, maxpepfdrabs);
+                        minpepfdr = Math.max(maxLinkminPepfdr - pepfdrStep, 0);
+                        pepfdrStep = (maxpepfdr - minpepfdr) / steps;
+                    }
+                    if (settings.boostProteins()) {
+                        maxprotfdr = Math.min(maxLinkmaxProtfdr + protfdrStep, maxprotfdrabs);
+                        minprotfdr = Math.max(maxLinkminProtfdr - protfdrStep, 0);
+                        protfdrStep = (maxprotfdr - minprotfdr) / steps;
+                    }
 
 
 
@@ -3231,7 +3259,7 @@ public class FDRGUI extends javax.swing.JFrame {
         LocalProperties.setProperty("mzIdenMLOwnerLast",txtmzIdentOwnerLast.getText());
         LocalProperties.setProperty("mzIdenMLOwnerEmail",txtmzIdentOwnerEmail.getText());
         LocalProperties.setProperty("mzIdenMLOwnerAddress",txtmzIdentAdress.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerAddress",txtmzIdentOwnerOrg.getText());
+        LocalProperties.setProperty("mzIdenMLOwnerOrg",txtmzIdentOwnerOrg.getText());
 
     }//GEN-LAST:event_btnWriteMzIdentMLActionPerformed
 
@@ -3414,8 +3442,8 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JButton btnPepInfo;
     private javax.swing.JButton btnProtInfo;
     private javax.swing.JButton btnReadMZIdent;
-    private javax.swing.JButton btnWrite;
-    private javax.swing.JButton btnWriteMzIdentML;
+    protected javax.swing.JButton btnWrite;
+    protected javax.swing.JButton btnWriteMzIdentML;
     private javax.swing.JComboBox cbCSVHeaderOptional;
     private javax.swing.JComboBox cbCSVHeaders;
     private javax.swing.JComboBox cbMZMatchScoreName;

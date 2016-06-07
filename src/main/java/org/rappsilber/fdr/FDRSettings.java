@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr;
 
 import java.awt.event.ActionListener;
-import org.rappsilber.fdr.OfflineFDR;
 
 /**
  *
@@ -27,6 +26,7 @@ public interface FDRSettings {
     void addCalcListener(ActionListener al);
 
     OfflineFDR.FDRLevel doOptimize();
+    void doOptimize(OfflineFDR.FDRLevel level);
 
     int getMaxLinkAmbiguity();
 
@@ -61,6 +61,7 @@ public interface FDRSettings {
     
     
     int getBoostingSteps();
+    public void setBoostingSteps(int steps);
 
     boolean getBoostBetween();
     void setBoostBetween(boolean between);
@@ -110,7 +111,14 @@ public interface FDRSettings {
     
     public void setAll(FDRSettings settings);
     
-    public boolean getScaleByLinkedNess();
-    public void setScaleByLinkedNess(boolean scale);
+    public boolean boostProteins();
+    public void boostProteins(boolean boost);
+
+    public boolean boostPSMs();
+    public void boostPSMs(boolean boost);
+    public boolean boostPeptidePairs();
+    public void boostPeptidePairs(boolean boost);
+    public boolean boostLinks();
+    public void boostLinks(boolean boost);
     
 }

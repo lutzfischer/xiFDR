@@ -39,7 +39,6 @@ public  class FDRResult {
     public int maximumLinkAmbiguity = 0;
     public boolean uniquePSMs = false;
     
-    public boolean scaleByLinkedNess = false;
 
 
 }

@@ -629,8 +629,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     public static int getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, boolean specialCase) {
-        //int metaGroup = (isLinear ? 0 : (isInternal ? 1 :2));
-        int metaGroup = (isLinear ? 0 : 1);//(isInternal ? 1 :2));
+        int metaGroup = (isLinear ? 0 : (isInternal ? 1 :2));
+        //int metaGroup = (isLinear ? 0 : 1);//(isInternal ? 1 :2));
         if (specialCase)
             metaGroup+=3;
         

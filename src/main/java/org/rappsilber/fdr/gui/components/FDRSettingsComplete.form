@@ -77,8 +77,9 @@
                       </Group>
                   </Group>
                   <Group type="102" attributes="0">
-                      <Component id="ckScale" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="32767" attributes="0"/>
+                      <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
+                      <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace pref="7" max="32767" attributes="0"/>
                       <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
@@ -161,7 +162,7 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="btnStopBoost" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="btnCalc" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="ckScale" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnBoostIgnores" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -390,10 +391,13 @@
         <Property name="text" type="java.lang.String" value="Between"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JCheckBox" name="ckScale">
+    <Component class="javax.swing.JButton" name="btnBoostIgnores">
       <Properties>
-        <Property name="text" type="java.lang.String" value="scale"/>
+        <Property name="text" type="java.lang.String" value="Boost Ignores"/>
       </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnBoostIgnoresActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>

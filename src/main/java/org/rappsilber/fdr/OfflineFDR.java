@@ -17,6 +17,7 @@ package org.rappsilber.fdr;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +26,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.rappsilber.data.csv.CSVRandomAccess;
 import org.rappsilber.fdr.entities.DirectionalPeptidePair;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
@@ -135,6 +137,8 @@ public abstract class OfflineFDR {
     private double safetyFactorSetting;
     private boolean ignoreGroupsSetting;
     private boolean csvSummaryOnly = false;
+    private boolean singleSummary = false;
+    private PrintWriter singleSummaryOut;
     private String csvOutDirSetting;
     private String csvOutBaseSetting;
     public static final Integer MINIMUM_POSSIBLE_DECOY = 1;
@@ -471,7 +475,7 @@ public abstract class OfflineFDR {
                                         + "\nReport-Factor:       " + String.format(format,getSafetyFactorSetting())
                                         + "\nIgnore Groups:       " + isIgnoreGroupsSetting());
 
-                                FDRResult result = this.calculateFDR(psmfdr / 1000000, pepfdr / 1000000, pgfdr / 1000000, pglfdr / 1000000, pgpfdr / 1000000, getSafetyFactorSetting(), isIgnoreGroupsSetting(), true,true, false);
+                                FDRResult result = this.calculateFDR(psmfdr / 1000000, pepfdr / 1000000, pgfdr / 1000000, pglfdr / 1000000, pgpfdr / 1000000, getSafetyFactorSetting(), isIgnoreGroupsSetting(), true,true);
 
                                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
                                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "fdr_basename: " + fdr_basename);
@@ -578,7 +582,7 @@ public abstract class OfflineFDR {
 
 //        fdrPSM = fdr(fdr, safetyFactor, inputPSM, nextFdrPSM, psmFDRGroupsInput, countFdrPSM, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups,setElementFDR);
 
-        fdr(fdr, safetyFactor, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
+        fdr(fdr, safetyFactor, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional);
         
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = PSM.getFDRGroupName(sg.fdrGroup);
@@ -610,7 +614,8 @@ public abstract class OfflineFDR {
             }
         }
             
-        fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
+        //fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, true, setElementFDR, directional,result.scaleByLinkedNess);
+        fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional);
         //fdrPeptidePairs = fdr(fdr, safetyFactor, psmPeps, nextFdrPep, pepFDRGroupsInput, countFdrPep, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = PeptidePair.getFDRGroupName(sg.fdrGroup);
@@ -689,7 +694,7 @@ public abstract class OfflineFDR {
             return;
         }
         //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
-        fdr(fdr, safetyFactor, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, false,result.scaleByLinkedNess);
+        fdr(fdr, safetyFactor, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, false);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = ProteinGroup.getFDRGroupName(sg.fdrGroup);
 
@@ -757,7 +762,8 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(fdr, safetyFactor, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, minPepCount, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
+//        fdr(fdr, safetyFactor, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, minPepCount, true, setElementFDR, directional,result.scaleByLinkedNess);
+        fdr(fdr, safetyFactor, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, minPepCount, ignoreGroups, setElementFDR, directional);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = ProteinGroupLink.getFDRGroupName(sg.fdrGroup);
 
@@ -816,7 +822,7 @@ public abstract class OfflineFDR {
 
 //        fdrProtainGroupPair = fdr(fdr, safetyFactor, linkPPIs, nextFdrPPI, ppiFDRGroupsInput, countFdrPPI, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR);
 
-        fdr(fdr, safetyFactor, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, directional,result.scaleByLinkedNess);
+        fdr(fdr, safetyFactor, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, directional);
         for (SubGroupFdrInfo sg : GroupedFDRs.values())
             sg.fdrGroupName = ProteinGroupPair.getFDRGroupName(sg.fdrGroup);
 
@@ -927,9 +933,8 @@ public abstract class OfflineFDR {
         result.psmFDR.retainAll(keep);
     }
 
-    public FDRResult calculateFDR(double psmFDR, double peptidePairFDR, double ProteinGroupFDR, double linkFDR, double ppiFDR, double safetyFactor, boolean ignoreGroups,boolean setElementFDR, boolean filterToUniquePSM, boolean scaleByLinkedNess) {
+    public FDRResult calculateFDR(double psmFDR, double peptidePairFDR, double ProteinGroupFDR, double linkFDR, double ppiFDR, double safetyFactor, boolean ignoreGroups,boolean setElementFDR, boolean filterToUniquePSM) {
         FDRResult result = new FDRResult();
-        result.scaleByLinkedNess = scaleByLinkedNess;
         reset();
 
         target_psm_fdr = psmFDR;
@@ -1899,7 +1904,7 @@ public abstract class OfflineFDR {
 //    }
 // 
     public void writeFiles(String path, String baseName, String seperator, FDRResult result) throws FileNotFoundException {
-
+        CSVRandomAccess csvFormater = new CSVRandomAccess(seperator.charAt(0), '"');
         String extension = "_xiFDR" + OfflineFDR.xiFDRVersion + ".txt";
         if (seperator.equals(",")) {
             extension = "_xiFDR" + OfflineFDR.xiFDRVersion + ".csv";
@@ -1912,7 +1917,7 @@ public abstract class OfflineFDR {
         if (!csvSummaryOnly) {
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write PSM-results to " + outName);
             psmOut = new PrintWriter(outName);
-            String header = getPSMHeader(seperator);
+            String header = csvFormater.valuesToString(getPSMHeader());
             psmOut.println(header);
         } else {
             psmOut = NullOutputStream.NULLPRINTWRITER;
@@ -1944,7 +1949,7 @@ public abstract class OfflineFDR {
 
         for (PSM pp : psms) {
             fdrPSMGroupCounts.add(pp.getFDRGroup());
-            String line = getPSMOutputLine(pp, seperator);
+            String line = csvFormater.valuesToString(getPSMOutputLine(pp));
             if (!csvSummaryOnly)
                 psmOut.println(line);
 
@@ -2055,11 +2060,11 @@ public abstract class OfflineFDR {
             outName = path + "/" + baseName + "_PeptidePairs" + extension;
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write linear PeptidePairs-results to " + outName);
             pepsOut = new PrintWriter(outName);
-            String xlPepsHeader = getXLPepsHeader(seperator);
+            String xlPepsHeader = csvFormater.valuesToString(getXLPepsHeader());
             pepsOut.println(xlPepsHeader);
 
             pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + OfflineFDR.xiFDRVersion + extension);
-            String linearPepsHeader = getLinearPepsHeader(seperator);
+            String linearPepsHeader = csvFormater.valuesToString(getLinearPepsHeader());
             pepsLinearOut.println(linearPepsHeader);
 
         } else {
@@ -2077,7 +2082,7 @@ public abstract class OfflineFDR {
             if (pp.isLinear() && ! pp.isLoop()) {
 
                 if (!csvSummaryOnly) {
-                    String line = getLinearPepeptideOutputLine(pp, seperator);
+                    String line = csvFormater.valuesToString(getLinearPepeptideOutputLine(pp));
                     pepsLinearOut.println(line);
                 }
 
@@ -2088,7 +2093,7 @@ public abstract class OfflineFDR {
                 }
             } else {
                 if (!csvSummaryOnly) {
-                    String line = getXlPepeptideOutputLine(pp, seperator);
+                    String line = csvFormater.valuesToString(getXlPepeptideOutputLine(pp));
                     pepsOut.println(line);
 //                    } catch (NullPointerException npe) {
 //                        throw new Error();
@@ -2150,7 +2155,7 @@ public abstract class OfflineFDR {
         PrintWriter linksOut = null;
         if (!csvSummaryOnly) {
             linksOut = new PrintWriter(path + "/" + baseName + "_Links" + extension);
-            String header = getLinkOutputHeader(seperator);
+            String header = csvFormater.valuesToString(getLinkOutputHeader());
             linksOut.println(header);
         } else {
             linksOut = NullOutputStream.NULLPRINTWRITER;
@@ -2161,7 +2166,7 @@ public abstract class OfflineFDR {
             fdrLinkGroupCounts.add(l.getFDRGroup());
             if (!csvSummaryOnly) {
                 
-                String line  = getLinkOutputLine(l, seperator);
+                String line  = csvFormater.valuesToString(getLinkOutputLine(l));
 
                 linksOut.println(line);
             }
@@ -2216,7 +2221,7 @@ public abstract class OfflineFDR {
         PrintWriter ppiOut = null;
         if (!csvSummaryOnly) {
             ppiOut = new PrintWriter(path + "/" + baseName + "_ppi" + extension);
-            String header = getPPIOutputHeader(seperator);
+            String header = csvFormater.valuesToString(getPPIOutputHeader());
             ppiOut.println(header);
         } else {
             ppiOut = NullOutputStream.NULLPRINTWRITER;
@@ -2228,7 +2233,7 @@ public abstract class OfflineFDR {
 
 
             if (!csvSummaryOnly) {
-                String line = getPPIOutputLine(pgp, seperator);
+                String line = csvFormater.valuesToString(getPPIOutputLine(pgp));
                 ppiOut.println(line);
             }
 
@@ -2279,7 +2284,8 @@ public abstract class OfflineFDR {
         PrintWriter pgOut = null;
         if (!csvSummaryOnly) {
             pgOut = new PrintWriter(path + "/" + baseName + "_proteingroups" + extension);
-            pgOut.println("ProteinGroup" + seperator + "Descriptions" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr");
+            pgOut.println(csvFormater.valuesToString(new String[]{"ProteinGroup" , "Descriptions" , "Score" , "isDecoy" , "isTT" , "isTD" , "isDD" , "fdrGroup" , "fdr"}));
+//            pgOut.println("ProteinGroup" + seperator + "Descriptions" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr");
         } else {
             pgOut = NullOutputStream.NULLPRINTWRITER;
         }
@@ -2287,8 +2293,8 @@ public abstract class OfflineFDR {
         for (ProteinGroup pg : pgs) {
             fdrProteinGroupCounts.add(pg.getFDRGroup());
             if (!csvSummaryOnly) {
-                pgOut.println(pg.acessions() + seperator + pg.descriptions() + seperator + pg.getScore() + seperator + pg.isDecoy() + seperator
-                        + pg.isTT() + seperator + pg.isTD() + seperator + pg.isDD() + seperator + pg.getFDRGroupName() + seperator + pg.getFDR());
+                pgOut.println(csvFormater.valuesToString(new String[]{pg.acessions() , pg.descriptions() , pg.getScore()+"" , pg.isDecoy()+"",
+                        pg.isTT()+"" , pg.isTD()+"" , pg.isDD()+"" , pg.getFDRGroupName() , pg.getFDR()+""}));
             }
             if (pg.isDecoy()) {
                 proteinGroupD++;
@@ -2307,7 +2313,17 @@ public abstract class OfflineFDR {
 //        if (!isPSMScoreHighBetter())
 //            java.util.Collections.reverse(fdrProteinGroups);
         // write out a table of all proteinpairs
-        PrintWriter summaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension);
+        
+        PrintWriter summaryOut = null;
+        if (singleSummary) {
+            if (singleSummaryOut == null)
+                singleSummaryOut =  new PrintWriter(path + "/" + baseName + "_summary" + extension);
+            
+            summaryOut = singleSummaryOut;
+            summaryOut.println("SummaryFile:" + baseName + "_summary" + extension);
+        } else {
+            summaryOut =  new PrintWriter(path + "/" + baseName + "_summary" + extension);
+        }
 
         summaryOut.println("xiFDR Version:" + seperator + OfflineFDR.xiFDRVersion);
         summaryOut.println("Source:" + seperator + getSource());
@@ -2326,6 +2342,14 @@ public abstract class OfflineFDR {
         summaryOut.println("\"Links for one peptide pair\"" + seperator + "" + (m_maximumLinkAmbiguity == 0 ? "unlimited" : m_maximumLinkAmbiguity));
         summaryOut.println("\"Protein pairs for one peptide pair\"" + seperator + "" + (m_maximumProteinAmbiguity == 0 ? "unlimited" : m_maximumProteinAmbiguity));
         summaryOut.println();
+        
+        if (ignoreGroupsSetting) {
+            summaryOut.println("\"Groups Where Ignored \"");
+        } else {
+            summaryOut.println("\"Length-Group:\"" + MyArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator));
+        }
+        summaryOut.println();
+        
 
 //        summaryOut.println("Input PSMs" +seperator + "fdr PSM" +seperator + "fdr peptide pairs" +seperator + "fdr links" +seperator + "fdr ppi");
         summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Internal TT\"" 
@@ -2398,7 +2422,8 @@ public abstract class OfflineFDR {
 
 
         summaryOut.flush();
-        summaryOut.close();
+        if (!singleSummary)
+            summaryOut.close();
 
 
     }
@@ -2767,7 +2792,7 @@ public abstract class OfflineFDR {
      * @param ignoreGroups  should we ignore groups cmpletely and just calculate a joined FDR?
      * @param setElementFDR should each element be flaged up with the FDR that it group has at the given score? - is used to speed up the maximation (by not setting these)
      */
-    private <T extends AbstractFDRElement<T>> void fdr(double fdr, double safetyfactor, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR, boolean directional, boolean scaleByLinkedness) {
+    private <T extends AbstractFDRElement<T>> void fdr(double fdr, double safetyfactor, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR, boolean directional) {
         HashMap<Integer, ArrayList<T>> groupedList = new HashMap<Integer, ArrayList<T>>(4);
         HashMap<Integer, UpdateableInteger> gTT = new HashMap<Integer, UpdateableInteger>(8);
         HashMap<Integer, UpdateableInteger> gTD = new HashMap<Integer, UpdateableInteger>(8);
@@ -2775,8 +2800,6 @@ public abstract class OfflineFDR {
 
         int resultcount =0;
 //        HashedArrayList<T> ret = new HashedArrayList<T>(c.size());
-        if (scaleByLinkedness)
-            defineConnectedness(fdrInput);
         
         
         if (fdrInput.isEmpty()) {
@@ -3290,7 +3313,7 @@ public abstract class OfflineFDR {
                 //did we just pas an fdr-step
                 if ((efdr<prevFDR || prevFDR == Double.POSITIVE_INFINITY) || fdr == Double.POSITIVE_INFINITY) {
                     // does it fullfill the saftyfactor
-                    if ((efdr_p / fdr < info.saftyfactor) || fdr == Double.POSITIVE_INFINITY)  {
+                    if ((efdr_p / fdr < info.saftyfactor || info.saftyfactor >1000) || fdr == Double.POSITIVE_INFINITY)  {
                     //if ((efdr_p / fdr < info.saftyfactor && efdr_n >= 0) || fdr == Double.POSITIVE_INFINITY)  {
                         if (info.firstPassingFDR == 0)
                             info.firstPassingFDR = prevFDR;
@@ -3562,7 +3585,8 @@ public abstract class OfflineFDR {
                 + "--ignoregroups "
                 + "--csvOutDir=X "
                 + "--csvBaseName=X "
-                + "--csvSummaryOnly ";
+                + "--csvSummaryOnly "
+                + "--singleSummary ";
 
     }
 
@@ -3665,12 +3689,19 @@ public abstract class OfflineFDR {
     }
 
     /**
-     * @param ignoreGroupsSetting the ignoreGroupsSetting to set
+     * @param summaryOnly when writing out put files only write the summary file
      */
     public void setCSVSummaryOnly(boolean summaryOnly) {
         this.csvSummaryOnly = summaryOnly;
     }
 
+    /**
+     * @param summaryOnly when writing out put files only write the summary file
+     */
+    public void setCSVSingleSummary(boolean singleSummary) {
+        this.singleSummary = singleSummary;
+    }
+    
     /**
      * @return the csvOutDirSetting
      */
@@ -3716,6 +3747,7 @@ public abstract class OfflineFDR {
         double reportfactor = 1.5;
         boolean ignoreGroups = false;
         boolean csvsummaryonly = false;
+        boolean csvsinglesummary = false;
         String csvdir = null;
         String csvBase = null;
         int fdrDigits = commandlineFDRDigits;
@@ -3913,6 +3945,11 @@ public abstract class OfflineFDR {
 
                 csvsummaryonly = true;
 
+            } else if (arg.equals("--singleSummary")) {
+
+                csvsummaryonly = true;
+                csvsinglesummary = true;
+
             } else {
                 unknown.add(arg);
             }
@@ -3929,6 +3966,7 @@ public abstract class OfflineFDR {
         setSafetyFactorSetting(reportfactor);
         setIgnoreGroupsSetting(ignoreGroups);
         setCSVSummaryOnly(csvsummaryonly);
+        setCSVSingleSummary(csvsinglesummary);
         setCsvOutBaseSetting(csvBase);
         setCsvOutDirSetting(csvdir);
 
@@ -4107,17 +4145,10 @@ public abstract class OfflineFDR {
             scan ="";
         
         String[] line = new String[]{pp.getPsmID() 
-                ,"\"" + run+ "\""
-                ,"\"" + scan+ "\""
-                ,"\"" + accessions1+ "\"" 
-                ,"\"" + descriptions1+ "\"" 
-                , Boolean.toString(pep1.isDecoy()) 
-                , "\"" + accessions2+ "\"" 
-                ,"\"" + descriptions2 + "\"" 
-                ,Boolean.toString(pep2.isDecoy()) 
-                , "\"" + pepSeq1 + "\"" 
-                ,"\"" + pepSeq2 + "\""
-                , positons1 
+                ,run
+                , scan, accessions1, descriptions1, Boolean.toString(pep1.isDecoy()) 
+                , accessions2, descriptions2 ,Boolean.toString(pep2.isDecoy()) 
+                , pepSeq1 , pepSeq2 , positons1 
                 ,positons2 
                 , (pepLength1 == 0?"":Integer.toString(pepLength1)) 
                 ,(pepLength2 == 0?"":Integer.toString(pepLength2)) 
@@ -4218,10 +4249,10 @@ public abstract class OfflineFDR {
         //           "ID" + "PSMIDs" + "Protein" + "Decoy" +  "Peptide" +  "psmID" + "Score" + "isDecoy" + "fdrGroup" + "fdr" +  + "ProteinFDR");
         ret.add(Integer.toString(pp.getPeptidePairID())); 
         ret.add( MyArrayUtils.toString(psmids, ";"));
-        ret.add( "\"" + pg1.acessions() + "\"");
-        ret.add( "\"" + pg1.descriptions()+ "\"");
+        ret.add(  pg1.acessions() );
+        ret.add( pg1.descriptions());
         ret.add( Boolean.toString(pp.getPeptide1().isDecoy()));
-        ret.add( "\"" + getPeptideSequence(pp.getPeptide1()) + "\"");
+        ret.add( getPeptideSequence(pp.getPeptide1()));
         ret.add( pp.getTopPSMIDs());
         ret.add( Double.toString(pp.getScore()));
         ret.add( Boolean.toString(pp.isDecoy()));
@@ -4246,14 +4277,14 @@ public abstract class OfflineFDR {
         //                    try {
         ret.add(Integer.toString(pp.getPeptidePairID())); 
         ret.add( MyArrayUtils.toString(psmids, ";")  ); 
-        ret.add( "\"" + pg1.acessions() + "\""   ); 
-        ret.add( "\"" + pg1.descriptions()+ "\"" ); 
+        ret.add( pg1.acessions()  ); 
+        ret.add( pg1.descriptions() ); 
         ret.add( ""+pp.getPeptide1().isDecoy()  ); 
-        ret.add( "\"" + pg2.acessions() + "\""   ); 
-        ret.add( "\"" + pg2.descriptions()+ "\"" ); 
+        ret.add(  pg2.acessions()  ); 
+        ret.add(  pg2.descriptions()); 
         ret.add( ""+pp.getPeptide2().isDecoy()  ); 
-        ret.add( "\"" + getPeptideSequence(pp.getPeptide1()) + "\""  ); 
-        ret.add( "\"" + getPeptideSequence(pp.getPeptide2()) + "\""  ); 
+        ret.add(getPeptideSequence(pp.getPeptide1()) ); 
+        ret.add( getPeptideSequence(pp.getPeptide2()) ); 
         ret.add( pp.getPeptide2() == Peptide.NOPEPTIDE || pp.getPeptide1() == Peptide.NOPEPTIDE  ? "" : ""+pp.getPeptideLinkSite1()  ); 
         ret.add( pp.getPeptide2() == Peptide.NOPEPTIDE || pp.getPeptide1() == Peptide.NOPEPTIDE  ? "" : ""+pp.getPeptideLinkSite2()  ); 
         ret.add( pp.getPeptide2() == Peptide.NOPEPTIDE || pp.getPeptide1() == Peptide.NOPEPTIDE  ? "" : pp.getPeptide1().getStringPositions(pp.getPeptideLinkSite1()-1)); 
@@ -4303,11 +4334,11 @@ public abstract class OfflineFDR {
         ret.add("" + l.getLinkID()  ); 
         ret.add( MyArrayUtils.toString(pepids, ";")  ); 
         ret.add( MyArrayUtils.toString(psmids, ";")  ); 
-        ret.add( "\"" +  l.site1Accessions() + "\""  ); 
-        ret.add( "\"" +  l.site1Descriptions() + "\""  ); 
+        ret.add( l.site1Accessions() ); 
+        ret.add( l.site1Descriptions() ); 
         ret.add("" +  pg1.isDecoy()  ); 
-        ret.add( "\"" +  l.site2Accessions() + "\""  ); 
-        ret.add( "\"" +  l.site2Descriptions() + "\""  ); 
+        ret.add( l.site2Accessions()  ); 
+        ret.add( l.site2Descriptions() ); 
         ret.add("" +  pg2.isDecoy()  ); 
         ret.add( l.site1Sites()  ); 
         ret.add( l.site2Site()  ); 
