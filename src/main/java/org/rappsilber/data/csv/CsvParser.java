@@ -20,6 +20,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -418,6 +423,24 @@ public class CsvParser {
         m_input = new BufferedReader(new FileReader(f));
         if (hasHeader)
             readHeader();
+    }
+    
+    public void openURI(URI f, boolean hasHeader) throws FileNotFoundException, IOException {
+        if (f.getScheme().equals("file")) {
+            openFile(new File(f), hasHeader);
+        } else {
+            URL url = new URL(f.toString());
+            URLConnection connection = url.openConnection();
+            InputStream is = connection.getInputStream();    
+            m_inputFile = null;
+            m_input = new BufferedReader(new InputStreamReader(is));
+            if (hasHeader)
+                readHeader();
+        }
+    }
+    
+    public void openURI(URI f) throws FileNotFoundException, IOException {
+        openURI(f, false);
     }
     
     /**
@@ -945,6 +968,18 @@ public class CsvParser {
     public double getDouble(String fieldName) {
         int field = getHeaderToColumn().get(fieldName);
         return getDouble(field);
+    }
+
+    /**
+     * Returns the value of the given field interpreted as Double.
+     * <p> Internally the String get converted via 
+     * {@link Double#parseDouble(java.lang.String)}.
+     * @param fieldName
+     * @return 
+     */    
+    public double getInteger(String fieldName) {
+        int field = getHeaderToColumn().get(fieldName);
+        return getInteger(field);
     }
     
    /**
