@@ -16,12 +16,19 @@
 package org.rappsilber.data.csv;
 
 import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -263,7 +270,36 @@ public class CSVRandomAccess extends CsvParser {
         notifyComplete();
     }
 
-
+    
+    public void openURI(URI f, boolean hasHeader) throws FileNotFoundException, IOException {
+        if (f.getScheme().equals("file")) {
+            openFile(new File(f), hasHeader);
+        } else {
+            super.openURI(f, false);
+            m_loading = true;
+            int row = 0;
+            synchronized(m_data) {
+                if (hasHeader && super.next()) {
+                    m_current = 0;
+                    m_data.add(super.getValues());
+                    setCurrentLineAsHeader();
+                    notifyProgress(row);
+                }
+                while (super.next()) {
+                    if (row++ % 10 == 0)
+                        notifyProgress(row);
+                    m_data.add(super.getValues());
+                }
+                m_loading = false;
+            }
+    //        m_loading.notifyAll();
+            notifyComplete();            
+        }
+    }
+    
+    public void openURI(URI f) throws FileNotFoundException, IOException {
+        openURI(f, false);
+    }
     
     /**
      * Read in a file as CSV-file - this function returns as soon as the file is open - and if  hasHeader is true - the header-row was read in.
@@ -866,7 +902,16 @@ public class CSVRandomAccess extends CsvParser {
         return sb.substring(0, sb.length() -1);        
         
     }
-    
+    /**
+     * turns the given array into a CSV-line that fits to the currently defined delimiter and quote characters
+     * @param values
+     * @return 
+     */
+    public String valuesToString(List<String> values) {
+        String[] v =new String[values.size()];
+        values.toArray(v);
+        return valuesToString(v);
+    }    
     /**
      * adds a new unnamed column to the csv-file
      * @return the index of the column
