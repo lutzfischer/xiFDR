@@ -15,6 +15,7 @@
  */
 package org.rappsilber.fdr.gui;
 
+import java.util.Set;
 import org.rappsilber.data.csv.CSVRandomAccess;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.OfflineFDR;
@@ -37,10 +38,10 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         CSVRandomAccess csv = new CSVRandomAccess(',', '\"');
         csv.setHeader(new String[]{"Group","Input","TargetFDR","Next FDR","Accepted FDR", "Lower FDR","Passed","Filtered Result","Worst Score"});
         csvLevelInfo.setCSV(csv);
-        
-        for (Object fg: level.keySet()) {
+        Set<Integer> ids = level.getGroupIDs();
+        for (Integer fg: ids) {
             String[] rowString = new String[9];
-            SubGroupFdrInfo sg = (SubGroupFdrInfo) level.get(fg);
+            SubGroupFdrInfo sg = level.getGroup(fg);
             
             
             String formatString = MiscUtils.formatStringForPrettyPrintingRelatedValues(

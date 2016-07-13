@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -275,8 +276,9 @@ public class FDRGUI extends javax.swing.JFrame {
 
     protected String fdrLevelSummary(FDRResultLevel fdrl) {
         StringBuilder sbSummary = new StringBuilder();
-        for (Object fg: fdrl.keySet()) {
-            SubGroupFdrInfo sg = (SubGroupFdrInfo) fdrl.get(fg);
+        Set<Integer> ids = fdrl.getGroupIDs();
+        for (Integer fg: ids) {
+            SubGroupFdrInfo sg = (SubGroupFdrInfo) fdrl.getGroup(fg);
             String gn = sg.fdrGroupName;
             sbSummary.append(gn);
             sbSummary.append(" : ");
