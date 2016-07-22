@@ -85,7 +85,10 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
 
     @Override
     public boolean equals(Object p) {
-        return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy; // && ((Protein) p).sequence.contentEquals(sequence);
+//        if (!sequence.isEmpty())
+            return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy && sequence.contentEquals(((Protein) p).sequence); // && ((Protein) p).sequence.contentEquals(sequence);
+        
+//        return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy; // && ((Protein) p).sequence.contentEquals(sequence);
     }
     /**
      * Is p the same protein as this.
@@ -94,8 +97,9 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      * @return 
      */
     public boolean equalsDecoysUnaware(Protein p) {
-        return p.accession.toLowerCase().contentEquals(accession.toLowerCase()) || p.accession.toLowerCase().contentEquals("rev_" + accession.toLowerCase()) ||
-                accession.toLowerCase().contentEquals("rev_" + p.accession.toLowerCase()); // && ((Protein) p).sequence.contentEquals(sequence);
+        return (p.accession.toLowerCase().contentEquals(accession.toLowerCase()) || p.accession.toLowerCase().contentEquals("rev_" + accession.toLowerCase()) ||
+            accession.toLowerCase().contentEquals("rev_" + p.accession.toLowerCase())) && p.sequence.length() == sequence.length(); // && ((Protein) p).sequence.contentEquals(sequence);
+        
     }
 
     /**

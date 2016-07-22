@@ -162,7 +162,6 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
             if (pg == this) {
                 return true; // no need to do any comparison
                 // no need to do any comparison
-                // no need to do any comparison
             }
             // if both groups don't contain the same numbers of links
             // then they are not the same
@@ -170,12 +169,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
                 return false;
             }
             // if one contains a protein, the other does not, then it's not the same group
-            for (Protein pc : ((ProteinGroup) pg).groupproteins) {
-                if (!cproteinpairs.contains(pc)) {
-                    return false;
-                }
-            }
-            return true;
+            return ((ProteinGroup) pg).groupproteins.containsAll(groupproteins);
         }
         return false;
     }
