@@ -119,7 +119,7 @@ public abstract class OfflineFDR {
      * is a higher score better than a lower score?
      */
     protected boolean PSMScoreHighBetter = true; 
-    public static Version xiFDRVersion = new Version(1, 0, 7 );
+    public static Version xiFDRVersion = new Version(1, 0, 8 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -1912,6 +1912,8 @@ public abstract class OfflineFDR {
 
         CountOccurence<Integer> fdrPSMGroupCounts = new CountOccurence<Integer>();
 
+        String outNameLinear = path + "/" + baseName + "_Linear_PSM" + extension;
+        PrintWriter psmLinearOut = null;
         String outName = path + "/" + baseName + "_PSM" + extension;
         PrintWriter psmOut = null;
         if (!csvSummaryOnly) {
@@ -1919,6 +1921,8 @@ public abstract class OfflineFDR {
             psmOut = new PrintWriter(outName);
             String header = csvFormater.valuesToString(getPSMHeader());
             psmOut.println(header);
+            psmLinearOut = new PrintWriter(outNameLinear);
+            psmLinearOut.println(header);
         } else {
             psmOut = NullOutputStream.NULLPRINTWRITER;
         }
