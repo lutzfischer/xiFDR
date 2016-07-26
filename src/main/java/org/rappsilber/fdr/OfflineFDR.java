@@ -47,7 +47,7 @@ import org.rappsilber.fdr.utils.MiscUtils;
 import org.rappsilber.utils.AutoIncrementValueMap;
 import org.rappsilber.utils.CountOccurence;
 import org.rappsilber.utils.DoubleArrayList;
-import org.rappsilber.utils.MyArrayUtils;
+import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.NullOutputStream;
 import org.rappsilber.utils.SelfAddHashSet;
 import org.rappsilber.utils.UpdateableInteger;
@@ -2350,7 +2350,7 @@ public abstract class OfflineFDR {
         if (ignoreGroupsSetting) {
             summaryOut.println("\"Groups Where Ignored \"");
         } else {
-            summaryOut.println("\"Length-Group:\"" + MyArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator));
+            summaryOut.println("\"Length-Group:\"" + RArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator));
         }
         summaryOut.println();
         
@@ -4106,7 +4106,7 @@ public abstract class OfflineFDR {
     
 
     protected String getPSMOutputLine(PSM psm, String seperator) {
-        return MyArrayUtils.toString(getPSMOutputLine(psm), seperator);
+        return RArrayUtils.toString(getPSMOutputLine(psm), seperator);
     }
     
     protected ArrayList<String> getPSMOutputLine(PSM pp) {
@@ -4176,15 +4176,15 @@ public abstract class OfflineFDR {
                 , (pep == null ? "" : Integer.toString(pep.getPeptidePairID())) 
                 ,(l == null ? "" : Integer.toString(l.getLinkID())) 
                 ,(ppi == null ? "" : Integer.toString(ppi.getProteinGroupPairID()))};
-        return new ArrayList<String>(MyArrayUtils.toCollection(line));
+        return new ArrayList<String>(RArrayUtils.toCollection(line));
     }
 
     protected String getPSMHeader(String seperator) {
-        return MyArrayUtils.toString(getPSMHeader(), seperator);
+        return RArrayUtils.toString(getPSMHeader(), seperator);
     }
     
     protected ArrayList<String> getPSMHeader() {
-        return new ArrayList<String>(MyArrayUtils.toCollection(new String[]{ "ID" , "run" , "scan"  , "Protein1" , "Description1" 
+        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{ "ID" , "run" , "scan"  , "Protein1" , "Description1" 
                 , "Decoy1" , "Protein2" , "Description2" , "Decoy2" 
                 , "PepSeq1" , "PepSeq2" , "PepPos1" , "PepPos2" 
                 , "PeptideLength1" , "PeptideLength2" , "LinkPos1" , "LinkPos2" 
@@ -4196,7 +4196,7 @@ public abstract class OfflineFDR {
     }
     
     protected ArrayList<String> getXLPepsHeader() {
-        return new ArrayList<String>(MyArrayUtils.toCollection(new String[]{
+        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{
             "PeptidePairID", 
             "PSMIDs", 
             "Protein1", 
@@ -4230,19 +4230,19 @@ public abstract class OfflineFDR {
     }
     
     protected String getXLPepsHeader(String seperator) {
-        return MyArrayUtils.toString(getXLPepsHeader(),seperator);
+        return RArrayUtils.toString(getXLPepsHeader(),seperator);
     }
 
     protected String getLinearPepsHeader(String seperator) {
-        return MyArrayUtils.toString(getLinearPepsHeader(),seperator);
+        return RArrayUtils.toString(getLinearPepsHeader(),seperator);
     }
     protected ArrayList<String> getLinearPepsHeader() {
-        return new ArrayList<String>(MyArrayUtils.toCollection(new String[]{ "PeptidePairID" , "PSMIDs" , "Protein"  , "Description" , "Decoy" , "Peptide" , "psmID" , "Score" , "isDecoy" , "fdrGroup" , "fdr" , "" , "ProteinFDR"}));
+        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{ "PeptidePairID" , "PSMIDs" , "Protein"  , "Description" , "Decoy" , "Peptide" , "psmID" , "Score" , "isDecoy" , "fdrGroup" , "fdr" , "" , "ProteinFDR"}));
     }
     
     
     protected String getLinearPepeptideOutputLine(PeptidePair pp, String seperator) {
-       return MyArrayUtils.toString(getLinearPepeptideOutputLine(pp), seperator);
+       return RArrayUtils.toString(getLinearPepeptideOutputLine(pp), seperator);
     }
     
     protected ArrayList<String> getLinearPepeptideOutputLine(PeptidePair pp) {
@@ -4252,7 +4252,7 @@ public abstract class OfflineFDR {
         
         //           "ID" + "PSMIDs" + "Protein" + "Decoy" +  "Peptide" +  "psmID" + "Score" + "isDecoy" + "fdrGroup" + "fdr" +  + "ProteinFDR");
         ret.add(Integer.toString(pp.getPeptidePairID())); 
-        ret.add( MyArrayUtils.toString(psmids, ";"));
+        ret.add( RArrayUtils.toString(psmids, ";"));
         ret.add(  pg1.acessions() );
         ret.add( pg1.descriptions());
         ret.add( Boolean.toString(pp.getPeptide1().isDecoy()));
@@ -4268,7 +4268,7 @@ public abstract class OfflineFDR {
     }
 
     protected String getXlPepeptideOutputLine(PeptidePair pp, String seperator) {
-        return MyArrayUtils.toString(getXlPepeptideOutputLine(pp), seperator);
+        return RArrayUtils.toString(getXlPepeptideOutputLine(pp), seperator);
     }
     
     protected ArrayList<String> getXlPepeptideOutputLine(PeptidePair pp) {
@@ -4280,7 +4280,7 @@ public abstract class OfflineFDR {
         ArrayList<String> ret =new ArrayList<String>();
         //                    try {
         ret.add(Integer.toString(pp.getPeptidePairID())); 
-        ret.add( MyArrayUtils.toString(psmids, ";")  ); 
+        ret.add( RArrayUtils.toString(psmids, ";")  ); 
         ret.add( pg1.acessions()  ); 
         ret.add( pg1.descriptions() ); 
         ret.add( ""+pp.getPeptide1().isDecoy()  ); 
@@ -4312,7 +4312,7 @@ public abstract class OfflineFDR {
     }
 
     protected String getLinkOutputLine(ProteinGroupLink l, String seperator) {
-        return MyArrayUtils.toString(getLinkOutputLine(l), seperator);
+        return RArrayUtils.toString(getLinkOutputLine(l), seperator);
     }
     
     protected ArrayList<String> getLinkOutputLine(ProteinGroupLink l) {
@@ -4336,8 +4336,8 @@ public abstract class OfflineFDR {
         ArrayList<String> ret =new ArrayList<String>();
         
         ret.add("" + l.getLinkID()  ); 
-        ret.add( MyArrayUtils.toString(pepids, ";")  ); 
-        ret.add( MyArrayUtils.toString(psmids, ";")  ); 
+        ret.add( RArrayUtils.toString(pepids, ";")  ); 
+        ret.add( RArrayUtils.toString(psmids, ";")  ); 
         ret.add( l.site1Accessions() ); 
         ret.add( l.site1Descriptions() ); 
         ret.add("" +  pg1.isDecoy()  ); 
@@ -4368,7 +4368,7 @@ public abstract class OfflineFDR {
     }
 
     protected String getLinkOutputHeader(String seperator) {
-        return MyArrayUtils.toString(getLinkOutputHeader(), seperator);
+        return RArrayUtils.toString(getLinkOutputHeader(), seperator);
     }
     
     protected ArrayList<String> getLinkOutputHeader() {
@@ -4406,7 +4406,7 @@ public abstract class OfflineFDR {
     }
 
     protected String getPPIOutputHeader(String seperator) {
-        return MyArrayUtils.toString(getPPIOutputHeader(), seperator);
+        return RArrayUtils.toString(getPPIOutputHeader(), seperator);
     }
     protected ArrayList<String> getPPIOutputHeader() {
         ArrayList<String>ret = new ArrayList<String>();
@@ -4438,7 +4438,7 @@ public abstract class OfflineFDR {
     }
 
     protected String getPPIOutputLine(ProteinGroupPair pgp, String seperator) {
-        return MyArrayUtils.toString(getPPIOutputLine(pgp),seperator);
+        return RArrayUtils.toString(getPPIOutputLine(pgp),seperator);
     }
 
     protected ArrayList<String> getPPIOutputLine(ProteinGroupPair pgp) {
@@ -4466,9 +4466,9 @@ public abstract class OfflineFDR {
         ArrayList<String> ret =new ArrayList<String>();
         
         ret.add("" +pgp.getProteinGroupPairID() ); 
-        ret.add(MyArrayUtils.toString(linkids, ";") ); 
-        ret.add(MyArrayUtils.toString(pepids, ";") ); 
-        ret.add(MyArrayUtils.toString(psmids, ";") ); 
+        ret.add(RArrayUtils.toString(linkids, ";") ); 
+        ret.add(RArrayUtils.toString(pepids, ";") ); 
+        ret.add(RArrayUtils.toString(psmids, ";") ); 
         ret.add(pgp.getProtein1().acessions() ); 
         ret.add( pgp.getProtein1().descriptions() ); 
         ret.add("" + pgp.getProtein1().isDecoy() ); 

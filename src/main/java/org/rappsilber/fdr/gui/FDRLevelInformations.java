@@ -91,7 +91,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         jTextField5 = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
         jTextField6 = new javax.swing.JTextField();
-        csvLevelInfo = new org.rappsilber.gui.components.CSV.CSVPanel();
+        csvLevelInfo = new org.rappsilber.data.csv.gui.CSVPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -215,7 +215,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnOK;
-    private org.rappsilber.gui.components.CSV.CSVPanel csvLevelInfo;
+    private org.rappsilber.data.csv.gui.CSVPanel csvLevelInfo;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

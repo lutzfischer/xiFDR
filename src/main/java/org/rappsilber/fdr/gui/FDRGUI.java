@@ -56,9 +56,9 @@ import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.gui.components.FDRSettingsPanel;
 import org.rappsilber.fdr.utils.MiscUtils;
 import org.rappsilber.gui.components.AutoAddTableModelListener;
-import org.rappsilber.gui.components.GenericTextPopUpMenu;
+import org.rappsilber.gui.GenericTextPopUpMenu;
 import org.rappsilber.gui.components.JoinedThreadedTextOuput;
-import org.rappsilber.utils.MyArrayUtils;
+import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.gui.logging.JTextAreaHandle;
         
 
@@ -415,7 +415,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "mzIdentML export currently only supported with mzIdentML source files");
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error while writing the xml-file:" + ex + "\n" + MyArrayUtils.toString(ex.getStackTrace(), "\n"));
+            JOptionPane.showMessageDialog(this, "Error while writing the xml-file:" + ex + "\n" + RArrayUtils.toString(ex.getStackTrace(), "\n"));
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error while writing the xml-file", ex);
             setStatus("error:" + ex);
             

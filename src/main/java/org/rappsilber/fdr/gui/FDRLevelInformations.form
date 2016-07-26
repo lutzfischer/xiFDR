@@ -204,7 +204,7 @@
         </Property>
       </Properties>
     </Component>
-    <Component class="org.rappsilber.gui.components.CSV.CSVPanel" name="csvLevelInfo">
+    <Component class="org.rappsilber.data.csv.gui.CSVPanel" name="csvLevelInfo">
       <Properties>
         <Property name="showLoadPanel" type="boolean" value="false"/>
         <Property name="showSavePanel" type="boolean" value="false"/>

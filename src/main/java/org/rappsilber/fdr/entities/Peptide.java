@@ -22,7 +22,7 @@ import java.util.HashSet;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.utils.IntArrayList;
-import org.rappsilber.utils.MyArrayUtils;
+import org.rappsilber.utils.RArrayUtils;
 
 /**
  * Represent a single peptide
@@ -433,7 +433,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
                 
             }
         }
-        return MyArrayUtils.toString(accessStrings, ";");
+        return RArrayUtils.toString(accessStrings, ";");
     }
 
     /**
@@ -457,7 +457,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
                 
             }
         }
-        return MyArrayUtils.toString(descStrings, ";");
+        return RArrayUtils.toString(descStrings, ";");
     }
 
     /**
