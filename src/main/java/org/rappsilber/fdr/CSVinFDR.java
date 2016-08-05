@@ -53,8 +53,8 @@ public class CSVinFDR extends OfflineFDR {
         if (csv.getInputFile()!= null)
             m_source = csv.getInputFile().getAbsolutePath();
             
-        ColumnAlternatives.setupAlternatives(csv);
-        csv.setAlternative("psmid", "id");
+        //ColumnAlternatives.setupAlternatives(csv);
+        //csv.setAlternative("psmid", "id");
         //csv.setAlternative("psmid", "id");
         
 //                  sm.id AS psmID, "
@@ -92,8 +92,8 @@ public class CSVinFDR extends OfflineFDR {
         int caccession2 = csv.getColumn("accession2");
         Integer cdescription1 = csv.getColumn("description1");
         Integer cdescription2 = csv.getColumn("description2");
-        Integer cpeptide_position1 = csv.getColumn("peptide_position_1");
-        Integer cpeptide_position2 = csv.getColumn("peptide_position_2");
+        Integer cpeptide_position1 = csv.getColumn("peptide position 1");
+        Integer cpeptide_position2 = csv.getColumn("peptide position 2");
         Integer cscoreratio = csv.getColumn("score ratio");
         Integer cPepScore1 = csv.getColumn("peptide1 score");
         Integer cPepScore2 = csv.getColumn("peptide2 score");
@@ -145,7 +145,7 @@ public class CSVinFDR extends OfflineFDR {
             
             Integer site1 = csv.getInteger(cpep1site,-1);
             Integer site2 = csv.getInteger(cpep2site,-1); //pepSeq2 == null || pepSeq2.trim().isEmpty() ? -1 : csv.getInteger(cpep2site,-1);
-            boolean isDecoy1 = csv.getBool(cpep1decoy);
+            boolean isDecoy1 = csv.getBool(cpep1decoy,false);
             boolean isDecoy2=  cpep2decoy == null ? false : csv.getBool(cpep2decoy, false);
             int charge = csv.getInteger(cprecZ);
             Double score = csv.getDouble(cscore);
@@ -158,9 +158,6 @@ public class CSVinFDR extends OfflineFDR {
             if (spepPosition2 == null || spepPosition2.trim().isEmpty()) 
                 spepPosition2 = "-1";
             
-//            double coverage1  = csv.getDouble(18);
-//            double coverage2  = csv.getDouble(19);
-//            double scoreRatio = coverage1/(coverage1+coverage2);
             
             // how to split up the score
             double scoreRatio = csv.getDouble(cscoreratio);
