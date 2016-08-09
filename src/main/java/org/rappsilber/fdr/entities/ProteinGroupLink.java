@@ -128,6 +128,16 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         m_specialOnly = pp.isSpecialcase();
     }
 
+    @Override
+    public Site getLinkSite1() {
+        return new LinkSite(this,0);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        return new LinkSite(this,1);
+    }
+
 
     @Override
     public int hashCode() {

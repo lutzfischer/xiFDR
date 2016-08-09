@@ -15,6 +15,7 @@
  */
 package org.rappsilber.fdr.gui;
 
+import java.util.Set;
 import org.rappsilber.data.csv.CSVRandomAccess;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.OfflineFDR;
@@ -37,10 +38,10 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         CSVRandomAccess csv = new CSVRandomAccess(',', '\"');
         csv.setHeader(new String[]{"Group","Input","TargetFDR","Next FDR","Accepted FDR", "Lower FDR","Passed","Filtered Result","Worst Score"});
         csvLevelInfo.setCSV(csv);
-        
-        for (Object fg: level.keySet()) {
+        Set<Integer> ids = level.getGroupIDs();
+        for (Integer fg: ids) {
             String[] rowString = new String[9];
-            SubGroupFdrInfo sg = (SubGroupFdrInfo) level.get(fg);
+            SubGroupFdrInfo sg = level.getGroup(fg);
             
             
             String formatString = MiscUtils.formatStringForPrettyPrintingRelatedValues(
@@ -90,7 +91,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         jTextField5 = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
         jTextField6 = new javax.swing.JTextField();
-        csvLevelInfo = new org.rappsilber.gui.components.CSV.CSVPanel();
+        csvLevelInfo = new org.rappsilber.data.csv.gui.CSVPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -214,7 +215,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnOK;
-    private org.rappsilber.gui.components.CSV.CSVPanel csvLevelInfo;
+    private org.rappsilber.data.csv.gui.CSVPanel csvLevelInfo;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

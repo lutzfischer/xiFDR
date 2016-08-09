@@ -148,4 +148,8 @@ public class SelfAddHashSet<T extends SelfAdd<T>> implements Iterable<T>, Collec
         m_innermap.clear();
     }
     
+    public T get(T e) {
+        return m_innermap.get(e);
+    }
+    
 }

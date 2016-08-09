@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Lutz Fischer <lfischer at staffmail.ed.ac.uk>.
+ * Copyright 2015 lfischer.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.utils;
+package org.rappsilber.fdr.entities;
 
-import java.util.HashMap;
+import org.rappsilber.utils.SelfAdd;
 
 /**
  *
  * @author lfischer
  */
-public class AutoIncrementValueMap<K> extends HashMap<K, Integer> {
-    
-    public int toIntValue(K s) {
-        Integer i = this.get(s);
-        if (i != null)
-            return i;
-        Integer ret = this.size();
-        this.put(s, ret);
-        return ret;
-    }
-    
+public interface Site extends SelfAdd<Site>{
+    double getConnectedness();
+    void setConnectedness(double connectedness);
 }

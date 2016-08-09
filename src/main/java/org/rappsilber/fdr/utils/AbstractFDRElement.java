@@ -15,6 +15,7 @@
  */
 package org.rappsilber.fdr.utils;
 
+import org.rappsilber.fdr.entities.Site;
 import org.rappsilber.utils.SelfAdd;
 
 /**
@@ -24,7 +25,12 @@ import org.rappsilber.utils.SelfAdd;
 public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSelfAdd<T>{
     protected double m_higherFDR;
     protected double m_lowerFDR;
-
+    
+    protected double m_linkedSupport = 1;
+    
+    public abstract Site getLinkSite1();
+    public abstract Site getLinkSite2();
+    
     /**
      * @return the higherFDR
      */
@@ -37,6 +43,20 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
      */
     public void setHigherFDR(double higherFDR) {
         this.m_higherFDR = higherFDR;
+    }
+
+    /**
+     * @return the m_linkedSupport
+     */
+    public double getLinkedSupport() {
+        return m_linkedSupport;
+    }
+
+    /**
+     * @param linkedSupport the linkedSupport to set
+     */
+    public void setLinkedSupport(double linkedSupport) {
+        this.m_linkedSupport = linkedSupport;
     }
 
     /**

@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -42,6 +43,7 @@ import javax.swing.table.TableModel;
 import org.rappsilber.config.LocalProperties;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.fdr.CSVinFDR;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.MZIdentXLFDR;
@@ -54,9 +56,9 @@ import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.gui.components.FDRSettingsPanel;
 import org.rappsilber.fdr.utils.MiscUtils;
 import org.rappsilber.gui.components.AutoAddTableModelListener;
-import org.rappsilber.gui.components.GenericTextPopUpMenu;
+import org.rappsilber.gui.GenericTextPopUpMenu;
 import org.rappsilber.gui.components.JoinedThreadedTextOuput;
-import org.rappsilber.utils.MyArrayUtils;
+import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.gui.logging.JTextAreaHandle;
         
 
@@ -223,7 +225,7 @@ public class FDRGUI extends javax.swing.JFrame {
         txtmzIdentOwnerLast.setText(LocalProperties.getProperty("mzIdenMLOwnerLast",txtmzIdentOwnerLast.getText()));
         txtmzIdentOwnerEmail.setText(LocalProperties.getProperty("mzIdenMLOwnerEmail",txtmzIdentOwnerEmail.getText()));
         txtmzIdentAdress.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress",txtmzIdentAdress.getText()));
-        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress",txtmzIdentOwnerOrg.getText()));
+        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerOrg",txtmzIdentOwnerOrg.getText()));
         
     }
     
@@ -274,8 +276,9 @@ public class FDRGUI extends javax.swing.JFrame {
 
     protected String fdrLevelSummary(FDRResultLevel fdrl) {
         StringBuilder sbSummary = new StringBuilder();
-        for (Object fg: fdrl.keySet()) {
-            SubGroupFdrInfo sg = (SubGroupFdrInfo) fdrl.get(fg);
+        Set<Integer> ids = fdrl.getGroupIDs();
+        for (Integer fg: ids) {
+            SubGroupFdrInfo sg = (SubGroupFdrInfo) fdrl.getGroup(fg);
             String gn = sg.fdrGroupName;
             sbSummary.append(gn);
             sbSummary.append(" : ");
@@ -376,10 +379,35 @@ public class FDRGUI extends javax.swing.JFrame {
             return super.getTableCellEditorComponent(table, value, isSelected, row, column);
         }
     }
+    
+    protected File getMzIdentMLOutput() {
+        return fbMzIdentMLOut.getFile();
+    }
 
+    protected String getMzIdentMLOwnerLast() {
+        return txtmzIdentOwnerLast.getText();
+    }
+
+    protected String getMzIdentMLOwnerFirst() {
+        return txtmzIdentOwnerFirst.getText();
+    }
+    
+    protected String getMzIdentMLOwnerEmail() {
+        return txtmzIdentOwnerEmail.getText();
+    }
+
+    protected String getMzIdentMLOwnerOrg() {
+        return txtmzIdentOwnerOrg.getText();
+    }
+
+    protected String getMzIdentMLOwnerAdress() {
+        return txtmzIdentAdress.getText();
+    }
+    
+    
     protected void writeMZIdentML() {
         try {
-            File f = fbMzIdentMLOut.getFile();
+            File f = getMzIdentMLOutput();
             // if (f.canWrite())
             if ( getFdr() instanceof MZIdentXLFDR) {
                 ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), getResult());
@@ -387,7 +415,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "mzIdentML export currently only supported with mzIdentML source files");
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error while writing the xml-file:" + ex + "\n" + MyArrayUtils.toString(ex.getStackTrace(), "\n"));
+            JOptionPane.showMessageDialog(this, "Error while writing the xml-file:" + ex + "\n" + RArrayUtils.toString(ex.getStackTrace(), "\n"));
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error while writing the xml-file", ex);
             setStatus("error:" + ex);
             
@@ -1727,355 +1755,369 @@ public class FDRGUI extends javax.swing.JFrame {
     public void maximiseLink(boolean between) {
         clearResults();
         
-        double steps = fdrSettings.getBoostingSteps();
-        setEnableRead(false);
-        setEnableCalc(false);
-        setEnableWrite(false);
-        StringBuffer sb = new StringBuffer();
-
-        // get some settings, that are constant for all calculations
-        boolean ignoreGroups = ckIgnoreGroups1.isSelected();
-
-        int minLinkPeptide = fdrSettings.getMinLinkPepCount();
-        int minProteinPeptide = fdrSettings.getMinProteinPepCount();
-        int minProteinPairPeptide = fdrSettings.getMinPPIPepCount();
-
-        int maxLinkAmbiguity = fdrSettings.getMaxLinkAmbiguity();
-        int maxProteinAmbiguity = fdrSettings.getMaxProteinAmbiguity();
-
-        double reportFactor = fdrSettings.getReportFactor();
-
-
-        // get the maximum fdr values, that we can play with
-        double maxpsmfdr = fdrSettings.getPSMFDR();
-        double maxpepfdr = fdrSettings.getPeptidePairFDR();
-        double maxprotfdr = fdrSettings.getProteinGroupFDR();
-        double maxlinkfdr = fdrSettings.getProteinGroupLinkFDR();
-
-        // the fixed fdr values
-        double maxppifdr = fdrSettings.getProteinGroupPairFDR();
-        boolean filterToUniquePSM = fdrSettings.filterToUniquePSM();
-//        int minLinkPeptide = (Integer) spMinLinkPepCount.getValue();
-//        int minProteinPeptide = (Integer) spMinProteinPepCount.getValue();
-//        int minProteinPairPeptide = (Integer) spMinPPIPepCount.getValue();
-//
-//        int maxLinkAmbiguity = (Integer) spMaxLinkAmbiguity.getValue();
-//        int maxProteinAmbiguity = (Integer) spMaxProteinAmbiguity.getValue();
-//
-//        double reportFactor = (Double) spReportFactor.getValue();
-//
-//
-//        // get the maximum fdr values, that we can play with
-//        double maxpsmfdr = (Double) spPsmFDR.getValue() / 100.0;
-//        double maxpepfdr = (Double) spPepFDR.getValue() / 100.0;
-//        double maxprotfdr = (Double) spProteinFDR.getValue() / 100.0;
-
-        double maxpsmfdrabs = maxpsmfdr;
-        double maxpepfdrabs = maxpepfdr;
-        double maxprotfdrabs = maxprotfdr;
-
+        final FDRSettingsImpl settings = new FDRSettingsImpl();
+        settings.setAll(fdrSettings);
         
-//        // the fixed fdr values
-//        double maxppifdr = (Double) spPPIFdr.getValue() / 100.0;
-//        double maxlinkfdr = (Double) spLinkFDR.getValue() / 100.0;
+        try {
+            double steps = settings.getBoostingSteps();
+            setEnableRead(false);
+            setEnableCalc(false);
+            setEnableWrite(false);
+            StringBuffer sb = new StringBuffer();
 
-        // in the first round we start looking on these values to the maximum values
-        double minpsmfdr = Math.min(0.005, maxpsmfdr / steps);
-        double minpepfdr = Math.min(0.005, maxpepfdr / steps);
-        double minprotfdr = Math.min(0.005, maxprotfdr / steps);
+            // get some settings, that are constant for all calculations
+            boolean ignoreGroups = ckIgnoreGroups1.isSelected();
 
-        // and we run through with these steps
-        double psmfdrStep = (maxpsmfdr - minpsmfdr) / steps;
-        double pepfdrStep = (maxpepfdr - minpepfdr) / steps;
-        double protfdrStep = (maxprotfdr - minprotfdr) / steps;
+            int minLinkPeptide = settings.getMinLinkPepCount();
+            int minProteinPeptide = settings.getMinProteinPepCount();
+            int minProteinPairPeptide = settings.getMinPPIPepCount();
 
-        double psmfdr = 1;
-        double pepfdr = 1;
-        double protfdr = 1;
+            int maxLinkAmbiguity = settings.getMaxLinkAmbiguity();
+            int maxProteinAmbiguity = settings.getMaxProteinAmbiguity();
 
-
-        boolean optimizing = true;
-
-        int maxLinkCount = 0;
-        int maxLinkCountBetween = 0;
-        int maxPPICount = 0;
-        int maxPPICountBetween = 0;
+            double reportFactor = settings.getReportFactor();
 
 
-        double maxLinkPsmfdr = 0;
-        double maxLinkPepfdr = 0;
-        double maxLinkProtfdr = 0;
+            // get the maximum fdr values, that we can play with
+            double maxpsmfdr = settings.getPSMFDR();
+            double maxpepfdr = settings.getPeptidePairFDR();
+            double maxprotfdr = settings.getProteinGroupFDR();
+            double maxlinkfdr = settings.getProteinGroupLinkFDR();
 
-        double maxLinkminPsmfdr = 0;
-        double maxLinkminPepfdr = 0;
-        double maxLinkminProtfdr = 0;
-        double maxLinkmaxPsmfdr = 0;
-        double maxLinkmaxPepfdr = 0;
-        double maxLinkmaxProtfdr = 0;
+            // the fixed fdr values
+            double maxppifdr = settings.getProteinGroupPairFDR();
+            boolean filterToUniquePSM = settings.filterToUniquePSM();
+    //        int minLinkPeptide = (Integer) spMinLinkPepCount.getValue();
+    //        int minProteinPeptide = (Integer) spMinProteinPepCount.getValue();
+    //        int minProteinPairPeptide = (Integer) spMinPPIPepCount.getValue();
+    //
+    //        int maxLinkAmbiguity = (Integer) spMaxLinkAmbiguity.getValue();
+    //        int maxProteinAmbiguity = (Integer) spMaxProteinAmbiguity.getValue();
+    //
+    //        double reportFactor = (Double) spReportFactor.getValue();
+    //
+    //
+    //        // get the maximum fdr values, that we can play with
+    //        double maxpsmfdr = (Double) spPsmFDR.getValue() / 100.0;
+    //        double maxpepfdr = (Double) spPepFDR.getValue() / 100.0;
+    //        double maxprotfdr = (Double) spProteinFDR.getValue() / 100.0;
 
-        int countDown = 5;
+            double maxpsmfdrabs = maxpsmfdr;
+            double maxpepfdrabs = maxpepfdr;
+            double maxprotfdrabs = maxprotfdr;
 
-        prepareFDRCalculation();
 
-        int optimizingRound=1;
-        while (optimizing) {
-            int lastMaxLinkCount = maxLinkCount;
-            int lastMaxPPICount = maxPPICount;
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"Round " +optimizingRound++);
+    //        // the fixed fdr values
+    //        double maxppifdr = (Double) spPPIFdr.getValue() / 100.0;
+    //        double maxlinkfdr = (Double) spLinkFDR.getValue() / 100.0;
+
+            // in the first round we start looking on these values to the maximum values
+            double minpsmfdr = settings.boostPSMs()?Math.min(0.005, maxpsmfdr / steps):maxpsmfdr;
+            double minpepfdr = settings.boostPeptidePairs()?Math.min(0.005, maxpepfdr / steps):maxpepfdr;
+            double minprotfdr = settings.boostProteins()?Math.min(0.005, maxprotfdr / steps): maxprotfdr;
+
+            // and we run through with these steps
+            double psmfdrStep = settings.boostPSMs()?(maxpsmfdr - minpsmfdr) / steps:100;
+            double pepfdrStep = settings.boostPeptidePairs()?(maxpepfdr - minpepfdr) / steps:100;
+            double protfdrStep = settings.boostProteins()?(maxprotfdr - minprotfdr) / steps:100;
             
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO,"PSM fdr from  :        " + minpsmfdr +" to " + maxpsmfdr +
-                                                                     "\nPeptide pair fdr from  " + minpepfdr +" to " + maxpepfdr +
-                                                                     "\nProtein-groupfdr from  " + minprotfdr +" to " + maxprotfdr +            
-                                                                     "\nSteps : " + steps);
-            FDRResult result = new FDRResult();
-            // find the combinations with the maximum number of ppis
-            psmloop:
-            for (psmfdr = maxpsmfdr; psmfdr > minpsmfdr - psmfdrStep / 2; psmfdr -= psmfdrStep) {
-                // we only need to calculate the link fdr ones for each
-                getFdr().calculatePSMFDR(psmfdr, reportFactor, ignoreGroups, false,result, getFdr().isPsm_directional(),filterToUniquePSM);
-                if (stopMaximizing) {
-                    break psmloop;
-                }      
-                // if we don't get PSM - stop looking at later stages
-                if (result.psmFDR.getResultCount() == 0) {
-                    break psmloop;
+
+            double psmfdr = 1;
+            double pepfdr = 1;
+            double protfdr = 1;
+
+
+            boolean optimizing = true;
+
+            int maxLinkCount = 0;
+            int maxLinkCountBetween = 0;
+            int maxPPICount = 0;
+            int maxPPICountBetween = 0;
+
+
+            double maxLinkPsmfdr = 0;
+            double maxLinkPepfdr = 0;
+            double maxLinkProtfdr = 0;
+
+            double maxLinkminPsmfdr = 0;
+            double maxLinkminPepfdr = 0;
+            double maxLinkminProtfdr = 0;
+            double maxLinkmaxPsmfdr = 0;
+            double maxLinkmaxPepfdr = 0;
+            double maxLinkmaxProtfdr = 0;
+
+            int countDown = 5;
+
+            prepareFDRCalculation();
+
+            int optimizingRound=1;
+            while (optimizing) {
+                int lastMaxLinkCount = maxLinkCount;
+                int lastMaxPPICount = maxPPICount;
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO,"Round " +optimizingRound++);
+
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO,"PSM fdr from  :        " + minpsmfdr +" to " + maxpsmfdr +
+                                                                         "\nPeptide pair fdr from  " + minpepfdr +" to " + maxpepfdr +
+                                                                         "\nProtein-groupfdr from  " + minprotfdr +" to " + maxprotfdr +            
+                                                                         "\nSteps : " + steps);
+                FDRResult result = new FDRResult();
+                // find the combinations with the maximum number of ppis
+                psmloop:
+                for (psmfdr = maxpsmfdr; psmfdr > minpsmfdr - psmfdrStep / 2; psmfdr -= psmfdrStep) {
+                    // we only need to calculate the link fdr ones for each
+                    getFdr().calculatePSMFDR(psmfdr, reportFactor, ignoreGroups, false,result, getFdr().isPsm_directional(),filterToUniquePSM);
+                    if (stopMaximizing) {
+                        break psmloop;
+                    }      
+                    // if we don't get PSM - stop looking at later stages
+                    if (result.psmFDR.getResultCount() == 0) {
+                        break psmloop;
+                    }
+
+                    peploop:
+                    for (pepfdr = maxpepfdr; pepfdr > minpepfdr - pepfdrStep; pepfdr -= pepfdrStep) {
+
+                        protloop:
+                        for (protfdr = maxprotfdr; protfdr > minprotfdr - protfdrStep; protfdr -= protfdrStep) {
+
+
+                            // calculate peptide level fdr
+                            getFdr().calculatePeptidePairFDR(pepfdr, reportFactor, ignoreGroups, false,result, getFdr().isPeptides_directional() );
+                            // if we don't get peptide pairs - stop looking at later stages
+                            if (result.peptidePairFDR.getResultCount() == 0) {
+                                break peploop;
+                            }
+
+                            if (stopMaximizing) {
+                                break psmloop;
+                            }
+
+                            // calculate protein level fdr
+                            if (protfdr < 1) {
+                                getFdr().calculateProteinGroupFDR(protfdr, reportFactor, ignoreGroups, minProteinPeptide, maxProteinAmbiguity, false, result);
+
+                                if (result.proteinGroupFDR.getResultCount() == 0) {
+                                    break protloop;
+                                }
+
+                                // cut down the peptides by proteins                           
+                                getFdr().filterFDRPeptidePairsByFDRProteinGroups(result);
+
+                                if (stopMaximizing) {
+                                    break psmloop;
+                                }                            
+                            }
+
+                            // calculate links
+                            getFdr().calculateLinkFDR(maxlinkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, between,result, getFdr().isLinks_directional());
+
+
+
+                            if (result.proteinGroupLinkFDR.getResultCount() == 0) {
+                                break protloop;
+                            }
+
+                            // do we need to calculate protein pairs?
+                            if (maxppifdr < 1) {
+                                if (stopMaximizing) {
+                                    break psmloop;
+                                }                                  
+                                getFdr().calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, between,result, getFdr().isPpi_directional());
+
+                                if (result.proteinGroupPairFDR.getResultCount() == 0) {
+                                    break protloop;
+                                }
+
+                                getFdr().filterFDRLinksByFDRProteinGroupPairs(result);
+
+
+                            }
+
+
+                            // how many links do we now have?
+                            final int linkCount = result.proteinGroupLinkFDR.getResultCount();
+                            final int linkCountBetween = result.proteinGroupLinkFDR.getBetween();
+                            final int ppiCount =  result.proteinGroupPairFDR ==null ? 0 : result.proteinGroupPairFDR.getResultCount();
+                            final int ppiCountBetween =  result.proteinGroupPairFDR ==null ? 0 : result.proteinGroupPairFDR.getBetween();
+
+                            // is it a new best?
+                            if ((between && linkCountBetween > maxLinkCountBetween) ||  // boost between and more between than before
+                                ((linkCountBetween == maxLinkCountBetween || !between) && linkCount > maxLinkCount) || // not between or same between but more overal
+                                ((ppiCountBetween == maxPPICountBetween || !between) && linkCount == maxLinkCount && ppiCountBetween > maxPPICountBetween) ||  //
+                                 ((!between || (linkCountBetween == maxLinkCountBetween && ppiCountBetween == maxPPICountBetween)) && ppiCount > maxPPICount)) {
+
+                                maxLinkCountBetween = linkCountBetween;
+                                maxPPICountBetween = ppiCountBetween;
+
+                                // store the values for this fdr
+                                maxLinkPsmfdr = psmfdr;
+                                maxLinkPepfdr = pepfdr;
+                                maxLinkProtfdr = protfdr;
+
+                                // and we found it just here
+                                maxLinkminPsmfdr = psmfdr;
+                                maxLinkminPepfdr = pepfdr;
+                                maxLinkminProtfdr = protfdr;
+                                maxLinkmaxPsmfdr = psmfdr;
+                                maxLinkmaxPepfdr = pepfdr;
+                                maxLinkmaxProtfdr = protfdr;
+
+                                maxLinkCount = linkCount;
+                                maxPPICount = ppiCount;
+                                // record that we found a new top
+                                String message = "psmfdr, " + psmfdr + " ,pepfdr, " + pepfdr + " ,protfdr, " + protfdr + ", link count, " + linkCount + (between ? "("+maxLinkCountBetween+" between)" :"");
+                                if (ppiCount > 0 )
+                                    message += ", Protein Pairs, " +  ppiCount  + (between ? "("+maxPPICountBetween+" between)" :"");
+                                sb.append(message + "\n");
+                                Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
+
+                                // forward the values to the gui
+                                final double schowPSMFDR = psmfdr;
+                                final double schowPepFDR = pepfdr;
+                                final double schowProtFDR = protfdr;
+
+                                javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                                    public void run() {
+                                        fdrSettingsComplete.setPSMFDR(schowPSMFDR);
+                                        fdrSettingsComplete.setPeptidePairFDR(schowPepFDR);
+                                        fdrSettingsComplete.setProteinGroupFDR(schowProtFDR);
+
+                                        fdrSettingsSimple.setPSMFDR(schowPSMFDR);
+                                        fdrSettingsSimple.setPeptidePairFDR(schowPepFDR);
+                                        fdrSettingsSimple.setProteinGroupFDR(schowProtFDR);
+
+                                        txtSumLinks.setText(linkCount + "");
+
+                                        if (ppiCount > 0)
+                                            txtSumProtGroupPairs.setText(ppiCount + "");
+
+                                    }
+                                });
+
+                            } else if (linkCount == maxLinkCount) {
+                                maxLinkminPsmfdr = Math.min(psmfdr, maxLinkminPsmfdr);
+                                maxLinkminPepfdr = Math.min(pepfdr, maxLinkminPepfdr);
+                                maxLinkminProtfdr = Math.min(protfdr, maxLinkminProtfdr);
+                                maxLinkmaxPsmfdr = Math.max(psmfdr, maxLinkminPsmfdr);
+                                maxLinkmaxPepfdr = Math.max(pepfdr, maxLinkminPepfdr);;
+                                maxLinkmaxProtfdr = Math.max(protfdr, maxLinkminProtfdr);;
+                            }
+
+                            if (stopMaximizing) {
+                                break psmloop;
+                            }
+
+                        }
+
+
+                    }
+
+
+
                 }
 
-                peploop:
-                for (pepfdr = maxpepfdr; pepfdr > minpepfdr - pepfdrStep; pepfdr -= pepfdrStep) {
+                setStatus("Max Link Round: " + optimizingRound + " - " + maxLinkCount + " links");
 
-                    protloop:
-                    for (protfdr = maxprotfdr; protfdr > minprotfdr - protfdrStep; protfdr -= protfdrStep) {
-   
-                        
-                        // calculate peptide level fdr
-                        getFdr().calculatePeptidePairFDR(pepfdr, reportFactor, ignoreGroups, false,result, getFdr().isPeptides_directional() );
-                        // if we don't get peptide pairs - stop looking at later stages
-                        if (result.peptidePairFDR.getResultCount() == 0) {
-                            break peploop;
-                        }
+                // no improvement for the last few rounds?
+                if ((maxLinkCount == lastMaxLinkCount && --countDown == 0) || stopMaximizing) {
+                    optimizing = false;
+                    Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
 
-                        if (stopMaximizing) {
-                            break psmloop;
-                        }
-                        
-                        // calculate protein level fdr
-                        if (protfdr < 1) {
-                            getFdr().calculateProteinGroupFDR(protfdr, reportFactor, ignoreGroups, minProteinPeptide, maxProteinAmbiguity, false, result);
-
-                            if (result.proteinGroupFDR.getResultCount() == 0) {
-                                break protloop;
-                            }
-                            
-                            // cut down the peptides by proteins                           
-                            getFdr().filterFDRPeptidePairsByFDRProteinGroups(result);
-
-                            if (stopMaximizing) {
-                                break psmloop;
-                            }                            
-                        }
-
-                        // calculate links
-                        getFdr().calculateLinkFDR(maxlinkfdr, reportFactor, ignoreGroups, minLinkPeptide, maxLinkAmbiguity, between,result, getFdr().isLinks_directional());
-
-
-                        
-                        if (result.proteinGroupLinkFDR.getResultCount() == 0) {
-                            break protloop;
-                        }
-
-                        // do we need to calculate protein pairs?
-                        if (maxppifdr < 1) {
-                            if (stopMaximizing) {
-                                break psmloop;
-                            }                                  
-                            getFdr().calculateProteinGroupPairFDR(maxppifdr, reportFactor, ignoreGroups, minProteinPairPeptide, 0, between,result, getFdr().isPpi_directional());
-
-                            if (result.proteinGroupPairFDR.getResultCount() == 0) {
-                                break protloop;
-                            }
-                            
-                            getFdr().filterFDRLinksByFDRProteinGroupPairs(result);
-
-                  
-                        }
-
-                        
-                        // how many links do we now have?
-                        final int linkCount = result.proteinGroupLinkFDR.getResultCount();
-                        final int linkCountBetween = result.proteinGroupLinkFDR.getBetween();
-                        final int ppiCount =  result.proteinGroupPairFDR ==null ? 0 : result.proteinGroupPairFDR.getResultCount();
-                        final int ppiCountBetween =  result.proteinGroupPairFDR ==null ? 0 : result.proteinGroupPairFDR.getBetween();
-
-                        // is it a new best?
-                        if ((between && linkCountBetween > maxLinkCountBetween) ||  // boost between and more between than before
-                            ((linkCountBetween == maxLinkCountBetween || !between) && linkCount > maxLinkCount) || // not between or same between but more overal
-                            ((ppiCountBetween == maxPPICountBetween || !between) && linkCount == maxLinkCount && ppiCountBetween > maxPPICountBetween) ||  //
-                             ((!between || (linkCountBetween == maxLinkCountBetween && ppiCountBetween == maxPPICountBetween)) && ppiCount > maxPPICount)) {
-                            
-                            maxLinkCountBetween = linkCountBetween;
-                            maxPPICountBetween = ppiCountBetween;
-
-                            // store the values for this fdr
-                            maxLinkPsmfdr = psmfdr;
-                            maxLinkPepfdr = pepfdr;
-                            maxLinkProtfdr = protfdr;
-
-                            // and we found it just here
-                            maxLinkminPsmfdr = psmfdr;
-                            maxLinkminPepfdr = pepfdr;
-                            maxLinkminProtfdr = protfdr;
-                            maxLinkmaxPsmfdr = psmfdr;
-                            maxLinkmaxPepfdr = pepfdr;
-                            maxLinkmaxProtfdr = protfdr;
-
-                            maxLinkCount = linkCount;
-                            maxPPICount = ppiCount;
-                            // record that we found a new top
-                            String message = "psmfdr, " + psmfdr + " ,pepfdr, " + pepfdr + " ,protfdr, " + protfdr + ", link count, " + linkCount + (between ? "("+maxLinkCountBetween+" between)" :"");
-                            if (ppiCount > 0 )
-                                message += ", Protein Pairs, " +  ppiCount  + (between ? "("+maxPPICountBetween+" between)" :"");
-                            sb.append(message + "\n");
-                            Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
-
-                            // forward the values to the gui
-                            final double schowPSMFDR = psmfdr;
-                            final double schowPepFDR = pepfdr;
-                            final double schowProtFDR = protfdr;
-
-                            javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                    final int foundPPICount = maxLinkCount;
+                    final Double setPsmfdr = maxLinkPsmfdr;
+                    final Double setPepfdr = maxLinkPepfdr;
+                    final Double setProtfdr = maxLinkProtfdr;
+                    boolean isSet = false;
+                    int trySet = 10;
+                    while (!isSet && trySet > 0) {
+                        try {
+                            javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
                                 public void run() {
-                                    fdrSettingsComplete.setPSMFDR(schowPSMFDR);
-                                    fdrSettingsComplete.setPeptidePairFDR(schowPepFDR);
-                                    fdrSettingsComplete.setProteinGroupFDR(schowProtFDR);
+                                    fdrSettingsComplete.setPSMFDR(setPsmfdr);
+                                    fdrSettingsComplete.setPeptidePairFDR(setPepfdr);
+                                    fdrSettingsComplete.setProteinGroupFDR(setProtfdr);
 
-                                    fdrSettingsSimple.setPSMFDR(schowPSMFDR);
-                                    fdrSettingsSimple.setPeptidePairFDR(schowPepFDR);
-                                    fdrSettingsSimple.setProteinGroupFDR(schowProtFDR);
-                                    
-                                    txtSumLinks.setText(linkCount + "");
-                                    
-                                    if (ppiCount > 0)
-                                        txtSumProtGroupPairs.setText(ppiCount + "");
-                                    
+                                    fdrSettingsSimple.setPSMFDR(setPsmfdr);
+                                    fdrSettingsSimple.setPeptidePairFDR(setPepfdr);
+                                    fdrSettingsSimple.setProteinGroupFDR(setProtfdr);
                                 }
                             });
-
-                        } else if (linkCount == maxLinkCount) {
-                            maxLinkminPsmfdr = Math.min(psmfdr, maxLinkminPsmfdr);
-                            maxLinkminPepfdr = Math.min(pepfdr, maxLinkminPepfdr);
-                            maxLinkminProtfdr = Math.min(protfdr, maxLinkminProtfdr);
-                            maxLinkmaxPsmfdr = Math.max(psmfdr, maxLinkminPsmfdr);
-                            maxLinkmaxPepfdr = Math.max(pepfdr, maxLinkminPepfdr);;
-                            maxLinkmaxProtfdr = Math.max(protfdr, maxLinkminProtfdr);;
+                            isSet = true;
+                        } catch (InterruptedException ex) {
+                            trySet--;
+                            Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (InvocationTargetException ex) {
+                            trySet--;
+                            Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
                         }
-
-                        if (stopMaximizing) {
-                            break psmloop;
-                        }
-
+                    }
+                    if (trySet < 0) {
+                        JOptionPane.showMessageDialog(this, "Could not set the values for fdr-calculation\n"
+                                + "\nPSM fdr:    " + setPsmfdr
+                                + "\nPeptide fdr:" + setPepfdr
+                                + "\nProtein FDR:" + setProtfdr, "Failed to set Parameters", JOptionPane.ERROR_MESSAGE);
+                        setEnableRead(true);
+                        setEnableCalc(true);
+                        setEnableWrite(true);
+                        stopMaximizing = false;
+                        return;
                     }
 
+                    javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            JOptionPane.showMessageDialog(rootPane, "found " + foundPPICount + " links for following settings \n"
+                                    + "\nPSM fdr:    " + setPsmfdr
+                                    + "\nPeptide fdr:" + setPepfdr
+                                    + "\nProtein FDR:" + setProtfdr, "best parameters found for max protein group pairs", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    });
 
-                }
+                    innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM);
 
-
-
-            }
-
-            setStatus("Max Link Round: " + optimizingRound + " - " + maxLinkCount + " links");
-            
-            // no improvement for the last few rounds?
-            if ((maxLinkCount == lastMaxLinkCount && --countDown == 0) || stopMaximizing) {
-                optimizing = false;
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
-
-                final int foundPPICount = maxLinkCount;
-                final Double setPsmfdr = maxLinkPsmfdr;
-                final Double setPepfdr = maxLinkPepfdr;
-                final Double setProtfdr = maxLinkProtfdr;
-                boolean isSet = false;
-                int trySet = 10;
-                while (!isSet && trySet > 0) {
-                    try {
-                        javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
-                            public void run() {
-                                fdrSettingsComplete.setPSMFDR(setPsmfdr);
-                                fdrSettingsComplete.setPeptidePairFDR(setPepfdr);
-                                fdrSettingsComplete.setProteinGroupFDR(setProtfdr);
-
-                                fdrSettingsSimple.setPSMFDR(setPsmfdr);
-                                fdrSettingsSimple.setPeptidePairFDR(setPepfdr);
-                                fdrSettingsSimple.setProteinGroupFDR(setProtfdr);
-                            }
-                        });
-                        isSet = true;
-                    } catch (InterruptedException ex) {
-                        trySet--;
-                        Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (InvocationTargetException ex) {
-                        trySet--;
-                        Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                if (trySet < 0) {
-                    JOptionPane.showMessageDialog(this, "Could not set the values for fdr-calculation\n"
-                            + "\nPSM fdr:    " + setPsmfdr
-                            + "\nPeptide fdr:" + setPepfdr
-                            + "\nProtein FDR:" + setProtfdr, "Failed to set Parameters", JOptionPane.ERROR_MESSAGE);
                     setEnableRead(true);
                     setEnableCalc(true);
                     setEnableWrite(true);
+
                     stopMaximizing = false;
-                    return;
-                }
 
-                javax.swing.SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        JOptionPane.showMessageDialog(rootPane, "found " + foundPPICount + " links for following settings \n"
-                                + "\nPSM fdr:    " + setPsmfdr
-                                + "\nPeptide fdr:" + setPepfdr
-                                + "\nProtein FDR:" + setProtfdr, "best parameters found for max protein group pairs", JOptionPane.INFORMATION_MESSAGE);
-                    }
-                });
-
-                innerFDRCalculation(setPsmfdr, setPepfdr, setProtfdr, maxlinkfdr, maxppifdr, getFdr(), reportFactor, filterToUniquePSM);
-
-                setEnableRead(true);
-                setEnableCalc(true);
-                setEnableWrite(true);
-
-                stopMaximizing = false;
-
-            } else {
-                if (maxLinkCount > lastMaxLinkCount) {
-                    // yes we improved
-                    countDown = 5;
                 } else {
-                    setStatus("Max Link Round: " + optimizingRound + " - " + maxLinkCount + " links - count down: " + countDown);
-                    
+                    if (maxLinkCount > lastMaxLinkCount) {
+                        // yes we improved
+                        countDown = 5;
+                    } else {
+                        setStatus("Max Link Round: " + optimizingRound + " - " + maxLinkCount + " links - count down: " + countDown);
+
+                    }
+
+                    // so see if we make the resoltuion finer
+                    // can we get a better result?
+                    if (settings.boostPSMs()) {
+                        maxpsmfdr = Math.min(maxLinkmaxPsmfdr + psmfdrStep, maxpsmfdrabs);
+                        minpsmfdr = Math.max(maxLinkminPsmfdr - psmfdrStep, 0);
+                        psmfdrStep = (maxpsmfdr - minpsmfdr) / steps;
+                    }
+                    if (settings.boostPeptidePairs()) {
+                        maxpepfdr = Math.min(maxLinkmaxPepfdr + pepfdrStep, maxpepfdrabs);
+                        minpepfdr = Math.max(maxLinkminPepfdr - pepfdrStep, 0);
+                        pepfdrStep = (maxpepfdr - minpepfdr) / steps;
+                    }
+                    if (settings.boostProteins()) {
+                        maxprotfdr = Math.min(maxLinkmaxProtfdr + protfdrStep, maxprotfdrabs);
+                        minprotfdr = Math.max(maxLinkminProtfdr - protfdrStep, 0);
+                        protfdrStep = (maxprotfdr - minprotfdr) / steps;
+                    }
+
+
+
                 }
 
-                // so see if we make the resoltuion finer
-                // can we get a better result?
-                maxpsmfdr = Math.min(maxLinkmaxPsmfdr + psmfdrStep, maxpsmfdrabs);
-                maxpepfdr = Math.min(maxLinkmaxPepfdr + pepfdrStep, maxpepfdrabs);
-                maxprotfdr = Math.min(maxLinkmaxProtfdr + protfdrStep, maxprotfdrabs);
-
-                minpsmfdr = Math.max(maxLinkminPsmfdr - psmfdrStep, 0);
-                minpepfdr = Math.max(maxLinkminPepfdr - pepfdrStep, 0);
-                minprotfdr = Math.max(maxLinkminProtfdr - protfdrStep, 0);
-
-
-                psmfdrStep = (maxpsmfdr - minpsmfdr) / steps;
-                pepfdrStep = (maxpepfdr - minpepfdr) / steps;
-                protfdrStep = (maxprotfdr - minprotfdr) / steps;
-                
-                
 
             }
-
-
+        } catch (Exception ex) {
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error maximizing links" , ex);
+            setEnableRead(true);
+            setEnableCalc(true);
+            
         }
 
 
@@ -3219,7 +3261,7 @@ public class FDRGUI extends javax.swing.JFrame {
         LocalProperties.setProperty("mzIdenMLOwnerLast",txtmzIdentOwnerLast.getText());
         LocalProperties.setProperty("mzIdenMLOwnerEmail",txtmzIdentOwnerEmail.getText());
         LocalProperties.setProperty("mzIdenMLOwnerAddress",txtmzIdentAdress.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerAddress",txtmzIdentOwnerOrg.getText());
+        LocalProperties.setProperty("mzIdenMLOwnerOrg",txtmzIdentOwnerOrg.getText());
 
     }//GEN-LAST:event_btnWriteMzIdentMLActionPerformed
 
@@ -3402,8 +3444,8 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JButton btnPepInfo;
     private javax.swing.JButton btnProtInfo;
     private javax.swing.JButton btnReadMZIdent;
-    private javax.swing.JButton btnWrite;
-    private javax.swing.JButton btnWriteMzIdentML;
+    protected javax.swing.JButton btnWrite;
+    protected javax.swing.JButton btnWriteMzIdentML;
     private javax.swing.JComboBox cbCSVHeaderOptional;
     private javax.swing.JComboBox cbCSVHeaders;
     private javax.swing.JComboBox cbMZMatchScoreName;

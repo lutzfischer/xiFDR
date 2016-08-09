@@ -18,6 +18,7 @@ package org.rappsilber.fdr.result;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import org.rappsilber.fdr.utils.FDRSelfAdd;
 import org.rappsilber.fdr.utils.HashedArrayList;
 
@@ -25,7 +26,8 @@ import org.rappsilber.fdr.utils.HashedArrayList;
  *
  * @author lfischer
  */
-public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGroupFdrInfo<T>> implements Iterable<T> {
+public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
+    HashMap<Integer,SubGroupFdrInfo<T>> groups = new HashMap<>();
     public boolean isDirectional = false;
     private int within;
     private int between;
@@ -33,14 +35,14 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
 
     public int getInputCount() {
         int c=0;
-        for (SubGroupFdrInfo<T> g: this.values())
+        for (SubGroupFdrInfo<T> g: groups.values())
             c+=g.inputCount;
         return c;
     }
 
     public int getResultCount() {
         int c=0;
-        for (SubGroupFdrInfo<T> g: this.values())
+        for (SubGroupFdrInfo<T> g: groups.values())
             c+=g.filteredResult.size();
         return c;
     }
@@ -48,7 +50,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     public double getLowerFDR() {
         int c=0;
         double fdr = 0d;
-        for (SubGroupFdrInfo<T> g: this.values()) {
+        for (SubGroupFdrInfo<T> g: groups.values()) {
             fdr+=g.results.size()*g.lowerFDR;
             c+=g.results.size();
         }
@@ -58,7 +60,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     public double getHigherFDR() {
         int c=0;
         double fdr = 0d;
-        for (SubGroupFdrInfo<T> g: this.values()) {
+        for (SubGroupFdrInfo<T> g: groups.values()) {
             fdr+=g.results.size()*g.higherFDR;
             c+=g.results.size();
         }
@@ -68,7 +70,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     public double geFirstParsingFDR() {
         int c=0;
         double fdr = 0d;
-        for (SubGroupFdrInfo<T> g: this.values()) {
+        for (SubGroupFdrInfo<T> g: groups.values()) {
             fdr+=g.results.size()*g.firstPassingFDR;
             c+=g.results.size();
         }
@@ -78,7 +80,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     public double getTargetFDR() {
         int c=0;
         double fdr = 0d;
-        for (SubGroupFdrInfo<T> g: this.values()) {
+        for (SubGroupFdrInfo<T> g: groups.values()) {
             fdr+=g.results.size()*g.targteFDR;
             c+=g.results.size();
         }
@@ -86,7 +88,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     }
 
     public Iterator<T> iterator() {
-        final Iterator<SubGroupFdrInfo<T>> gi = this.values().iterator();
+        final Iterator<SubGroupFdrInfo<T>> gi = groups.values().iterator();
 
         return new Iterator<T>() {
             SubGroupFdrInfo<T> ng = null;
@@ -114,9 +116,49 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
         };
 
     }
+    public Iterable<T> filteredRsults() {
+        return new Iterable<T>() {
 
+            @Override
+            public Iterator<T> iterator() {
+                return filteredIterator();
+            }
+            
+        };
+    }
+
+    public Iterator<T> filteredIterator() {
+        final Iterator<SubGroupFdrInfo<T>> gi = groups.values().iterator();
+
+        return new Iterator<T>() {
+            SubGroupFdrInfo<T> ng = null;
+            Iterator<T> ngi = null;
+            public boolean hasNext() {
+                if (ngi!= null  && ngi.hasNext())
+                    return true;
+
+                while (gi.hasNext()) {
+                    ng=gi.next();
+                    ngi = ng.filteredResult.iterator();
+                    if (ngi.hasNext())
+                        return true;
+                }
+                return false;
+            }
+
+            public T next() {
+                return ngi.next();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        };
+
+    }
+    
     public boolean filteredContains(T e)  {
-        for (SubGroupFdrInfo<T> g : this.values()) {
+        for (SubGroupFdrInfo<T> g : groups.values()) {
             if (g.filteredContains(e))
                 return true;
         }
@@ -124,7 +166,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     }
 
     public T filteredGet(T e)  {
-        for (SubGroupFdrInfo<T> g : this.values()) {
+        for (SubGroupFdrInfo<T> g : groups.values()) {
             T ret = g.filteredGet(e);
             if (ret!=null) {
                 return ret;
@@ -135,7 +177,7 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
     
     public void retainAll(Collection<T> k) {
 
-        for (SubGroupFdrInfo<T> g: values()) {
+        for (SubGroupFdrInfo<T> g: groups.values()) {
             g.filteredResult = new HashedArrayList<T>(g.filteredResult);
             g.filteredResult.retainAll(k);
         }
@@ -183,6 +225,28 @@ public class FDRResultLevel<T extends FDRSelfAdd> extends HashMap<Integer,SubGro
         this.linear = linear;
     }
 
+    public Set<Integer> getGroupIDs() {
+        return groups.keySet();
+    }
 
+    public Collection<SubGroupFdrInfo<T>> getGroups() {
+        return groups.values();
+    }
 
+    public SubGroupFdrInfo<T> getGroup(Integer id) {
+        return groups.get(id);
+    }
+
+    public void addGroup(int id, SubGroupFdrInfo<T> group) {
+        groups.put(id, group);
+    }    
+    
+    public int size() {
+        int ret = 0;
+        for (SubGroupFdrInfo<T> sg : getGroups()) {
+            ret += sg.within + sg.between + sg.linear;
+        }
+        return ret;
+    }
+    
 }

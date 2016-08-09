@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Lutz Fischer <lfischer at staffmail.ed.ac.uk>.
+ * Copyright 2015 lfischer.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.data.csv;
+package org.rappsilber.fdr.entities;
+
+import org.rappsilber.utils.SelfAdd;
 
 /**
- * interface that is used to calculate default-values for a column based on other values in that row
+ *
  * @author lfischer
  */
-public interface CSVValueCalc {
-    /**
-     * calculate a value for the current row of the CSVParser
-     * @param csv
-     * @return 
-     */
-    public String getValue(CsvParser csv);
-    /**
-     * calculate a value for the given row of the CSVParser
-     * @param csv
-     * @param row
-     * @return 
-     */
-    public String getValue(CSVRandomAccess csv, int row);
+public abstract class AbstractSite implements Site {
+    protected double m_connetcedness = 1;
+
+    @Override
+    public void add(Site o) {
+        setConnectedness(getConnectedness() + o.getConnectedness());
+    }
+
+    @Override
+    public double getConnectedness() {
+        return m_connetcedness;
+    }
+
+    @Override
+    public void setConnectedness(double connectedness) {
+        m_connetcedness = connectedness;
+    }
+    
 }

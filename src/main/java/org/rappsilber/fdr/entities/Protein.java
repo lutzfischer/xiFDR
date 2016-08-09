@@ -85,8 +85,10 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
 
     @Override
     public boolean equals(Object p) {
-        return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy; // && ((Protein) p).sequence.contentEquals(sequence);
+        return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy && (sequence.contentEquals(((Protein) p).sequence) || sequence.isEmpty() || ((Protein) p).sequence.isEmpty()); // && ((Protein) p).sequence.contentEquals(sequence);
+        
     }
+
     /**
      * Is p the same protein as this.
      * Decoy is ignored
@@ -94,8 +96,8 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      * @return 
      */
     public boolean equalsDecoysUnaware(Protein p) {
-        return p.accession.toLowerCase().contentEquals(accession.toLowerCase()) || p.accession.toLowerCase().contentEquals("rev_" + accession.toLowerCase()) ||
-                accession.toLowerCase().contentEquals("rev_" + p.accession.toLowerCase()); // && ((Protein) p).sequence.contentEquals(sequence);
+        return (p.accession.toLowerCase().contentEquals(accession.toLowerCase()) || p.accession.toLowerCase().contentEquals("rev_" + accession.toLowerCase()) ||
+            accession.toLowerCase().contentEquals("rev_" + p.accession.toLowerCase())) && (p.sequence.length() == sequence.length() || p.sequence.isEmpty() || sequence.isEmpty()); // && ((Protein) p).sequence.contentEquals(sequence);
     }
 
     /**
@@ -291,7 +293,8 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     }    
     
     public Protein decoyComplement() {
-        return new Protein(id, accession, description, !isDecoy, linearSupport, internalSupport, betweenSupport);
+        Protein p = new Protein(id, accession, description, !isDecoy, linearSupport, internalSupport, betweenSupport);
+        return p;
     }
     
     public int support() {
@@ -313,6 +316,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         peps = new HashSet<Peptide>();
         peppairs = new HashSet<PeptidePair>();
         m_fdr = Double.MAX_VALUE;
+        setLinkedSupport(1);
     }
     
 
@@ -374,4 +378,16 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     public boolean isBetween() {
         return false;
     }
+    
+    @Override
+    public Site getLinkSite1() {
+        return new ProteinSite(this);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        return null;
+    }
+    
+    
 }

@@ -99,6 +99,16 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
     }
 
     @Override
+    public Site getLinkSite1() {
+        return new ProteinGroupSite(protein1);
+    }
+
+    @Override
+    public Site getLinkSite2() {
+        return new ProteinGroupSite(protein2);
+    }
+
+    @Override
     public int hashCode() {
         return hashcode;
     }
