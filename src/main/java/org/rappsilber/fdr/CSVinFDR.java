@@ -22,7 +22,6 @@ import java.text.ParseException;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.utils.AutoIncrementValueMap;
-import org.rappsilber.data.csv.ColumnAlternatives;
 
 /**
  *
@@ -106,8 +105,32 @@ public class CSVinFDR extends OfflineFDR {
         while (csv.next()) {
             lineNumber++;
             String psmID;
+
+            String pepSeq1 = csv.getValue(cpep1);
+            String pepSeq2 = csv.getValue(cpep2);
+
+            // if the sequence looks like K.PEPTIDEK.A assume that the first and 
+            // last aminoacid are leading and trailing aminoacids and not really part of the peptide
+            if (pepSeq1.matches("[A-Za-z\\-]+\\..*\\.[A-Za-z\\-]+")) {
+                pepSeq1 = pepSeq1.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
+            }
+            if (pepSeq2.matches("[A-Za-z\\-]+\\..*\\.[A-Za-z\\-]+")) {
+                pepSeq2 = pepSeq2.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
+            }
+
+            
+            Integer site1 = csv.getInteger(cpep1site,-1);
+            Integer site2 = csv.getInteger(cpep2site,-1); //pepSeq2 == null || pepSeq2.trim().isEmpty() ? -1 : csv.getInteger(cpep2site,-1);
+            
+            // do we have to generate an ID?
             if (cpsmID == null) {
                 String key = "Scan: " + csv.getValue(cscan) + " Run: " + csv.getValue(crun);
+                int c= pepSeq1.compareTo(pepSeq2) ;
+                if (c > 0 || (c==0 && site1 > site2) ) {
+                    key=key +" P1_" + csv.getValue(cpep1) + " P2_" + csv.getValue(cpep2) + " " + csv.getInteger(cpep1site) + " " + csv.getInteger(cpep2site);
+                } else {
+                    key=key +" P1_" + csv.getValue(cpep2) + " P2_" + csv.getValue(cpep1) + " " + csv.getInteger(cpep2site) + " " + csv.getInteger(cpep1site);;
+                }
                 //psmID = PSMIDs.toIntValue(key);
                 psmID = key;
             }else
@@ -115,17 +138,8 @@ public class CSVinFDR extends OfflineFDR {
                 psmID=csv.getValue(cpsmID);
             
   
-            String pepSeq1 = csv.getValue(cpep1);
-            String pepSeq2 = csv.getValue(cpep2);
             
-            // if the sequence looks like K.PEPTIDEK.A assume that the first and 
-            // last aminoacid are leading and trailing aminoacids and not really part of the peptide
-            if (pepSeq1.matches("[A-Z\\-]+\\..*\\.[A-Z\\-]+")) {
-                pepSeq1 = pepSeq1.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
-            }
-            if (pepSeq2.matches("[A-Z\\-]+\\..*\\.[A-Z\\-]+")) {
-                pepSeq2 = pepSeq2.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
-            }
+
             
             // if we have a column for the peptide length take that value
             // otherwise count all capital letters in the sequence and define 
@@ -143,8 +157,6 @@ public class CSVinFDR extends OfflineFDR {
                 peplen2 = csv.getInteger(cpep2len, 0);
             }
             
-            Integer site1 = csv.getInteger(cpep1site,-1);
-            Integer site2 = csv.getInteger(cpep2site,-1); //pepSeq2 == null || pepSeq2.trim().isEmpty() ? -1 : csv.getInteger(cpep2site,-1);
             boolean isDecoy1 = csv.getBool(cpep1decoy,false);
             boolean isDecoy2=  cpep2decoy == null ? false : csv.getBool(cpep2decoy, false);
             int charge = csv.getInteger(cprecZ);
