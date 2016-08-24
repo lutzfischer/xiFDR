@@ -37,6 +37,7 @@ public  class FDRResult {
     public int minPeptideLength = 0;
     public int maximumProteinAmbiguity = 0;
     public int maximumLinkAmbiguity = 0;
+    public double reportFactor = 0;
     public boolean uniquePSMs = false;
     
 
