@@ -287,7 +287,7 @@ public class CSVinFDR extends OfflineFDR {
     }
     
     public String argList() {
-        return super.argList() + " --map=col:name,col:name --delimiter= --quote= ";
+        return super.argList() + " --map=col:name,col:name --delimiter= --quote= csv-file1 csv-file2";
     }
     
     public String argDescription() {
