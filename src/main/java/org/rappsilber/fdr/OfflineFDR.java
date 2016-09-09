@@ -93,7 +93,7 @@ public abstract class OfflineFDR {
      */
     protected boolean PSMScoreHighBetter = true; 
     /** the version of xiFDR to be reported */
-    public static Version xiFDRVersion = new Version(1, 0, 9 );
+    public static Version xiFDRVersion = new Version(1, 0, 10 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
