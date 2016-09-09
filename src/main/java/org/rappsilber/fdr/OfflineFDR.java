@@ -2760,6 +2760,16 @@ public abstract class OfflineFDR {
         this.minPepPerProteinGroupPair = minPepPerProteinGroupPair;
     }
 
+    public String execClass() {
+        return this.getClass().getName();
+    }
+
+    public void printUsage() {
+        System.out.println("java " + execClass() + " "+ argList());
+        System.out.println(argDescription());
+    }
+    
+    
     public String argList() {
         return "--lenghtgroups=A,B,C "
                 + "--psmfdr=X "
@@ -2782,6 +2792,55 @@ public abstract class OfflineFDR {
 
     }
 
+    public String argDescription() {
+        return    "--lenghtgroups=A,B,C     how to group peptides by length\n"
+                + "--psmfdr=X               the psm-fdr\n"
+                + "                         can either be a single value or \n"
+                + "                         a range (min,max,stepsize)\n"
+                + "--pepfdr=X               the peptide pair fdr\n"
+                + "                         can either be a single value or \n"
+                + "                         a range (min,max,stepsize)\n"
+                + "--proteinfdr=X           the protein pair fdr\n"
+                + "                         can either be a single value or \n"
+                + "                         a range (min,max,stepsize)\n"
+                + "--linkfdr=X              residue pair fdr\n"
+                + "                         can either be a single value or \n"
+                + "                         a range (min,max,stepsize)\n"
+                + "--ppifdr=X               protein pair fdr\n"
+                + "                         can either be a single value or \n"
+                + "                         a range (min,max,stepsize)\n"
+                + "--reportfactor=X         better be ignored\n"
+                + "--maxProteinAmbiguity=X  any peptide that can be in more \n"
+                + "                         then this number of proteins will\n"
+                + "                         be ignored\n"
+                + "--maxLinkAmbiguity=X     links that have more then this \n"
+                + "                         number of possible residue\n"
+                + "                         combinationswill be ignored\n"
+                + "--minPeptidesPerLink=X   only links that have at least this \n"
+                + "                         number of unique peptide pairs \n"
+                + "                         supporting them will be considered\n"
+                + "--minPeptidesPerProtein=X Only proteins that have at least\n"
+                + "                         this number of unique peptide pairs\n"
+                + "                         supporting them will be considered\n"
+                + "--minPeptidesPerPPI=X    only protein pairs that have at \n"
+                + "                         least this number of unique peptide\n"
+                + "                         pairs supporting them will be \n"
+                + "                         considered\n"
+                + "--minPeptideLength=X     only accept psms where both peptides\n"
+                + "                         have at least this many residues\n"
+                + "--ignoregroups           don't do any grouping during FDR\n"
+                + "                         calculation\n"
+                + "--csvOutDir=X            where to write the output files\n"
+                + "--csvBaseName=X          each file will be prepended with \n"
+                + "                         this name"
+                + "--csvSummaryOnly         don;t write the actuall results but\n"
+                + "                         only the summary\n"
+                + "--singleSummary          if fdrs where given in ranges all\n"
+                + "                         summary files will be written into a\n"
+                + " sinlge file\n";
+
+    }
+    
     /**
      * @return the psmFDRSetting
      */
@@ -3144,7 +3203,7 @@ public abstract class OfflineFDR {
 
             }  else if (arg.startsWith("--uniquePSMs=")) {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
-                setFilterUniquePSMs(bool.matches("?i^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$"));
+                setFilterUniquePSMs(bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$"));
             } else {
                 unknown.add(arg);
             }
