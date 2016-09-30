@@ -357,7 +357,8 @@ public class CSVSelection extends javax.swing.JPanel {
                 {"description1",  new Boolean(true), null},
                 {"description2",  new Boolean(true), null},
                 {"peptide position 1", null, null},
-                {"peptide position 2", null, null}
+                {"peptide position 2", null, null},
+                {"Crosslinker",  new Boolean(true), null}
             },
             new String [] {
                 "Column", "Optional", "Name in CSV"

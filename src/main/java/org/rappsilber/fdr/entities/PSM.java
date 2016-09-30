@@ -17,6 +17,7 @@ package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
@@ -120,6 +121,23 @@ public class PSM extends AbstractFDRElement<PSM> {
     private boolean specialcase = false;
     
     
+    private static String nolinker = "";
+    
+    /**
+     * The cross-linker for this match
+     */
+    public String crosslinker = nolinker;
+
+    /**
+     * I filter all cross-linker names through this HashMap.
+     * This way all PSMs that have the same cross-linker will actually refer to 
+     * the same string for the cross-linker and I can compare them via 
+     * a.crosslinker == b.crosslinker instead of 
+     * a.crosslinker.equals(b.crosslinker).
+     * Should be a wee bit faster.
+     */
+    private static HashMap<String,String> allLinker = new HashMap<String, String>();
+
     
     /**
      * creates a new instance of a PSM.
@@ -234,7 +252,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     public boolean equals(Object l) {
         PSM c = (PSM) l;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
-        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
+        return this.score == c.score && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
                 (((c.scoreRatio == this.scoreRatio || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
                 ((Math.round(100000*c.scoreRatio) == Math.round(100000-100000*this.scoreRatio) || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
@@ -812,6 +830,29 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setMatchedCharge(int match_charge) {
         this.match_charge = match_charge;
+    }
+
+    /**
+     * @return the crosslinker
+     */
+    public String getCrosslinker() {
+        return crosslinker;
+    }
+
+    /**
+     * @param crosslinker the crosslinker to set
+     */
+    public void setCrosslinker(String crosslinker) {
+        
+        // doing this makes sure I can just make a comparison via = instead of String.equal
+        // and I expect that the number of cros-linker in anygiven settup will be rather limited
+        String prevXL = allLinker.get(crosslinker);
+        if (prevXL == null) {
+            prevXL = crosslinker;
+            allLinker.put(crosslinker, crosslinker);
+        }
+
+        this.crosslinker = prevXL;
     }
     
 }

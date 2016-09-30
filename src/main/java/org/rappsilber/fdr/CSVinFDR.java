@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.utils.AutoIncrementValueMap;
-import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.UpdatableChar;
 
 /**
@@ -58,7 +57,7 @@ public class CSVinFDR extends OfflineFDR {
         new String[]{"peptide1 score","Pep1Score"},
         new String[]{"peptide2 score","Pep2Score"},
     };
-
+    
     public CSVinFDR() {
     }
 
@@ -100,6 +99,7 @@ public class CSVinFDR extends OfflineFDR {
         Integer cscoreratio = csv.getColumn("score ratio");
         Integer cPepScore1 = csv.getColumn("peptide1 score");
         Integer cPepScore2 = csv.getColumn("peptide2 score");
+        Integer cCrosslinker = csv.getColumn("crosslinker");
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
@@ -141,9 +141,6 @@ public class CSVinFDR extends OfflineFDR {
                 //psmID=csv.getInteger(cpsmID);
                 psmID=csv.getValue(cpsmID);
             
-  
-            
-
             
             // if we have a column for the peptide length take that value
             // otherwise count all capital letters in the sequence and define 
@@ -267,6 +264,8 @@ public class CSVinFDR extends OfflineFDR {
                         psm.setScan(csv.getValue(cscan));
                     if (crun !=null)
                         psm.setRun(csv.getValue(crun));
+                    if (cCrosslinker != null) 
+                        psm.setCrosslinker(csv.getValue(cCrosslinker));
                     
                 }
             }
@@ -317,8 +316,14 @@ public class CSVinFDR extends OfflineFDR {
                 + "                             score ratio (optional)\n"
                 + "                             peptide1 score (optional)\n"
                 + "                             peptide2 score (optional)\n"
+                + "                             crosslinker (optional)\n"
                 + "                         either run and scan numebr must\n"
                 + "                         or psmid needs to be specified\n "
+                + "                         Example:\n "
+                + "                         --map=scan:spectrum,psmid:id\n "
+                + "                          maps scan to spectrum and\n"
+                + "                          psmid to id as the columns\n"
+                + "                          in the CSV\n"
                 + "--delimiter              what separates fields in the file\n "
                 + "--quote                  how are text fields qoted\n"
                 + "                         e.g. each field that contains the\n"
@@ -326,7 +331,7 @@ public class CSVinFDR extends OfflineFDR {
         
     }
     
-    
+        
     public String[] parseArgs(String[] argv) {
         ArrayList<String> unknown = new ArrayList<String>();
         
