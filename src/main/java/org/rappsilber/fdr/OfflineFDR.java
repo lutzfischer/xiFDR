@@ -1221,6 +1221,8 @@ public abstract class OfflineFDR {
         if (!csvSummaryOnly) {
             psmOut.flush();
             psmOut.close();
+            psmLinearOut.flush();
+            psmLinearOut.close();
         }
 
 
