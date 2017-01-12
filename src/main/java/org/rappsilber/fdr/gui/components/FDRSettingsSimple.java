@@ -96,6 +96,8 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
             }
         };        
         spFDR.getModel().addChangeListener(max100Listener);
+        spReportFactor.setVisible(false);
+        lblReportFactor.setVisible(false);
                 
     }
     
@@ -360,7 +362,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel7 = new javax.swing.JLabel();
+        lblReportFactor = new javax.swing.JLabel();
         spReportFactor = new javax.swing.JSpinner();
         jLabel1 = new javax.swing.JLabel();
         ckDirectional = new javax.swing.JCheckBox();
@@ -373,10 +375,10 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         btnStopBoost = new javax.swing.JButton();
         ckBoostBetween = new javax.swing.JCheckBox();
 
-        jLabel7.setText("Report Factor");
-        jLabel7.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
+        lblReportFactor.setText("Report Factor");
+        lblReportFactor.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
 
-        spReportFactor.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(1.1d), Double.valueOf(1.0d), null, Double.valueOf(0.1d)));
+        spReportFactor.setModel(new javax.swing.SpinnerNumberModel(1.1d, 1.0d, null, 0.1d));
         spReportFactor.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
 
         jLabel1.setText("FDR");
@@ -414,7 +416,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
             }
         });
 
-        spFDR.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(100.0d), Double.valueOf(0.0d), null, Double.valueOf(1.0d)));
+        spFDR.setModel(new javax.swing.SpinnerNumberModel(100.0d, 0.0d, null, 1.0d));
         spFDR.setToolTipText("What is the maximal acceptable FDR");
 
         cbFDRLevel.setSelectedIndex(3);
@@ -442,10 +444,10 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                     .addComponent(jLabel1)
                     .addComponent(lblDirectional)
                     .addComponent(lblBoost)
-                    .addComponent(jLabel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lblReportFactor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(spReportFactor, javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(spFDR)
@@ -458,7 +460,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(cbFDRLevel, javax.swing.GroupLayout.DEFAULT_SIZE, 140, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(btnCalc)))
                 .addContainerGap())
         );
@@ -482,7 +484,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                     .addComponent(ckBoostBetween, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel7)
+                    .addComponent(lblReportFactor)
                     .addComponent(spReportFactor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -523,9 +525,9 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private javax.swing.JCheckBox ckDirectional;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel lblBoost;
     private javax.swing.JLabel lblDirectional;
+    public javax.swing.JLabel lblReportFactor;
     private javax.swing.JSpinner spFDR;
     private javax.swing.JSpinner spReportFactor;
     // End of variables declaration//GEN-END:variables

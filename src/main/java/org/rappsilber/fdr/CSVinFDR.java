@@ -105,7 +105,7 @@ public class CSVinFDR extends OfflineFDR {
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
         int lineNumber =0;
         
-        
+        int noPSMID =0;
         while (csv.next()) {
             lineNumber++;
             String psmID;
@@ -128,15 +128,19 @@ public class CSVinFDR extends OfflineFDR {
             
             // do we have to generate an ID?
             if (cpsmID == null) {
-                String key = "Scan: " + csv.getValue(cscan) + " Run: " + csv.getValue(crun);
-                int c= pepSeq1.compareTo(pepSeq2) ;
-                if (c > 0 || (c==0 && site1 > site2) ) {
-                    key=key +" P1_" + csv.getValue(cpep1) + " P2_" + csv.getValue(cpep2) + " " + csv.getInteger(cpep1site) + " " + csv.getInteger(cpep2site);
+                if (cscan == null || crun == null) {
+                    psmID = Integer.toString(noPSMID++);
                 } else {
-                    key=key +" P1_" + csv.getValue(cpep2) + " P2_" + csv.getValue(cpep1) + " " + csv.getInteger(cpep2site) + " " + csv.getInteger(cpep1site);;
+                    String key = "Scan: " + csv.getValue(cscan) + " Run: " + csv.getValue(crun);
+                    int c= pepSeq1.compareTo(pepSeq2) ;
+                    if (c > 0 || (c==0 && site1 > site2) ) {
+                        key=key +" P1_" + csv.getValue(cpep1) + " P2_" + csv.getValue(cpep2) + " " + csv.getInteger(cpep1site) + " " + csv.getInteger(cpep2site);
+                    } else {
+                        key=key +" P1_" + csv.getValue(cpep2) + " P2_" + csv.getValue(cpep1) + " " + csv.getInteger(cpep2site) + " " + csv.getInteger(cpep1site);;
+                    }
+                    //psmID = PSMIDs.toIntValue(key);
+                    psmID = key;
                 }
-                //psmID = PSMIDs.toIntValue(key);
-                psmID = key;
             }else
                 //psmID=csv.getInteger(cpsmID);
                 psmID=csv.getValue(cpsmID);
@@ -256,17 +260,20 @@ public class CSVinFDR extends OfflineFDR {
             for (int i = 0; i<pepPositions2.length; i++) {
                 ipeppos2[i] = Integer.parseInt(pepPositions2[i]);
             }
-            
+            PSM psm = null;
             for (int p1 = 0; p1< accessions1.length; p1++) {
                 for (int p2 = 0; p2< accessions2.length; p2++) {
-                    PSM psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, accessions1[p1], descriptions1[p1], accessions2[p2], descriptions2[p2], ipeppos1[p1], ipeppos2[p2], scoreRatio, false);
-                    if (cscan !=null)
-                        psm.setScan(csv.getValue(cscan));
-                    if (crun !=null)
-                        psm.setRun(csv.getValue(crun));
-                    if (cCrosslinker != null) 
-                        psm.setCrosslinker(csv.getValue(cCrosslinker));
+                    String run = crun == null ? "":csv.getValue(crun);
+                    String scan = cscan == null ? "":csv.getValue(cscan);
+                    String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
                     
+                    psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, 
+                            site1, site2, isDecoy1, isDecoy2, charge, score, 
+                            accessions1[p1], descriptions1[p1], accessions2[p2],
+                            descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
+                            scoreRatio, false,crosslinker,run,scan);
+//    public PSM          addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
+
                 }
             }
             

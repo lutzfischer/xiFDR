@@ -152,6 +152,17 @@ public abstract class OfflineFDR {
      */
     protected int m_maximumProteinPairAmbiguity = 0;
 
+    
+    /**
+     * I filter the cross-linker names through this hashmap, ensuring I have 
+     * only one string instance per cross-linker.
+     * That way comparison of cross-linker can be reduced to
+     * A = B instead of A.equals(B) 
+     */
+    HashMap<String,String> foundCrossLinker = new HashMap<>();
+    HashMap<String,String> foundRuns = new HashMap<>();
+    
+    
     /**
      * @return the uniquePSMs
      */
@@ -327,6 +338,9 @@ public abstract class OfflineFDR {
      * @return
      */
     public PSM addMatch(String psmID, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, String accession1, String description1, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase) {
+        return addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, accession1, description1, accession2, description2, pepPosition1, pepPosition2, scoreRatio, isSpecialCase, "", "", "");
+    }
+    public PSM addMatch(String psmID, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, String accession1, String description1, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String scan) {
 
         int pepid1 = m_pepIDs.toIntValue(pepSeq1);
         int pepid2 = m_pepIDs.toIntValue(pepSeq2);
@@ -335,7 +349,7 @@ public abstract class OfflineFDR {
 
 
         //return addMatch(pepSeq2, pepSeq1, accession1, accession2, protid1, description2, isDecoy1, pepid1, pepPosition1, peplen1, protid2, isDecoy2, pepid2, pepPosition2, peplen2, psmID, site1, site2, charge, score, scoreRatio, isSpecialCase);
-        return addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "","", scoreRatio, isSpecialCase);
+        return addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "","", scoreRatio, isSpecialCase, crosslinker,run,scan);
     }
 
     /**
@@ -358,7 +372,7 @@ public abstract class OfflineFDR {
      * @param scoreRation
      * @return a peptide pair that is supported by the given match
      */
-    public PSM addMatch(String psmID, Peptide peptide1, Peptide peptide2, int peplen1, int peplen2, int site1, int site2, int charge, double score, Protein proteinId1, Protein proteinId2, int pepPosition1, int pepPosition2, double scoreRation, boolean isSpecialCase) {
+    public PSM addMatch(String psmID, Peptide peptide1, Peptide peptide2, int peplen1, int peplen2, int site1, int site2, int charge, double score, Protein proteinId1, Protein proteinId2, int pepPosition1, int pepPosition2, double scoreRation, boolean isSpecialCase, String crosslinker, String run, String Scan) {
         Peptide npepid1;
         Peptide npepid2;
         int npeplen1;
@@ -408,6 +422,25 @@ public abstract class OfflineFDR {
 
         PSM psm = new PSM(psmID, npepid1, npepid2, nsite1, nsite2, proteinId1.isDecoy(), proteinId2.isDecoy(), charge, score, nScoreRatio);
         psm.setSpecialcase(isSpecialCase);
+        
+        // ensure we have just a single instance of a string for each cross-linker and run
+        // speeds up comparisons later
+        String r = foundRuns.get(run);
+        if (r == null) {
+            psm.setRun(run);
+            foundRuns.put(run, run);
+        } else
+            psm.setRun(r);
+        if (crosslinker == null) 
+            crosslinker= "";
+        
+        String c = foundCrossLinker.get(crosslinker);
+        if (c == null) {
+            psm.setCrosslinker(crosslinker);
+            foundCrossLinker.put(crosslinker, crosslinker);
+        } else
+            psm.setCrosslinker(c);
+        psm.setScan(Scan);
 
 
         PSM regpsm = allPSMs.register(psm);
@@ -3718,19 +3751,17 @@ public abstract class OfflineFDR {
 
 
 
-    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase) {
-        return addMatch(psmID, run, scan, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2,  site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "", "", scoreRatio, isSpecialCase);
+    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase, String crosslinker) {
+        return addMatch(psmID, run, scan, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2,  site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "", "", scoreRatio, isSpecialCase, crosslinker);
     }
     
-    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase) {
-        PSM ret = addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, Protein1Sequence, Protein2Sequence, scoreRatio, isSpecialCase);
-        ret.setRun(run);
-        ret.setScan(scan);
+    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker) {
+        PSM ret = addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, Protein1Sequence, Protein2Sequence, scoreRatio, isSpecialCase, crosslinker, run, scan);
         return ret;
         
     }
     
-    public PSM addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase) {
+    public PSM addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
 //    public PSM addMatch(String pepSeq2, String pepSeq1, String accession1, String accession2, int protid1, String description2, boolean isDecoy1, int pepid1, int pepPosition1, int peplen1, int protid2, boolean isDecoy2, int pepid2, int pepPosition2, int peplen2, String psmID, int site1, int site2, int charge, double score, double scoreRatio, boolean isSpecialCase) {
         boolean linear = pepSeq2 == null || pepSeq2.isEmpty() || pepSeq1 == null || pepSeq1.isEmpty();
         boolean internal = (!linear) && (accession1.contentEquals(accession2) || ("REV_"+accession1).contentEquals(accession2) || accession1.contentEquals("REV_"+accession2));
@@ -3756,7 +3787,7 @@ public abstract class OfflineFDR {
             p2 = allProteins.register(p2);
             pep2 = allPeptides.register(new Peptide(pepid2, pepSeq2, isDecoy2, p2, pepPosition2, peplen2));
         }
-        PSM psm = addMatch(psmID, pep1, pep2, peplen1, peplen2, site1, site2, charge, score, p1, p2, pepPosition1, pepPosition2, scoreRatio, isSpecialCase);
+        PSM psm = addMatch(psmID, pep1, pep2, peplen1, peplen2, site1, site2, charge, score, p1, p2, pepPosition1, pepPosition2, scoreRatio, isSpecialCase, crosslinker, run, Scan);
 
 
         return psm;

@@ -56,7 +56,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spMinProteinPepCount.setSpecialValue(1);
         spMinLinkPepCount.setSpecialValue(1);
         spMinPPIPepCount.setSpecialValue(1);
-        
+        spReportFactor.setVisible(false);
+        lblReportFactor.setVisible(false);
     }
     
     
@@ -374,7 +375,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spLinkFDR = new javax.swing.JSpinner();
         jLabel4 = new javax.swing.JLabel();
         spPPIFdr = new javax.swing.JSpinner();
-        jLabel7 = new javax.swing.JLabel();
+        lblReportFactor = new javax.swing.JLabel();
         spReportFactor = new javax.swing.JSpinner();
         jLabel8 = new javax.swing.JLabel();
         jLabel28 = new javax.swing.JLabel();
@@ -403,33 +404,33 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
         jLabel5.setText("PSM");
 
-        spPsmFDR.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(100.0d), Double.valueOf(0.0d), null, Double.valueOf(1.0d)));
+        spPsmFDR.setModel(new javax.swing.SpinnerNumberModel(100.0d, 0.0d, null, 1.0d));
         spPsmFDR.setToolTipText("FDR value accepted for PSMs");
 
         jLabel2.setText("Peptide Pair");
 
-        spPepFDR.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(100.0d), Double.valueOf(0.0d), null, Double.valueOf(1.0d)));
+        spPepFDR.setModel(new javax.swing.SpinnerNumberModel(100.0d, 0.0d, null, 1.0d));
         spPepFDR.setToolTipText("FDR value accepted for Peptide Pairs (including linksite within the peptide)");
 
         jLabel6.setText("Protein Group");
 
-        spProteinFDR.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(100.0d), Double.valueOf(0.0d), null, Double.valueOf(1.0d)));
+        spProteinFDR.setModel(new javax.swing.SpinnerNumberModel(100.0d, 0.0d, null, 1.0d));
         spProteinFDR.setToolTipText("FDR value accepted for protein-groups");
 
         jLabel3.setText("Link");
 
-        spLinkFDR.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(5.0d), Double.valueOf(0.0d), null, Double.valueOf(1.0d)));
+        spLinkFDR.setModel(new javax.swing.SpinnerNumberModel(5.0d, 0.0d, null, 1.0d));
         spLinkFDR.setToolTipText("FDR value accepted for Links (Protein-group-links)");
 
         jLabel4.setText("Protein Pairs");
 
-        spPPIFdr.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(100.0d), Double.valueOf(0.0d), null, Double.valueOf(1.0d)));
+        spPPIFdr.setModel(new javax.swing.SpinnerNumberModel(100.0d, 0.0d, null, 1.0d));
         spPPIFdr.setToolTipText("FDR value accepted for protein-pairs");
 
-        jLabel7.setText("Report Factor");
-        jLabel7.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
+        lblReportFactor.setText("Report Factor");
+        lblReportFactor.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
 
-        spReportFactor.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(1.1d), Double.valueOf(1.0d), null, Double.valueOf(0.1d)));
+        spReportFactor.setModel(new javax.swing.SpinnerNumberModel(1.1d, 1.0d, null, 0.1d));
         spReportFactor.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
 
         jLabel8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -478,13 +479,13 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         cbBoostWhat.setSelectedIndex(3);
         cbBoostWhat.setToolTipText("Boost the results for the given level by modifying the lower-level FDRs");
 
-        spMinProteinPepCount.setModel(new javax.swing.SpinnerNumberModel(Integer.valueOf(1), Integer.valueOf(1), null, Integer.valueOf(1)));
+        spMinProteinPepCount.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
         spMinProteinPepCount.setSpecialValue(1);
 
-        spMinLinkPepCount.setModel(new javax.swing.SpinnerNumberModel(Integer.valueOf(1), Integer.valueOf(1), null, Integer.valueOf(1)));
+        spMinLinkPepCount.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
         spMinLinkPepCount.setSpecialValue(1);
 
-        spMinPPIPepCount.setModel(new javax.swing.SpinnerNumberModel(Integer.valueOf(1), Integer.valueOf(1), null, Integer.valueOf(1)));
+        spMinPPIPepCount.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
         spMinPPIPepCount.setSpecialValue(1);
 
         btnStopBoost.setText("stop");
@@ -521,7 +522,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addComponent(jLabel6)
                             .addComponent(jLabel3)
                             .addComponent(jLabel4)
-                            .addComponent(jLabel7)
+                            .addComponent(lblReportFactor)
                             .addComponent(ckMaximize))
                         .addGap(12, 12, 12)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
@@ -617,7 +618,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(spReportFactor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel7)
+                    .addComponent(lblReportFactor)
                     .addComponent(ckUniquePSM))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 6, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -674,9 +675,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
+    public javax.swing.JLabel lblReportFactor;
     private javax.swing.JSpinner spLinkFDR;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMaxLinkAmbiguity;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMaxProteinAmbiguity;
@@ -689,7 +690,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JSpinner spPepFDR;
     private javax.swing.JSpinner spProteinFDR;
     private javax.swing.JSpinner spPsmFDR;
-    private javax.swing.JSpinner spReportFactor;
+    public javax.swing.JSpinner spReportFactor;
     // End of variables declaration//GEN-END:variables
 
 

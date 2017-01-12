@@ -26,7 +26,7 @@
                           <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel7" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblReportFactor" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
@@ -147,7 +147,7 @@
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="ckUniquePSM" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace pref="6" max="32767" attributes="0"/>
@@ -235,11 +235,14 @@
         <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for protein-pairs"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JLabel" name="jLabel7">
+    <Component class="javax.swing.JLabel" name="lblReportFactor">
       <Properties>
         <Property name="text" type="java.lang.String" value="Report Factor"/>
         <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
       </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
     </Component>
     <Component class="javax.swing.JSpinner" name="spReportFactor">
       <Properties>
@@ -248,6 +251,9 @@
         </Property>
         <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
       </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel8">
       <Properties>

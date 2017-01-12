@@ -550,11 +550,11 @@ public class CSVSelection extends javax.swing.JPanel {
                 return;
             }
 
-            if (!(psmidSelected || (runSelected && scanSelected))) {
-                JOptionPane.showMessageDialog(this, "We need at least a PSM-ID \n"
-                        + "or run and Scan to uniqely identify a PSM.", "Missing Column", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+//            if (!(psmidSelected || (runSelected && scanSelected))) {
+//                JOptionPane.showMessageDialog(this, "We need at least a PSM-ID \n"
+//                        + "or run and Scan to uniqely identify a PSM.", "Missing Column", JOptionPane.WARNING_MESSAGE);
+//                return;
+//            }
         
         doActionPerformed();
     }//GEN-LAST:event_btnReadCsvActionPerformed
