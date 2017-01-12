@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.rappsilber.data.csv.CSVRandomAccess;
@@ -93,7 +94,7 @@ public abstract class OfflineFDR {
      */
     protected boolean PSMScoreHighBetter = true; 
     /** the version of xiFDR to be reported */
-    public static Version xiFDRVersion = new Version(1, 0, 10 );
+    public static Version xiFDRVersion = new Version(1, 0, 11 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -151,6 +152,17 @@ public abstract class OfflineFDR {
      */
     protected int m_maximumProteinPairAmbiguity = 0;
 
+    
+    /**
+     * I filter the cross-linker names through this hashmap, ensuring I have 
+     * only one string instance per cross-linker.
+     * That way comparison of cross-linker can be reduced to
+     * A = B instead of A.equals(B) 
+     */
+    HashMap<String,String> foundCrossLinker = new HashMap<>();
+    HashMap<String,String> foundRuns = new HashMap<>();
+    
+    
     /**
      * @return the uniquePSMs
      */
@@ -326,6 +338,9 @@ public abstract class OfflineFDR {
      * @return
      */
     public PSM addMatch(String psmID, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, String accession1, String description1, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase) {
+        return addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, accession1, description1, accession2, description2, pepPosition1, pepPosition2, scoreRatio, isSpecialCase, "", "", "");
+    }
+    public PSM addMatch(String psmID, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, String accession1, String description1, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String scan) {
 
         int pepid1 = m_pepIDs.toIntValue(pepSeq1);
         int pepid2 = m_pepIDs.toIntValue(pepSeq2);
@@ -334,7 +349,7 @@ public abstract class OfflineFDR {
 
 
         //return addMatch(pepSeq2, pepSeq1, accession1, accession2, protid1, description2, isDecoy1, pepid1, pepPosition1, peplen1, protid2, isDecoy2, pepid2, pepPosition2, peplen2, psmID, site1, site2, charge, score, scoreRatio, isSpecialCase);
-        return addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "","", scoreRatio, isSpecialCase);
+        return addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "","", scoreRatio, isSpecialCase, crosslinker,run,scan);
     }
 
     /**
@@ -357,7 +372,7 @@ public abstract class OfflineFDR {
      * @param scoreRation
      * @return a peptide pair that is supported by the given match
      */
-    public PSM addMatch(String psmID, Peptide peptide1, Peptide peptide2, int peplen1, int peplen2, int site1, int site2, int charge, double score, Protein proteinId1, Protein proteinId2, int pepPosition1, int pepPosition2, double scoreRation, boolean isSpecialCase) {
+    public PSM addMatch(String psmID, Peptide peptide1, Peptide peptide2, int peplen1, int peplen2, int site1, int site2, int charge, double score, Protein proteinId1, Protein proteinId2, int pepPosition1, int pepPosition2, double scoreRation, boolean isSpecialCase, String crosslinker, String run, String Scan) {
         Peptide npepid1;
         Peptide npepid2;
         int npeplen1;
@@ -407,6 +422,25 @@ public abstract class OfflineFDR {
 
         PSM psm = new PSM(psmID, npepid1, npepid2, nsite1, nsite2, proteinId1.isDecoy(), proteinId2.isDecoy(), charge, score, nScoreRatio);
         psm.setSpecialcase(isSpecialCase);
+        
+        // ensure we have just a single instance of a string for each cross-linker and run
+        // speeds up comparisons later
+        String r = foundRuns.get(run);
+        if (r == null) {
+            psm.setRun(run);
+            foundRuns.put(run, run);
+        } else
+            psm.setRun(r);
+        if (crosslinker == null) 
+            crosslinker= "";
+        
+        String c = foundCrossLinker.get(crosslinker);
+        if (c == null) {
+            psm.setCrosslinker(crosslinker);
+            foundCrossLinker.put(crosslinker, crosslinker);
+        } else
+            psm.setCrosslinker(c);
+        psm.setScan(Scan);
 
 
         PSM regpsm = allPSMs.register(psm);
@@ -1185,8 +1219,12 @@ public abstract class OfflineFDR {
         for (PSM pp : psms) {
             fdrPSMGroupCounts.add(pp.getFDRGroup());
             String line = csvFormater.valuesToString(getPSMOutputLine(pp));
-            if (!csvSummaryOnly)
-                psmOut.println(line);
+            if (!csvSummaryOnly) {
+                if (pp.isLinear())
+                    psmLinearOut.println(line);
+                else
+                    psmOut.println(line);
+            }
 
             if (pp.getPeptide1() == Peptide.NOPEPTIDE || pp.getPeptide2() == Peptide.NOPEPTIDE) {
                 if (pp.isTT()) {
@@ -1216,6 +1254,8 @@ public abstract class OfflineFDR {
         if (!csvSummaryOnly) {
             psmOut.flush();
             psmOut.close();
+            psmLinearOut.flush();
+            psmLinearOut.close();
         }
 
 
@@ -1476,8 +1516,7 @@ public abstract class OfflineFDR {
         PrintWriter pgOut = null;
         if (!csvSummaryOnly) {
             pgOut = new PrintWriter(path + "/" + baseName + "_proteingroups" + extension);
-            pgOut.println(csvFormater.valuesToString(new String[]{"ProteinGroup" , "Descriptions" , "Score" , "isDecoy" , "isTT" , "isTD" , "isDD" , "fdrGroup" , "fdr"}));
-//            pgOut.println("ProteinGroup" + seperator + "Descriptions" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr");
+            pgOut.println(csvFormater.valuesToString(getProteinGroupOutputHeader()));
         } else {
             pgOut = NullOutputStream.NULLPRINTWRITER;
         }
@@ -1485,8 +1524,7 @@ public abstract class OfflineFDR {
         for (ProteinGroup pg : pgs) {
             fdrProteinGroupCounts.add(pg.getFDRGroup());
             if (!csvSummaryOnly) {
-                pgOut.println(csvFormater.valuesToString(new String[]{pg.acessions() , pg.descriptions() , pg.getScore()+"" , pg.isDecoy()+"",
-                        pg.isTT()+"" , pg.isTD()+"" , pg.isDD()+"" , pg.getFDRGroupName() , pg.getFDR()+""}));
+                pgOut.println(csvFormater.valuesToString(getProteinGroupOutput(pg)));
             }
             if (pg.isDecoy()) {
                 proteinGroupD++;
@@ -2788,7 +2826,8 @@ public abstract class OfflineFDR {
                 + "--csvOutDir=X "
                 + "--csvBaseName=X "
                 + "--csvSummaryOnly "
-                + "--singleSummary ";
+                + "--singleSummary "
+                + "--uniquePSMs= ";
 
     }
 
@@ -2837,7 +2876,9 @@ public abstract class OfflineFDR {
                 + "                         only the summary\n"
                 + "--singleSummary          if fdrs where given in ranges all\n"
                 + "                         summary files will be written into a\n"
-                + " sinlge file\n";
+                + "                         sinlge file\n"
+                + "--uniquePSMs=X           filtr PSMs to unique PSMs \n"
+                + "                         options are true,false,1,0\n";
 
     }
     
@@ -3327,6 +3368,7 @@ public abstract class OfflineFDR {
                 ,proteinLinkPositons1  
                 ,proteinLinkPositons2 
                 ,Integer.toString(pp.getCharge()) 
+                , pp.getCrosslinker()
                 , Double.toString(pp.getScore()) 
                 , Boolean.toString(pp.isDecoy()) 
                 , Boolean.toString(pp.isTT()) 
@@ -3350,11 +3392,11 @@ public abstract class OfflineFDR {
     }
     
     protected ArrayList<String> getPSMHeader() {
-        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{ "ID" , "run" , "scan"  , "Protein1" , "Description1" 
+        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{ "PSMID" , "run" , "scan"  , "Protein1" , "Description1" 
                 , "Decoy1" , "Protein2" , "Description2" , "Decoy2" 
                 , "PepSeq1" , "PepSeq2" , "PepPos1" , "PepPos2" 
                 , "PeptideLength1" , "PeptideLength2" , "LinkPos1" , "LinkPos2" 
-                , "ProteinLinkPos1" , "ProteinLinkPos2" , "Charge" , "Score" 
+                , "ProteinLinkPos1" , "ProteinLinkPos2" , "Charge" , "Crosslinker", "Score" 
                 , "isDecoy" , "isTT" , "isTD" , "isDD" , "fdrGroup" , "fdr" 
                 , "" , "PeptidePairFDR" , "Protein1FDR" , "Protein2FDR" 
                 , "LinkFDR" , "PPIFDR" , ""
@@ -3378,6 +3420,7 @@ public abstract class OfflineFDR {
             "FromProteinSite",
             "ToProteinSite",
             "psmID",
+            "Crosslinker",
             "Score", 
             "isDecoy", 
             "isTT",
@@ -3460,6 +3503,7 @@ public abstract class OfflineFDR {
         ret.add( pp.getPeptide2() == Peptide.NOPEPTIDE || pp.getPeptide1() == Peptide.NOPEPTIDE  ? "" : pp.getPeptide1().getStringPositions(pp.getPeptideLinkSite1()-1)); 
         ret.add( pp.getPeptide2() == Peptide.NOPEPTIDE || pp.getPeptide1() == Peptide.NOPEPTIDE  ? "" : pp.getPeptide2().getStringPositions(pp.getPeptideLinkSite2()-1)); 
         ret.add( pp.getTopPSMIDs()  ); 
+        ret.add( pp.getCrosslinker());
         ret.add( ""+pp.getScore()  ); 
         ret.add( ""+pp.isDecoy()  ); 
         ret.add( ""+pp.isTT()  ); 
@@ -3487,10 +3531,12 @@ public abstract class OfflineFDR {
         ProteinGroupPair ppi = l.getFdrPPI();
         double top_pepfdr = Double.MAX_VALUE;
         double top_psmfdr = Double.MAX_VALUE;
+        HashSet<String>  xl = new HashSet<String>();
         for (PeptidePair pp : l.getPeptidePairs()) {
             if (pp.getFDR() < top_pepfdr) {
                 top_pepfdr = pp.getFDR();
             }
+            xl.add(pp.getCrosslinker());
             for (PSM psm : pp.getTopPSMs()) {
                 if (psm.getFDR() < top_psmfdr) {
                     top_psmfdr = psm.getFDR();
@@ -3512,6 +3558,7 @@ public abstract class OfflineFDR {
         ret.add("" +  pg2.isDecoy()  ); 
         ret.add( l.site1Sites()  ); 
         ret.add( l.site2Site()  ); 
+        ret.add( RArrayUtils.toString(xl, ";"));
         ret.add("" +  l.getScore()  ); 
         ret.add("" +  l.isDecoy()  ); 
         ret.add("" +  l.isTT()  ); 
@@ -3550,6 +3597,7 @@ public abstract class OfflineFDR {
         ret.add( "Decoy2" ); 
         ret.add( "fromSite" ); 
         ret.add( "ToSite" ); 
+        ret.add( "Croslinkers");
         ret.add( "Score" ); 
         ret.add( "isDecoy" );
         ret.add( "isTT" ); 
@@ -3574,6 +3622,7 @@ public abstract class OfflineFDR {
     protected String getPPIOutputHeader(String seperator) {
         return RArrayUtils.toString(getPPIOutputHeader(), seperator);
     }
+    
     protected ArrayList<String> getPPIOutputHeader() {
         ArrayList<String>ret = new ArrayList<String>();
         ret.add("ProteinGroupPairID" ); 
@@ -3585,7 +3634,8 @@ public abstract class OfflineFDR {
         ret.add( "isDecoy1" ); 
         ret.add( "Protein2" ); 
         ret.add( "Description2" ); 
-        ret.add( "isDecoy2" ); 
+        ret.add( "isDecoy2" );
+        ret.add( "Crosslinker");
         ret.add( "Score" ); 
         ret.add( "isDecoy" ); 
         ret.add( "isTT" ); 
@@ -3614,6 +3664,7 @@ public abstract class OfflineFDR {
         double top_linkfdr = Double.MAX_VALUE;
         double top_pepfdr = Double.MAX_VALUE;
         double top_psmfdr = Double.MAX_VALUE;
+        HashSet<String> xl = new HashSet<>();
         for (ProteinGroupLink l : pgp.getLinks()) {
             if (l.getFDR() < top_linkfdr) {
                 top_linkfdr = l.getFDR();
@@ -3627,6 +3678,7 @@ public abstract class OfflineFDR {
                         top_psmfdr = psm.getFDR();
                     }
                 }
+                xl.add(pp.getCrosslinker());
             }
         }
         ArrayList<String> ret =new ArrayList<String>();
@@ -3641,6 +3693,7 @@ public abstract class OfflineFDR {
         ret.add( pgp.getProtein2().acessions() ); 
         ret.add( pgp.getProtein2().descriptions() ); 
         ret.add("" +pgp.getProtein2().isDecoy() ); 
+        ret.add( RArrayUtils.toString(xl, ";"));
         ret.add("" + pgp.getScore() ); 
         ret.add("" + pgp.isDecoy()  ); 
         ret.add("" +pgp.isTT() ); 
@@ -3658,6 +3711,39 @@ public abstract class OfflineFDR {
         return ret;
     }
     
+    protected ArrayList<String> getProteinGroupOutputHeader() {
+        ArrayList<String>ret = new ArrayList<String>();
+        ret.add("ProteinGroup" );
+        ret.add( "Descriptions" );
+        ret.add( "Crosslinker" );
+        ret.add( "Score" );
+        ret.add( "isDecoy" );
+        ret.add( "isTT" );
+        ret.add( "isTD" );
+        ret.add( "isDD" );
+        ret.add( "fdrGroup" );
+        ret.add( "fdr");    
+        return ret;
+    }    
+    
+    protected ArrayList<String> getProteinGroupOutput(ProteinGroup pg) {
+        HashSet<String> crosslinker = new HashSet<>();
+        for (PeptidePair pp: pg.getPeptidePairs()) {
+            crosslinker.add(pp.getCrosslinker());
+        }
+        ArrayList<String>ret = new ArrayList<String>();
+        ret.add( pg.acessions() );
+        ret.add( pg.descriptions() );
+        ret.add( RArrayUtils.toString(crosslinker, ";"));
+        ret.add( pg.getScore()+"" );
+        ret.add( pg.isDecoy()+"");
+        ret.add( pg.isTT()+"" );
+        ret.add( pg.isTD()+"" );
+        ret.add( pg.isDD()+"" );
+        ret.add( pg.getFDRGroupName() );
+        ret.add( pg.getFDR()+"");    
+        return ret;
+    }
     
     protected String getPeptideSequence(Peptide p) {
         return p.getSequence();
@@ -3665,19 +3751,17 @@ public abstract class OfflineFDR {
 
 
 
-    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase) {
-        return addMatch(psmID, run, scan, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2,  site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "", "", scoreRatio, isSpecialCase);
+    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, double scoreRatio, boolean isSpecialCase, String crosslinker) {
+        return addMatch(psmID, run, scan, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2,  site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, "", "", scoreRatio, isSpecialCase, crosslinker);
     }
     
-    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase) {
-        PSM ret = addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, Protein1Sequence, Protein2Sequence, scoreRatio, isSpecialCase);
-        ret.setRun(run);
-        ret.setScan(scan);
+    public PSM addMatch(String psmID, String run, String scan, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker) {
+        PSM ret = addMatch(psmID, pepid1, pepid2, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protid1, accession1, description1, protid2, accession2, description2, pepPosition1, pepPosition2, Protein1Sequence, Protein2Sequence, scoreRatio, isSpecialCase, crosslinker, run, scan);
         return ret;
         
     }
     
-    public PSM addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase) {
+    public PSM addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
 //    public PSM addMatch(String pepSeq2, String pepSeq1, String accession1, String accession2, int protid1, String description2, boolean isDecoy1, int pepid1, int pepPosition1, int peplen1, int protid2, boolean isDecoy2, int pepid2, int pepPosition2, int peplen2, String psmID, int site1, int site2, int charge, double score, double scoreRatio, boolean isSpecialCase) {
         boolean linear = pepSeq2 == null || pepSeq2.isEmpty() || pepSeq1 == null || pepSeq1.isEmpty();
         boolean internal = (!linear) && (accession1.contentEquals(accession2) || ("REV_"+accession1).contentEquals(accession2) || accession1.contentEquals("REV_"+accession2));
@@ -3703,7 +3787,7 @@ public abstract class OfflineFDR {
             p2 = allProteins.register(p2);
             pep2 = allPeptides.register(new Peptide(pepid2, pepSeq2, isDecoy2, p2, pepPosition2, peplen2));
         }
-        PSM psm = addMatch(psmID, pep1, pep2, peplen1, peplen2, site1, site2, charge, score, p1, p2, pepPosition1, pepPosition2, scoreRatio, isSpecialCase);
+        PSM psm = addMatch(psmID, pep1, pep2, peplen1, peplen2, site1, site2, charge, score, p1, p2, pepPosition1, pepPosition2, scoreRatio, isSpecialCase, crosslinker, run, Scan);
 
 
         return psm;

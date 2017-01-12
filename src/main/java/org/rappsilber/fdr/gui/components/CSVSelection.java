@@ -357,7 +357,8 @@ public class CSVSelection extends javax.swing.JPanel {
                 {"description1",  new Boolean(true), null},
                 {"description2",  new Boolean(true), null},
                 {"peptide position 1", null, null},
-                {"peptide position 2", null, null}
+                {"peptide position 2", null, null},
+                {"Crosslinker",  new Boolean(true), null}
             },
             new String [] {
                 "Column", "Optional", "Name in CSV"
@@ -549,11 +550,11 @@ public class CSVSelection extends javax.swing.JPanel {
                 return;
             }
 
-            if (!(psmidSelected || (runSelected && scanSelected))) {
-                JOptionPane.showMessageDialog(this, "We need at least a PSM-ID \n"
-                        + "or run and Scan to uniqely identify a PSM.", "Missing Column", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+//            if (!(psmidSelected || (runSelected && scanSelected))) {
+//                JOptionPane.showMessageDialog(this, "We need at least a PSM-ID \n"
+//                        + "or run and Scan to uniqely identify a PSM.", "Missing Column", JOptionPane.WARNING_MESSAGE);
+//                return;
+//            }
         
         doActionPerformed();
     }//GEN-LAST:event_btnReadCsvActionPerformed

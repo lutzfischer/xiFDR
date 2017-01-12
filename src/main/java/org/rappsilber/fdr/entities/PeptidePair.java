@@ -71,6 +71,12 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * overall score of this pair
      */
     private double score;
+    
+    
+    /**
+     * Cross-linker
+     */
+    private String crosslinker;
     /** top-score per charge state */
     private DoubleArrayList chargeTopScoresRatios = new DoubleArrayList();
     /**
@@ -146,8 +152,10 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         } else {
             isTT = true;
         }
+        crosslinker = psm.getCrosslinker();
 //        this.chargeTopScores.set(psm.getCharge(), psm.getScore());
 //        this.chargeTopScoresPSMId.set(psm.getCharge(), psm.getPsmID());
+        this.psms.add(psm);
         this.chargeTopScoresPSM.put(psm.getCharge(), psm);
         this.chargeTopScoresRatios.set(psm.getCharge(), psm.getScoreRatio());
 
@@ -171,8 +179,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     @Override
     public boolean equals(Object l) {
         PeptidePair c = (PeptidePair) l;
-        return (c.peptide1.equals(peptide1) && c.peptide2.equals(peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2)
-                || (c.peptide2.equals(peptide1) && c.peptide1.equals(peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2);
+        return  crosslinker == c.crosslinker && 
+                ((c.peptide1.equals(peptide1) && c.peptide2.equals(peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2)
+                || (c.peptide2.equals(peptide1) && c.peptide1.equals(peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }
 
     /** 
@@ -185,6 +194,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         if (p == this) {
             return;
         }
+        this.psms.addAll(p.psms);
         boolean invertScoreRatio = false;
         // transfer topScores and match-ids
         for (int i : p.chargeTopScoresPSM.keySet()) {
@@ -907,4 +917,18 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             return null;
         return new PeptideSite(peptide2,pepsite2);
     }    
+
+    /**
+     * @return the psms
+     */
+    public ArrayList<PSM> getAllPSMs() {
+        return psms;
+    }
+
+    /**
+     * @return the crosslinker
+     */
+    public String getCrosslinker() {
+        return crosslinker;
+    }
 }

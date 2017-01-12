@@ -23,7 +23,7 @@
                   <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="lblDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="lblBoost" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="jLabel7" max="32767" attributes="0"/>
+                  <Component id="lblReportFactor" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
@@ -77,7 +77,7 @@
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace pref="32" max="32767" attributes="0"/>
@@ -91,11 +91,14 @@
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="javax.swing.JLabel" name="jLabel7">
+    <Component class="javax.swing.JLabel" name="lblReportFactor">
       <Properties>
         <Property name="text" type="java.lang.String" value="Report Factor"/>
         <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
       </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
     </Component>
     <Component class="javax.swing.JSpinner" name="spReportFactor">
       <Properties>
