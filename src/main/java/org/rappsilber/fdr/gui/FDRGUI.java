@@ -226,6 +226,13 @@ public class FDRGUI extends javax.swing.JFrame {
         txtmzIdentOwnerEmail.setText(LocalProperties.getProperty("mzIdenMLOwnerEmail",txtmzIdentOwnerEmail.getText()));
         txtmzIdentAdress.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress",txtmzIdentAdress.getText()));
         txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerOrg",txtmzIdentOwnerOrg.getText()));
+
+
+        csvSelect.addAddListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                csvSelectAddActionPerformed(evt);
+            }
+        });
         
     }
     
@@ -460,9 +467,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
     public void readCSV() {
         try {
-            setEnableRead(false);
-            setEnableCalc(false);
-            setEnableWrite(false);
+
 
             setStatus("Start");
             final CSVinFDR ofdr = new CSVinFDR();
@@ -471,35 +476,57 @@ public class FDRGUI extends javax.swing.JFrame {
 
             setFdr(ofdr);
 
-            getFdr().setPSMScoreHighBetter(csvSelect.higherIsBetter());
-
-
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    try {
-                        setStatus("Read from " + csvSelect.getFile().getName());
-                        CsvParser csv = csvSelect.getCsv();
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + csvSelect.getFile().getAbsolutePath());
-                        ofdr.readCSV(csv);
-                        setEnableCalc(true);
-                        setStatus("finished reading");
-                    } catch (Exception ex) {
-                        Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
-                        setStatus("error:" + ex);
-                    }
-                    setEnableRead(true);
-                    //  setEnableWrite(true);
-                }
-
-
-            };
-            new Thread(runnable).start();
+            addCSV(ofdr);
         } catch (Exception ex) {
             Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
             setStatus("error:" + ex);
             setEnableRead(true);
         }
 
+    }
+
+    public void readAdditionalCSV() {
+        try {
+
+
+            setStatus("Start");
+
+            addCSV((CSVinFDR) getFdr());
+        } catch (Exception ex) {
+            Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
+            setStatus("error:" + ex);
+            setEnableRead(true);
+        }
+
+    }
+    
+    private void addCSV(final CSVinFDR ofdr) {
+        getFdr().setPSMScoreHighBetter(csvSelect.higherIsBetter());
+        
+        setEnableRead(false);
+        setEnableCalc(false);
+        setEnableWrite(false);
+        
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    setStatus("Read from " + csvSelect.getFile().getName());
+                    CsvParser csv = csvSelect.getCsv();
+                    Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + csvSelect.getFile().getAbsolutePath());
+                    ofdr.readCSV(csv);
+                    setEnableCalc(true);
+                    setStatus("finished reading");
+                } catch (Exception ex) {
+                    Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
+                    setStatus("error:" + ex);
+                }
+                setEnableRead(true);
+                //  setEnableWrite(true);
+            }
+            
+            
+        };
+        new Thread(runnable).start();
     }
 
     public void readMZIdentML() {
@@ -822,6 +849,7 @@ public class FDRGUI extends javax.swing.JFrame {
         Runnable setModel = new Runnable() {
             public void run() {
                 csvSelect.setEnabled(enable);
+                csvSelect.setEnableAdd(enable && m_fdr != null);
                 btnReadMZIdent.setEnabled(enable && ((JPanel) fdrSettings).isEnabled());
 
             }
@@ -3369,6 +3397,10 @@ public class FDRGUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_ckIgnoreGroups1ActionPerformed
 
+    private void csvSelectAddActionPerformed(java.awt.event.ActionEvent evt) {                                          
+        readCSV();
+    }       
+    
     private void csvSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_csvSelectActionPerformed
         readCSV();
     }//GEN-LAST:event_csvSelectActionPerformed

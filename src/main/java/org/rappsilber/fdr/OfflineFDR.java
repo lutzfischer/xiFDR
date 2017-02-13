@@ -94,7 +94,7 @@ public abstract class OfflineFDR {
      */
     protected boolean PSMScoreHighBetter = true; 
     /** the version of xiFDR to be reported */
-    public static Version xiFDRVersion = new Version(1, 0, 12 );
+    public static Version xiFDRVersion = new Version(1, 0, 13 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -2987,6 +2987,13 @@ public abstract class OfflineFDR {
         this.csvSummaryOnly = summaryOnly;
     }
 
+    /**
+     * @param summaryOnly when writing out put files only write the summary file
+     */
+    public boolean getCSVSummaryOnly() {
+        return this.csvSummaryOnly;
+    }
+    
     /**
      * @param summaryOnly when writing out put files only write the summary file
      */

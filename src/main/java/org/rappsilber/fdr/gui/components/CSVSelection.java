@@ -16,6 +16,7 @@
 package org.rappsilber.fdr.gui.components;
 
 import java.awt.Component;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -47,6 +48,8 @@ public class CSVSelection extends javax.swing.JPanel {
 
     private ArrayList<java.awt.event.ActionListener> m_actionlisteners = new ArrayList<ActionListener>();
 
+    private ArrayList<java.awt.event.ActionListener> m_addlisteners = new ArrayList<ActionListener>();
+    
     public String missingColumn = "!! !MISSING! !!";
     public String optionalColumn = "  OPTIONAL   ";
     public String[] csvColumns = new String[]{missingColumn};
@@ -227,7 +230,7 @@ public class CSVSelection extends javax.swing.JPanel {
         for (java.awt.event.ActionListener al : m_actionlisteners) 
             al.actionPerformed(null);
     }
-    
+
     public void addActionListener(java.awt.event.ActionListener al) {
         this.m_actionlisteners.add(al);
     }
@@ -236,6 +239,24 @@ public class CSVSelection extends javax.swing.JPanel {
     public void removeActionListener(java.awt.event.ActionListener al) {
         this.m_actionlisteners.remove(al);
     }
+
+
+    protected void doAddPerformed() {
+        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "file selected",Calendar.getInstance().getTimeInMillis(), 0);
+        for (java.awt.event.ActionListener al : m_addlisteners) 
+            al.actionPerformed(null);
+    }
+
+    
+    public void addAddListener(java.awt.event.ActionListener al) {
+        this.m_addlisteners.add(al);
+    }
+    
+
+    public void removeAddListener(java.awt.event.ActionListener al) {
+        this.m_addlisteners.remove(al);
+    }
+    
     
     public String getDelimiter() {
         return cbCSVDElimiter.getSelectedItem().toString();
@@ -282,7 +303,11 @@ public class CSVSelection extends javax.swing.JPanel {
         super.setEnabled(enabled);
         btnReadCsv.setEnabled(enabled);
     }
-    
+
+    public void setEnableAdd(boolean enabled) {
+        btnAddCSV.setEnabled(enabled);
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -307,6 +332,7 @@ public class CSVSelection extends javax.swing.JPanel {
         jLabel11 = new javax.swing.JLabel();
         btnReadCsv = new javax.swing.JButton();
         jLabel27 = new javax.swing.JLabel();
+        btnAddCSV = new javax.swing.JButton();
 
         cbCSVHeaders.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
@@ -402,6 +428,14 @@ public class CSVSelection extends javax.swing.JPanel {
 
         jLabel27.setText("Quote");
 
+        btnAddCSV.setText("Add");
+        btnAddCSV.setEnabled(false);
+        btnAddCSV.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAddCSVActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -409,35 +443,38 @@ public class CSVSelection extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(13, 13, 13)
-                        .addComponent(jLabel11))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel26)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(cbCSVDElimiter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel27)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(cbCSVQuote, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(ckCSVHasHeader))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGap(13, 13, 13)
+                                .addComponent(jLabel11))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel26)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(rbCSVLowBetter)
-                            .addComponent(rbCSVHighBetter))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnReadCsv, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(12, 12, 12))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(cbCSVDElimiter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jLabel27)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(cbCSVQuote, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(ckCSVHasHeader))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(rbCSVLowBetter)
+                                    .addComponent(rbCSVHighBetter)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(fbCsvIn, javax.swing.GroupLayout.DEFAULT_SIZE, 512, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(btnReadCsv, javax.swing.GroupLayout.DEFAULT_SIZE, 78, Short.MAX_VALUE)
+                            .addComponent(btnAddCSV, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(0, 8, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(fbCsvIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addContainerGap())))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane2)
+                        .addContainerGap()
+                        .addComponent(jScrollPane2)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -453,7 +490,8 @@ public class CSVSelection extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(21, 21, 21)
+                        .addComponent(btnAddCSV)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnReadCsv))
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jLabel26)
@@ -467,7 +505,7 @@ public class CSVSelection extends javax.swing.JPanel {
                             .addComponent(rbCSVLowBetter)
                             .addComponent(ckCSVHasHeader))))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 178, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 171, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -509,58 +547,62 @@ public class CSVSelection extends javax.swing.JPanel {
 
     private void btnReadCsvActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnReadCsvActionPerformed
 
-            boolean scoreSelected = false;
-            boolean peptide1ScoreSelected = false;
-            boolean peptide2ScoreSelected = false;
-            boolean psmidSelected = false;
-            boolean runSelected = false;
-            boolean scanSelected = false;
-        
-        
-            final TableModel tm = tblCSVColumns.getModel();
-            // check, whether we have all the neded columns
-            for (int r = 0; r < tm.getRowCount(); r++) {
-                if ((!Boolean.TRUE.equals(tm.getValueAt(r, 1))) && tm.getValueAt(r, 2) == missingColumn) {
-                    JOptionPane.showMessageDialog(this, "No column for " + tm.getValueAt(r, 0) + " selected", "Missing Column", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (tm.getValueAt(r, 0).toString().contentEquals("Peptide1 Score") && tm.getValueAt(r, 2) != optionalColumn) {
-                    peptide1ScoreSelected = true;
-                }
-                if (tm.getValueAt(r, 0).toString().contentEquals("Peptide2 Score") && tm.getValueAt(r, 2) != optionalColumn) {
-                    peptide2ScoreSelected = true;
-                }
-                if (tm.getValueAt(r, 0).toString().contentEquals("score") && tm.getValueAt(r, 2) != optionalColumn) {
-                    scoreSelected = true;
-                }
-                if (tm.getValueAt(r, 0).toString().contentEquals("run") && tm.getValueAt(r, 2) != optionalColumn) {
-                    runSelected = true;
-                }
-                if (tm.getValueAt(r, 0).toString().contentEquals("scan") && tm.getValueAt(r, 2) != optionalColumn) {
-                    scanSelected = true;
-                }
-                if (tm.getValueAt(r, 0).toString().contentEquals("psmid") && tm.getValueAt(r, 2) != optionalColumn) {
-                    psmidSelected = true;
-                }
-            }
-
-            if (!(scoreSelected || (peptide1ScoreSelected && peptide2ScoreSelected))) {
-                JOptionPane.showMessageDialog(this, "At least a PSM-level-score (Score-column) \n"
-                        + "or two peptide scores for a PSM is required.", "Missing Column", JOptionPane.WARNING_MESSAGE);
+            if (!testInput()) 
                 return;
-            }
-
-//            if (!(psmidSelected || (runSelected && scanSelected))) {
-//                JOptionPane.showMessageDialog(this, "We need at least a PSM-ID \n"
-//                        + "or run and Scan to uniqely identify a PSM.", "Missing Column", JOptionPane.WARNING_MESSAGE);
-//                return;
-//            }
         
         doActionPerformed();
     }//GEN-LAST:event_btnReadCsvActionPerformed
 
+    protected boolean testInput() throws HeadlessException {
+        boolean scoreSelected = false;
+        boolean peptide1ScoreSelected = false;
+        boolean peptide2ScoreSelected = false;
+        boolean psmidSelected = false;
+        boolean runSelected = false;
+        boolean scanSelected = false;
+        final TableModel tm = tblCSVColumns.getModel();
+        // check, whether we have all the neded columns
+        for (int r = 0; r < tm.getRowCount(); r++) {
+            if ((!Boolean.TRUE.equals(tm.getValueAt(r, 1))) && tm.getValueAt(r, 2) == missingColumn) {
+                JOptionPane.showMessageDialog(this, "No column for " + tm.getValueAt(r, 0) + " selected", "Missing Column", JOptionPane.WARNING_MESSAGE);
+                return true;
+            }
+            if (tm.getValueAt(r, 0).toString().contentEquals("Peptide1 Score") && tm.getValueAt(r, 2) != optionalColumn) {
+                peptide1ScoreSelected = true;
+            }
+            if (tm.getValueAt(r, 0).toString().contentEquals("Peptide2 Score") && tm.getValueAt(r, 2) != optionalColumn) {
+                peptide2ScoreSelected = true;
+            }
+            if (tm.getValueAt(r, 0).toString().contentEquals("score") && tm.getValueAt(r, 2) != optionalColumn) {
+                scoreSelected = true;
+            }
+            if (tm.getValueAt(r, 0).toString().contentEquals("run") && tm.getValueAt(r, 2) != optionalColumn) {
+                runSelected = true;
+            }
+            if (tm.getValueAt(r, 0).toString().contentEquals("scan") && tm.getValueAt(r, 2) != optionalColumn) {
+                scanSelected = true;
+            }
+            if (tm.getValueAt(r, 0).toString().contentEquals("psmid") && tm.getValueAt(r, 2) != optionalColumn) {
+                psmidSelected = true;
+            }
+        }
+        if (!(scoreSelected || (peptide1ScoreSelected && peptide2ScoreSelected))) {
+            JOptionPane.showMessageDialog(this, "At least a PSM-level-score (Score-column) \n"
+                    + "or two peptide scores for a PSM is required.", "Missing Column", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
+    private void btnAddCSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddCSVActionPerformed
+            if (!testInput()) return;
+
+            doAddPerformed();
+    }//GEN-LAST:event_btnAddCSVActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup bgScoreDirectionCSV;
+    private javax.swing.JButton btnAddCSV;
     private javax.swing.JButton btnReadCsv;
     private javax.swing.JComboBox cbCSVDElimiter;
     private javax.swing.JComboBox cbCSVHeaderOptional;
