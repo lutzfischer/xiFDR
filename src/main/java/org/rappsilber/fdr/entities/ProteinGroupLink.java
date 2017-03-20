@@ -193,7 +193,6 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
 
     public void add(ProteinGroupLink o) {
         double addScore = 0;
-        //throw new UnsupportedOperationException("Not supported yet.");
         if (o == this)
             return;
         if (runtoScan != null) {
@@ -219,7 +218,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
 
                 }
             }        
-            this.score = Math.sqrt(addScore + o.getScore() * o.getScore());
+            this.score = Math.sqrt(addScore + score* score);
         } else {
             support.addAll(o.getPeptidePairs());
             this.score = Math.sqrt(score*score + o.getScore() * o.getScore());
