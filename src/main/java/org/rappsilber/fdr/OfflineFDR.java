@@ -94,7 +94,7 @@ public abstract class OfflineFDR {
      */
     protected boolean PSMScoreHighBetter = true; 
     /** the version of xiFDR to be reported */
-    public static Version xiFDRVersion = new Version(1, 0, 14 );
+    public static Version xiFDRVersion = new Version(1, 0, 15 );
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -2832,7 +2832,7 @@ public abstract class OfflineFDR {
     }
 
     public String argDescription() {
-        return    "--lenghtgroups=A,B,C     how to group peptides by length\n"
+        return    "--lengthgroups=A,B,C     how to group peptides by length\n"
                 + "--psmfdr=X               the psm-fdr\n"
                 + "                         can either be a single value or \n"
                 + "                         a range (min,max,stepsize)\n"
@@ -3053,7 +3053,7 @@ public abstract class OfflineFDR {
 
         for (String arg : argv) {
 
-            if (arg.startsWith("--lenghtgroups=")) {
+            if (arg.startsWith("--lenghtgroups=") || arg.startsWith("--lengthgroups=")) {
 
                 String[] slen = arg.substring(arg.indexOf("=") + 1).trim().split(",");
                 lengthgroups = new int[slen.length];
