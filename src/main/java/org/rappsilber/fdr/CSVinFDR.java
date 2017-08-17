@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.utils.AutoIncrementValueMap;
+import static org.rappsilber.utils.StringUtils.sixDigits;
 import org.rappsilber.utils.UpdatableChar;
 
 /**
@@ -56,6 +57,9 @@ public class CSVinFDR extends OfflineFDR {
         new String[]{"peptide position 2","Start2"},
         new String[]{"peptide1 score","Pep1Score"},
         new String[]{"peptide2 score","Pep2Score"},
+        new String[]{"experimental mz","expMZ"},
+        new String[]{"calculated mass","calcMass"},
+        new String[]{"info","info"},
     };
     
     public CSVinFDR() {
@@ -65,7 +69,48 @@ public class CSVinFDR extends OfflineFDR {
         super(peptideLengthGroups);
     }
     
+
     
+    @Override
+    protected ArrayList<String> getPSMHeader() {
+        ArrayList<String> ret = super.getPSMHeader();
+//        String header = "PSMID" + seperator + "run" + seperator + "scan" 
+//                + seperator + "exp charge"  + seperator + "exp m/z" + seperator + "exp mass" + seperator + "exp fractionalmass" 
+//                + seperator + "match charge" + seperator + "match mass" + seperator + "match fractionalmass"   
+//                
+//                + seperator + "Protein1" + seperator + "Description1" + seperator + "Decoy1" + seperator + "Protein2" + seperator + "Description2" + seperator + "Decoy2" + seperator + "Peptide1" + seperator + "Peptide2" + seperator + "PeptidePosition1" + seperator + "PeptidePosition2" + seperator + "PeptideLength1" + seperator + "PeptideLength2" + seperator + "fromSite" + seperator + "ToSite" + seperator + "Charge" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr" + seperator + "" + seperator + "PeptidePairFDR" + seperator + "Protein1FDR" + seperator + "Protein2FDR" + seperator + "LinkFDR" + seperator + "PPIFDR" + seperator + seperator + "peptide pair id" + seperator + "link id" + seperator + "ppi id";
+        ret.add(2, "exp charge");
+        ret.add(3, "exp m/z");
+        ret.add(4, "exp mass");
+        ret.add(5, "exp fractionalmass");
+        ret.add(6, "match charge");
+        ret.add(7,  "match mass");
+        ret.add(8, "match fractionalmass");
+        return ret;
+    }
+
+    
+    protected ArrayList<String> getPSMOutputLine(PSM pp) {
+        ArrayList<String> ret = super.getPSMOutputLine(pp);
+
+        double mz = pp.getExperimentalMZ();
+        int charge = pp.getCharge();
+        double mass = (mz-1.00727646677)*charge;
+        double fraction = mass-Math.floor(mass);
+        double calcfraction = pp.getCalcMass()-Math.floor(pp.getCalcMass());
+
+        
+        ret.add(2,""+ charge);
+        ret.add(3, sixDigits.format(mz));
+        ret.add(4, sixDigits.format(mass));
+        ret.add(5, sixDigits.format(fraction));
+        ret.add(6,""+ pp.getMatchedCharge());
+        ret.add(7,  sixDigits.format(pp.getCalcMass()));
+        ret.add(8, sixDigits.format(calcfraction));
+        
+
+        return ret;
+    }    
     
 
     public void readCSV(File f) throws FileNotFoundException, IOException, ParseException  {
@@ -100,6 +145,9 @@ public class CSVinFDR extends OfflineFDR {
         Integer cPepScore1 = csv.getColumn("peptide1 score");
         Integer cPepScore2 = csv.getColumn("peptide2 score");
         Integer cCrosslinker = csv.getColumn("crosslinker");
+        Integer cExpMZ = csv.getColumn("experimental mz");
+        Integer cCalcMass = csv.getColumn("calculated mass");
+        Integer cInfo = csv.getColumn("info");
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
@@ -260,6 +308,8 @@ public class CSVinFDR extends OfflineFDR {
             for (int i = 0; i<pepPositions2.length; i++) {
                 ipeppos2[i] = Integer.parseInt(pepPositions2[i]);
             }
+            
+            
             PSM psm = null;
             for (int p1 = 0; p1< accessions1.length; p1++) {
                 for (int p2 = 0; p2< accessions2.length; p2++) {
@@ -272,6 +322,18 @@ public class CSVinFDR extends OfflineFDR {
                             accessions1[p1], descriptions1[p1], accessions2[p2],
                             descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
                             scoreRatio, false,crosslinker,run,scan);
+
+                    // read exp- and calc-mass
+                    if (cCalcMass != null) {
+                        psm.setCalcMass(csv.getDouble(cCalcMass));
+                    }
+                    if (cExpMZ != null) {
+                        psm.setExperimentalMZ(csv.getDouble(cExpMZ));
+                    }
+
+                    if (cInfo != null) {
+                        psm.setInfo(csv.getValue(cInfo));
+                    }
 //    public PSM          addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
 
                 }
@@ -324,6 +386,9 @@ public class CSVinFDR extends OfflineFDR {
                 + "                             peptide1 score (optional)\n"
                 + "                             peptide2 score (optional)\n"
                 + "                             crosslinker (optional)\n"
+                + "                             calculated mass (optional)\n"
+                + "                             experimental mz (optional)\n"
+                + "                             info (optional)\n"
                 + "                         either run and scan numebr must\n"
                 + "                         or psmid needs to be specified\n "
                 + "                         Example:\n "

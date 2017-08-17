@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.RandomAccess;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.rappsilber.data.csv.CSVRandomAccess;
@@ -37,6 +38,7 @@ import org.rappsilber.fdr.entities.ProteinGroupDirectionalPair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.entities.Site;
+import org.rappsilber.fdr.entities.UniquePSM;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.result.FDRResultLevel;
@@ -62,7 +64,7 @@ public abstract class OfflineFDR {
     /**
      * store all psm
      */
-    SelfAddHashSet<PSM> allPSMs = new SelfAddHashSet<PSM>();
+    protected SelfAddHashSet<PSM> allPSMs = new SelfAddHashSet<PSM>();
 
     /**
      * store all peptide pairs
@@ -94,7 +96,7 @@ public abstract class OfflineFDR {
      */
     protected boolean PSMScoreHighBetter = true; 
     /** the version of xiFDR to be reported */
-    public static Version xiFDRVersion = new Version(1, 0, 15 );
+    private static Version xiFDRVersion;
     private int minPepPerProteinGroup = 1;
     private int minPepPerProteinGroupLink = 1;
     private int minPepPerProteinGroupPair = 1;
@@ -129,6 +131,18 @@ public abstract class OfflineFDR {
     
     public int commandlineFDRDigits = 2;
     private boolean uniquePSMs = true;
+
+    /**
+     * We normalize psm-scores by median and MAD - but to go around some quirks 
+     * of our score propagation scores then get shifted so that the lowest score 
+     * is around one.
+     */
+    private double psmNormOffset=0;
+    
+    /**
+     * indicates, whether the psms went through a score normalisation
+     */
+    private boolean isNormalized = false;
     
 
     /**
@@ -160,8 +174,15 @@ public abstract class OfflineFDR {
      * A = B instead of A.equals(B) 
      */
     HashMap<String,String> foundCrossLinker = new HashMap<>();
+    /**
+     * I filter the run names through this hashmap, ensuring I have 
+     * only one string instance per run.
+     * That way comparison of runs can be reduced to
+     * A = B instead of A.equals(B) 
+     */
     HashMap<String,String> foundRuns = new HashMap<>();
-    
+    HashMap<String,Integer> runToInt = new HashMap<>();
+    ArrayList<String> runs = new ArrayList<>();
     
     /**
      * @return the uniquePSMs
@@ -211,6 +232,61 @@ public abstract class OfflineFDR {
     public OfflineFDR(int[] peptideLengthGroups) {
         PeptidePair.setLenghtGroup(peptideLengthGroups);
     }
+    
+    
+    
+    public void normalizePSMs() {
+        DoubleArrayList scores = new DoubleArrayList(allPSMs.size()/2);
+        int c=0;
+        double minScore = scores.getDouble(0);
+        
+        for (PSM p : allPSMs) {
+            double s = p.getScore();
+            if (p.isDecoy())
+                scores.add(s);
+            if (s<minScore)
+                minScore=s;
+        }
+        Collections.sort(scores);
+        
+        double median=(scores.get(scores.size()/2)+scores.get((scores.size()-1)/2))/2;
+        for (c=scores.size(); c>=0;--c) {
+            scores.set(c, Math.abs(scores.get(c)-median));
+        }
+        Collections.sort(scores);
+        double mad = (scores.get(scores.size()/2)+scores.get((scores.size()-1)/2))/2;
+        
+        double offset=1-(minScore-median)/mad;
+        psmNormOffset=offset;
+        for (PSM p : allPSMs) {
+            p.setScore((p.getScore()-median)/mad+offset);
+        }
+        
+        setNormalized(true);
+    }
+    
+    /**
+     * add a list of independently normalised psms to the current list of psms
+     * @param psms  list of psms
+     * @param offset the offset applied to this list
+     */
+    public void addNormalisedPsmList(SelfAddHashSet<PSM> psms, double offset) {
+        double offsetdiff = psmNormOffset-offset;
+        //make sure we shift the normalised median to the same place for both lists
+        if (offsetdiff<0) {
+            for (PSM p : allPSMs) {
+                p.setScore(p.getScore()-offsetdiff);
+            }
+            this.psmNormOffset-=offsetdiff;
+        } else if (offsetdiff >0) {
+            for (PSM p : psms) {
+                p.setScore(p.getScore()+offsetdiff);
+            }
+        }
+        
+        allPSMs.addAll(psms);
+    }
+    
     
     
     protected void levelSummary(PrintWriter summaryOut, String pepheader, FDRResultLevel level, String seperator, HashMap<Integer, String> groups) {
@@ -423,14 +499,9 @@ public abstract class OfflineFDR {
         PSM psm = new PSM(psmID, npepid1, npepid2, nsite1, nsite2, proteinId1.isDecoy(), proteinId2.isDecoy(), charge, score, nScoreRatio);
         psm.setSpecialcase(isSpecialCase);
         
-        // ensure we have just a single instance of a string for each cross-linker and run
-        // speeds up comparisons later
-        String r = foundRuns.get(run);
-        if (r == null) {
-            psm.setRun(run);
-            foundRuns.put(run, run);
-        } else
-            psm.setRun(r);
+ 
+
+        psm.setRun(registerRun(run));
         if (crosslinker == null) 
             crosslinker= "";
         
@@ -443,9 +514,22 @@ public abstract class OfflineFDR {
         psm.setScan(Scan);
 
 
-        PSM regpsm = allPSMs.register(psm);
+        PSM regpsm = getAllPSMs().register(psm);
 
         return regpsm;
+    }
+
+    protected String registerRun(String run) {
+        // ensure we have just a single instance of a string for each cross-linker and run
+        // speeds up comparisons later
+        String r = foundRuns.get(run);
+        if (r == null) {
+            r = run;
+            foundRuns.put(run, run);
+            runToInt.put(run, runs.size());
+            runs.add(run);
+        }
+        return r;
     }
 
     
@@ -530,73 +614,55 @@ public abstract class OfflineFDR {
         GroupedFDRs.isDirectional = false;
         reset();
         result.uniquePSMs = filterUnique;
-//        psmFDRGroupsInput = new HashMap<Integer, Integer>();
-//        nextFdrPSM = new HashMap<Integer, Double>();
-//        countFdrPSM = new HashMap<Integer, Integer>();
 
         Collection<PSM> inputPSM;
         
         if (m_maximumProteinAmbiguity >0 && m_minPepLength ==0) {
-            inputPSM = new ArrayList<PSM>(allPSMs.size());
-            for (PSM p : allPSMs) {
-                if (p.getPeptide1().getProteins().size() <= m_maximumProteinAmbiguity &&
+            inputPSM = new ArrayList<PSM>(getAllPSMs().size());
+            for (PSM p : getAllPSMs()) {
+                if (p.getScore()>0 && p.getPeptide1().getProteins().size() <= m_maximumProteinAmbiguity &&
                         p.getPeptide2().getProteins().size() <= m_maximumProteinAmbiguity) {
                     inputPSM.add(p);
                 }
             }
         } else if (m_maximumProteinAmbiguity >0 && m_minPepLength > 0) {
-            inputPSM = new ArrayList<PSM>(allPSMs.size());
-            for (PSM p : allPSMs) {
+            inputPSM = new ArrayList<PSM>(getAllPSMs().size());
+            for (PSM p : getAllPSMs()) {
                 Peptide pep1 = p.getPeptide1();
                 Peptide pep2 = p.getPeptide2();
                 
-                if (pep1.getProteins().size() <= m_maximumProteinAmbiguity &&
+                if (p.getScore()>0 && pep1.getProteins().size() <= m_maximumProteinAmbiguity &&
                         pep2.getProteins().size() <= m_maximumProteinAmbiguity && 
                         pep1.length() >=m_minPepLength  && (pep2 == Peptide.NOPEPTIDE || pep2.length() >=m_minPepLength || pep2.getSequence().matches("(-\\.)?X-?[0-9\\.]+(\\.-)?")) ) {
                     inputPSM.add(p);
                 }
             }
         } else if (m_minPepLength > 0) {
-            inputPSM = new ArrayList<PSM>(allPSMs.size());
-            for (PSM p : allPSMs) {
-                Peptide pep1 = p.getPeptide1();
-                Peptide pep2 = p.getPeptide2();
-                
-                if (pep1.length() >=m_minPepLength  && (pep2 == Peptide.NOPEPTIDE || pep2.length() >=m_minPepLength || pep2.getSequence().matches("(-\\.)?X-?[0-9\\.]+(\\.-)?"))) {
-                    inputPSM.add(p);
+            inputPSM = new ArrayList<PSM>(getAllPSMs().size());
+            for (PSM p : getAllPSMs()) {
+                if (p.getScore()>0) {
+                    Peptide pep1 = p.getPeptide1();
+                    Peptide pep2 = p.getPeptide2();
+
+                    if (pep1.length() >=m_minPepLength  && (pep2 == Peptide.NOPEPTIDE || pep2.length() >=m_minPepLength || pep2.getSequence().matches("(-\\.)?X-?[0-9\\.]+(\\.-)?"))) {
+                        inputPSM.add(p);
+                    }
                 }
             }
         } else {
-            inputPSM = allPSMs;
+            inputPSM = new ArrayList<PSM>(getAllPSMs().size());
+            for (PSM p : getAllPSMs()) {
+                if (p.getScore()>0) {
+                    inputPSM.add(p);
+                }
+            }
         }
         
         if (filterUnique) {
-            HashMap<String,PSM> uniquePSM = new HashMap<String,PSM>();
-            for (PSM psm : inputPSM) {
-                String key = psm.getPeptide1().getSequence() + "_!xl!_" 
-                        + psm.getPeptide2().getSequence() + "_!xl!_" 
-                        + psm.getPeptideLinkSite1() + "_!xl!_" 
-                        + psm.getPeptideLinkSite2() + "_!xl!_" 
-                        + psm.getCharge();
-                PSM stored = uniquePSM.get(key);
-                if (stored != null) {
-                    if (stored.getScore()< psm.getScore())
-                        uniquePSM.put(key, psm);
-                } else if (!isPsm_directional()) {
-                    key = psm.getPeptide2().getSequence() + "_!xl!_" 
-                                            + psm.getPeptide1().getSequence() + "_!xl!_" 
-                                            + psm.getPeptideLinkSite2() + "_!xl!_" 
-                                            + psm.getPeptideLinkSite1() + "_!xl!_" 
-                                            + psm.getCharge();
-                    stored = uniquePSM.get(key);
-                    if (stored != null) {
-                        if (stored.getScore()< psm.getScore())
-                            uniquePSM.put(key, psm);
-                    } else
-                        uniquePSM.put(key, psm);
-                }
-            }
-            inputPSM = new ArrayList<PSM>(uniquePSM.values());
+            SelfAddHashSet<PSM> uniquePSM = new SelfAddHashSet<PSM>();
+            for (PSM psm : inputPSM) 
+                uniquePSM.add(new  UniquePSM(psm));
+            inputPSM = new ArrayList<PSM>(uniquePSM);
         }
         
         
@@ -624,9 +690,6 @@ public abstract class OfflineFDR {
         FDRResultLevel<PeptidePair> GroupedFDRs = new FDRResultLevel<PeptidePair>();
         GroupedFDRs.isDirectional = directional;
     
-//        pepFDRGroupsInput = new HashMap<Integer, Integer>();
-//        nextFdrPep = new HashMap<Integer, Double>();
-//        countFdrPep = new HashMap<Integer, Integer>();
         SelfAddHashSet<PeptidePair> psmPeps = new SelfAddHashSet<PeptidePair>();
         if (!directional) {
             for (PSM psm : psms) {
@@ -639,9 +702,7 @@ public abstract class OfflineFDR {
             }
         }
             
-        //fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, true, setElementFDR, directional,result.scaleByLinkedNess);
         fdr(fdr, safetyFactor, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, directional);
-        //fdrPeptidePairs = fdr(fdr, safetyFactor, psmPeps, nextFdrPep, pepFDRGroupsInput, countFdrPep, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR);
         for (SubGroupFdrInfo sg : GroupedFDRs.getGroups())
             sg.fdrGroupName = PeptidePair.getFDRGroupName(sg.fdrGroup);
 
@@ -964,7 +1025,7 @@ public abstract class OfflineFDR {
         reset();
 
    
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO,"Input PSM :" + allPSMs.size() + "\n calculation psm-fdr");
+        Logger.getLogger(this.getClass().getName()).log(Level.INFO,"Input PSM :" + getAllPSMs().size() + "\n calculation psm-fdr");
         calculatePSMFDR(psmFDR, safetyFactor, ignoreGroups,setElementFDR,result, isPsm_directional(), filterToUniquePSM);
 
         
@@ -1150,7 +1211,7 @@ public abstract class OfflineFDR {
     public String summaryString(FDRResult result) {
         StringBuffer sb = new StringBuffer();
         sb.append("Input PSMs:");
-        sb.append(allPSMs.size());
+        sb.append(getAllPSMs().size());
         sb.append(";  FDR PSM:");
         sb.append(result.psmFDR.getResultCount());
         sb.append(";  FDR PeptidePairs:");
@@ -1165,7 +1226,7 @@ public abstract class OfflineFDR {
     }
 
     public Collection<PSM> getInputPSMs() {
-        return allPSMs;
+        return getAllPSMs();
     }
 
     public void writeFiles(String path, String baseName, String seperator, FDRResult result) throws FileNotFoundException {
@@ -1587,7 +1648,7 @@ public abstract class OfflineFDR {
                 + seperator + "\"Between TT\"" + seperator + "\"Between TD\"" + seperator + "\"Between DD\""
                 + seperator + "\"Linear T\"" + seperator + "\"Linear D\"");
 
-        summaryOut.println("\"Input PSMs\"" + seperator + "" + allPSMs.size());
+        summaryOut.println("\"Input PSMs\"" + seperator + "" + getAllPSMs().size());
 
         summaryOut.println("\"fdr PSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
                 + seperator + psmBetweenTT + seperator + psmBetweenTD + seperator + psmBetweenDD
@@ -3298,7 +3359,7 @@ public abstract class OfflineFDR {
         m_XLPSMCount = null;
 
 
-        for (PSM psm : allPSMs) {
+        for (PSM psm : getAllPSMs()) {
             psm.setFDRGroup();
             psm.setFDR(Double.MAX_VALUE);
             psm.setFdrPeptidePair(null);
@@ -3394,11 +3455,11 @@ public abstract class OfflineFDR {
         return new ArrayList<String>(RArrayUtils.toCollection(line));
     }
 
-    protected String getPSMHeader(String seperator) {
+    protected <T extends RandomAccess & Collection> String getPSMHeader(String seperator) {
         return RArrayUtils.toString(getPSMHeader(), seperator);
     }
     
-    protected ArrayList<String> getPSMHeader() {
+    protected  <T extends RandomAccess & Collection> ArrayList<String> getPSMHeader() {
         return new ArrayList<String>(RArrayUtils.toCollection(new String[]{ "PSMID" , "run" , "scan"  , "Protein1" , "Description1" 
                 , "Decoy1" , "Protein2" , "Description2" , "Decoy2" 
                 , "PepSeq1" , "PepSeq2" , "PepPos1" , "PepPos2" 
@@ -3406,12 +3467,12 @@ public abstract class OfflineFDR {
                 , "ProteinLinkPos1" , "ProteinLinkPos2" , "Charge" , "Crosslinker", "Score" 
                 , "isDecoy" , "isTT" , "isTD" , "isDD" , "fdrGroup" , "fdr" 
                 , "" , "PeptidePairFDR" , "Protein1FDR" , "Protein2FDR" 
-                , "LinkFDR" , "PPIFDR" , ""
+                , "LinkFDR" , "PPIFDR"
                 , "peptide pair id" , "link id" , "ppi id"}));
     }
     
     protected ArrayList<String> getXLPepsHeader() {
-        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{
+        ArrayList<String> ret = new ArrayList<String>(RArrayUtils.toCollection(new String[]{
             "PeptidePairID", 
             "PSMIDs", 
             "Protein1", 
@@ -3443,6 +3504,10 @@ public abstract class OfflineFDR {
             "",
             "link id" ,
             "ppi id"}));
+        for (String r : runs) {
+            ret.add( r ); 
+        }        
+        return ret;
     }
     
     protected String getXLPepsHeader(String seperator) {
@@ -3453,7 +3518,25 @@ public abstract class OfflineFDR {
         return RArrayUtils.toString(getLinearPepsHeader(),seperator);
     }
     protected ArrayList<String> getLinearPepsHeader() {
-        return new ArrayList<String>(RArrayUtils.toCollection(new String[]{ "PeptidePairID" , "PSMIDs" , "Protein"  , "Description" , "Decoy" , "Peptide" , "psmID" , "Score" , "isDecoy" , "fdrGroup" , "fdr" , "" , "ProteinFDR"}));
+        ArrayList<String> ret = new ArrayList<>();
+        ret.add("PeptidePairID");
+        ret.add("PSMIDs");
+        ret.add("Protein");
+        ret.add("Description");
+        ret.add("Decoy");
+        ret.add("Peptide");
+        ret.add("psmID");
+        ret.add("Score");
+        ret.add("isDecoy");
+        ret.add("fdrGroup");
+        ret.add("fdr");
+        ret.add("");
+        ret.add("ProteinFDR");
+        for (String r : runs) {
+            ret.add( r ); 
+        }
+        
+        return ret;
     }
     
     
@@ -3465,7 +3548,7 @@ public abstract class OfflineFDR {
         String[] psmids = pp.getPSMids();
         ProteinGroup pg1 = pp.getPeptide1().getProteinGroup();
         ArrayList<String> ret =new ArrayList<String>();
-        
+
         //           "ID" + "PSMIDs" + "Protein" + "Decoy" +  "Peptide" +  "psmID" + "Score" + "isDecoy" + "fdrGroup" + "fdr" +  + "ProteinFDR");
         ret.add(Integer.toString(pp.getPeptidePairID())); 
         ret.add( RArrayUtils.toString(psmids, ";"));
@@ -3480,6 +3563,27 @@ public abstract class OfflineFDR {
         ret.add( Double.toString(pp.getFDR()));
         ret.add( "");
         ret.add( (pp.getFdrProteinGroup1() == null ? "" : Double.toString(pp.getFdrProteinGroup1().getFDR())));
+
+        HashSet<String> linkRuns = new HashSet<>();
+        HashMap<String,Double> runScore = new HashMap<>();
+
+        for (PSM psm : pp.getAllPSMs()) {
+            if (psm instanceof UniquePSM) {
+                for (PSM upsm : (UniquePSM) psm)
+                    psmToRun(upsm, linkRuns, runScore);
+            } else {
+                psmToRun(psm, linkRuns, runScore);
+            }
+        }
+        
+        for (String r : runs) {
+            Double d=runScore.get(r); 
+            if (d==null) {
+                ret.add("");
+            } else {
+                ret.add(d.toString());
+            }
+        }          
         return ret;
     }
 
@@ -3525,6 +3629,28 @@ public abstract class OfflineFDR {
         ret.add( ""+ppi.getFDR()  ); 
         ret.add(""); ret.add(""+l.getLinkID()  ); 
         ret.add( ""+ppi.getProteinGroupPairID());
+        
+        HashSet<String> linkRuns = new HashSet<>();
+        HashMap<String,Double> runScore = new HashMap<>();
+
+        for (PSM psm : pp.getAllPSMs()) {
+            if (psm instanceof UniquePSM) {
+                for (PSM upsm : (UniquePSM) psm)
+                    psmToRun(upsm, linkRuns, runScore);
+            } else {
+                psmToRun(psm, linkRuns, runScore);
+            }
+        }
+        
+        for (String r : runs) {
+            Double d=runScore.get(r); 
+            if (d==null) {
+                ret.add("");
+            } else {
+                ret.add(d.toString());
+            }
+        }          
+        
         return ret;
     }
 
@@ -3535,6 +3661,10 @@ public abstract class OfflineFDR {
     protected ArrayList<String> getLinkOutputLine(ProteinGroupLink l) {
         int[] pepids = l.getPeptidePairIDs();
         String[] psmids = l.getPSMIDs();
+        HashSet<String> linkRuns = new HashSet<>();
+        HashMap<String,Double> runScore = new HashMap<>();
+        
+        
         ProteinGroupPair ppi = l.getFdrPPI();
         double top_pepfdr = Double.MAX_VALUE;
         double top_psmfdr = Double.MAX_VALUE;
@@ -3547,6 +3677,14 @@ public abstract class OfflineFDR {
             for (PSM psm : pp.getTopPSMs()) {
                 if (psm.getFDR() < top_psmfdr) {
                     top_psmfdr = psm.getFDR();
+                }
+            }
+            for (PSM psm : pp.getAllPSMs()) {
+                if (psm instanceof UniquePSM) {
+                    for (PSM upsm : (UniquePSM) psm)
+                        psmToRun(upsm, linkRuns, runScore);
+                } else {
+                    psmToRun(psm, linkRuns, runScore);
                 }
             }
         }
@@ -3575,6 +3713,14 @@ public abstract class OfflineFDR {
         ret.add("" +  pepids.length  ); 
         ret.add( l.getFDRGroupName()  ); 
         ret.add("" +  l.getFDR()  ); 
+        for (String r : runs) {
+            Double d=runScore.get(r); 
+            if (d==null) {
+                ret.add("");
+            } else {
+                ret.add(d.toString());
+            }
+        }        
         ret.add( ""  ); 
         ret.add("" +  l.getProteinGroup1().getFDR()  ); 
         ret.add("" +  l.getProteinGroup2().getFDR()  ); 
@@ -3587,15 +3733,26 @@ public abstract class OfflineFDR {
         return ret;
     }
 
+    private void psmToRun(PSM psm, HashSet<String> linkRuns, HashMap<String, Double> runScore) {
+        String r = psm.getRun();
+        linkRuns.add(r);
+        Double d = runScore.get(r);
+        if (d == null || d < psm.getScore()) {
+            runScore.put(r, psm.getScore());
+        }
+    }
+
     protected String getLinkOutputHeader(String seperator) {
         return RArrayUtils.toString(getLinkOutputHeader(), seperator);
     }
-    
+
+
     protected ArrayList<String> getLinkOutputHeader() {
         ArrayList<String>ret = new ArrayList<String>();
         ret.add("LinkID" ); 
         ret.add( "PeptidePairIDs" ); 
         ret.add( "PSMIDs" ); 
+        ret.add( "Runs" ); 
         ret.add( "Protein1" ); 
         ret.add( "Description1" ); 
         ret.add( "Decoy1" ); 
@@ -3614,6 +3771,11 @@ public abstract class OfflineFDR {
         ret.add( "count peptide pairs" ); 
         ret.add( "fdrGroup" ); 
         ret.add( "fdr" ); 
+
+        for (String r : runs) {
+            ret.add( r ); 
+        }
+
         ret.add( "" ); 
         ret.add( "Protein1FDR" ); 
         ret.add( "Protein2FDR" ); 
@@ -3798,5 +3960,73 @@ public abstract class OfflineFDR {
 
 
         return psm;
+    }
+
+    /**
+     * @return the allPSMs
+     */
+    public SelfAddHashSet<PSM> getAllPSMs() {
+        return allPSMs;
+    }
+
+    /**
+     * @param allPSMs the allPSMs to set
+     */
+    public void setAllPSMs(SelfAddHashSet<PSM> allPSMs) {
+        this.allPSMs = allPSMs;
+    }
+
+    /**
+     * indicates, whether the psms went through a score normalisation
+     * @return the isNormalized
+     */
+    public boolean isNormalized() {
+        return isNormalized;
+    }
+
+    /**
+     * indicates, whether the psms went through a score normalisation
+     * @param isNormalized the isNormalized to set
+     */
+    public void setNormalized(boolean isNormalized) {
+        this.isNormalized = isNormalized;
+    }
+
+    /**
+     * We normalize psm-scores by median and MAD - but to go around some quirks
+     * of our score propagation scores then get shifted so that the lowest score
+     * is around one.
+     * @return the psmNormOffset
+     */
+    public double getPsmNormalizationOffset() {
+        return psmNormOffset;
+    }
+
+    /**
+     * We normalize psm-scores by median and MAD - but to go around some quirks
+     * of our score propagation scores then get shifted so that the lowest score
+     * is around one.
+     * @param psmNormOffset the psmNormOffset to set
+     */
+    public void setPsmNormalizationOffset(double psmNormOffset) {
+        this.psmNormOffset = psmNormOffset;
+    }
+
+    /**
+     * the version of xiFDR to be reported
+     * @return the xiFDRVersion
+     */
+    public static Version getXiFDRVersion() {
+        if (xiFDRVersion == null)
+            xiFDRVersion = Version.parseEmbededVersion("xifdrproject.properties", "xifdr.version");
+        return xiFDRVersion;
+    }
+
+    /**
+     * the version of xiFDR to be reported
+     * @param aXiFDRVersion the xiFDRVersion to set
+     */
+    public static void setXiFDRVersion(Version aXiFDRVersion) {
+        xiFDRVersion = aXiFDRVersion;
     }
 }
