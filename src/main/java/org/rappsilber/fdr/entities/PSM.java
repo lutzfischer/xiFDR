@@ -113,6 +113,10 @@ public class PSM extends AbstractFDRElement<PSM> {
     public ProteinGroup fdrProteinGroup1 = null;
     /** protein group for the second peptide */
     public ProteinGroup fdrProteinGroup2 = null;
+    /**
+     * arbitrary additional informations - will be written out to csv-files unquoted
+     */
+    private String   info=null;
     /** 
      * Is this a special case. E.g. PSMs that where matched with unknown 
      * charge-state have a inherently higher chance to be wrong. Therefore it
@@ -121,7 +125,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     private boolean specialcase = false;
     
     
-    private static String nolinker = "";
+    private final static String nolinker = "";
     
     /**
      * The cross-linker for this match
@@ -138,7 +142,8 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private static HashMap<String,String> allLinker = new HashMap<String, String>();
 
-    
+    private double preNormalisedScore;
+
     /**
      * creates a new instance of a PSM.
      * @param psmID a unique ID for the PSM (e.g. used when a CSV-file contains 
@@ -187,7 +192,6 @@ public class PSM extends AbstractFDRElement<PSM> {
         
         this.pepsite1 = site1;
         this.pepsite2 = site2;
-        this.score = score * score;
         this.isDecoy1 = isDecoy1;
         this.isDecoy2 = isDecoy2;
         if (isDecoy1) {
@@ -203,6 +207,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         }
         this.charge = charge;
         this.score = score;
+        this.preNormalisedScore = score;
         this.scoreRatio = scoreRatio;
         this.peptide1 = peptide1;
         this.peptide2 = peptide2;
@@ -392,6 +397,13 @@ public class PSM extends AbstractFDRElement<PSM> {
         return score;
     }
 
+    /**
+     * @return the score
+     */
+    public void setScore(double score) {
+        this.score = score;
+    }
+    
     /**
      * @return the precursor charge state of the PSM
      */
@@ -853,6 +865,34 @@ public class PSM extends AbstractFDRElement<PSM> {
         }
 
         this.crosslinker = prevXL;
+    }
+
+    /**
+     * @return the info
+     */
+    public String getInfo() {
+        return info;
+    }
+
+    /**
+     * @param info the info to set
+     */
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
+    /**
+     * @return the normScore
+     */
+    public double getNonnormalizedScore() {
+        return preNormalisedScore;
+    }
+
+    /**
+     * @param normScore the normScore to set
+     */
+    public void setNonnormalizedScore(double score) {
+        this.preNormalisedScore = score;
     }
     
 }

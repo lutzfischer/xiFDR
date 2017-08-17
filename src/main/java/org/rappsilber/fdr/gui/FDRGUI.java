@@ -113,7 +113,7 @@ public class FDRGUI extends javax.swing.JFrame {
         
         
         this.setTitle("");   
-        txtXiFDRVersion.setText(OfflineFDR.xiFDRVersion.toString());
+        txtXiFDRVersion.setText(OfflineFDR.getXiFDRVersion().toString());
         //tpInput.removeTabAt(0);
         tblPepLength.getModel().addTableModelListener(new AutoAddTableModelListener());
 
@@ -238,7 +238,7 @@ public class FDRGUI extends javax.swing.JFrame {
     
     
     public void setTitle(String title) {
-        super.setTitle("xiFDR (" + OfflineFDR.xiFDRVersion + ")" + title);
+        super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ")" + title);
         
     }
     

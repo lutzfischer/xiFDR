@@ -70,7 +70,7 @@ public class MZIdentXLFDR extends OfflineFDR {
     private MzIdentMLUnmarshaller unmarshaller;
     //private URL xmlFileURL = JmzIdentMLParser.class.getClassLoader().getResource("CPTAC_Progenesis_Identifications.mzid");
     //private URL xmlFileURL = JmzIdentMLParser.class.getClassLoader().getResource("55merge_mascot_full.mzid");
-    private String xmlFile = "resources/55merge_mascot_full.mzid";
+    private String xmlFile;
     private List<String> peptideList = new ArrayList();
     private List<String> dbSequenceList = new ArrayList();
     private List<String> matrix = new ArrayList();
@@ -90,8 +90,8 @@ public class MZIdentXLFDR extends OfflineFDR {
     private HashMap<String, ArrayList<SpectrumIdentificationItem>> PSMidToCrosslinkedPSM = new HashMap<String, ArrayList<SpectrumIdentificationItem>>();
     private HashMap<String, uk.ac.ebi.jmzidml.model.mzidml.Peptide> peptideIdHashMap = new HashMap<String, uk.ac.ebi.jmzidml.model.mzidml.Peptide>();
     private ArrayList<SpectrumIdentificationItem> linearPSM = new ArrayList<SpectrumIdentificationItem>();
-    private List<ProteinDetectionHypothesis> proteinDetectionHypothesisList = new ArrayList<ProteinDetectionHypothesis>();
-    private List<ProteinAmbiguityGroup> proteinAmbiguityGroupList = new ArrayList<ProteinAmbiguityGroup>();
+//    private List<ProteinDetectionHypothesis> proteinDetectionHypothesisList = new ArrayList<ProteinDetectionHypothesis>();
+//    private List<ProteinAmbiguityGroup> proteinAmbiguityGroupList = new ArrayList<ProteinAmbiguityGroup>();
     private ArrayList<SpectrumIdentificationResult> sirList = new ArrayList();
     
     ProteinDetectionList proteinDetectionList = new ProteinDetectionList();
@@ -746,7 +746,7 @@ public class MZIdentXLFDR extends OfflineFDR {
             xiUP.setName("XiFDR");
             xiNameParam.setParam(xiUP);
             asXi.setSoftwareName(xiNameParam);
-            asXi.setVersion(OfflineFDR.xiFDRVersion.toString());
+            asXi.setVersion(OfflineFDR.getXiFDRVersion().toString());
             
             if (analysisSoftwareList != null) {
                 analysisSoftwareList.getAnalysisSoftware().add(asXi);
