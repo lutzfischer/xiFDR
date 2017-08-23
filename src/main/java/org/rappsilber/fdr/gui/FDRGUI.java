@@ -234,8 +234,43 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
         
+        fbFolder.addActionListener(new ActionListener() {
+            public boolean setting = false;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (setting)
+                    return;
+                setting =true;
+                String filename = fbFolder.getText();
+                File file = new File(filename);
+                String name = file.getName();
+                String extension="";
+                if (name.contains(".")) {
+                    if (name.toLowerCase().endsWith(".tsv") ||
+                            name.toLowerCase().endsWith(".txt")) {
+                        rbTSV.setSelected(true);
+                    } else if (name.toLowerCase().endsWith(".csv")) {
+                        rbCSV.setSelected(true);
+                    }
+                    extension=name.substring(name.lastIndexOf("."));
+                }
+                String folder = file.getParent();
+                String basename = name.replaceAll("\\.[^\\.]*$", "");
+                if (basename.matches("^.*_[^_]*_xiFDR.*$")) {
+                    basename = basename.substring(0, basename.indexOf("_xiFDR"));
+                    if (basename.contains("_Linear_"))
+                        basename = basename.substring(0, basename.lastIndexOf("_Linear_"));
+                    else 
+                        basename = basename.substring(0, basename.lastIndexOf("_"));
+                    
+                    fbFolder.setFile(file.getParent()+File.separator+basename+extension);
+                }
+                setting =false;
+                
+            }
+        });
+        
     }
-    
     
     public void setTitle(String title) {
         super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ")" + title);
@@ -446,7 +481,18 @@ public class FDRGUI extends javax.swing.JFrame {
                 try {
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, "start writing");
                     //                    ofdr.writeFiles(txtFolder.getText(), txtBaseName.getText(), 0.05, 0.05, 0.05, 0.05, new int[]{4, 9});
-                    ofdr.writeFiles(fbFolder.getText(), txtBaseName.getText(), sep, getResult());
+                    String filename = fbFolder.getText();
+                    File file = new File(filename);
+                    String folder = file.getParent();
+                    String basename = file.getName().replaceAll("\\.[^\\.]*$", "");
+                    if (basename.matches("^.*_[^_]*_xiFDR.*$")) {
+                        basename = basename.substring(0, basename.indexOf("_xiFDR"));
+                        if (basename.contains("_Linear_"))
+                            basename = basename.substring(0, basename.lastIndexOf("_Linear_"));
+                        else 
+                            basename = basename.substring(0, basename.lastIndexOf("_"));
+                    }
+                    ofdr.writeFiles(folder, basename, sep, getResult());
                     setStatus("finished: " + ofdr.summaryString(getResult()));
 
                 } catch (FileNotFoundException ex) {
@@ -2276,13 +2322,11 @@ public class FDRGUI extends javax.swing.JFrame {
         txtSumProtGroupPairsInternal = new javax.swing.JTextField();
         btnPPIInfo = new javax.swing.JButton();
         jPanel10 = new javax.swing.JPanel();
-        jLabel10 = new javax.swing.JLabel();
         rbTSV = new javax.swing.JRadioButton();
         rbCSV = new javax.swing.JRadioButton();
         btnWrite = new javax.swing.JButton();
         fbFolder = new org.rappsilber.gui.components.FileBrowser();
         jLabel9 = new javax.swing.JLabel();
-        txtBaseName = new javax.swing.JTextField();
         ckPrePostAA = new javax.swing.JCheckBox();
         jPanel14 = new javax.swing.JPanel();
         fbMzIdentMLOut = new org.rappsilber.gui.components.FileBrowser();
@@ -2467,10 +2511,10 @@ public class FDRGUI extends javax.swing.JFrame {
         pDatabseSize.setBorder(javax.swing.BorderFactory.createTitledBorder("Database Sizes"));
         pDatabseSize.setEnabled(false);
 
-        spDecoyDBProt.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(9.99999999E8d), Double.valueOf(0.001d), null, Double.valueOf(1.0d)));
+        spDecoyDBProt.setModel(new javax.swing.SpinnerNumberModel(9.99999999E8d, 0.001d, null, 1.0d));
         spDecoyDBProt.setEnabled(false);
 
-        spTargetDBProt.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(9.99999999E8d), Double.valueOf(0.001d), null, Double.valueOf(1.0d)));
+        spTargetDBProt.setModel(new javax.swing.SpinnerNumberModel(9.99999999E8d, 0.001d, null, 1.0d));
         spTargetDBProt.setEnabled(false);
 
         lblProtein.setText("Protein");
@@ -2479,10 +2523,10 @@ public class FDRGUI extends javax.swing.JFrame {
         lblPeptide.setText("Peptide");
         lblPeptide.setEnabled(false);
 
-        spTargetDB.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(9.99999999E8d), Double.valueOf(0.001d), null, Double.valueOf(1.0d)));
+        spTargetDB.setModel(new javax.swing.SpinnerNumberModel(9.99999999E8d, 0.001d, null, 1.0d));
         spTargetDB.setEnabled(false);
 
-        spDecoyDB.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(9.99999999E8d), Double.valueOf(0.001d), null, Double.valueOf(1.0d)));
+        spDecoyDB.setModel(new javax.swing.SpinnerNumberModel(9.99999999E8d, 0.001d, null, 1.0d));
         spDecoyDB.setEnabled(false);
 
         lblDecoyDB.setText("Decoy");
@@ -2491,10 +2535,10 @@ public class FDRGUI extends javax.swing.JFrame {
         lblTargetDB.setText("Target");
         lblTargetDB.setEnabled(false);
 
-        spDecoyDBLinks.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(9.99999999E8d), Double.valueOf(0.001d), null, Double.valueOf(1.0d)));
+        spDecoyDBLinks.setModel(new javax.swing.SpinnerNumberModel(9.99999999E8d, 0.001d, null, 1.0d));
         spDecoyDBLinks.setEnabled(false);
 
-        spTargetDBLinks.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(9.99999999E8d), Double.valueOf(0.001d), null, Double.valueOf(1.0d)));
+        spTargetDBLinks.setModel(new javax.swing.SpinnerNumberModel(9.99999999E8d, 0.001d, null, 1.0d));
         spTargetDBLinks.setEnabled(false);
 
         lblLinkDB.setText("Links");
@@ -2943,14 +2987,22 @@ public class FDRGUI extends javax.swing.JFrame {
 
         tpResult.addTab("Summary", jPanel8);
 
-        jLabel10.setText("Base Name");
-
         bgSeparator.add(rbTSV);
         rbTSV.setText("Tab Separated");
+        rbTSV.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rbTSVActionPerformed(evt);
+            }
+        });
 
         bgSeparator.add(rbCSV);
         rbCSV.setSelected(true);
         rbCSV.setText("Comma Separated");
+        rbCSV.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rbCSVActionPerformed(evt);
+            }
+        });
 
         btnWrite.setText("Write");
         btnWrite.setEnabled(false);
@@ -2960,16 +3012,11 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
-        fbFolder.setDirectoryOnly(true);
+        fbFolder.setAutoAddDefaultExtension("csv");
+        fbFolder.setExtensions(new String[] {"tsv", "txt", "csv"});
         fbFolder.setLoad(false);
 
-        jLabel9.setText("Folder");
-
-        txtBaseName.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtBaseNameActionPerformed(evt);
-            }
-        });
+        jLabel9.setText("Output");
 
         ckPrePostAA.setText("Pre and post amino-acids");
         ckPrePostAA.setEnabled(false);
@@ -2980,13 +3027,10 @@ public class FDRGUI extends javax.swing.JFrame {
             jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel10Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel9)
-                    .addComponent(jLabel10))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jLabel9)
+                .addGap(47, 47, 47)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fbFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(txtBaseName)
                     .addGroup(jPanel10Layout.createSequentialGroup()
                         .addComponent(rbTSV)
                         .addGap(95, 95, 95)
@@ -3005,11 +3049,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fbFolder, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel9))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtBaseName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel10))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(45, 45, 45)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(rbTSV)
                     .addComponent(ckPrePostAA))
@@ -3252,9 +3292,6 @@ public class FDRGUI extends javax.swing.JFrame {
         writeResults();
     }//GEN-LAST:event_btnWriteActionPerformed
 
-    private void txtBaseNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBaseNameActionPerformed
-    }//GEN-LAST:event_txtBaseNameActionPerformed
-
     private void txtSumPSMActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtSumPSMActionPerformed
     }//GEN-LAST:event_txtSumPSMActionPerformed
 
@@ -3421,6 +3458,16 @@ public class FDRGUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_txtmzIdentOwnerOrgActionPerformed
 
+    private void rbTSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbTSVActionPerformed
+        if (rbTSV.isSelected())
+            fbFolder.setAutoAddDefaultExtension("txt");
+    }//GEN-LAST:event_rbTSVActionPerformed
+
+    private void rbCSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbCSVActionPerformed
+        if (rbCSV.isSelected())
+            fbFolder.setAutoAddDefaultExtension("csv");
+    }//GEN-LAST:event_rbCSVActionPerformed
+
     
     
 //    private void fdrSpinnerMaximumCheck(JSpinner sp, double max) {                                   
@@ -3495,7 +3542,6 @@ public class FDRGUI extends javax.swing.JFrame {
     private org.rappsilber.fdr.gui.components.FDRSettingsComplete fdrSettingsComplete;
     private org.rappsilber.fdr.gui.components.FDRSettingsSimple fdrSettingsSimple;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
@@ -3573,7 +3619,6 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTable tblPepLength;
     protected javax.swing.JTabbedPane tpInput;
     protected javax.swing.JTabbedPane tpResult;
-    private javax.swing.JTextField txtBaseName;
     private javax.swing.JTextArea txtLog;
     private javax.swing.JTextField txtStatus;
     private javax.swing.JTextField txtSumInput;
