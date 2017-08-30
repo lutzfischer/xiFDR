@@ -76,6 +76,18 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
         }
     }    
 
+    @Override
+    public boolean isSpecialcase() {
+        return getTopPSM().isSpecialcase(); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int getFDRGroup() {
+        return getTopPSM().getFDRGroup(); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    
+
     /**
      * @return the topPSM
      */

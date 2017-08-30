@@ -3092,7 +3092,7 @@ public abstract class OfflineFDR {
 
     public String[] parseArgs(String[] argv) {
         ArrayList<String> unknown = new ArrayList<String>();
-        int[] lengthgroups = new int[]{9, 6, 4};
+        int[] lengthgroups = new int[]{4};
         double[] psmFDR = new double[]{1, 1, 1};
         double[] pepFDR = new double[]{1, 1, 1};
         double[] protFDR = new double[]{1, 1, 1};

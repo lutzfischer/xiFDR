@@ -554,7 +554,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setFDRGroup() {
         
-        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, specialcase);
+        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, isSpecialcase());
        
     }     
     
