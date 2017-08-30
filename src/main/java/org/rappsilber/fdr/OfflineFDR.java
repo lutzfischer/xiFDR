@@ -236,16 +236,25 @@ public abstract class OfflineFDR {
     
     
     public void normalizePSMs() {
+        if (allPSMs.size() == 0)
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Supposedly no PSMs here");
         DoubleArrayList scores = new DoubleArrayList(allPSMs.size()/2);
+        DoubleArrayList targetScores = new DoubleArrayList(allPSMs.size()/2);
         int c=0;
-        double minScore = scores.getDouble(0);
-        
+        double minScore = Double.MAX_VALUE;
+        boolean looped=false;
         for (PSM p : allPSMs) {
+            looped = true;
             double s = p.getScore();
             if (p.isDecoy())
                 scores.add(s);
+            else
+                targetScores.add(s);
             if (s<minScore)
                 minScore=s;
+        }
+        if (allPSMs.size() >0 && !looped) {
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Something is really strange here");
         }
         Collections.sort(scores);
         

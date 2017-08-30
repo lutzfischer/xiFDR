@@ -522,7 +522,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
             setFdr(ofdr);
 
-            addCSV(ofdr);
+            addCSV(ofdr,null);
         } catch (Exception ex) {
             Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
             setStatus("error:" + ex);
@@ -536,8 +536,10 @@ public class FDRGUI extends javax.swing.JFrame {
 
 
             setStatus("Start");
-
-            addCSV((CSVinFDR) getFdr());
+            final CSVinFDR ofdr = new CSVinFDR();
+            
+            addCSV(ofdr, (CSVinFDR) getFdr());
+            
         } catch (Exception ex) {
             Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, null, ex);
             setStatus("error:" + ex);
@@ -546,7 +548,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
     }
     
-    private void addCSV(final CSVinFDR ofdr) {
+    private void addCSV(final CSVinFDR ofdr, final CSVinFDR addto) {
         getFdr().setPSMScoreHighBetter(csvSelect.higherIsBetter());
         
         setEnableRead(false);
@@ -560,6 +562,16 @@ public class FDRGUI extends javax.swing.JFrame {
                     CsvParser csv = csvSelect.getCsv();
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + csvSelect.getFile().getAbsolutePath());
                     ofdr.readCSV(csv);
+                    if(addto != null) {
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Normalize new data!");
+                        ofdr.normalizePSMs();
+                        if (!addto.isNormalized()) {
+                            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Normalize previous data!");
+                            addto.normalizePSMs();
+                        }
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Join with previous data!");
+                        addto.addNormalisedPsmList(ofdr.getAllPSMs(), ofdr.getPsmNormalizationOffset());                    
+                    }
                     setEnableCalc(true);
                     setStatus("finished reading");
                 } catch (Exception ex) {
@@ -3435,7 +3447,7 @@ public class FDRGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_ckIgnoreGroups1ActionPerformed
 
     private void csvSelectAddActionPerformed(java.awt.event.ActionEvent evt) {                                          
-        readCSV();
+        readAdditionalCSV();
     }       
     
     private void csvSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_csvSelectActionPerformed
