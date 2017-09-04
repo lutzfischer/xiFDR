@@ -47,9 +47,10 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
         PSM c = (PSM) l;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
         return this.getCrosslinker() == c.getCrosslinker() && this.getCharge() == c.getCharge() &&
-                (c.getPeptide1().equals(this.getPeptide1()) && c.getPeptide2().equals(this.getPeptide2()) && c.getLinkSite1() == this.getLinkSite1() && c.getLinkSite2() == this.getLinkSite2()) 
+//                (c.getPeptide1().equals(this.getPeptide1()) && c.getPeptide2().equals(this.getPeptide2()) && ((PeptideSite)c.getLinkSite1() == this.getLinkSite1() && c.getLinkSite2() == this.getLinkSite2()) 
+                (c.getPeptide1().equals(this.getPeptide1()) && c.getPeptide2().equals(this.getPeptide2()) && c.getPeptideLinkSite1()== this.getPeptideLinkSite1() && c.getPeptideLinkSite2() == this.getPeptideLinkSite2()) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
-                (c.getPeptide2().equals(this.getPeptide1()) && c.getPeptide1().equals(this.getPeptide2()) && c.getLinkSite2() == getLinkSite1() && c.getLinkSite1() == getLinkSite2());
+                (c.getPeptide2().equals(this.getPeptide1()) && c.getPeptide1().equals(this.getPeptide2()) && c.getPeptideLinkSite2()== this.getPeptideLinkSite1() && c.getPeptideLinkSite1() == this.getPeptideLinkSite2());
     }
     
     /**
@@ -86,7 +87,9 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
         return getTopPSM().getFDRGroup(); //To change body of generated methods, choose Tools | Templates.
     }
     
-    
+    public int hashCode() {
+        return topPSM.hashCode();
+    }    
 
     /**
      * @return the topPSM

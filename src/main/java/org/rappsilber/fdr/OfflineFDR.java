@@ -1287,6 +1287,9 @@ public abstract class OfflineFDR {
 
 
         for (PSM pp : psms) {
+            if (pp instanceof UniquePSM) {
+                pp = ((UniquePSM)pp).getTopPSM();
+            }
             fdrPSMGroupCounts.add(pp.getFDRGroup());
             String line = csvFormater.valuesToString(getPSMOutputLine(pp));
             if (!csvSummaryOnly) {
