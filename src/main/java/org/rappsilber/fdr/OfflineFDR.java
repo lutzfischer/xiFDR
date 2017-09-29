@@ -285,15 +285,22 @@ public abstract class OfflineFDR {
         if (offsetdiff<0) {
             for (PSM p : allPSMs) {
                 p.setScore(p.getScore()-offsetdiff);
+                p.setRun(registerRun(p.getRun()));
+                if (p.getCrosslinker() != null) {
+                    registerCrossLinker(p.getCrosslinker(), p);
+                }
+                allPSMs.add(p);
             }
             this.psmNormOffset-=offsetdiff;
         } else if (offsetdiff >0) {
             for (PSM p : psms) {
                 p.setScore(p.getScore()+offsetdiff);
+                registerRun(p.getRun());
+                allPSMs.add(p);
             }
         }
         
-        allPSMs.addAll(psms);
+//        allPSMs.addAll(psms);
     }
     
     
@@ -514,18 +521,22 @@ public abstract class OfflineFDR {
         if (crosslinker == null) 
             crosslinker= "";
         
-        String c = foundCrossLinker.get(crosslinker);
-        if (c == null) {
-            psm.setCrosslinker(crosslinker);
-            foundCrossLinker.put(crosslinker, crosslinker);
-        } else
-            psm.setCrosslinker(c);
+        registerCrossLinker(crosslinker, psm);
         psm.setScan(Scan);
 
 
         PSM regpsm = getAllPSMs().register(psm);
 
         return regpsm;
+    }
+
+    protected void registerCrossLinker(String crosslinker, PSM psm) {
+        String c = foundCrossLinker.get(crosslinker);
+        if (c == null) {
+            psm.setCrosslinker(crosslinker);
+            foundCrossLinker.put(crosslinker, crosslinker);
+        } else
+            psm.setCrosslinker(c);
     }
 
     protected String registerRun(String run) {
@@ -3764,7 +3775,6 @@ public abstract class OfflineFDR {
         ret.add("LinkID" ); 
         ret.add( "PeptidePairIDs" ); 
         ret.add( "PSMIDs" ); 
-        ret.add( "Runs" ); 
         ret.add( "Protein1" ); 
         ret.add( "Description1" ); 
         ret.add( "Decoy1" ); 
@@ -3894,35 +3904,84 @@ public abstract class OfflineFDR {
     
     protected ArrayList<String> getProteinGroupOutputHeader() {
         ArrayList<String>ret = new ArrayList<String>();
+        ret.add("ProteinGroupID" );
         ret.add("ProteinGroup" );
         ret.add( "Descriptions" );
+        ret.add( "Sequence");
         ret.add( "Crosslinker" );
         ret.add( "Score" );
         ret.add( "isDecoy" );
         ret.add( "isTT" );
         ret.add( "isTD" );
         ret.add( "isDD" );
+        ret.add( "PSM IDs");    
         ret.add( "fdrGroup" );
         ret.add( "fdr");    
+        for (String r : runs) {
+            ret.add( r ); 
+        }
         return ret;
     }    
     
     protected ArrayList<String> getProteinGroupOutput(ProteinGroup pg) {
+        ArrayList<Integer> pepids = new ArrayList<>();
+        ArrayList<String> psmids = new ArrayList<>();
+        HashSet<String> linkRuns = new HashSet<>();
+        HashMap<String,Double> runScore = new HashMap<>();
+
+        double top_pepfdr = Double.MAX_VALUE;
+        double top_psmfdr = Double.MAX_VALUE;
+        
         HashSet<String> crosslinker = new HashSet<>();
         for (PeptidePair pp: pg.getPeptidePairs()) {
+            pepids.add(pp.getPeptidePairID());
+            
             crosslinker.add(pp.getCrosslinker());
+            if (pp.getFDR() < top_pepfdr) {
+                top_pepfdr = pp.getFDR();
+            }
+            for (PSM psm : pp.getTopPSMs()) {
+                if (psm.getFDR() < top_psmfdr) {
+                    top_psmfdr = psm.getFDR();
+                }
+            }
+            for (PSM psm : pp.getAllPSMs()) {
+                if (psm instanceof UniquePSM) {
+                    for (PSM upsm : (UniquePSM) psm) {
+                        psmToRun(upsm, linkRuns, runScore);
+                        psmids.add(upsm.getPsmID());
+                    }
+                } else {
+                    psmToRun(psm, linkRuns, runScore);
+                    psmids.add(psm.getPsmID());
+                }
+            }
+        }    
+        ArrayList<String> sequences = new ArrayList<>();
+        for (Protein p : pg.getProteins()) {
+            sequences.add(p.getSequence());
         }
         ArrayList<String>ret = new ArrayList<String>();
         ret.add( pg.acessions() );
         ret.add( pg.descriptions() );
+        ret.add( RArrayUtils.toString(sequences, ";"));
         ret.add( RArrayUtils.toString(crosslinker, ";"));
         ret.add( pg.getScore()+"" );
         ret.add( pg.isDecoy()+"");
         ret.add( pg.isTT()+"" );
         ret.add( pg.isTD()+"" );
         ret.add( pg.isDD()+"" );
+        ret.add( RArrayUtils.toString(psmids, ";"));
         ret.add( pg.getFDRGroupName() );
         ret.add( pg.getFDR()+"");    
+        for (String r : runs) {
+            Double d=runScore.get(r); 
+            if (d==null) {
+                ret.add("");
+            } else {
+                ret.add(d.toString());
+            }
+        }  
         return ret;
     }
     

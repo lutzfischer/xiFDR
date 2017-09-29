@@ -124,6 +124,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private boolean specialcase = false;
     
+    private UniquePSM partOfUniquePSM;
     
     private final static String nolinker = "";
     
@@ -893,6 +894,20 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setNonnormalizedScore(double score) {
         this.preNormalisedScore = score;
+    }
+
+    /**
+     * @return the partOfUniquePSM
+     */
+    public UniquePSM getPartOfUniquePSM() {
+        return partOfUniquePSM;
+    }
+
+    /**
+     * @param partOfUniquePSM the partOfUniquePSM to set
+     */
+    public void setPartOfUniquePSM(UniquePSM partOfUniquePSM) {
+        this.partOfUniquePSM = partOfUniquePSM;
     }
     
 }

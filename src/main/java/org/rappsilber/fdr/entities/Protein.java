@@ -85,8 +85,14 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
 
     @Override
     public boolean equals(Object p) {
-        return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy && (sequence.contentEquals(((Protein) p).sequence) || sequence.isEmpty() || ((Protein) p).sequence.isEmpty()); // && ((Protein) p).sequence.contentEquals(sequence);
-        
+        return ((Protein) p).accession.contentEquals(accession) && 
+                isDecoy == ((Protein) p).isDecoy && 
+                ( 
+                    (!isDecoy) ||  // unluckily we have different ways to do decoy at times - so we have to ignore the sequence here
+                    sequence.contentEquals(((Protein) p).sequence) || 
+                    sequence.isEmpty() || 
+                    ((Protein) p).sequence.isEmpty()
+                ); // && ((Protein) p).sequence.contentEquals(sequence);
     }
 
     /**

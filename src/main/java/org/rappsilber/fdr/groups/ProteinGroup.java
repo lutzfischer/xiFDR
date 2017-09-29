@@ -155,9 +155,10 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     }
 
     @Override
-    public boolean equals(Object pg) {
-        HashSet<Protein> cproteinpairs = (HashSet<Protein>) groupproteins.clone();
-        if (pg instanceof ProteinGroup) {
+    public boolean equals(Object o) {
+//        HashSet<Protein> cproteinpairs = (HashSet<Protein>) groupproteins.clone();
+        if (o instanceof ProteinGroup) {
+            ProteinGroup pg = (ProteinGroup) o;
             // if it is actaually the same object
             if (pg == this) {
                 return true; // no need to do any comparison
@@ -165,11 +166,11 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
             }
             // if both groups don't contain the same numbers of links
             // then they are not the same
-            if (((ProteinGroup) pg).groupproteins.size() != groupproteins.size()) {
+            if (pg.groupproteins.size() != groupproteins.size()) {
                 return false;
             }
             // if one contains a protein, the other does not, then it's not the same group
-            return ((ProteinGroup) pg).groupproteins.containsAll(groupproteins);
+            return pg.groupproteins.containsAll(groupproteins);
         }
         return false;
     }

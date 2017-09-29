@@ -570,7 +570,7 @@ public class FDRGUI extends javax.swing.JFrame {
                             addto.normalizePSMs();
                         }
                         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Join with previous data!");
-                        addto.addNormalisedPsmList(ofdr.getAllPSMs(), ofdr.getPsmNormalizationOffset());                    
+                        addto.addNormalisedPsmList(ofdr.getAllPSMs(), ofdr.getPsmNormalizationOffset());
                     }
                     setEnableCalc(true);
                     setStatus("finished reading");
