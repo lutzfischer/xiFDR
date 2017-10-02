@@ -160,14 +160,15 @@ public class CSVinFDR extends OfflineFDR {
 
             String pepSeq1 = csv.getValue(cpep1);
             String pepSeq2 = csv.getValue(cpep2);
+            String terminalAminoAcids = "([A-Z\\--][a-z]*|(\\[[A-Z\\--][a-z]*\\])+)";
 
             // if the sequence looks like K.PEPTIDEK.A assume that the first and 
             // last aminoacid are leading and trailing aminoacids and not really part of the peptide
-            if (pepSeq1.matches("[A-Za-z\\-]+\\..*\\.[A-Za-z\\-]+")) {
-                pepSeq1 = pepSeq1.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
+            if (pepSeq1.matches(terminalAminoAcids+"\\..*"+terminalAminoAcids)) {
+                pepSeq1 = pepSeq1.replaceAll("^" + terminalAminoAcids +"\\.", "").replaceAll("\\."+terminalAminoAcids +"$", "");
             }
-            if (pepSeq2.matches("[A-Za-z\\-]+\\..*\\.[A-Za-z\\-]+")) {
-                pepSeq2 = pepSeq2.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
+            if (pepSeq2.matches(terminalAminoAcids+"\\..*"+terminalAminoAcids)) {
+                pepSeq2 = pepSeq2.replaceAll("^" + terminalAminoAcids +"\\.", "").replaceAll("\\."+terminalAminoAcids +"$", "");
             }
 
             
