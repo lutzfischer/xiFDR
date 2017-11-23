@@ -44,6 +44,7 @@ public class FDRSettingsImpl implements FDRSettings {
     protected boolean boostPeptidePairs = true;
     protected boolean boostProteins = true;
     protected boolean boostLinks = true;
+    protected boolean groupByPPI = false;
     
     @Override
     public void addCalcListener(ActionListener al) {
@@ -317,4 +318,14 @@ public class FDRSettingsImpl implements FDRSettings {
     public void boostLinks(boolean boost) {
         boostLinks = boost;
     }    
+
+    @Override
+    public boolean isGroupByPSMCount() {
+        return groupByPPI;
+    }
+
+    @Override
+    public void setGroupByPSMCount(boolean groupByPPI) {
+        this.groupByPPI=groupByPPI;
+    }
 }

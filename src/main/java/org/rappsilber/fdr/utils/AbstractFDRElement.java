@@ -16,6 +16,7 @@
 package org.rappsilber.fdr.utils;
 
 import org.rappsilber.fdr.entities.Site;
+import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.utils.SelfAdd;
 
 /**
@@ -73,6 +74,8 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
         this.m_lowerFDR = lowerFDR;
     }
     
+    public abstract ProteinGroup getProteinGroup1();
+    public abstract ProteinGroup getProteinGroup2();
 
     
 }

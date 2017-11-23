@@ -356,5 +356,22 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
     public boolean isBetween() {
         return !isInternal;
     }
+
+    @Override
+    public ProteinGroup getProteinGroup1() {
+        return protein1;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup2() {
+        return protein2;
+    }
+
+    /**
+     * @param fdrGroup the fdrGroup to set
+     */
+    public void setFDRGroup(int fdrGroup) {
+        this.fdrGroup = fdrGroup;
+    }
     
 }

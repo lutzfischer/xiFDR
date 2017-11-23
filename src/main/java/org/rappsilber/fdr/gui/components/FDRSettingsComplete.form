@@ -55,6 +55,12 @@
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
+                      <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
+                      <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace pref="7" max="32767" attributes="0"/>
+                      <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="spMaximizeSteps" alignment="0" max="32767" attributes="0"/>
                           <Component id="spMinPPIPepCount" alignment="0" max="32767" attributes="0"/>
@@ -69,18 +75,15 @@
                           <Component id="jLabel8" alignment="0" max="32767" attributes="0"/>
                           <Component id="spMinPeptideLength" alignment="0" max="32767" attributes="0"/>
                           <Component id="spMaxProteinAmbiguity" alignment="0" max="32767" attributes="0"/>
-                          <Group type="102" attributes="0">
-                              <Component id="ckUniquePSM" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace min="0" pref="55" max="32767" attributes="0"/>
-                          </Group>
                           <Component id="ckBoostBetween" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="ckGroupByPSMs" min="-2" max="-2" attributes="0"/>
+                                  <Component id="ckUniquePSM" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                          </Group>
                       </Group>
-                  </Group>
-                  <Group type="102" attributes="0">
-                      <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
-                      <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="7" max="32767" attributes="0"/>
-                      <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
           </Group>
@@ -137,7 +140,10 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="spMinPPIPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spMinPPIPepCount" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="ckUniquePSM" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
                   <Component id="ckDirectionalPPI" alignment="1" min="-2" max="-2" attributes="0"/>
                   <Group type="103" alignment="1" groupAlignment="3" attributes="0">
                       <Component id="spPPIFdr" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -148,9 +154,9 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="lblReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="ckUniquePSM" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckGroupByPSMs" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="6" max="32767" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="cbBoostWhat" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -395,6 +401,7 @@
     <Component class="javax.swing.JCheckBox" name="ckBoostBetween">
       <Properties>
         <Property name="text" type="java.lang.String" value="Between"/>
+        <Property name="toolTipText" type="java.lang.String" value="optimize settings for maximizing between matches"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JButton" name="btnBoostIgnores">
@@ -403,6 +410,15 @@
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnBoostIgnoresActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckGroupByPSMs">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Group by PSMs"/>
+        <Property name="toolTipText" type="java.lang.String" value="Groups  matches baessed on how many psms support a given protein pair."/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckGroupByPSMsActionPerformed"/>
       </Events>
     </Component>
   </SubComponents>

@@ -45,23 +45,11 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private PeptidePair m_peppair;
     
-    /**
-     * the link represented by this PSM
-     */
-    private ProteinGroupLink m_link;
-    /**
-     * the protein pair represented by this PSM
-     */
-    private ProteinGroupPair m_ppi;
 
     /** link-site in peptide1 */
-    private int pepsite1;
+    private byte pepsite1;
     /** link-site in peptide2 */
-    private int pepsite2;
-    /** length of  peptide1 */
-    private int peplen1;
-    /** length of  peptide2 */
-    private int peplen2;
+    private byte pepsite2;
     /** positions of peptide1 */
     Peptide peptide1;
     /** positions of peptide2 */
@@ -69,7 +57,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     /** overall score of this pair */
     private double score;
     /** top-score per charge state */
-    private int charge = 0;
+    private byte charge = 0;
     /**
      * M/Z value of the spectrum
      */
@@ -81,7 +69,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * Charge value of the matched peptide(pair)
      */
-    private int match_charge;
+    private byte exp_charge;
     
     /**
      * 
@@ -93,18 +81,20 @@ public class PSM extends AbstractFDRElement<PSM> {
     private boolean isDecoy1;
     /** second peptide comes from a decoy sequence */
     private boolean isDecoy2;
+    /** short cut for testing of tt (0) td(1) or dd(2) matches */
+    private byte isTT_TD_DD;
     /** it could be a protein internal link */
     private boolean isInternal = false;
     /** is this a linear "peptide pair" - meaning only one peptide */
     private boolean isLinear = false;
     /** is this a loop-linked peptide */
     private boolean isLoop = false;
-    /** are all peptides from the target database */
-    private boolean isTT = false;
-    /** is one peptide from the decoy database */
-    private boolean isTD = false;
-    /** are all peptides from the decoy database */
-    private boolean isDD = false;
+//    /** are all peptides from the target database */
+//    private boolean isTT = false;
+//    /** is one peptide from the decoy database */
+//    private boolean isTD = false;
+//    /** are all peptides from the decoy database */
+//    private boolean isDD = false;
     /** an id for the fdr-group of this PSM */
     private int fdrGroup;
     /** what is the calculated FDR for the score of this PSM */
@@ -124,14 +114,14 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private boolean specialcase = false;
     
-    private UniquePSM partOfUniquePSM;
+    private PSM partOfUniquePSM;
     
-    private final static String nolinker = "";
+    private final static String NOLINKER = "";
     
     /**
      * The cross-linker for this match
      */
-    public String crosslinker = nolinker;
+    public String crosslinker = NOLINKER;
 
     /**
      * I filter all cross-linker names through this HashMap.
@@ -143,7 +133,19 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private static HashMap<String,String> allLinker = new HashMap<String, String>();
 
+    /**
+     * what was the score prior normalisation
+     */
     private double preNormalisedScore;
+    
+    /**
+     * If we filter to unique PSMs then the top-scoring will represent a set of 
+     * psms. As we don't want to lose the info which ones are represented we 
+     * list them here.
+     */
+    private ArrayList<PSM> represents;
+    
+    
 
     /**
      * creates a new instance of a PSM.
@@ -163,8 +165,8 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, String run, String scan, Peptide peptide1, Peptide peptide2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, double scoreRatio) {
-        this(psmID, peptide1, peptide2, site1, site2, isDecoy1, isDecoy2, charge, score, scoreRatio);
+    public PSM(String psmID, String run, String scan, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double scoreRatio) {
+        this(psmID, peptide1, peptide2, (byte)site1, (byte)site2, isDecoy1, isDecoy2, (byte)charge, score, scoreRatio);
         this.run = run;
         this.scan = scan;
     }
@@ -186,7 +188,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, Peptide peptide1, Peptide peptide2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, double scoreRatio) {
+    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double scoreRatio) {
         this.psmID = psmID;
 //        this.id1 = id1;
 //        this.id2 = id2;
@@ -196,15 +198,10 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.isDecoy1 = isDecoy1;
         this.isDecoy2 = isDecoy2;
         if (isDecoy1) {
-            if (isDecoy2) {
-                isDD = true;
-            } else {
-                isTD = true;
-            }
-        } else if (isDecoy2) {
-            isTD = true;
-        } else {
-            isTT = true;
+            isTT_TD_DD++;
+        } 
+        if (isDecoy2) {
+            isTT_TD_DD++;
         }
         this.charge = charge;
         this.score = score;
@@ -219,6 +216,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.isLinear = peptide1 == Peptide.NOPEPTIDE || peptide2 == Peptide.NOPEPTIDE;
         this.isLoop = this.isLinear && site1 >= 0 && site2 >= 0;
         this.isInternal = peptide1.sameProtein(peptide2);
+        represents = new ArrayList<PSM>();
+        represents.add(this);
         
 //        setFDRGroup();
         
@@ -366,18 +365,21 @@ public class PSM extends AbstractFDRElement<PSM> {
     public Peptide getPeptide2() {
         return peptide2;
     }
+    
+    
+    
 
     /**
      * @return the link site of the first peptide
      */
-    public int getPeptideLinkSite1() {
+    public byte getPeptideLinkSite1() {
         return pepsite1;
     }
 
     /**
      * @return the link site of the second peptide
      */
-    public int getPeptideLinkSite2() {
+    public byte getPeptideLinkSite2() {
         return pepsite2;
     }
 
@@ -385,7 +387,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param peptide
      * @return the link site of the given peptide
      */
-    public int getPeptideLinkSite(int peptide) {
+    public byte getPeptideLinkSite(int peptide) {
         return peptide == 0 ? pepsite1 : pepsite2;
     }
     
@@ -408,7 +410,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * @return the precursor charge state of the PSM
      */
-    public int getCharge() {
+    public byte getCharge() {
         return charge;
     }
 
@@ -452,7 +454,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     @Override
     public boolean isTT() {
-        return isTT;
+        return isTT_TD_DD==0;
     }
 
     /**
@@ -461,7 +463,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     @Override
     public boolean isTD() {
-        return isTD;
+        return isTT_TD_DD==1;
     }
 
     /**
@@ -470,7 +472,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     @Override
     public boolean isDD() {
-        return isDD;
+        return isTT_TD_DD==2;
     }
 
     /**
@@ -558,7 +560,16 @@ public class PSM extends AbstractFDRElement<PSM> {
         fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, isSpecialcase());
        
     }     
-    
+
+    /**
+     * set the FDR group according to the information on this PSM
+     */
+    public void setFDRGroup(int fdrGroup) {
+        
+        this.fdrGroup = fdrGroup;
+       
+    }     
+
     /**
      * store the FDR assigned to the score of this PSM
      * @param fdr 
@@ -628,6 +639,9 @@ public class PSM extends AbstractFDRElement<PSM> {
         resetFdrProteinGroup();
         setFdrPeptidePair(null);
         setLinkedSupport(1);
+        setPartOfUniquePSM(null);
+        represents.clear();
+        represents.add(this);
     }
     
     /**
@@ -645,10 +659,15 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param pg
     */
     public void setFdrProteinGroup(ProteinGroup pg) {
-        if (pg.equals(peptide1.getProteinGroup()))
-            this.fdrProteinGroup1 = pg;
-        if (pg.equals(peptide2.getProteinGroup()))
-            this.fdrProteinGroup2 = pg;
+        if (pg == null) {
+            this.fdrProteinGroup1 = null;
+            this.fdrProteinGroup2 = null;
+        } else {
+            if (pg.equals(peptide1.getProteinGroup()))
+                this.fdrProteinGroup1 = pg;
+            if (pg.equals(peptide2.getProteinGroup()))
+                this.fdrProteinGroup2 = pg;
+        }
     }
     
     /**
@@ -833,16 +852,16 @@ public class PSM extends AbstractFDRElement<PSM> {
      * Charge value of the matched peptide(pair)
      * @return the match_charge
      */
-    public int getMatchedCharge() {
-        return match_charge;
+    public int getExpCharge() {
+        return exp_charge;
     }
 
     /**
      * Charge value of the matched peptide(pair)
      * @param match_charge the match_charge to set
      */
-    public void setMatchedCharge(int match_charge) {
-        this.match_charge = match_charge;
+    public void setExpCharge(byte match_charge) {
+        this.exp_charge = match_charge;
     }
 
     /**
@@ -899,15 +918,36 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * @return the partOfUniquePSM
      */
-    public UniquePSM getPartOfUniquePSM() {
+    public PSM getPartOfUniquePSM() {
         return partOfUniquePSM;
     }
 
     /**
      * @param partOfUniquePSM the partOfUniquePSM to set
      */
-    public void setPartOfUniquePSM(UniquePSM partOfUniquePSM) {
+    public void setPartOfUniquePSM(PSM partOfUniquePSM) {
         this.partOfUniquePSM = partOfUniquePSM;
     }
     
+    
+    public void represents(PSM psm) {
+        this.represents.add(psm);
+        if (psm.represents.size() >0) {
+            this.represents.addAll(psm.represents);
+        }
+    }
+    
+    public ArrayList<PSM> getRepresented() {
+        return represents;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup1() {
+        return getPeptide1().getProteinGroup();
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup2() {
+        return getPeptide2().getProteinGroup();
+    }
 }

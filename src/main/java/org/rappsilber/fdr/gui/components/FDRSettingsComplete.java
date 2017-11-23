@@ -401,6 +401,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckUniquePSM = new javax.swing.JCheckBox();
         ckBoostBetween = new javax.swing.JCheckBox();
         btnBoostIgnores = new javax.swing.JButton();
+        ckGroupByPSMs = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -500,11 +501,20 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckUniquePSM.setToolTipText("only use the top match for each combination of charge peptide1, peptide2 and charge state as a PSM");
 
         ckBoostBetween.setText("Between");
+        ckBoostBetween.setToolTipText("optimize settings for maximizing between matches");
 
         btnBoostIgnores.setText("Boost Ignores");
         btnBoostIgnores.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBoostIgnoresActionPerformed(evt);
+            }
+        });
+
+        ckGroupByPSMs.setText("Group by PSMs");
+        ckGroupByPSMs.setToolTipText("Groups  matches baessed on how many psms support a given protein pair.");
+        ckGroupByPSMs.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckGroupByPSMsActionPerformed(evt);
             }
         });
 
@@ -546,6 +556,11 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(70, 70, 70)
+                        .addComponent(btnBoostIgnores)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                        .addComponent(btnCalc))
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(spMaximizeSteps)
                             .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -559,15 +574,12 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(spMinPeptideLength, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(spMaxProteinAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(ckBoostBetween, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(ckUniquePSM)
-                                .addGap(0, 55, Short.MAX_VALUE))
-                            .addComponent(ckBoostBetween, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(70, 70, 70)
-                        .addComponent(btnBoostIgnores)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
-                        .addComponent(btnCalc))))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(ckGroupByPSMs)
+                                    .addComponent(ckUniquePSM))
+                                .addGap(0, 0, Short.MAX_VALUE))))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -610,7 +622,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                         .addComponent(jLabel3)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(ckUniquePSM))
                     .addComponent(ckDirectionalPPI, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(spPPIFdr, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -619,8 +633,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(spReportFactor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblReportFactor)
-                    .addComponent(ckUniquePSM))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 6, Short.MAX_VALUE)
+                    .addComponent(ckGroupByPSMs))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(ckMaximize)
                     .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -654,6 +668,10 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         setBoostIgnores();
     }//GEN-LAST:event_btnBoostIgnoresActionPerformed
 
+    private void ckGroupByPSMsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckGroupByPSMsActionPerformed
+        setGroupByPSMCount(ckGroupByPSMs.isSelected());
+    }//GEN-LAST:event_ckGroupByPSMsActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBoostIgnores;
     private javax.swing.JButton btnCalc;
@@ -664,6 +682,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JCheckBox ckDirectionalPPI;
     private javax.swing.JCheckBox ckDirectionalPSM;
     private javax.swing.JCheckBox ckDirectionalPeptidePair;
+    private javax.swing.JCheckBox ckGroupByPSMs;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JCheckBox ckUniquePSM;
     private javax.swing.JLabel jLabel1;

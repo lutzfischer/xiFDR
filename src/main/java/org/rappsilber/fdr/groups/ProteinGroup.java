@@ -262,6 +262,12 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return fdrgroup;
     }
 
+    @Override
+    public void setFDRGroup(int fdrGroup) {
+        this.fdrgroup = fdrGroup;
+    }
+    
+    
     public boolean isTT() {
 //        if (!fdrgroupSet)
 //            setFDRGroup();
@@ -315,7 +321,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 
     }
 
-    public String acessions() {
+    public String accessions() {
         StringBuffer sb = new StringBuffer();
 
         if (isDecoy()) {
@@ -329,6 +335,15 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return sb.substring(0,sb.length() - 1);
     }
 
+    public String accessionsNoDecoy() {
+        StringBuffer sb = new StringBuffer();
+
+        for (Protein p : groupproteins) {
+            sb.append(p.getAccession());
+            sb.append(";");
+        }
+        return sb.substring(0,sb.length() - 1);
+    }
     
     public String descriptions() {
         StringBuffer sb = new StringBuffer();
@@ -364,9 +379,9 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 
     public String toString() {
         if (isTD()) {
-            return "D - " + acessions();
+            return "D - " + accessions();
         }
-        return "T - " + acessions();
+        return "T - " + accessions();
     }
 
     public boolean isDecoy() {
@@ -494,6 +509,16 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 
     public boolean isBetween() {
         return false;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup1() {
+        return this;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup2() {
+        return NOPROTEINGROUP;
     }
     
 }
