@@ -188,6 +188,10 @@ public class CSVinFDR extends OfflineFDR {
             // last aminoacid are leading and trailing aminoacids and not really part of the peptide
             Matcher m1=hasTerminalAminoAcids.matcher(pepSeq1);
             Matcher m2=hasTerminalAminoAcids.matcher(pepSeq2);
+            if ((pepSeq2 == null || pepSeq2.isEmpty()) && m1.matches()) {
+                pepSeq1 = m1.replaceAll("$1");
+            }
+                
             if (m1.matches() && m2.matches()) {
                 pepSeq1 = m1.replaceAll("$1");
                 pepSeq2 = m2.replaceAll("$1");
