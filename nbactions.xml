@@ -10,8 +10,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.gui.FDRGUI</exec.args>
+                <exec.args>-Xmx11g -XX:+HeapDumpOnOutOfMemoryError -classpath %classpath org.rappsilber.fdr.gui.FDRGUI</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
         </action>
         <action>
@@ -24,9 +25,10 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Xms1g -classpath %classpath org.rappsilber.fdr.gui.FDRGUI</exec.args>
+                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Xmx11g -XX:+HeapDumpOnOutOfMemoryError -classpath %classpath org.rappsilber.fdr.gui.FDRGUI</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
+                <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
         </action>
         <action>
@@ -39,8 +41,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.gui.FDRGUI</exec.args>
+                <exec.args>-Xmx11g -XX:+HeapDumpOnOutOfMemoryError -classpath %classpath org.rappsilber.fdr.gui.FDRGUI</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
         </action>
     </actions>

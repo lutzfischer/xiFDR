@@ -21,4 +21,7 @@ Any value defined here will override the pom.xml file value but is only applicab
         <netbeans.hint.license>apache20</netbeans.hint.license>
         <org-netbeans-modules-javascript2-requirejs.enabled>false</org-netbeans-modules-javascript2-requirejs.enabled>
     </properties>
+    <spellchecker-wordlist xmlns="http://www.netbeans.org/ns/spellchecker-wordlist/1">
+        <word>psms</word>
+    </spellchecker-wordlist>
 </project-shared-configuration>

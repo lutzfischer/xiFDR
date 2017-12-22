@@ -18,6 +18,7 @@ package org.rappsilber.fdr.entities;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 
 /**
@@ -85,8 +86,14 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
 
     @Override
     public boolean equals(Object p) {
-        return ((Protein) p).accession.contentEquals(accession) && isDecoy == ((Protein) p).isDecoy && (sequence.contentEquals(((Protein) p).sequence) || sequence.isEmpty() || ((Protein) p).sequence.isEmpty()); // && ((Protein) p).sequence.contentEquals(sequence);
-        
+        return ((Protein) p).accession.contentEquals(accession) && 
+                isDecoy == ((Protein) p).isDecoy && 
+                ( 
+                    (!isDecoy) ||  // unluckily we have different ways to do decoy at times - so we have to ignore the sequence here
+                    sequence.contentEquals(((Protein) p).sequence) || 
+                    sequence.isEmpty() || 
+                    ((Protein) p).sequence.isEmpty()
+                ); // && ((Protein) p).sequence.contentEquals(sequence);
     }
 
     /**
@@ -387,6 +394,23 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     @Override
     public Site getLinkSite2() {
         return null;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup1() {
+        ArrayList<Protein> pg = new ArrayList<>(1);
+        pg.add(this);
+        return new ProteinGroup(pg, peppairs);
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup2() {
+        return ProteinGroup.NOPROTEINGROUP;
+    }
+
+    @Override
+    public void setFDRGroup(int fdrGroup) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     

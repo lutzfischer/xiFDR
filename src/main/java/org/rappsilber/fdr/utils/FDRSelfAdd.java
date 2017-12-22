@@ -32,6 +32,11 @@ public interface FDRSelfAdd<T> extends SelfAdd<T> { //, Comparable<T> {
      * @return 
      */
     int getFDRGroup();
+    
+    /**
+     * defines the fdr-group for a single entry
+     */
+    void setFDRGroup(int fdrGroup);
     /**
      * Name of the FDR-group this match belongs to
      * @return 

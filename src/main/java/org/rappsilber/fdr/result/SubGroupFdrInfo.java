@@ -32,6 +32,12 @@ public class SubGroupFdrInfo<T extends FDRSelfAdd> implements Iterable<T> {
     public int DD;
     /**  how many TT cases are there in total */
     public int TT;
+    /**  how many TD cases are there in total */
+    public int resultTD;
+    /**  how many DD cases are there in total */
+    public int resultDD;
+    /**  how many TT cases are there in total */
+    public int resultTT;
 
     /**  target fdr */
     public double targteFDR;
@@ -119,6 +125,11 @@ public class SubGroupFdrInfo<T extends FDRSelfAdd> implements Iterable<T> {
      */
     public void setLinear(int linear) {
         this.linear = linear;
+    }
+
+    void clear() {
+        results.clear();
+        filteredResult.clear();
     }
 
 

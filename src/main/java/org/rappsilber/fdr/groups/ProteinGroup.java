@@ -155,9 +155,10 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     }
 
     @Override
-    public boolean equals(Object pg) {
-        HashSet<Protein> cproteinpairs = (HashSet<Protein>) groupproteins.clone();
-        if (pg instanceof ProteinGroup) {
+    public boolean equals(Object o) {
+//        HashSet<Protein> cproteinpairs = (HashSet<Protein>) groupproteins.clone();
+        if (o instanceof ProteinGroup) {
+            ProteinGroup pg = (ProteinGroup) o;
             // if it is actaually the same object
             if (pg == this) {
                 return true; // no need to do any comparison
@@ -165,11 +166,11 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
             }
             // if both groups don't contain the same numbers of links
             // then they are not the same
-            if (((ProteinGroup) pg).groupproteins.size() != groupproteins.size()) {
+            if (pg.groupproteins.size() != groupproteins.size()) {
                 return false;
             }
             // if one contains a protein, the other does not, then it's not the same group
-            return ((ProteinGroup) pg).groupproteins.containsAll(groupproteins);
+            return pg.groupproteins.containsAll(groupproteins);
         }
         return false;
     }
@@ -261,6 +262,12 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return fdrgroup;
     }
 
+    @Override
+    public void setFDRGroup(int fdrGroup) {
+        this.fdrgroup = fdrGroup;
+    }
+    
+    
     public boolean isTT() {
 //        if (!fdrgroupSet)
 //            setFDRGroup();
@@ -314,7 +321,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 
     }
 
-    public String acessions() {
+    public String accessions() {
         StringBuffer sb = new StringBuffer();
 
         if (isDecoy()) {
@@ -328,6 +335,15 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return sb.substring(0,sb.length() - 1);
     }
 
+    public String accessionsNoDecoy() {
+        StringBuffer sb = new StringBuffer();
+
+        for (Protein p : groupproteins) {
+            sb.append(p.getAccession());
+            sb.append(";");
+        }
+        return sb.substring(0,sb.length() - 1);
+    }
     
     public String descriptions() {
         StringBuffer sb = new StringBuffer();
@@ -363,9 +379,9 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 
     public String toString() {
         if (isTD()) {
-            return "D - " + acessions();
+            return "D - " + accessions();
         }
-        return "T - " + acessions();
+        return "T - " + accessions();
     }
 
     public boolean isDecoy() {
@@ -493,6 +509,16 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 
     public boolean isBetween() {
         return false;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup1() {
+        return this;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup2() {
+        return NOPROTEINGROUP;
     }
     
 }

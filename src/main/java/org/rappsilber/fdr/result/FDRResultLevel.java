@@ -116,7 +116,7 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         };
 
     }
-    public Iterable<T> filteredRsults() {
+    public Iterable<T> filteredResults() {
         return new Iterable<T>() {
 
             @Override
@@ -176,10 +176,23 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
     }    
     
     public void retainAll(Collection<T> k) {
-
+        between =0;
+        linear =0;
+        within = 0;
         for (SubGroupFdrInfo<T> g: groups.values()) {
             g.filteredResult = new HashedArrayList<T>(g.filteredResult);
             g.filteredResult.retainAll(k);
+  
+            for (T e : g.filteredResult) {
+                if (e.isTT()) {
+                    if (e.isLinear()) 
+                        linear++;
+                    if (e.isBetween()) 
+                        between++;
+                    else if (e.isInternal()) 
+                        within++;
+                }
+            }
         }
     }
 
@@ -249,4 +262,9 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         return ret;
     }
     
+    public void clear() {
+        for (SubGroupFdrInfo si : groups.values()) {
+            si.clear();
+        }        
+    }
 }

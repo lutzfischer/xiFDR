@@ -21,11 +21,16 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.rappsilber.data.csv.CsvParser;
+import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.utils.AutoIncrementValueMap;
+import org.rappsilber.utils.RArrayUtils;
 import static org.rappsilber.utils.StringUtils.sixDigits;
 import org.rappsilber.utils.UpdatableChar;
 
@@ -34,11 +39,12 @@ import org.rappsilber.utils.UpdatableChar;
  * @author lfischer
  */
 public class CSVinFDR extends OfflineFDR {
-    private String m_source = null;
+    private ArrayList<String> m_source = new ArrayList<>();
+    private ArrayList<CsvCondition> m_filter = new ArrayList<>();
     private ArrayList<String[]> commandLineColumnMapping;
     private Character delimiter;
     private Character quote;
-    private String[][] defaultcolumnmapping=new String[][]{
+    public static String[][] DEFAULT_COLUMN_MAPPING=new String[][]{
         new String[]{"peptide1","Peptide1"},
         new String[]{"peptide2","Peptide2"},
         new String[]{"peptide length 1","LengthPeptide1"},
@@ -94,7 +100,7 @@ public class CSVinFDR extends OfflineFDR {
         ArrayList<String> ret = super.getPSMOutputLine(pp);
 
         double mz = pp.getExperimentalMZ();
-        int charge = pp.getCharge();
+        int charge = pp.getExpCharge();
         double mass = (mz-1.00727646677)*charge;
         double fraction = mass-Math.floor(mass);
         double calcfraction = pp.getCalcMass()-Math.floor(pp.getCalcMass());
@@ -104,7 +110,7 @@ public class CSVinFDR extends OfflineFDR {
         ret.add(3, sixDigits.format(mz));
         ret.add(4, sixDigits.format(mass));
         ret.add(5, sixDigits.format(fraction));
-        ret.add(6,""+ pp.getMatchedCharge());
+        ret.add(6,""+ pp.getCharge());
         ret.add(7,  sixDigits.format(pp.getCalcMass()));
         ret.add(8, sixDigits.format(calcfraction));
         
@@ -112,50 +118,67 @@ public class CSVinFDR extends OfflineFDR {
         return ret;
     }    
     
-
+    protected Integer getColumn(CsvParser csv,String column,boolean optional) throws ParseException {
+        Integer c = csv.getColumn(column);
+        if (c== null && !optional) {
+            throw new ParseException("Column " + column + " not found", 0);
+        }
+        return c;
+    }
+    
     public void readCSV(File f) throws FileNotFoundException, IOException, ParseException  {
-        readCSV(CsvParser.guessCsv(f, 50));
+        readCSV(CsvParser.guessCsv(f, 50), null);
     }
 
-    public void readCSV(CsvParser csv) throws FileNotFoundException, IOException, ParseException  {
-        if (csv.getInputFile()!= null)
-            m_source = csv.getInputFile().getAbsolutePath();
+    public void readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException  {
+        if (csv.getInputFile()!= null) {
+            m_source.add(csv.getInputFile().getAbsolutePath());
+        } else {
+            m_source.add(null);
+        }
+        m_filter.add(filter);
             
 
-        Integer crun = csv.getColumn("run");
-        Integer cscan = csv.getColumn("scan");
-        Integer cpsmID = csv.getColumn("psmid");
-        int cpep1 = csv.getColumn("peptide1");
-        int cpep2 = csv.getColumn("peptide2");
-        Integer cpep1len = csv.getColumn("peptide length 1");
-        Integer cpep2len = csv.getColumn("peptide length 2");
-        int cpep1site = csv.getColumn("peptide link 1");
-        int cpep2site = csv.getColumn("peptide link 2");
-        int cpep1decoy = csv.getColumn("is decoy 1");
-        Integer cpep2decoy = csv.getColumn("is decoy 2");
-        int cprecZ = csv.getColumn("precursor charge");
-        int cscore = csv.getColumn("score");
-        int caccession1 = csv.getColumn("accession1");
-        int caccession2 = csv.getColumn("accession2");
-        Integer cdescription1 = csv.getColumn("description1");
-        Integer cdescription2 = csv.getColumn("description2");
-        Integer cpeptide_position1 = csv.getColumn("peptide position 1");
-        Integer cpeptide_position2 = csv.getColumn("peptide position 2");
-        Integer cscoreratio = csv.getColumn("score ratio");
-        Integer cPepScore1 = csv.getColumn("peptide1 score");
-        Integer cPepScore2 = csv.getColumn("peptide2 score");
-        Integer cCrosslinker = csv.getColumn("crosslinker");
-        Integer cExpMZ = csv.getColumn("experimental mz");
-        Integer cCalcMass = csv.getColumn("calculated mass");
-        Integer cInfo = csv.getColumn("info");
+        Integer crun = getColumn(csv,"run",true);
+        Integer cscan = getColumn(csv,"scan",true);
+        Integer cpsmID = getColumn(csv,"psmid",true);
+        int cpep1 = getColumn(csv,"peptide1",false);
+        int cpep2 = getColumn(csv,"peptide2",false);
+        Integer cpep1len = getColumn(csv,"peptide length 1",true);
+        Integer cpep2len = getColumn(csv,"peptide length 2",true);
+        int cpep1site = getColumn(csv,"peptide link 1",false);
+        int cpep2site = getColumn(csv,"peptide link 2",false);
+        int cpep1decoy = getColumn(csv,"is decoy 1",false);
+        Integer cpep2decoy = getColumn(csv,"is decoy 2",true);
+        int cprecZ = getColumn(csv,"precursor charge",false);
+        int cscore = getColumn(csv,"score",false);
+        int caccession1 = getColumn(csv,"accession1",false);
+        int caccession2 = getColumn(csv,"accession2",false);
+        Integer cdescription1 = getColumn(csv,"description1",true);
+        Integer cdescription2 = getColumn(csv,"description2",true);
+        Integer cpeptide_position1 = getColumn(csv,"peptide position 1",true);
+        Integer cpeptide_position2 = getColumn(csv,"peptide position 2",true);
+        Integer cscoreratio = getColumn(csv,"score ratio",true);
+        Integer cPepScore1 = getColumn(csv,"peptide1 score",true);
+        Integer cPepScore2 = getColumn(csv,"peptide2 score",true);
+        Integer cCrosslinker = getColumn(csv,"crosslinker",true);
+        Integer cExpMZ = getColumn(csv,"experimental mz",true);
+        Integer cCalcMass = getColumn(csv,"calculated mass",true);
+        Integer cInfo = getColumn(csv,"info",true);
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
         int lineNumber =0;
+        String terminalAminoAcids = "(?:[A-Z\\-][a-z]*|\\[(?:[A-Z\\-][a-z]*)+\\])";
+        Pattern hasTerminalAminoAcids = Pattern.compile("^" +terminalAminoAcids+"\\.(.*)\\."+terminalAminoAcids + "$");
+        Pattern nterminalAminoAcids = Pattern.compile("^" + terminalAminoAcids +"\\.");
+        Pattern cterminalAminoAcids = Pattern.compile("\\."+terminalAminoAcids +"$");
         
         int noPSMID =0;
         while (csv.next()) {
             lineNumber++;
+            if (filter != null && !filter.fits(csv))
+                continue;
             String psmID;
 
             String pepSeq1 = csv.getValue(cpep1);
@@ -163,11 +186,15 @@ public class CSVinFDR extends OfflineFDR {
 
             // if the sequence looks like K.PEPTIDEK.A assume that the first and 
             // last aminoacid are leading and trailing aminoacids and not really part of the peptide
-            if (pepSeq1.matches("[A-Za-z\\-]+\\..*\\.[A-Za-z\\-]+")) {
-                pepSeq1 = pepSeq1.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
+            Matcher m1=hasTerminalAminoAcids.matcher(pepSeq1);
+            Matcher m2=hasTerminalAminoAcids.matcher(pepSeq2);
+            if ((pepSeq2 == null || pepSeq2.isEmpty()) && m1.matches()) {
+                pepSeq1 = m1.replaceAll("$1");
             }
-            if (pepSeq2.matches("[A-Za-z\\-]+\\..*\\.[A-Za-z\\-]+")) {
-                pepSeq2 = pepSeq2.replaceAll("^[A-Z\\-]+\\.", "").replaceAll("\\.[A-Z\\-]+", "");
+                
+            if (m1.matches() && m2.matches()) {
+                pepSeq1 = m1.replaceAll("$1");
+                pepSeq2 = m2.replaceAll("$1");
             }
 
             
@@ -217,7 +244,7 @@ public class CSVinFDR extends OfflineFDR {
             String saccession1 = csv.getValue(caccession1);
             String sdescription1 = csv.getValue(cdescription1);
             String saccession2 = csv.getValue(caccession2);
-            String sdescription2 = csv.getValue(caccession2);
+            String sdescription2 = csv.getValue(cdescription2);
             String spepPosition1 = csv.getValue(cpeptide_position1);
             String spepPosition2= csv.getValue(cpeptide_position2);
             if (spepPosition2 == null || spepPosition2.trim().isEmpty()) 
@@ -322,14 +349,27 @@ public class CSVinFDR extends OfflineFDR {
                             accessions1[p1], descriptions1[p1], accessions2[p2],
                             descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
                             scoreRatio, false,crosslinker,run,scan);
+                    
+                    Double expMZ = null;
+                    if (cExpMZ != null) {
+                        expMZ=csv.getDouble(cExpMZ);
+                        psm.setExperimentalMZ(expMZ);
+                    }
 
                     // read exp- and calc-mass
                     if (cCalcMass != null) {
-                        psm.setCalcMass(csv.getDouble(cCalcMass));
+                        Double calcMass=csv.getDouble(cCalcMass);
+                        
+                        psm.setCalcMass(calcMass);
+                        
+                        if (expMZ != null) {
+                            psm.setExpCharge((byte)Math.round(calcMass/expMZ));
+                            
+                        }
                     }
-                    if (cExpMZ != null) {
-                        psm.setExperimentalMZ(csv.getDouble(cExpMZ));
-                    }
+                    
+                    
+                    
 
                     if (cInfo != null) {
                         psm.setInfo(csv.getValue(cInfo));
@@ -344,11 +384,74 @@ public class CSVinFDR extends OfflineFDR {
 
     @Override
     public String getSource() {
+        boolean filterFound = false;
+        boolean filterSame = true;
+        String filter ="";
+        String ret = "";
+        if (m_filter.get(0) != null) {
+            filter = m_filter.get(0).toString();
+        }
+        // do we have any filter and are they all the same?
+        for (CsvCondition c : m_filter) {
+            if (c != null) {
+                filterFound = true;
+                if (!filter.equals(c.toString())) {
+                    filterSame = false;
+                    break;
+                }
+            }
+        }
+        
+        if (filterFound) {
+            if (filterSame) {
+                StringBuilder sb = new StringBuilder(RArrayUtils.toString(m_source, "\n"));
+                sb.append("\nfilter:").append(filter);
+                ret = sb.toString();
+            } else {
+                StringBuilder sb = new StringBuilder();
+                for (int s = 0; s<m_source.size(); s++) {
+                    sb.append(m_source.get(s)).append("\n");
+                    sb.append("filter:");
+                    if (m_filter.get(s) == null)
+                        sb.append("no filter\n");
+                    else 
+                        sb.append(m_filter.get(s)).append("\n");
+                }
+                sb.delete(sb.length(), sb.length()+1);
+                ret = sb.toString();
+            }
+        } else {
+            if (m_source != null)
+                ret = RArrayUtils.toString(m_source, "\n") ;
+        }
+        return ret;
+    }
+
+    public String getSources() {
         if (m_source != null)
-            return m_source;
+            return RArrayUtils.toString(m_source, "\n") ;
         return "";
     }
+
+    public void setSource(String source) {
+        m_source=new ArrayList<>();
+        m_source.add(source);
+    }
+
+    public void addSource(String source) {
+        m_source.add(source);
+        m_filter.add(null);
+    }
+
+    public void addSource(String source,CsvCondition filter) {
+        m_source.add(source);
+        m_filter.add(filter);
+    }
     
+    public void addSource(ArrayList<String> source,ArrayList<CsvCondition> filter) {
+        m_source.addAll(source);
+        m_filter.addAll(filter);
+    }
     
     public String execClass() {
         return this.getClass().getName();
@@ -404,6 +507,7 @@ public class CSVinFDR extends OfflineFDR {
     }
     
         
+    @Override
     public String[] parseArgs(String[] argv) {
         ArrayList<String> unknown = new ArrayList<String>();
         
@@ -493,7 +597,7 @@ public class CSVinFDR extends OfflineFDR {
                 }
             }
         } else {
-            for (String[] map : ofdr.defaultcolumnmapping) {
+            for (String[] map : ofdr.DEFAULT_COLUMN_MAPPING) {
                 for (int i = 1; i<map.length;i++) {
                     csv.setAlternative(map[0], map[i]);
                 }
@@ -503,7 +607,7 @@ public class CSVinFDR extends OfflineFDR {
         
         // read in all files
         for (String f : files) {
-            Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "seeting up csv input");
+            Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "setting up csv input");
             
             UpdatableChar delimChar = new UpdatableChar(',');
             UpdatableChar quoteChar = new UpdatableChar('"');
@@ -529,7 +633,7 @@ public class CSVinFDR extends OfflineFDR {
             
             Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Read datafrom CSV");
             try {
-                ofdr.readCSV(csv);
+                ofdr.readCSV(csv,null);
             } catch (IOException ex) {
                 Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "Error while reading file: " + f, ex);
                 System.exit(-1);
@@ -549,5 +653,54 @@ public class CSVinFDR extends OfflineFDR {
         
     }
 
+    /**
+     * @return the commandLineColumnMapping
+     */
+    public ArrayList<String[]> getCommandLineColumnMapping() {
+        return commandLineColumnMapping;
+    }
+
+    /**
+     * @param commandLineColumnMapping the commandLineColumnMapping to set
+     */
+    public void setCommandLineColumnMapping(ArrayList<String[]> commandLineColumnMapping) {
+        this.commandLineColumnMapping = commandLineColumnMapping;
+    }
+
+    /**
+     * @return the delimiter
+     */
+    public Character getDelimiter() {
+        return delimiter;
+    }
+
+    /**
+     * @param delimiter the delimiter to set
+     */
+    public void setDelimiter(Character delimiter) {
+        this.delimiter = delimiter;
+    }
+
+    /**
+     * @return the quote
+     */
+    public Character getQuote() {
+        return quote;
+    }
+
+    /**
+     * @param quote the quote to set
+     */
+    public void setQuote(Character quote) {
+        this.quote = quote;
+    }
+
+    public CsvCondition getFilter() {
+        return m_filter.get(0);
+    }
+
+    public Collection<CsvCondition> getFilters() {
+        return m_filter;
+    }
     
 }

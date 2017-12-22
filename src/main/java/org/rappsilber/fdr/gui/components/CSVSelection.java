@@ -15,7 +15,9 @@
  */
 package org.rappsilber.fdr.gui.components;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,25 +28,32 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.EventObject;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.UIManager;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.gui.components.JoinedThreadedTextOuput;
 import org.rappsilber.data.csv.ColumnAlternatives;
+import org.rappsilber.data.csv.condition.CsvCondition;
+import org.rappsilber.data.csv.gui.filter.ConditionList;
 
 /**
  *
  * @author lfischer
  */
-public class CSVSelection extends javax.swing.JPanel {
+public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvParser>{
 
     private ArrayList<java.awt.event.ActionListener> m_actionlisteners = new ArrayList<ActionListener>();
 
@@ -55,8 +64,35 @@ public class CSVSelection extends javax.swing.JPanel {
     public String[] csvColumns = new String[]{missingColumn};
     public String[] csvColumnsOptional = new String[]{optionalColumn};
 
+
     private JoinedThreadedTextOuput m_status = null;
     
+   public static String[][] COLUMN_ALIASES = new String[][]{
+        {"matchid", "spectrummatchid", "match id", "spectrum match id", "psmid"},
+        {"isdecoy", "is decoy", "reverse", "decoy"},
+        {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy"},
+        {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy"},
+        {"score", "match score", "match score", "pep score"},
+        {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score"},
+        {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score"},
+        {"run", "run name", "raw file", "filename/id"},
+        {"scan", "scan number", "ms/ms scan number", "spectrum number"},
+        {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1"},
+        {"pep2 position", "peptide position2", "start2", "peptide position 2", "PepPos2"},
+        {"pep1 link pos", "link1", "peptide1 link pos", "peptide link1", "peptide link 1", "from site","LinkPos1"},
+        {"pep2 link pos", "link2", "peptide2 link pos", "peptide link2", "peptide link 2" , "to site","LinkPos2"},
+        {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1"},
+        {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2"},
+        {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence"},
+        {"peptide2" , "peptide 2", "pepseq2"},
+        {"precursermz", "precursor mz", "experimental mz", "exp mz"},
+        {"precursor charge", "precoursorcharge", "charge"},
+        {"calculated mass", "calc mass", "theoretical mass"},
+        {"description1", "fasta1"},
+        {"description2", "fasta2"},
+        {"protein1", "display protein1", "accession1"},
+        {"protein2", "display protein2", "accession2"},}; 
+
     
     private class NeededOptionalComboBoxCellEditor extends DefaultCellEditor {
 
@@ -122,12 +158,15 @@ public class CSVSelection extends javax.swing.JPanel {
      */
     public CSVSelection() {
         initComponents();
+        fbCsvIn.setMultipleFiles(true);
         fbCsvIn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setUpCsvHeaders();
+                ckFilter.setEnabled(true);
             }
         });       
         
+        fbCsvIn.setLocalPropertyKey("xiFDR_CSV_IN_LAST_FOLDER");
 
         ckCSVHasHeader.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -141,6 +180,11 @@ public class CSVSelection extends javax.swing.JPanel {
 
         TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(2);
         columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
+        resetColumnMappings();
+        spAdditional.setVisible(false);
+    }
+
+    protected void resetColumnMappings() {
         TableModel tm = tblCSVColumns.getModel();
         for (int r = 0; r < tblCSVColumns.getRowCount(); r++) {
             if (Boolean.TRUE.equals(tm.getValueAt(r, 1))) {
@@ -149,7 +193,6 @@ public class CSVSelection extends javax.swing.JPanel {
                 tblCSVColumns.getModel().setValueAt(missingColumn, r, 2);
             }
         }
-        
     }
 
     public void setUpCsvHeaders() {
@@ -158,7 +201,7 @@ public class CSVSelection extends javax.swing.JPanel {
             CsvParser csv;
             try {
                 csv = CsvParser.guessCsv(f, 50);
-                ColumnAlternatives.setupAlternatives(csv);
+                ColumnAlternatives.setupAlternatives(csv,COLUMN_ALIASES);
                 String delimiter = csv.getDelimiter();
                 if (delimiter.contentEquals(",")) {
                     delimiter = "Comma";
@@ -177,7 +220,11 @@ public class CSVSelection extends javax.swing.JPanel {
 
                 if (ckCSVHasHeader.isSelected()) {
                     csv.setCurrentLineAsHeader();
-                    ColumnAlternatives.levenshteinMatchHeadersALternatives(csv);
+                    HashMap<String,String[]> excludeMappings = new HashMap<>(2);
+                    if (ckSmartMatch.isSelected()) {
+                        excludeMappings.put("psmid",new String[]{"spectra to matched","matchrank","spectrum quality score"});
+                        ColumnAlternatives.levenshteinMatchHeadersAlternatives(csv, excludeMappings,0.7);
+                    }
                     for (int c = 0; c < csv.getMaxColumns(); c++) {
                         csvColumns[c + 1] = csv.getHeader(c);
                         csvColumnsOptional[c + 1] = csv.getHeader(c);
@@ -199,6 +246,10 @@ public class CSVSelection extends javax.swing.JPanel {
                 cbCSVHeaders.setModel(new DefaultComboBoxModel(csvColumns));
                 cbCSVHeaderOptional.setModel(new DefaultComboBoxModel(csvColumnsOptional));
                 csv.close();
+                if (filter.setCsvParser(csv) >0) {
+                    btnFilter.setIcon(UIManager.getIcon("OptionPane.errorIcon"));
+                    btnFilter.setToolTipText("Filter no longer match to file");
+                }
 
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
@@ -224,7 +275,11 @@ public class CSVSelection extends javax.swing.JPanel {
     public File getFile() {
         return fbCsvIn.getFile();
     }
-    
+
+    public File[] getFiles() {
+        return fbCsvIn.getFiles();
+    }
+
     protected void doActionPerformed() {
         ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "file selected",Calendar.getInstance().getTimeInMillis(), 0);
         for (java.awt.event.ActionListener al : m_actionlisteners) 
@@ -298,6 +353,88 @@ public class CSVSelection extends javax.swing.JPanel {
         return csv;
     }
     
+    public Iterator<CsvParser> iterator() {
+        final File[] inputs = getFiles();
+        final TableModel tm = tblCSVColumns.getModel();
+        String preDelimiter = getDelimiter();
+        if (preDelimiter.contentEquals("Comma")) {
+            preDelimiter = ",";
+        } else if (preDelimiter.contentEquals("Tab")) {
+            preDelimiter = "\t";
+        } else if (preDelimiter.contentEquals("Space")) {
+            preDelimiter = " ";
+        }
+        final char delimiter = preDelimiter.charAt(0);
+        final char quote = getQuote();
+        final boolean hasHeader =hasHeader();
+        return new Iterator<CsvParser>() {
+            int n=0;
+            
+            @Override
+            public boolean hasNext() {
+                return n<inputs.length;
+            }
+
+            @Override
+            public CsvParser next()  {
+                File nf = inputs[n++];
+                CsvParser csv = new CsvParser();
+                for (int r = 0; r < tm.getRowCount(); r++) {
+                    if (tm.getValueAt(r, 2) != missingColumn) {
+                        csv.setAlternative(tm.getValueAt(r, 2).toString(), tm.getValueAt(r, 0).toString());
+                    }
+                }
+                csv.setDelimiter(delimiter);
+                csv.setQuote(quote);
+                try {                
+                    csv.openFile(nf, hasHeader);
+                } catch (IOException ex) {
+                    Logger.getLogger(CSVSelection.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new RuntimeException(ex);
+                }
+                return csv;
+            }
+        };
+        
+    }
+
+    
+    JFrame windowFilter;
+    
+    public void showFilter() {
+        if (windowFilter == null){
+            windowFilter = new JFrame();
+            windowFilter.setName("XiFDR - CSV Filter");
+            windowFilter.setLayout(new BorderLayout());
+            ConditionList csv = filter;
+            windowFilter.setPreferredSize(csv.getPreferredSize());
+            windowFilter.add(csv, BorderLayout.CENTER);
+            JButton btnok = new JButton("OK");
+            btnok.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    windowFilter.setVisible(false);
+                }
+            });
+            windowFilter.add(csv, BorderLayout.CENTER);
+            windowFilter.add(btnok, BorderLayout.PAGE_END);
+            windowFilter.pack();
+            Dimension s = windowFilter.getSize();
+            s.height=s.height*2;
+            windowFilter.setSize(s);
+            windowFilter.setVisible(true);
+            
+        } else {
+            windowFilter.setVisible(true);
+        }
+    }
+    
+    public CsvCondition getFilter() {
+        if (ckFilter.isSelected()) {
+            return filter.getCondition();
+        }
+        return null;
+    }
     
     public void setEnable(boolean enabled) {
         super.setEnabled(enabled);
@@ -308,6 +445,13 @@ public class CSVSelection extends javax.swing.JPanel {
         btnAddCSV.setEnabled(enabled);
     }
 
+    
+    
+    public void addAdditionalOption(Component c) {
+        spAdditional.setVisible(true);
+        pAdditional.add(c);
+                
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -320,6 +464,7 @@ public class CSVSelection extends javax.swing.JPanel {
         cbCSVHeaders = new javax.swing.JComboBox();
         cbCSVHeaderOptional = new javax.swing.JComboBox();
         bgScoreDirectionCSV = new javax.swing.ButtonGroup();
+        filter = new org.rappsilber.data.csv.gui.filter.ConditionList();
         jLabel26 = new javax.swing.JLabel();
         cbCSVQuote = new javax.swing.JComboBox();
         cbCSVDElimiter = new javax.swing.JComboBox();
@@ -333,6 +478,11 @@ public class CSVSelection extends javax.swing.JPanel {
         btnReadCsv = new javax.swing.JButton();
         jLabel27 = new javax.swing.JLabel();
         btnAddCSV = new javax.swing.JButton();
+        ckSmartMatch = new javax.swing.JCheckBox();
+        spAdditional = new javax.swing.JScrollPane();
+        pAdditional = new javax.swing.JPanel();
+        ckFilter = new javax.swing.JCheckBox();
+        btnFilter = new javax.swing.JButton();
 
         cbCSVHeaders.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
@@ -384,7 +534,9 @@ public class CSVSelection extends javax.swing.JPanel {
                 {"description2",  new Boolean(true), null},
                 {"peptide position 1", null, null},
                 {"peptide position 2", null, null},
-                {"Crosslinker",  new Boolean(true), null}
+                {"Crosslinker",  new Boolean(true), null},
+                {"experimental mz",  new Boolean(true), null},
+                {"calculated mass",  new Boolean(true), null}
             },
             new String [] {
                 "Column", "Optional", "Name in CSV"
@@ -410,6 +562,12 @@ public class CSVSelection extends javax.swing.JPanel {
 
         ckCSVHasHeader.setSelected(true);
         ckCSVHasHeader.setText("hasHeader");
+        ckCSVHasHeader.setToolTipText("first row of input is considered header");
+        ckCSVHasHeader.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckCSVHasHeaderActionPerformed(evt);
+            }
+        });
 
         fbCsvIn.setDescription("Text Files");
         fbCsvIn.setExtensions(new String[] {"csv", "txt", "tsv"});
@@ -436,12 +594,38 @@ public class CSVSelection extends javax.swing.JPanel {
             }
         });
 
+        ckSmartMatch.setText("intelligent column matching");
+        ckSmartMatch.setToolTipText("Needs Manual control:tries to select the best header by string distance");
+        ckSmartMatch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckSmartMatchActionPerformed(evt);
+            }
+        });
+
+        pAdditional.setLayout(new javax.swing.BoxLayout(pAdditional, javax.swing.BoxLayout.Y_AXIS));
+        spAdditional.setViewportView(pAdditional);
+
+        ckFilter.setEnabled(false);
+        ckFilter.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckFilterActionPerformed(evt);
+            }
+        });
+
+        btnFilter.setText("Filter");
+        btnFilter.setEnabled(false);
+        btnFilter.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnFilterActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
@@ -449,33 +633,40 @@ public class CSVSelection extends javax.swing.JPanel {
                                 .addComponent(jLabel11))
                             .addGroup(layout.createSequentialGroup()
                                 .addContainerGap()
-                                .addComponent(jLabel26)))
+                                .addComponent(jLabel26))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(ckFilter)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnFilter)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(cbCSVDElimiter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(ckCSVHasHeader))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
-                                        .addComponent(cbCSVDElimiter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(jLabel27)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(cbCSVQuote, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(ckCSVHasHeader))
+                                    .addComponent(ckSmartMatch))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(rbCSVLowBetter)
-                                    .addComponent(rbCSVHighBetter)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(fbCsvIn, javax.swing.GroupLayout.DEFAULT_SIZE, 512, Short.MAX_VALUE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(btnReadCsv, javax.swing.GroupLayout.DEFAULT_SIZE, 78, Short.MAX_VALUE)
-                            .addComponent(btnAddCSV, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(0, 8, Short.MAX_VALUE))
+                                    .addComponent(rbCSVHighBetter)
+                                    .addComponent(rbCSVLowBetter))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(btnReadCsv, javax.swing.GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
+                                    .addComponent(btnAddCSV, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                            .addComponent(fbCsvIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(jScrollPane2)))
-                .addContainerGap())
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(spAdditional))))
+                .addGap(6, 6, 6))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -489,24 +680,25 @@ public class CSVSelection extends javax.swing.JPanel {
                         .addComponent(fbCsvIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(btnAddCSV)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnReadCsv))
+                    .addComponent(btnAddCSV)
+                    .addComponent(rbCSVHighBetter)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jLabel26)
                         .addComponent(cbCSVDElimiter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(jLabel27)
-                        .addComponent(cbCSVQuote, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(rbCSVHighBetter)
-                        .addGap(3, 3, 3)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(rbCSVLowBetter)
-                            .addComponent(ckCSVHasHeader))))
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 171, Short.MAX_VALUE)
-                .addContainerGap())
+                        .addComponent(cbCSVQuote, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(btnReadCsv)
+                    .addComponent(rbCSVLowBetter)
+                    .addComponent(ckSmartMatch)
+                    .addComponent(ckCSVHasHeader)
+                    .addComponent(btnFilter)
+                    .addComponent(ckFilter))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(spAdditional, javax.swing.GroupLayout.DEFAULT_SIZE, 44, Short.MAX_VALUE)
+                .addGap(10, 10, 10)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -565,7 +757,7 @@ public class CSVSelection extends javax.swing.JPanel {
         for (int r = 0; r < tm.getRowCount(); r++) {
             if ((!Boolean.TRUE.equals(tm.getValueAt(r, 1))) && tm.getValueAt(r, 2) == missingColumn) {
                 JOptionPane.showMessageDialog(this, "No column for " + tm.getValueAt(r, 0) + " selected", "Missing Column", JOptionPane.WARNING_MESSAGE);
-                return true;
+                return false;
             }
             if (tm.getValueAt(r, 0).toString().contentEquals("Peptide1 Score") && tm.getValueAt(r, 2) != optionalColumn) {
                 peptide1ScoreSelected = true;
@@ -600,22 +792,52 @@ public class CSVSelection extends javax.swing.JPanel {
             doAddPerformed();
     }//GEN-LAST:event_btnAddCSVActionPerformed
 
+    private void ckSmartMatchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckSmartMatchActionPerformed
+        resetColumnMappings();
+        
+        setUpCsvHeaders();
+    }//GEN-LAST:event_ckSmartMatchActionPerformed
+
+    private void ckCSVHasHeaderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckCSVHasHeaderActionPerformed
+        ckSmartMatch.setEnabled(ckCSVHasHeader.isSelected());
+    }//GEN-LAST:event_ckCSVHasHeaderActionPerformed
+
+    private void ckFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckFilterActionPerformed
+        btnFilter.setEnabled(ckFilter.isSelected());
+        if (ckFilter.isSelected()) {
+            showFilter();
+        }
+    }//GEN-LAST:event_ckFilterActionPerformed
+
+    private void btnFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFilterActionPerformed
+        showFilter();
+        btnFilter.setIcon(null);
+        btnFilter.setToolTipText("open filter dialog");
+        
+    }//GEN-LAST:event_btnFilterActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup bgScoreDirectionCSV;
     private javax.swing.JButton btnAddCSV;
+    private javax.swing.JButton btnFilter;
     private javax.swing.JButton btnReadCsv;
     private javax.swing.JComboBox cbCSVDElimiter;
     private javax.swing.JComboBox cbCSVHeaderOptional;
     private javax.swing.JComboBox cbCSVHeaders;
     private javax.swing.JComboBox cbCSVQuote;
     private javax.swing.JCheckBox ckCSVHasHeader;
+    private javax.swing.JCheckBox ckFilter;
+    private javax.swing.JCheckBox ckSmartMatch;
     private org.rappsilber.gui.components.FileBrowser fbCsvIn;
+    private org.rappsilber.data.csv.gui.filter.ConditionList filter;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JPanel pAdditional;
     private javax.swing.JRadioButton rbCSVHighBetter;
     private javax.swing.JRadioButton rbCSVLowBetter;
+    public javax.swing.JScrollPane spAdditional;
     private javax.swing.JTable tblCSVColumns;
     // End of variables declaration//GEN-END:variables
 }

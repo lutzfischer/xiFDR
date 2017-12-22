@@ -17,6 +17,7 @@ package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import org.rappsilber.fdr.groups.ProteinGroup;
 
 /**
  *
@@ -32,6 +33,8 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
         support= new ArrayList<>();
         support.add(psm);
         topPSM=psm;
+        this.crosslinker = psm.getCrosslinker();
+        psm.setPartOfUniquePSM(this);
     }
     
     
@@ -47,9 +50,10 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
         PSM c = (PSM) l;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
         return this.getCrosslinker() == c.getCrosslinker() && this.getCharge() == c.getCharge() &&
-                (c.getPeptide1().equals(this.getPeptide1()) && c.getPeptide2().equals(this.getPeptide2()) && c.getLinkSite1() == this.getLinkSite1() && c.getLinkSite2() == this.getLinkSite2()) 
+//                (c.getPeptide1().equals(this.getPeptide1()) && c.getPeptide2().equals(this.getPeptide2()) && ((PeptideSite)c.getLinkSite1() == this.getLinkSite1() && c.getLinkSite2() == this.getLinkSite2()) 
+                (c.getPeptide1().equals(this.getPeptide1()) && c.getPeptide2().equals(this.getPeptide2()) && c.getPeptideLinkSite1()== this.getPeptideLinkSite1() && c.getPeptideLinkSite2() == this.getPeptideLinkSite2()) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
-                (c.getPeptide2().equals(this.getPeptide1()) && c.getPeptide1().equals(this.getPeptide2()) && c.getLinkSite2() == getLinkSite1() && c.getLinkSite1() == getLinkSite2());
+                (c.getPeptide2().equals(this.getPeptide1()) && c.getPeptide1().equals(this.getPeptide2()) && c.getPeptideLinkSite2()== this.getPeptideLinkSite1() && c.getPeptideLinkSite1() == this.getPeptideLinkSite2());
     }
     
     /**
@@ -62,18 +66,38 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
             return;
         }
         if (p instanceof UniquePSM) {
-            support.addAll(((UniquePSM)p).support);
+            for (PSM psm : ((UniquePSM) p).support) {
+                support.add(psm);
+                psm.setPartOfUniquePSM(this);
+            }
+            //support.addAll(((UniquePSM)p).support);
+            
             if (p.getScore() > getScore()) {
                 setScore(p.getScore());
                 topPSM=((UniquePSM) p).topPSM;
             }
         } else {
             support.add(p);
+            p.setPartOfUniquePSM(this);
             if (p.getScore() > getScore()) {
                 setScore(p.getScore());
                 topPSM=p;
             }
         }
+    }    
+
+    @Override
+    public boolean isSpecialcase() {
+        return getTopPSM().isSpecialcase(); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int getFDRGroup() {
+        return getTopPSM().getFDRGroup(); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    public int hashCode() {
+        return topPSM.hashCode();
     }    
 
     /**
@@ -93,6 +117,30 @@ public class UniquePSM extends PSM implements Iterable<PSM>{
     @Override
     public Iterator<PSM> iterator() {
         return support.iterator();
+    }
+
+    @Override
+    public void setFDR(double fdr) {
+        super.setFDR(fdr); //To change body of generated methods, choose Tools | Templates.
+        topPSM.setFDR(fdr);
+    }
+
+    @Override
+    public void setFDRGroup() {
+        super.setFDRGroup(); //To change body of generated methods, choose Tools | Templates.
+        topPSM.setFDRGroup();
+    }
+
+    @Override
+    public void setFdrPeptidePair(PeptidePair pp) {
+        super.setFdrPeptidePair(pp); //To change body of generated methods, choose Tools | Templates.
+        topPSM.setFdrPeptidePair(pp);
+    }
+
+    @Override
+    public void setFdrProteinGroup(ProteinGroup pg) {
+        super.setFdrProteinGroup(pg); //To change body of generated methods, choose Tools | Templates.
+        topPSM.setFdrProteinGroup(pg);
     }
 
     

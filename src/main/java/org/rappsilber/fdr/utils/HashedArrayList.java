@@ -103,4 +103,9 @@ public class HashedArrayList<T> extends ArrayList<T> {
         return hash.get(e);
     }
     
+    
+    public void clear() {
+        super.clear();
+        hash.clear();
+    }
 }

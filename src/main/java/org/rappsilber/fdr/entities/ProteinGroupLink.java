@@ -50,6 +50,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     protected boolean m_linkssorted = false;
     private boolean m_specialOnly = true;
     private HashMap<String, HashSet<String>> runtoScan = null;  
+    private Integer fdrGroup = null;
     
     public static int MIN_DISTANCE_FOR_LONG = 0;
     
@@ -228,17 +229,20 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
 
 
     public int getFDRGroup() {
-        int group = (isInternal?1:0) + (m_specialOnly?2:0);
-        if (MIN_DISTANCE_FOR_LONG > 0 && isInternal && getProteinGroup1().size() + getProteinGroup1().size() ==2) {
-            for (int f : getPosition1().values().iterator().next()) {
-                for (int t : getPosition2().values().iterator().next()) {
-                    if (Math.abs(f-t) > MIN_DISTANCE_FOR_LONG) {
-                        group+=4;
+        if (fdrGroup == null) {
+            int group = (isInternal?1:0) + (m_specialOnly?2:0);
+            if (MIN_DISTANCE_FOR_LONG > 0 && isInternal && getProteinGroup1().size() + getProteinGroup1().size() ==2) {
+                for (int f : getPosition1().values().iterator().next()) {
+                    for (int t : getPosition2().values().iterator().next()) {
+                        if (Math.abs(f-t) > MIN_DISTANCE_FOR_LONG) {
+                            group+=4;
+                        }
                     }
                 }
             }
+            fdrGroup = group;
         }
-        return group;
+        return fdrGroup;
     }
 
     public String getFDRGroupName() {
@@ -439,6 +443,10 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     public double getFDR() {
         return m_fdr;
     }
+    
+    public void setFDRGroup(int fdrGroup) {
+        this.fdrGroup = fdrGroup;
+    }
 
 //    /**
 //     * @return the m_PPIfdr
@@ -463,9 +471,11 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
      */
     public void setFdrPPI(ProteinGroupPair ppi) {
         this.m_ppi = ppi;
-        // flag up the peptide pairs
-        for (PeptidePair pp : support) {
-            pp.setFdrLink(this);
+        if (ppi != null) {
+            // flag up the peptide pairs
+            for (PeptidePair pp : support) {
+                pp.setFdrLink(this);
+            }
         }
     }
 

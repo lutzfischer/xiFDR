@@ -30,6 +30,8 @@ import javax.swing.JFrame;
  */
 public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDRSettings {
 
+
+
     protected ArrayList<ActionListener> m_StopMaximizingListener = new ArrayList<ActionListener>();
 
     protected ArrayList<java.awt.event.ActionListener> m_calc_listener = new ArrayList<ActionListener>();
@@ -39,6 +41,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     protected boolean boostPeptidePairs = true;
     protected boolean boostProteins = true;
     protected boolean boostLinks = true;
+    protected boolean groupByPSMCount = false;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -155,7 +158,19 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
             fi.setVisible(true);
         }
     }
-    
+    /**
+     * @return the groupByPPI
+     */
+    public boolean isGroupByPSMCount() {
+        return groupByPSMCount;
+    }
+
+    /**
+     * @param groupByPPI the groupByPPI to set
+     */
+    public void setGroupByPSMCount(boolean groupBySMCount) {
+        this.groupByPSMCount = groupBySMCount;
+    }    
     
     public void setAll(FDRSettings settings) {
         this.setBoostingSteps(settings.getBoostingSteps());
@@ -182,6 +197,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
         this.boostPSMs(settings.boostPSMs());
         this.boostPeptidePairs(settings.boostPeptidePairs());
         this.boostProteins(settings.boostProteins());
+        this.setGroupByPSMCount(settings.isGroupByPSMCount());
     }
     
 //    public abstract void setEnabled(boolean e);

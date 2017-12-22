@@ -16,6 +16,7 @@
 package org.rappsilber.fdr.result;
 
 import java.util.Collection;
+import java.util.HashMap;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
@@ -39,6 +40,19 @@ public  class FDRResult {
     public int maximumLinkAmbiguity = 0;
     public double reportFactor = 0;
     public boolean uniquePSMs = false;
+
+    public void clear() {
+        if (psmFDR != null)
+            psmFDR.clear();
+        if (peptidePairFDR != null)
+            peptidePairFDR.clear();
+        if (proteinGroupFDR != null)
+            proteinGroupFDR.clear();
+        if (proteinGroupLinkFDR != null)
+            proteinGroupLinkFDR.clear();
+        if (proteinGroupPairFDR != null)
+            proteinGroupPairFDR.clear();
+    }
     
 
 

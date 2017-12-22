@@ -120,5 +120,6 @@ public interface FDRSettings {
     public void boostPeptidePairs(boolean boost);
     public boolean boostLinks();
     public void boostLinks(boolean boost);
-    
+    public boolean isGroupByPSMCount();
+    public void setGroupByPSMCount(boolean groupByPPI);
 }

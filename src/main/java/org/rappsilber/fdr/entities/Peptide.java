@@ -389,7 +389,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      */
     public void resetFDR() {
         m_fdr= Double.MAX_VALUE;
-        m_peppairs = new HashSet<PeptidePair>();
+        m_peppairs.clear();
         //m_positions = new HashMap<Protein, IntArrayList>();
         setLinkedSupport(1);
     }
@@ -563,5 +563,20 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      */
     public double getMass() {
         return this.mass;
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup1() {
+        return getProteinGroup();
+    }
+
+    @Override
+    public ProteinGroup getProteinGroup2() {
+        return ProteinGroup.NOPROTEINGROUP;
+    }
+
+    @Override
+    public void setFDRGroup(int fdrGroup) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
