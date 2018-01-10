@@ -26,7 +26,7 @@ import org.rappsilber.fdr.utils.AbstractFDRElement;
  * @author lfischer
  */
 public class Protein extends AbstractFDRElement<Protein> {//implements Comparable<Protein> {
-    private int id;
+    private long id;
     private String accession;
     private String description;
     private String sequence="";
@@ -59,7 +59,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      * @param internal
      * @param between 
      */
-    public Protein(int id, String accession, String description, boolean isDecoy, boolean linear, boolean internal, boolean between) {
+    public Protein(long id, String accession, String description, boolean isDecoy, boolean linear, boolean internal, boolean between) {
         this.id = id;
         // at some points we consider decoy and non decoy proteins the same. So 
         // both get the same accession to make my life easier
@@ -175,7 +175,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     /**
      * @return the id
      */
-    public int getId() {
+    public long getId() {
         return id;
     }
 
