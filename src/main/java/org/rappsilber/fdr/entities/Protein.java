@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
+import org.rappsilber.fdr.utils.FDRGroupNames;
 
 /**
  * Represents a single protein. 
@@ -42,12 +43,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     private double m_fdr = -1;
     
     
-    private Integer fdrgroup = null;
+    private String fdrgroup = null;
     
     /**
      * Used as the protein of origin for the NOPEPTIDE peptide
      */
     public static Protein NOPROTEIN = new Protein(Integer.MAX_VALUE, "", "", false,true,true, true);
+    private String validated;
 
     /**
      * Constructor
@@ -124,6 +126,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         //setFDRGroup();
        //isAmbigious &= o.isAmbigious;        
         //            score+= o.score;
+        if (o.hasPositiveGrouping()) {
+            if (this.validated == null ) {
+                this.validated = o.getPositiveGrouping();
+            } else if (!this.validated.contentEquals(o.getPositiveGrouping())) {
+                this.validated += " " + o.getPositiveGrouping();
+            }
+        }
     }
 
     /**
@@ -141,7 +150,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         this.betweenSupport |= !(pp.isInternal() || pp.isLinear);
         this.linearSupport |= pp.isLinear;
         //setFDRGroup();
-
+        if (pp.hasPositiveGrouping()) {
+            if (this.validated == null) {
+                this.validated = pp.getPositiveGrouping();
+            } else if (!this.validated.contentEquals(pp.getPositiveGrouping())) {
+                this.validated += " " + pp.getPositiveGrouping();
+            }
+        }
     }
 
 
@@ -227,37 +242,45 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     }
 
     private void setFDRGroup() {
-        fdrgroup = (hasInternalSupport() ? 2:0) + (hasLinearSupport() ?1 :0);
-        if (fdrgroup == 0 && betweenSupport)
-            fdrgroup = 4;
+        fdrgroup = "";
+        if (hasLinearSupport()) {
+            fdrgroup = "Linear";
+        } 
+        if (hasInternalSupport()) {
+            fdrgroup += "Internal";
+        } 
+        if (fdrgroup.isEmpty()){
+            fdrgroup = "Between";
+        }
+        fdrgroup=FDRGroupNames.get(fdrgroup);
         
     }
     
     @Override
-    public int getFDRGroup() {
+    public String getFDRGroup() {
         if (fdrgroup == null)
             setFDRGroup();
         return fdrgroup;
     }
     
     
-    @Override
-    public String getFDRGroupName() {
-        return getFDRGroupName(fdrgroup);
-    }
-    
-    public static String getFDRGroupName(int group) {
-        switch (group) {
-            case -1 : return "all combined";
-            case 0 : return "Only PPI";
-            case 1 : return "Linear"    ;
-            case 2 : return "Within";
-            case 3 : return "Linear + Within";
-            case 4 : return "between only";
-                
-            default : return "?no support?";
-        }
-    }
+//    @Override
+//    public String getFDRGroupName() {
+//        return getFDRGroupName(fdrgroup);
+//    }
+//    
+//    public static String getFDRGroupName(int group) {
+//        switch (group) {
+//            case -1 : return "all combined";
+//            case 0 : return "Only PPI";
+//            case 1 : return "Linear"    ;
+//            case 2 : return "Within";
+//            case 3 : return "Linear + Within";
+//            case 4 : return "between only";
+//                
+//            default : return "?no support?";
+//        }
+//    }
     
     @Override
     public boolean isTT() {
@@ -409,9 +432,38 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     }
 
     @Override
-    public void setFDRGroup(int fdrGroup) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void setFDRGroup(String fdrGroup) {
+        this.fdrgroup = FDRGroupNames.get(fdrGroup);
     }
     
+    @Override
+    public boolean hasPositiveGrouping() {
+        return this.validated != null;
+    }
     
+    @Override
+    public void setPositiveGrouping(String av) {
+        this.validated = av;
+    }
+
+    @Override
+    public String getPositiveGrouping() {
+        return this.validated;
+    }
+
+    @Override
+    public boolean hasNegativeGrouping() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setNegativeGrouping(String v) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public String getNegativeGrouping() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+        
 }

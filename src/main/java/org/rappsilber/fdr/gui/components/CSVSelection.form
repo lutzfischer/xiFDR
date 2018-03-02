@@ -201,7 +201,7 @@
         <Component class="javax.swing.JTable" name="tblCSVColumns">
           <Properties>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="3" rowCount="25">
+              <Table columnCount="3" rowCount="28">
                 <Column editable="false" title="Column" type="java.lang.String">
                   <Data value="run"/>
                   <Data value="scan"/>
@@ -228,6 +228,9 @@
                   <Data value="Crosslinker"/>
                   <Data value="experimental mz"/>
                   <Data value="calculated mass"/>
+                  <Data value="Info Field"/>
+                  <Data value="Negative Grouping"/>
+                  <Data value="Positive Grouping"/>
                 </Column>
                 <Column editable="false" title="Optional" type="java.lang.Boolean">
                   <Data value="true"/>
@@ -255,9 +258,15 @@
                   <Data value="true"/>
                   <Data value="true"/>
                   <Data value="true"/>
+                  <Data value="null"/>
+                  <Data value="true"/>
+                  <Data value="true"/>
                 </Column>
                 <Column editable="true" title="Name in CSV" type="java.lang.String">
                   <Data value=""/>
+                  <Data value="null"/>
+                  <Data value="null"/>
+                  <Data value="null"/>
                   <Data value="null"/>
                   <Data value="null"/>
                   <Data value="null"/>

@@ -122,4 +122,9 @@ public interface FDRSettings {
     public void boostLinks(boolean boost);
     public boolean isGroupByPSMCount();
     public void setGroupByPSMCount(boolean groupByPPI);
+    
+    public void setMinTD(Integer c) ;
+
+    public int getMinTD();
+    
 }

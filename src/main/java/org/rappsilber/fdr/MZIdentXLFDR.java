@@ -399,14 +399,14 @@ public class MZIdentXLFDR extends OfflineFDR {
                     
                     if (linkPositions.size() > 0) {
                         if (linkPositions.size() == 2) {
-                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, linkPositions.get(0), linkPositions.get(1), pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, false);
+                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, linkPositions.get(0), linkPositions.get(1), pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, null);
                         } else {
                             System.err.println(sii.getId() + ": Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match");
                             Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "{0}Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match", sii.getId());
-                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, false);
+                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, null);
                         }
                     } else {
-                        addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, false);
+                        addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, null);
                     }
                     
                 }
@@ -497,7 +497,7 @@ public class MZIdentXLFDR extends OfflineFDR {
                             crosslinkedDecoys = true;
                         
                         countCrosslinkedPSM++;
-                        addMatch(sii1.getId(), pepSeq1, pepSeq2, pep1.getPeptideSequence().length(), pep2.getPeptideSequence().length(), peplinksite1, peplinksite2, pepev1.isIsDecoy(), pepev2.isIsDecoy(), sii1.getChargeState(),score, acc1, desc1, acc2, desc2, pepstart1, pepstart2, scoreRatio, false);
+                        addMatch(sii1.getId(), pepSeq1, pepSeq2, pep1.getPeptideSequence().length(), pep2.getPeptideSequence().length(), peplinksite1, peplinksite2, pepev1.isIsDecoy(), pepev2.isIsDecoy(), sii1.getChargeState(),score, acc1, desc1, acc2, desc2, pepstart1, pepstart2, scoreRatio, null);
                     }
                     
                 }

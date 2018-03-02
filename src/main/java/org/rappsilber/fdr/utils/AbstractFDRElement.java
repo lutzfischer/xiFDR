@@ -77,5 +77,34 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     public abstract ProteinGroup getProteinGroup1();
     public abstract ProteinGroup getProteinGroup2();
 
+    /** 
+     * indicates this passed some form of external validation and should 
+     * therefore have a higher chance to be true.
+     */
+    public abstract boolean hasPositiveGrouping();
+    
+    /** 
+     * define the validation state of the match
+     * this indicates (if true) this passed some form of external validation and 
+     * should therefore have a higher chance to be true.
+     */
+    public abstract void setPositiveGrouping(String v);
+
+    public abstract String getPositiveGrouping();
+
+
+    /** 
+     * indicates this passed some form of Negative value that makes this 
+     * inherently less likely to be true
+     */
+    public abstract boolean hasNegativeGrouping();
+    
+    /** 
+     * indicates this passed some form of Negative value that makes this 
+     * inherently less likely to be true
+     */
+    public abstract void setNegativeGrouping(String v);
+
+    public abstract String getNegativeGrouping();
     
 }

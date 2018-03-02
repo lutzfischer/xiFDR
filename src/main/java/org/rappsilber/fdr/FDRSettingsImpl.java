@@ -45,6 +45,7 @@ public class FDRSettingsImpl implements FDRSettings {
     protected boolean boostProteins = true;
     protected boolean boostLinks = true;
     protected boolean groupByPPI = false;
+    int minTD = 0;
     
     @Override
     public void addCalcListener(ActionListener al) {
@@ -327,5 +328,15 @@ public class FDRSettingsImpl implements FDRSettings {
     @Override
     public void setGroupByPSMCount(boolean groupByPPI) {
         this.groupByPPI=groupByPPI;
+    }
+
+    @Override
+    public void setMinTD(Integer c) {
+        minTD =c;
+    }
+
+    @Override
+    public int getMinTD() {
+        return minTD;
     }
 }

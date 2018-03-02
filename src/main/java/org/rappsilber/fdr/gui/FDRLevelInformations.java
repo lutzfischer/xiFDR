@@ -38,8 +38,8 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         CSVRandomAccess csv = new CSVRandomAccess(',', '\"');
         csv.setHeader(new String[]{"Group","Input","TargetFDR","Next FDR","Accepted FDR", "Lower FDR","Passed","Filtered Result","Worst Score"});
         csvLevelInfo.setCSV(csv);
-        Set<Integer> ids = level.getGroupIDs();
-        for (Integer fg: ids) {
+        Set<String> ids = level.getGroupIDs();
+        for (String fg: ids) {
             String[] rowString = new String[9];
             SubGroupFdrInfo sg = level.getGroup(fg);
             
@@ -53,7 +53,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
                     },1);
             
 
-            rowString[0] = ""+ sg.fdrGroupName;
+            rowString[0] = sg.fdrGroup;
             rowString[1] = ""+sg.inputCount;
             
             rowString[2] = sg.targteFDR >=+ 1 ? "unrestricted" : ""+(sg.targteFDR * 100);

@@ -40,6 +40,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private double m_protfdr = 100;
     private double m_linkfdr = 100;
     private double m_ppifdr = 100;
+    private int m_minTD = 0;
     
     private boolean m_filterToUniquePSM = true;
     
@@ -543,6 +544,16 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 //    @Override
 //    public boolean isEnabeled(boolean e) {
 //    }
+
+    @Override
+    public void setMinTD(Integer c) {
+        m_minTD = c;
+    }
+
+    @Override
+    public int getMinTD() {
+        return m_minTD;
+    }
 
 
 }

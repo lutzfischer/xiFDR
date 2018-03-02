@@ -100,6 +100,10 @@ public class FDRGUI extends javax.swing.JFrame {
      */
     public FDRGUI() {
         initComponents();
+        cmbPeakListFormat.setVisible(false);
+        lblPeaklistExtension.setVisible(false);
+        txtScanConversion.setVisible(false);
+        lblScanConversion.setVisible(false);
         
         
 
@@ -371,6 +375,9 @@ public class FDRGUI extends javax.swing.JFrame {
         getFdr().setMinPepPerProteinGroupLink(fdrSettings.getMinLinkPepCount());
         getFdr().setMinPepPerProteinGroupPair(fdrSettings.getMinPPIPepCount());
 
+        getFdr().setMinDecoys(fdrSettings.getMinTD());
+        getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
+
         int lengthSteps = tblPepLength.getRowCount();
         int[] pepLength = new int[lengthSteps];
         for (int i = 0; i < lengthSteps - 1; i++) {
@@ -382,10 +389,10 @@ public class FDRGUI extends javax.swing.JFrame {
 
     protected String fdrLevelSummary(FDRResultLevel fdrl) {
         StringBuilder sbSummary = new StringBuilder();
-        Set<Integer> ids = fdrl.getGroupIDs();
-        for (Integer fg : ids) {
+        Set<String> ids = fdrl.getGroupIDs();
+        for (String fg : ids) {
             SubGroupFdrInfo sg = (SubGroupFdrInfo) fdrl.getGroup(fg);
-            String gn = sg.fdrGroupName;
+            String gn = sg.fdrGroup;
             sbSummary.append(gn);
             sbSummary.append(" : ");
             sbSummary.append(String.format("%6d", sg.results.size()));
@@ -964,6 +971,7 @@ public class FDRGUI extends javax.swing.JFrame {
             fdrSettingsSimple.setMinProteinPepCount(fdrSettings.getMinProteinPepCount());
             
             getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
+            getFdr().setMinDecoys(fdrSettings.getMinTD());
 
             if (fdrSettings.doOptimize() != null) {
                 final OfflineFDR.FDRLevel l = fdrSettings.doOptimize();
@@ -2352,9 +2360,11 @@ public class FDRGUI extends javax.swing.JFrame {
         
         int count=0;
         int countBetween=0;
+        int countLinear=0;
         
         int countPreFilter=0;
         int countBetweenPreFilter=0;
+        int countLinearPreFilter=0;
         
         public MaximizeLevelInfo(double maximumFDR, boolean boost, int steps) {
             this.maximumFDR = maximumFDR;
@@ -2386,12 +2396,14 @@ public class FDRGUI extends javax.swing.JFrame {
         
         public void setCounts(FDRResultLevel l) {
             count=l.getBetween()+l.getWithin();
+            countLinear = l.getLinear();
             countBetween=l.getBetween();
         }
         
         public void setCountsPrefilter(FDRResultLevel l) {
             countPreFilter=l.getBetween()+l.getWithin();
             countBetweenPreFilter=l.getBetween();
+            countLinearPreFilter=l.getLinear();
         }
         
         public void setNewMaxFDR() {
@@ -2608,7 +2620,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                     final double showLinkFDR = linkFDRInfo.currentFDR;
                                     final double showPSMCount = psmFDRInfo.count;
                                     final double showPepCount = pepFDRInfo.count;
-                                    final double showProtCount= protFDRInfo.count;
+                                    final double showProtCount= protFDRInfo.countLinear;
                                     final double showLinkCount = linkFDRInfo.count;
                                     final double showPPICount = ppiFDRInfo.count;
                                     final double showLinkCountBetween = linkFDRInfo.countBetween;
@@ -2893,6 +2905,10 @@ public class FDRGUI extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         txtmzIdentOwnerOrg = new javax.swing.JTextField();
+        lblPeaklistExtension = new javax.swing.JLabel();
+        txtScanConversion = new javax.swing.JTextField();
+        lblScanConversion = new javax.swing.JLabel();
+        cmbPeakListFormat = new javax.swing.JComboBox();
         pLog = new javax.swing.JPanel();
         spLog = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
@@ -3667,6 +3683,14 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
+        lblPeaklistExtension.setText("Peak-list file extension");
+
+        txtScanConversion.setText("-1");
+
+        lblScanConversion.setText("Scan-number conversion");
+
+        cmbPeakListFormat.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "mzML", "raw", "mgf" }));
+
         javax.swing.GroupLayout jPanel14Layout = new javax.swing.GroupLayout(jPanel14);
         jPanel14.setLayout(jPanel14Layout);
         jPanel14Layout.setHorizontalGroup(
@@ -3680,17 +3704,21 @@ public class FDRGUI extends javax.swing.JFrame {
                             .addComponent(jLabel2)
                             .addComponent(jLabel3)
                             .addComponent(jLabel4)
-                            .addComponent(jLabel5))
+                            .addComponent(jLabel5)
+                            .addComponent(lblPeaklistExtension)
+                            .addComponent(lblScanConversion))
                         .addGap(18, 18, 18)
                         .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(txtScanConversion)
                             .addComponent(jScrollPane1)
                             .addGroup(jPanel14Layout.createSequentialGroup()
                                 .addComponent(txtmzIdentOwnerFirst, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
                                 .addComponent(txtmzIdentOwnerLast, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(txtmzIdentOwnerEmail)
-                            .addComponent(txtmzIdentOwnerOrg))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 341, Short.MAX_VALUE)
+                            .addComponent(txtmzIdentOwnerOrg)
+                            .addComponent(cmbPeakListFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 289, Short.MAX_VALUE)
                         .addComponent(btnWriteMzIdentML)))
                 .addContainerGap())
         );
@@ -3717,7 +3745,15 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
-                .addContainerGap(207, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblPeaklistExtension)
+                    .addComponent(cmbPeakListFormat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtScanConversion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblScanConversion))
+                .addContainerGap(140, Short.MAX_VALUE))
         );
 
         tpResult.addTab("mzIdentML", jPanel14);
@@ -4111,6 +4147,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox ckDefineGroups;
     private javax.swing.JCheckBox ckIgnoreGroups1;
     public javax.swing.JCheckBox ckPrePostAA;
+    public javax.swing.JComboBox cmbPeakListFormat;
     protected org.rappsilber.fdr.gui.components.CSVSelection csvSelect;
     private javax.swing.JEditorPane editAbout;
     private javax.swing.JEditorPane editAboutCSV;
@@ -4165,8 +4202,10 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTabbedPane jTabbedPane4;
     private javax.swing.JLabel lblDecoyDB;
     private javax.swing.JLabel lblLinkDB;
+    public javax.swing.JLabel lblPeaklistExtension;
     private javax.swing.JLabel lblPeptide;
     private javax.swing.JLabel lblProtein;
+    public javax.swing.JLabel lblScanConversion;
     private javax.swing.JLabel lblSumBetween;
     private javax.swing.JLabel lblSumBetween1;
     private javax.swing.JLabel lblSumInternal;
@@ -4201,6 +4240,7 @@ public class FDRGUI extends javax.swing.JFrame {
     protected javax.swing.JTabbedPane tpInput;
     protected javax.swing.JTabbedPane tpResult;
     private javax.swing.JTextArea txtLog;
+    public javax.swing.JTextField txtScanConversion;
     private javax.swing.JTextField txtStatus;
     private javax.swing.JTextField txtSumInput;
     private javax.swing.JTextField txtSumLinks;

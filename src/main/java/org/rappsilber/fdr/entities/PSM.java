@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
+import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.SelfAddHashSet;
 
 
@@ -96,7 +97,7 @@ public class PSM extends AbstractFDRElement<PSM> {
 //    /** are all peptides from the decoy database */
 //    private boolean isDD = false;
     /** an id for the fdr-group of this PSM */
-    private int fdrGroup;
+    private String fdrGroup;
     /** what is the calculated FDR for the score of this PSM */
     public double m_fdr = -1;
     /** protein group for the first peptide*/
@@ -112,7 +113,9 @@ public class PSM extends AbstractFDRElement<PSM> {
      * charge-state have a inherently higher chance to be wrong. Therefore it
      * makes sense to calculate the FDR for these separately
      */
-    private boolean specialcase = false;
+    //private boolean specialcase = false;
+
+    private String negativeGrouping = null;
     
     private PSM partOfUniquePSM;
     
@@ -144,6 +147,8 @@ public class PSM extends AbstractFDRElement<PSM> {
      * list them here.
      */
     private ArrayList<PSM> represents;
+    private boolean isNonCovalent = false;
+    private String validated;
     
     
 
@@ -218,8 +223,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.isInternal = peptide1.sameProtein(peptide2);
         represents = new ArrayList<PSM>();
         represents.add(this);
-        
-//        setFDRGroup();
+        isNonCovalent = pepsite1<=0 && pepsite2<=0 && !isLinear;
         
     }
 
@@ -256,6 +260,8 @@ public class PSM extends AbstractFDRElement<PSM> {
     @Override
     public boolean equals(Object l) {
         PSM c = (PSM) l;
+        if (isNonCovalent != c.isNonCovalent)
+            return false;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
         return this.score == c.score && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
                 (((c.scoreRatio == this.scoreRatio || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
@@ -480,28 +486,28 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @return 
      */
     @Override
-    public int getFDRGroup() {
+    public String getFDRGroup() {
         return fdrGroup;
     }
 
-    /**
-     * a name for the FDR-group
-     * @return 
-     */
-    @Override
-    public String getFDRGroupName() {
-        return PeptidePair.fdrGroupNames.get(fdrGroup);
-    }
+//    /**
+//     * a name for the FDR-group
+//     * @return 
+//     */
+//    @Override
+//    public String getFDRGroupName() {
+//        return PeptidePair.fdrGroupNames.get(fdrGroup);
+//    }
     
-    /**
-     * Returns the name for the given FDR-group-id
-     * @param fdrgroup
-     * @return 
-     */
-    public static String getFDRGroupName(int fdrgroup) {
-        return PeptidePair.getFDRGroupName(fdrgroup);
-    }    
-    
+//    /**
+//     * Returns the name for the given FDR-group-id
+//     * @param fdrgroup
+//     * @return 
+//     */
+//    public static String getFDRGroupName(int fdrgroup) {
+//        return PeptidePair.getFDRGroupName(fdrgroup);
+//    }    
+//    
     /**
      * Returns a list of links supported by this PSM.
      * As the ambiguity is handled in the Protein groups this will report 
@@ -557,14 +563,18 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setFDRGroup() {
         
-        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, isSpecialcase());
+        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, PSM.this.getNegativeGrouping(),(isNonCovalent ? "NonCovalent":""));
+        if (validated!=null) {
+            fdrGroup+= " " + validated;
+            fdrGroup=FDRGroupNames.get(fdrGroup);
+        }
        
     }     
 
     /**
      * set the FDR group according to the information on this PSM
      */
-    public void setFDRGroup(int fdrGroup) {
+    public void setFDRGroup(String fdrGroup) {
         
         this.fdrGroup = fdrGroup;
        
@@ -704,8 +714,12 @@ public class PSM extends AbstractFDRElement<PSM> {
      * makes sense to calculate the FDR for these separately
      * @return the specialcase
      */
-    public boolean isSpecialcase() {
-        return specialcase;
+    public boolean hasNegativeGrouping() {
+        return negativeGrouping != null;
+    }
+
+    public String getNegativeGrouping() {
+        return negativeGrouping;
     }
 
     /**
@@ -714,10 +728,20 @@ public class PSM extends AbstractFDRElement<PSM> {
      * makes sense to calculate the FDR for these separately
      * @param specialcase the specialcase to set
      */
-    public void setSpecialcase(boolean specialcase) {
-        this.specialcase = specialcase;
+    public void setNegativeGrouping(boolean specialcase) {
+        this.negativeGrouping = specialcase?"Special":null;
     }
 
+    /**
+     * Is this a special case. E.g. PSMs that where matched with unknown 
+     * charge-state have a inherently higher chance to be wrong. Therefore it
+     * makes sense to calculate the FDR for these separately
+     * @param specialcase the reason specialcase to set
+     */
+    public void setNegativeGrouping(String specialcase) {
+        this.negativeGrouping = specialcase;
+    }
+    
     /**
      * Is this a non-cross-linked PSM?
      * @return the isLinear
@@ -950,4 +974,34 @@ public class PSM extends AbstractFDRElement<PSM> {
     public ProteinGroup getProteinGroup2() {
         return getPeptide2().getProteinGroup();
     }
+
+    /**
+     * @return the isNonCovalent
+     */
+    public boolean isNonCovalent() {
+        return isNonCovalent;
+    }
+
+    /**
+     * @param isNonCovalent the isNonCovalent to set
+     */
+    public void setNonCovalent(boolean isNonCovalent) {
+        this.isNonCovalent = isNonCovalent;
+    }
+
+    @Override
+    public boolean hasPositiveGrouping() {
+        return this.validated != null;
+    }
+    
+    @Override
+    public void setPositiveGrouping(String av) {
+        this.validated = av;
+    }
+
+    @Override
+    public String getPositiveGrouping() {
+        return this.validated;
+    }
+
 }

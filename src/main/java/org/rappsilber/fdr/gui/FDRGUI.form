@@ -1316,9 +1316,12 @@
                                               <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="lblPeaklistExtension" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="lblScanConversion" alignment="0" min="-2" max="-2" attributes="0"/>
                                           </Group>
                                           <EmptySpace type="separate" max="-2" attributes="0"/>
                                           <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                              <Component id="txtScanConversion" max="32767" attributes="0"/>
                                               <Component id="jScrollPane1" max="32767" attributes="0"/>
                                               <Group type="102" attributes="0">
                                                   <Component id="txtmzIdentOwnerFirst" min="-2" pref="80" max="-2" attributes="0"/>
@@ -1327,8 +1330,9 @@
                                               </Group>
                                               <Component id="txtmzIdentOwnerEmail" max="32767" attributes="0"/>
                                               <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
+                                              <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
                                           </Group>
-                                          <EmptySpace pref="341" max="32767" attributes="0"/>
+                                          <EmptySpace type="unrelated" pref="289" max="32767" attributes="0"/>
                                           <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                   </Group>
@@ -1363,7 +1367,17 @@
                                       <Component id="jScrollPane1" min="-2" max="-2" attributes="0"/>
                                       <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="207" max="32767" attributes="0"/>
+                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="3" attributes="0">
+                                      <Component id="lblPeaklistExtension" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="cmbPeakListFormat" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="3" attributes="0">
+                                      <Component id="txtScanConversion" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="lblScanConversion" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace pref="140" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1456,6 +1470,45 @@
                           <Events>
                             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txtmzIdentOwnerOrgActionPerformed"/>
                           </Events>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="lblPeaklistExtension">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Peak-list file extension"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JTextField" name="txtScanConversion">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="-1"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="lblScanConversion">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Scan-number conversion"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JComboBox" name="cmbPeakListFormat">
+                          <Properties>
+                            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                              <StringArray count="3">
+                                <StringItem index="0" value="mzML"/>
+                                <StringItem index="1" value="raw"/>
+                                <StringItem index="2" value="mgf"/>
+                              </StringArray>
+                            </Property>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value=""/>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                          </AuxValues>
                         </Component>
                       </SubComponents>
                     </Container>

@@ -48,6 +48,7 @@
                           <Component id="ckDirectionalPeptidePair" alignment="0" max="-2" attributes="0"/>
                           <Component id="ckDirectionalPSM" alignment="0" max="-2" attributes="0"/>
                           <Component id="jLabel1" alignment="0" max="-2" attributes="0"/>
+                          <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
                   <Component id="btnStopBoost" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -57,7 +58,7 @@
                   <Group type="102" attributes="0">
                       <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
                       <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="7" max="32767" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                       <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <Group type="102" attributes="0">
@@ -68,6 +69,7 @@
                           <Component id="spMinProteinPepCount" alignment="0" max="32767" attributes="0"/>
                           <Component id="jLabel28" alignment="0" pref="0" max="32767" attributes="0"/>
                           <Component id="jLabel18" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spMinTDChance" alignment="0" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
@@ -155,8 +157,10 @@
                   <Component id="spReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="lblReportFactor" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="ckGroupByPSMs" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spMinTDChance" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace max="32767" attributes="0"/>
+              <EmptySpace pref="6" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="cbBoostWhat" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -253,7 +257,7 @@
     <Component class="javax.swing.JSpinner" name="spReportFactor">
       <Properties>
         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-          <SpinnerModel initial="1.1" minimum="1.0" numberType="java.lang.Double" stepSize="0.1" type="number"/>
+          <SpinnerModel initial="100000.0" minimum="1.0" numberType="java.lang.Double" stepSize="0.1" type="number"/>
         </Property>
         <Property name="toolTipText" type="java.lang.String" value="maximum factor the next step in fdr is permited to exced the target fdr"/>
       </Properties>
@@ -420,6 +424,22 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckGroupByPSMsActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinTDChance">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="The total number of matches times the fdr should be larger then the given number - otherwise the subgroup will not be considered on its own"/>
+        <Property name="specialValue" type="java.lang.Number" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="0" type="code"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel7">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Min TD Chance"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

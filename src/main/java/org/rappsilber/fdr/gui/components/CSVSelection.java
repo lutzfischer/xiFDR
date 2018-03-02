@@ -536,7 +536,10 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 {"peptide position 2", null, null},
                 {"Crosslinker",  new Boolean(true), null},
                 {"experimental mz",  new Boolean(true), null},
-                {"calculated mass",  new Boolean(true), null}
+                {"calculated mass",  new Boolean(true), null},
+                {"Info Field", null, null},
+                {"Negative Grouping",  new Boolean(true), null},
+                {"Positive Grouping",  new Boolean(true), null}
             },
             new String [] {
                 "Column", "Optional", "Name in CSV"

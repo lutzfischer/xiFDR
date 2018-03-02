@@ -198,6 +198,8 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
         this.boostPeptidePairs(settings.boostPeptidePairs());
         this.boostProteins(settings.boostProteins());
         this.setGroupByPSMCount(settings.isGroupByPSMCount());
+        this.setGroupByPSMCount(settings.isGroupByPSMCount());
+        this.setMinTD(settings.getMinTD());        
     }
     
 //    public abstract void setEnabled(boolean e);

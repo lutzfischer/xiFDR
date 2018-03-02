@@ -65,6 +65,8 @@ public class CSVinFDR extends OfflineFDR {
         new String[]{"peptide2 score","Pep2Score"},
         new String[]{"experimental mz","expMZ"},
         new String[]{"calculated mass","calcMass"},
+        new String[]{"negative grouping","NegativeGrouping"},
+        new String[]{"positive grouping","PositiveGrouping"},
         new String[]{"info","info"},
     };
     
@@ -165,6 +167,8 @@ public class CSVinFDR extends OfflineFDR {
         Integer cExpMZ = getColumn(csv,"experimental mz",true);
         Integer cCalcMass = getColumn(csv,"calculated mass",true);
         Integer cInfo = getColumn(csv,"info",true);
+        Integer cNegativeGrouping = getColumn(csv,"negative grouping",true);
+        Integer cPositiveGrouping = getColumn(csv,"positive grouping",true);
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
@@ -343,13 +347,27 @@ public class CSVinFDR extends OfflineFDR {
                     String run = crun == null ? "":csv.getValue(crun);
                     String scan = cscan == null ? "":csv.getValue(cscan);
                     String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
+                    String negativeCase = null;
+                    String poisitiveCase = null;
+                    if (cNegativeGrouping >=0) {
+                        negativeCase = csv.getValue(cNegativeGrouping);
+                        if (negativeCase.isEmpty())
+                            negativeCase=null;
+                    }
+                    if (cPositiveGrouping >=0) {
+                        poisitiveCase = csv.getValue(cPositiveGrouping);
+                        if (poisitiveCase.isEmpty())
+                            poisitiveCase=null;
+                    }
                     
                     psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, 
                             site1, site2, isDecoy1, isDecoy2, charge, score, 
                             accessions1[p1], descriptions1[p1], accessions2[p2],
                             descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
-                            scoreRatio, false,crosslinker,run,scan);
-                    
+                            scoreRatio, negativeCase,crosslinker,run,scan);
+                    if (poisitiveCase != null) {
+                        psm.setPositiveGrouping(poisitiveCase);
+                    }
                     Double expMZ = null;
                     if (cExpMZ != null) {
                         expMZ=csv.getDouble(cExpMZ);
