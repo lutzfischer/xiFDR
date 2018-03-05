@@ -349,12 +349,12 @@ public class CSVinFDR extends OfflineFDR {
                     String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
                     String negativeCase = null;
                     String poisitiveCase = null;
-                    if (cNegativeGrouping >=0) {
+                    if (cNegativeGrouping != null && cNegativeGrouping >=0) {
                         negativeCase = csv.getValue(cNegativeGrouping);
                         if (negativeCase.isEmpty())
                             negativeCase=null;
                     }
-                    if (cPositiveGrouping >=0) {
+                    if (cPositiveGrouping != null && cPositiveGrouping >=0) {
                         poisitiveCase = csv.getValue(cPositiveGrouping);
                         if (poisitiveCase.isEmpty())
                             poisitiveCase=null;

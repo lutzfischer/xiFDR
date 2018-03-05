@@ -201,7 +201,7 @@
         <Component class="javax.swing.JTable" name="tblCSVColumns">
           <Properties>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="3" rowCount="28">
+              <Table columnCount="4" rowCount="28">
                 <Column editable="false" title="Column" type="java.lang.String">
                   <Data value="run"/>
                   <Data value="scan"/>
@@ -228,9 +228,9 @@
                   <Data value="Crosslinker"/>
                   <Data value="experimental mz"/>
                   <Data value="calculated mass"/>
-                  <Data value="Info Field"/>
-                  <Data value="Negative Grouping"/>
-                  <Data value="Positive Grouping"/>
+                  <Data value="info"/>
+                  <Data value="negative grouping"/>
+                  <Data value="positive grouping"/>
                 </Column>
                 <Column editable="false" title="Optional" type="java.lang.Boolean">
                   <Data value="true"/>
@@ -291,6 +291,36 @@
                   <Data value="null"/>
                   <Data value="null"/>
                   <Data value="null"/>
+                </Column>
+                <Column editable="false" title="Description" type="java.lang.String">
+                  <Data value="raw file name that the spectrum derived from"/>
+                  <Data value="scan number within that run"/>
+                  <Data value="a unique ID for the PSM - if not given will be defined based on run and scan"/>
+                  <Data value="sequence of the first peptide"/>
+                  <Data value="sequence of the second peptide"/>
+                  <Data value="length (in amino acids) of the first peptide"/>
+                  <Data value="length (in amino acids) of the second peptide"/>
+                  <Data value="which residue of the first peptide does the cross-linker attach to"/>
+                  <Data value="which residue of the second peptide does the cross-linker attach to"/>
+                  <Data value="is the first peptide from the decoy database"/>
+                  <Data value="is the second peptide from the decoy database"/>
+                  <Data value="charge state of the precursor ion"/>
+                  <Data value="score of the spectrum match"/>
+                  <Data value="if there is a joined score given for the match how to separate the score for cases where each peptide individually has to be considered (only affects protein fdr)"/>
+                  <Data value="a score for the first peptide"/>
+                  <Data value="a score for the second peptide"/>
+                  <Data value="protein accession number(s) for the source of the first peptide"/>
+                  <Data value="protein accession number(s) for the source of the second peptide"/>
+                  <Data value="description of the first protein"/>
+                  <Data value="description of the second protein"/>
+                  <Data value="position(s) of the first peptide in the protein(s)"/>
+                  <Data value="position(s) of the second peptide in the protein(s)"/>
+                  <Data value="name of the cross-linker involved in this PSM"/>
+                  <Data value="experimental precursor M/Z"/>
+                  <Data value="calculated mass of the precursor"/>
+                  <Data value="arbitrary info field to be forwarded to the results table"/>
+                  <Data value="if some matches have an inherently higher chance to be false positive then they can be flaged here"/>
+                  <Data value="if some matches have an inherently lower chance to be false positive then they can be flaged here"/>
                 </Column>
               </Table>
             </Property>

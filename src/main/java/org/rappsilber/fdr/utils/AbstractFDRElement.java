@@ -15,6 +15,7 @@
  */
 package org.rappsilber.fdr.utils;
 
+import java.util.HashSet;
 import org.rappsilber.fdr.entities.Site;
 import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.utils.SelfAdd;
@@ -28,6 +29,8 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     protected double m_lowerFDR;
     
     protected double m_linkedSupport = 1;
+    protected HashSet<String> m_NegativeGrouping;
+    protected HashSet<String> positiveGroups;
     
     public abstract Site getLinkSite1();
     public abstract Site getLinkSite2();
@@ -77,34 +80,49 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     public abstract ProteinGroup getProteinGroup1();
     public abstract ProteinGroup getProteinGroup2();
 
-    /** 
-     * indicates this passed some form of external validation and should 
-     * therefore have a higher chance to be true.
-     */
-    public abstract boolean hasPositiveGrouping();
+    public boolean hasPositiveGrouping() {
+        return this.positiveGroups!=null;
+    }
     
-    /** 
-     * define the validation state of the match
-     * this indicates (if true) this passed some form of external validation and 
-     * should therefore have a higher chance to be true.
-     */
-    public abstract void setPositiveGrouping(String v);
+    public void setPositiveGrouping(String av) {
+        if (av == null) {
+            this.positiveGroups = null;
+        }else {
+            this.positiveGroups = new HashSet<String>(1);
+            this.positiveGroups.add(av);
+        }
+    }
 
-    public abstract String getPositiveGrouping();
+    public HashSet<String> getPositiveGrouping() {
+        return positiveGroups;
+    }
 
 
     /** 
      * indicates this passed some form of Negative value that makes this 
      * inherently less likely to be true
      */
-    public abstract boolean hasNegativeGrouping();
+    public boolean hasNegativeGrouping() {
+        return m_NegativeGrouping != null;
+    }
     
-    /** 
-     * indicates this passed some form of Negative value that makes this 
-     * inherently less likely to be true
+    /**
+     * are all supporting PSMs "special" cases?
+     * @param specialcase 
      */
-    public abstract void setNegativeGrouping(String v);
-
-    public abstract String getNegativeGrouping();
+    public void setNegativeGrouping(String cause) {
+        if (cause == null) {
+            this.m_NegativeGrouping = null;
+        } else {
+            this.m_NegativeGrouping = new HashSet<>(1);
+            this.m_NegativeGrouping.add(cause);
+        }
+    }
+    
+    public HashSet<String> getNegativeGrouping() {
+        return this.m_NegativeGrouping;
+    }
+ 
+    
     
 }

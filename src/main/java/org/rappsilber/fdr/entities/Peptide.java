@@ -54,7 +54,6 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     public double m_fdr = -1;
     /** mass of this peptide */
     public double mass = Double.NaN;
-    private String validated;
     
     
 
@@ -220,11 +219,6 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
                 addNew(p,pos);
             }
         }
-        if (this.validated == null && o.hasPositiveGrouping()) {
-            this.validated = o.getPositiveGrouping();
-        } else if (this.validated != null && !this.validated.contentEquals(o.getPositiveGrouping())) {
-            this.validated += " " + o.getPositiveGrouping();
-        }
     }
     
     /**
@@ -266,13 +260,6 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      */
     public void add(PeptidePair o) {
         this.m_peppairs.add(o);
-        if (o.hasPositiveGrouping()) {
-            if (this.validated == null) {
-                this.validated = o.getPositiveGrouping();
-            } else if (!this.validated.contentEquals(o.getPositiveGrouping())) {
-                this.validated += " " + o.getPositiveGrouping();
-            }
-        }
     }
     
     /**
@@ -594,34 +581,34 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     }
     
     
-    @Override
-    public boolean hasPositiveGrouping() {
-        return this.validated != null;
-    }
-    
-    @Override
-    public void setPositiveGrouping(String av) {
-        this.validated = av;
-    }
-
-    @Override
-    public String getPositiveGrouping() {
-        return this.validated;
-    }
-
-    @Override
-    public boolean hasNegativeGrouping() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setNegativeGrouping(String v) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getNegativeGrouping() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public boolean hasNegativeGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public void setNegativeGrouping(String v) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
 
 }

@@ -380,7 +380,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 File nf = inputs[n++];
                 CsvParser csv = new CsvParser();
                 for (int r = 0; r < tm.getRowCount(); r++) {
-                    if (tm.getValueAt(r, 2) != missingColumn) {
+                    if (tm.getValueAt(r, 2) != missingColumn && tm.getValueAt(r, 2) != optionalColumn) {
                         csv.setAlternative(tm.getValueAt(r, 2).toString(), tm.getValueAt(r, 0).toString());
                     }
                 }
@@ -512,44 +512,44 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         tblCSVColumns.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {"run",  new Boolean(true), ""},
-                {"scan",  new Boolean(true), null},
-                {"psmid",  new Boolean(true), null},
-                {"peptide1", null, null},
-                {"peptide2", null, null},
-                {"peptide length 1",  new Boolean(true), null},
-                {"peptide length 2",  new Boolean(true), null},
-                {"peptide link 1", null, null},
-                {"peptide link 2", null, null},
-                {"is decoy 1", null, null},
-                {"is decoy 2", null, null},
-                {"precursor charge", null, null},
-                {"score",  new Boolean(true), null},
-                {"score ratio",  new Boolean(true), null},
-                {"peptide1 score",  new Boolean(true), null},
-                {"peptide2 score",  new Boolean(true), null},
-                {"accession1", null, null},
-                {"accession2", null, null},
-                {"description1",  new Boolean(true), null},
-                {"description2",  new Boolean(true), null},
-                {"peptide position 1", null, null},
-                {"peptide position 2", null, null},
-                {"Crosslinker",  new Boolean(true), null},
-                {"experimental mz",  new Boolean(true), null},
-                {"calculated mass",  new Boolean(true), null},
-                {"Info Field",  new Boolean(true), null},
-                {"Negative Grouping",  new Boolean(true), null},
-                {"Positive Grouping",  new Boolean(true), null}
+                {"run",  new Boolean(true), "", "raw file name that the spectrum derived from"},
+                {"scan",  new Boolean(true), null, "scan number within that run"},
+                {"psmid",  new Boolean(true), null, "a unique ID for the PSM - if not given will be defined based on run and scan"},
+                {"peptide1", null, null, "sequence of the first peptide"},
+                {"peptide2", null, null, "sequence of the second peptide"},
+                {"peptide length 1",  new Boolean(true), null, "length (in amino acids) of the first peptide"},
+                {"peptide length 2",  new Boolean(true), null, "length (in amino acids) of the second peptide"},
+                {"peptide link 1", null, null, "which residue of the first peptide does the cross-linker attach to"},
+                {"peptide link 2", null, null, "which residue of the second peptide does the cross-linker attach to"},
+                {"is decoy 1", null, null, "is the first peptide from the decoy database"},
+                {"is decoy 2", null, null, "is the second peptide from the decoy database"},
+                {"precursor charge", null, null, "charge state of the precursor ion"},
+                {"score",  new Boolean(true), null, "score of the spectrum match"},
+                {"score ratio",  new Boolean(true), null, "if there is a joined score given for the match how to separate the score for cases where each peptide individually has to be considered (only affects protein fdr)"},
+                {"peptide1 score",  new Boolean(true), null, "a score for the first peptide"},
+                {"peptide2 score",  new Boolean(true), null, "a score for the second peptide"},
+                {"accession1", null, null, "protein accession number(s) for the source of the first peptide"},
+                {"accession2", null, null, "protein accession number(s) for the source of the second peptide"},
+                {"description1",  new Boolean(true), null, "description of the first protein"},
+                {"description2",  new Boolean(true), null, "description of the second protein"},
+                {"peptide position 1", null, null, "position(s) of the first peptide in the protein(s)"},
+                {"peptide position 2", null, null, "position(s) of the second peptide in the protein(s)"},
+                {"Crosslinker",  new Boolean(true), null, "name of the cross-linker involved in this PSM"},
+                {"experimental mz",  new Boolean(true), null, "experimental precursor M/Z"},
+                {"calculated mass",  new Boolean(true), null, "calculated mass of the precursor"},
+                {"info",  new Boolean(true), null, "arbitrary info field to be forwarded to the results table"},
+                {"negative grouping",  new Boolean(true), null, "if some matches have an inherently higher chance to be false positive then they can be flaged here"},
+                {"positive grouping",  new Boolean(true), null, "if some matches have an inherently lower chance to be false positive then they can be flaged here"}
             },
             new String [] {
-                "Column", "Optional", "Name in CSV"
+                "Column", "Optional", "Name in CSV", "Description"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.Boolean.class, java.lang.String.class
+                java.lang.String.class, java.lang.Boolean.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, true
+                false, false, true, false
             };
 
             public Class getColumnClass(int columnIndex) {

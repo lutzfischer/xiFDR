@@ -126,13 +126,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         //setFDRGroup();
        //isAmbigious &= o.isAmbigious;        
         //            score+= o.score;
-        if (o.hasPositiveGrouping()) {
-            if (this.validated == null ) {
-                this.validated = o.getPositiveGrouping();
-            } else if (!this.validated.contentEquals(o.getPositiveGrouping())) {
-                this.validated += " " + o.getPositiveGrouping();
-            }
-        }
+//        if (o.hasPositiveGrouping()) {
+//            if (this.validated == null ) {
+//                this.validated = o.getPositiveGrouping();
+//            } else if (!this.validated.contentEquals(o.getPositiveGrouping())) {
+//                this.validated += " " + o.getPositiveGrouping();
+//            }
+//        }
     }
 
     /**
@@ -150,13 +150,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         this.betweenSupport |= !(pp.isInternal() || pp.isLinear);
         this.linearSupport |= pp.isLinear;
         //setFDRGroup();
-        if (pp.hasPositiveGrouping()) {
-            if (this.validated == null) {
-                this.validated = pp.getPositiveGrouping();
-            } else if (!this.validated.contentEquals(pp.getPositiveGrouping())) {
-                this.validated += " " + pp.getPositiveGrouping();
-            }
-        }
+//        if (pp.hasPositiveGrouping()) {
+//            if (this.validated == null) {
+//                this.validated = pp.getPositiveGrouping();
+//            } else if (!this.validated.contentEquals(pp.getPositiveGrouping())) {
+//                this.validated += " " + pp.getPositiveGrouping();
+//            }
+//        }
     }
 
 
@@ -435,35 +435,35 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     public void setFDRGroup(String fdrGroup) {
         this.fdrgroup = FDRGroupNames.get(fdrGroup);
     }
-    
-    @Override
-    public boolean hasPositiveGrouping() {
-        return this.validated != null;
-    }
-    
-    @Override
-    public void setPositiveGrouping(String av) {
-        this.validated = av;
-    }
-
-    @Override
-    public String getPositiveGrouping() {
-        return this.validated;
-    }
-
-    @Override
-    public boolean hasNegativeGrouping() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setNegativeGrouping(String v) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getNegativeGrouping() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-        
+//    
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public boolean hasNegativeGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public void setNegativeGrouping(String v) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//        
 }

@@ -31,6 +31,7 @@ import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -117,64 +118,7 @@ public class FDRGUI extends javax.swing.JFrame {
         });
         loggingOutput.setLevel(Level.ALL);
 
-        // add a hanlder that shows the log - tab when evver a warning or a an error happens
-        java.util.logging.Handler tabRiser = new java.util.logging.Handler() {
-
-            {
-                this.setFilter(new Filter() {
-
-                    public boolean isLoggable(LogRecord record) {
-                        return true;
-                    }
-                });
-            }
-
-            @Override
-            public void publish(LogRecord record) {
-                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
-                    // find the log tab
-                    for (int i = 0; i < jTabbedPane1.getTabCount(); i++) {
-                        if (jTabbedPane1.getTitleAt(i).contentEquals("Log")) {
-                            final int tabID = i;
-                            // warnings are yellow
-                            Color pc = Color.YELLOW;
-                            // severe is red
-                            if (record.getLevel().intValue() >= Level.SEVERE.intValue()) {
-                                pc = Color.RED;
-                            }
-                            final Color c = pc;
-                            SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    jTabbedPane1.setBackgroundAt(tabID, c);
-                                    // if severe raise the log tab
-                                    if (c == Color.RED) {
-                                        jTabbedPane1.setSelectedIndex(tabID);
-                                    }
-                                    jTabbedPane1.addChangeListener(new ChangeListener() {
-                                        @Override
-                                        public void stateChanged(ChangeEvent e) {
-                                            jTabbedPane1.removeChangeListener(this);
-                                            jTabbedPane1.setBackgroundAt(tabID, null);
-                                        }
-                                    });
-                                }
-                            });
-                            break;
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void flush() {
-
-            }
-
-            @Override
-            public void close() throws SecurityException {
-
-            }
-        };
+        Handler tabRiser = riseLoggignTabOnError();
 
         // make sure we display one of the possible fdrsettings-panel
         changeFDRSettings(null);
@@ -209,42 +153,7 @@ public class FDRGUI extends javax.swing.JFrame {
         con.add(this);
         con.add(fdrSettingsComplete);
         con.add(fdrSettingsSimple);
-        // get all the spinners in all containers recursivly
-        for (int i = 0; i < con.size(); i++) {
-            for (Component c : con.get(i).getComponents()) {
-                if (c instanceof JSpinner) {
-                    if (!spinSet.contains(c)) {
-                        spins.add((Container) c);
-                        spinSet.add((Container) c);
-                    }
-                } else if (c instanceof Container) {
-                    con.add((Container) c);
-                }
-            }
-        }
-        // now install the a handler on all text-fields within all spinners that selects all 
-        for (int i = 0; i < spins.size(); i++) {
-            Container spin = spins.get(i);
-            for (Component c : spin.getComponents()) {
-                if (c instanceof JTextField) {
-                    ((JTextField) c).addFocusListener(new java.awt.event.FocusAdapter() {
-                        public void focusGained(final java.awt.event.FocusEvent evt) {
-                            javax.swing.SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    // on focus gain select all text
-                                    ((JTextField) evt.getSource()).selectAll();
-                                }
-                            });
-                        }
-                    });
-                } else if (c instanceof Container) {
-                    if (!spinSet.contains(c)) {
-                        spins.add((Container) c);
-                        spinSet.add((Container) c);
-                    }
-                }
-            }
-        }
+        makeSpinnersSelectTextOnEnter(con, spinSet, spins);
 
         // hide the DB-sizes panel
         ckDBSizeActionPerformed(null);
@@ -284,11 +193,7 @@ public class FDRGUI extends javax.swing.JFrame {
         spDistanceGroup.setSpecialValueText("No distance group");
         spDistanceGroup.setValue((Integer) 0);
 
-        txtmzIdentOwnerFirst.setText(LocalProperties.getProperty("mzIdenMLOwnerFirst", txtmzIdentOwnerFirst.getText()));
-        txtmzIdentOwnerLast.setText(LocalProperties.getProperty("mzIdenMLOwnerLast", txtmzIdentOwnerLast.getText()));
-        txtmzIdentOwnerEmail.setText(LocalProperties.getProperty("mzIdenMLOwnerEmail", txtmzIdentOwnerEmail.getText()));
-        txtmzIdentAdress.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress", txtmzIdentAdress.getText()));
-        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerOrg", txtmzIdentOwnerOrg.getText()));
+        setMZIdentMLOwner();
 
         csvSelect.addAddListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -296,6 +201,124 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
+        fbFolderAddActionListener();
+        
+        cbLevel.setSelectedItem(Level.INFO);
+        cbLevelActionPerformed(new ActionEvent(cbLevel, 0, ""));
+        
+        parseChageLog();
+    }
+
+    public Handler riseLoggignTabOnError() {
+        // add a hanlder that shows the log - tab when evver a warning or a an error happens
+        java.util.logging.Handler tabRiser = new java.util.logging.Handler() {
+            
+            {
+                this.setFilter(new Filter() {
+                    
+                    public boolean isLoggable(LogRecord record) {
+                        return true;
+                    }
+                });
+            }
+            
+            @Override
+            public void publish(LogRecord record) {
+                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
+                    // find the log tab
+                    for (int i = 0; i < jTabbedPane1.getTabCount(); i++) {
+                        if (jTabbedPane1.getTitleAt(i).contentEquals("Log")) {
+                            final int tabID = i;
+                            // warnings are yellow
+                            Color pc = Color.YELLOW;
+                            // severe is red
+                            if (record.getLevel().intValue() >= Level.SEVERE.intValue()) {
+                                pc = Color.RED;
+                            }
+                            final Color c = pc;
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    jTabbedPane1.setBackgroundAt(tabID, c);
+                                    // if severe raise the log tab
+                                    if (c == Color.RED) {
+                                        jTabbedPane1.setSelectedIndex(tabID);
+                                    }
+                                    jTabbedPane1.addChangeListener(new ChangeListener() {
+                                        @Override
+                                        public void stateChanged(ChangeEvent e) {
+                                            jTabbedPane1.removeChangeListener(this);
+                                            jTabbedPane1.setBackgroundAt(tabID, null);
+                                        }
+                                    });
+                                }
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void flush() {
+                
+            }
+            
+            @Override
+            public void close() throws SecurityException {
+                
+            }
+        };
+        return tabRiser;
+    }
+
+    public void makeSpinnersSelectTextOnEnter(ArrayList<Container> con, HashSet<Container> spinSet, ArrayList<Container> spins) {
+        // get all the spinners in all containers recursivly
+        for (int i = 0; i < con.size(); i++) {
+            for (Component c : con.get(i).getComponents()) {
+                if (c instanceof JSpinner) {
+                    if (!spinSet.contains(c)) {
+                        spins.add((Container) c);
+                        spinSet.add((Container) c);
+                    }
+                } else if (c instanceof Container) {
+                    con.add((Container) c);
+                }
+            }
+        }
+        // now install the a handler on all text-fields within all spinners that selects all
+        for (int i = 0; i < spins.size(); i++) {
+            Container spin = spins.get(i);
+            for (Component c : spin.getComponents()) {
+                if (c instanceof JTextField) {
+                    ((JTextField) c).addFocusListener(new java.awt.event.FocusAdapter() {
+                        public void focusGained(final java.awt.event.FocusEvent evt) {
+                            javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    // on focus gain select all text
+                                    ((JTextField) evt.getSource()).selectAll();
+                                }
+                            });
+                        }
+                    });
+                } else if (c instanceof Container) {
+                    if (!spinSet.contains(c)) {
+                        spins.add((Container) c);
+                        spinSet.add((Container) c);
+                    }
+                }
+            }
+        }
+    }
+
+    public void setMZIdentMLOwner() {
+        txtmzIdentOwnerFirst.setText(LocalProperties.getProperty("mzIdenMLOwnerFirst", txtmzIdentOwnerFirst.getText()));
+        txtmzIdentOwnerLast.setText(LocalProperties.getProperty("mzIdenMLOwnerLast", txtmzIdentOwnerLast.getText()));
+        txtmzIdentOwnerEmail.setText(LocalProperties.getProperty("mzIdenMLOwnerEmail", txtmzIdentOwnerEmail.getText()));
+        txtmzIdentAdress.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress", txtmzIdentAdress.getText()));
+        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerOrg", txtmzIdentOwnerOrg.getText()));
+    }
+
+    public void fbFolderAddActionListener() {
         fbFolder.addActionListener(new ActionListener() {
             public boolean setting = false;
 
@@ -334,12 +357,24 @@ public class FDRGUI extends javax.swing.JFrame {
 
             }
         });
-        
         fbFolder.setLocalPropertyKey("XiFDR_LAST_CSV_OUT_FOLDER");
-        cbLevel.setSelectedItem(Level.INFO);
-        cbLevelActionPerformed(new ActionEvent(cbLevel, 0, ""));
+    }
+    
+    public void parseChageLog() {
+        final Properties properties = new Properties();
+        String propertyFile ="xifdrproject.properties";
+        try {
+            properties.load(this.getClass().getResourceAsStream(propertyFile));
+        } catch (Exception e) {
+            try {
+                properties.load(this.getClass().getClassLoader().getResourceAsStream(propertyFile));                
+            }catch (Exception ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING,"Could not parse changelog",ex);
+            }
+        }
+        String v = properties.getProperty("xifdr.changelog");
+        txtchangelog.setText(v);
         
-
     }
 
     public void setTitle(String title) {
@@ -2919,6 +2954,8 @@ public class FDRGUI extends javax.swing.JFrame {
         pVersion = new javax.swing.JPanel();
         jLabel29 = new javax.swing.JLabel();
         txtXiFDRVersion = new javax.swing.JTextField();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        txtchangelog = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
         editAbout = new javax.swing.JEditorPane();
         jScrollPane5 = new javax.swing.JScrollPane();
@@ -3815,16 +3852,24 @@ public class FDRGUI extends javax.swing.JFrame {
 
         txtXiFDRVersion.setEditable(false);
 
+        txtchangelog.setColumns(20);
+        txtchangelog.setRows(5);
+        jScrollPane2.setViewportView(txtchangelog);
+
         javax.swing.GroupLayout pVersionLayout = new javax.swing.GroupLayout(pVersion);
         pVersion.setLayout(pVersionLayout);
         pVersionLayout.setHorizontalGroup(
             pVersionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pVersionLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel29)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtXiFDRVersion, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(604, Short.MAX_VALUE))
+                .addGroup(pVersionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 777, Short.MAX_VALUE)
+                    .addGroup(pVersionLayout.createSequentialGroup()
+                        .addComponent(jLabel29)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtXiFDRVersion, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         pVersionLayout.setVerticalGroup(
             pVersionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -3833,7 +3878,9 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(pVersionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel29)
                     .addComponent(txtXiFDRVersion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(381, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 363, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         jTabbedPane4.addTab("Version", pVersion);
@@ -4193,6 +4240,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
@@ -4257,6 +4305,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTextField txtSumProtGroupPairsInternal;
     private javax.swing.JTextField txtSumProtGroups;
     private javax.swing.JTextField txtXiFDRVersion;
+    private javax.swing.JTextArea txtchangelog;
     private javax.swing.JTextArea txtmzIdentAdress;
     private javax.swing.JTextField txtmzIdentOwnerEmail;
     private javax.swing.JTextField txtmzIdentOwnerFirst;

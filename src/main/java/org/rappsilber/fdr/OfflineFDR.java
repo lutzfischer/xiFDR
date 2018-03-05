@@ -3687,37 +3687,46 @@ public abstract class OfflineFDR {
             run = "";
         if (scan==null)
             scan ="";
-        
-        String[] line = new String[]{pp.getPsmID() 
-                ,run
-                , scan, accessions1, descriptions1, Boolean.toString(pep1.isDecoy()) 
-                , accessions2, descriptions2 ,Boolean.toString(pep2.isDecoy()) 
-                , pepSeq1 , pepSeq2 , positons1 
-                ,positons2 
-                , (pepLength1 == 0?"":Integer.toString(pepLength1)) 
-                ,(pepLength2 == 0?"":Integer.toString(pepLength2)) 
-                , Integer.toString(pepLink1) 
-                ,Integer.toString(pepLink2) 
-                ,proteinLinkPositons1  
-                ,proteinLinkPositons2 
-                ,Integer.toString(pp.getCharge()) 
-                , pp.getCrosslinker()
-                , Double.toString(pp.getScore()) 
-                , Boolean.toString(pp.isDecoy()) 
-                , Boolean.toString(pp.isTT()) 
-                ,Boolean.toString(pp.isTD()) 
-                ,Boolean.toString(pp.isDD() )
-                ,pp.getFDRGroup()
-                ,Double.toString(pp.getFDR())
-                ,"", (pep == null ? "" : Double.toString(pep.getFDR()) )
-                ,(pp.getFdrProteinGroup1() == null ? "" : Double.toString(pp.getFdrProteinGroup1().getFDR())) 
-                ,(pp.getFdrProteinGroup2() == null ? "" : Double.toString(pp.getFdrProteinGroup2().getFDR()))
-                ,(l == null ? "" : Double.toString(l.getFDR())) 
-                ,(ppi == null ? "" : Double.toString(ppi.getFDR())) 
-                , (pep == null ? "" : Integer.toString(pep.getPeptidePairID())) 
-                ,(l == null ? "" : Integer.toString(l.getLinkID())) 
-                ,(ppi == null ? "" : Integer.toString(ppi.getProteinGroupPairID()))};
-        return new ArrayList<String>(RArrayUtils.toCollection(line));
+        ArrayList<String >ret = new ArrayList<>(37);
+        ret.add(pp.getPsmID());
+        ret.add(run);
+        ret.add( scan);
+        ret.add( accessions1);
+        ret.add( descriptions1);
+        ret.add( Boolean.toString(pep1.isDecoy()));
+        ret.add( accessions2);
+        ret.add(descriptions2);
+        ret.add(Boolean.toString(pep2.isDecoy()));
+        ret.add( pepSeq1 );
+        ret.add(pepSeq2 );
+        ret.add(positons1);
+        ret.add(positons2);
+        ret.add( (pepLength1 == 0?"":Integer.toString(pepLength1)));
+        ret.add((pepLength2 == 0?"":Integer.toString(pepLength2)));
+        ret.add( Integer.toString(pepLink1));
+        ret.add(Integer.toString(pepLink2));
+        ret.add(proteinLinkPositons1);
+        ret.add(proteinLinkPositons2);
+        ret.add(Integer.toString(pp.getCharge()));
+        ret.add( pp.getCrosslinker());
+        ret.add( Double.toString(pp.getScore()));
+        ret.add( Boolean.toString(pp.isDecoy()));
+        ret.add( Boolean.toString(pp.isTT()));
+        ret.add(Boolean.toString(pp.isTD()));
+        ret.add(Boolean.toString(pp.isDD() ));
+        ret.add(pp.getFDRGroup());
+        ret.add(Double.toString(pp.getFDR()));
+        ret.add("");
+        ret.add((pep == null ? "" : Double.toString(pep.getFDR()) ));
+        ret.add((pp.getFdrProteinGroup1() == null ? "" : Double.toString(pp.getFdrProteinGroup1().getFDR())));
+        ret.add((pp.getFdrProteinGroup2() == null ? "" : Double.toString(pp.getFdrProteinGroup2().getFDR())));
+        ret.add((l == null ? "" : Double.toString(l.getFDR())));
+        ret.add((ppi == null ? "" : Double.toString(ppi.getFDR())));
+        ret.add( (pep == null ? "" : Integer.toString(pep.getPeptidePairID())));
+        ret.add((l == null ? "" : Integer.toString(l.getLinkID())));
+        ret.add((ppi == null ? "" : Integer.toString(ppi.getProteinGroupPairID())));        
+        ret.add(pp.getInfo());        
+        return ret;
     }
 
     protected <T extends RandomAccess & Collection> String getPSMHeader(String seperator) {
@@ -3733,7 +3742,7 @@ public abstract class OfflineFDR {
                 , "isDecoy" , "isTT" , "isTD" , "isDD" , "fdrGroup" , "fdr" 
                 , "" , "PeptidePairFDR" , "Protein1FDR" , "Protein2FDR" 
                 , "LinkFDR" , "PPIFDR"
-                , "peptide pair id" , "link id" , "ppi id"}));
+                , "peptide pair id" , "link id" , "ppi id","info"}));
     }
     
     protected ArrayList<String> getXLPepsHeader() {

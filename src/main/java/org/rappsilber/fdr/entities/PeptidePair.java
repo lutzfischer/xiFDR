@@ -129,11 +129,11 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     /** proteingroup supported by this peptidepair that passed the fdr */
     public ProteinGroup fdrProteinGroup2 = null;
     /** are all supporting PSMs special cases? */
-    private ArrayList<String> specialcase = null;
+//    private HashSet<String> negativeGroups = null;
 
     /** indicates that the two peptides where in the same spectrum but non-covalently linked */
     private boolean isNonCovalent = false;
-    private String validated;
+//    private HashSet<String> positiveGroups;
     
     
     /**
@@ -173,14 +173,14 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         this.isLoop = isLinear && pepsite1 >= 0 && pepsite2 >= 0;
         this.isInternal = peptide1.sameProtein(peptide2);
         if (psm.hasNegativeGrouping()) {
-            this.specialcase = new ArrayList<>();
-            this.specialcase.add(psm.getNegativeGrouping());
+            this.m_NegativeGrouping = new HashSet<>();
+            this.m_NegativeGrouping.addAll(psm.getNegativeGrouping());
         }
         //this.score = psm.getScore();
         isNonCovalent = psm.isNonCovalent();
 
         setFDRGroup();
-        this.validated = psm.getPositiveGrouping();
+        this.positiveGroups = psm.getPositiveGrouping();
 
     }
 
@@ -240,8 +240,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             
         }
         boolean setFDR = false;
-        if (specialcase!=null && !p.hasNegativeGrouping()) {
-            specialcase = null;
+        if (m_NegativeGrouping!=null && !p.hasNegativeGrouping()) {
+            m_NegativeGrouping = null;
             setFDR = true;
         }
         
@@ -251,11 +251,11 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         } 
         
         if (p.hasPositiveGrouping()) {
-            if (this.validated == null) {
-                this.validated = p.getPositiveGrouping();
+            if (this.positiveGroups == null) {
+                this.positiveGroups = p.getPositiveGrouping();
                 setFDR = true;
-            } else if (!this.validated.contentEquals(p.getPositiveGrouping())) {
-                this.validated += " " + p.getPositiveGrouping();
+            } else if (!this.positiveGroups.containsAll(p.getPositiveGrouping())) {
+                this.positiveGroups.addAll(p.getPositiveGrouping());
                 setFDR = true;
             }
         }
@@ -681,18 +681,19 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @param specialCase
      * @return 
      */
-    public static String getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, String specialCase, String groupExt) {
+    public static String getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, Collection<String> negativeGroups, Collection<String> positiveGroups, String groupExt) {
         String group = (isLinear ? "linear" : (isInternal ? "internal" :"between"));
         groupExt=" " + groupExt;
-        //int metaGroup = (isLinear ? 0 : 1);//(isInternal ? 1 :2));
-        if (specialCase != null) {
-            groupExt+=" " + specialCase;
+        if (negativeGroups != null && negativeGroups.size() > 0) {
+            ArrayList<String> ng = new ArrayList<>(negativeGroups);            
+            java.util.Collections.sort(ng);
+            groupExt=" n:" + RArrayUtils.toString(ng, " n:");
         }
-        
-
-        
-       // int fdrGroup = metaGroup * lenghtGroup.length;
-        
+        if (positiveGroups != null && positiveGroups.size() > 0) {
+            ArrayList<String> pg = new ArrayList<>(positiveGroups);
+            java.util.Collections.sort(pg);
+            groupExt=" p:" + RArrayUtils.toString(pg, " p:");
+        }
 
         if (ISTARGETED) { // for targetd modifications add the mass to the fdr group
             // sorry is used rappsilber internally for targeted modification search 
@@ -740,13 +741,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      */
     public void setFDRGroup() {
         String sc = null;
-        if (specialcase != null)
-            sc = RArrayUtils.toString(specialcase, " ");
-        fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, sc, (isNonCovalent ? "NonCovalent":"") + (validated == null ? "" : validated));
-        if (hasPositiveGrouping()) {
-            fdrGroup += " " + validated;
-            fdrGroup = FDRGroupNames.get(fdrGroup);
-        }
+        fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, m_NegativeGrouping, positiveGroups, isNonCovalent ? "NonCovalent":"");
     }
     /**
      * define the fdr-group for this match
@@ -895,49 +890,46 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         return 1;
     }
 
-    /**
-     * are all supporting PSMs "special" cases?
-     * @return the specialcase
-     */
-    public boolean hasNegativeGrouping() {
-        return specialcase!=null;
-    }
-
-    /**
-     * are all supporting PSMs "special" cases?
-     * @param specialcase 
-     */
-    public void setNegativeGrouping(boolean specialcase) {
-        if (specialcase) {
-            this.specialcase = new ArrayList<>();
-            this.specialcase.add("Special");
-                    
-        } else {
-            this.specialcase = null;
-        }
-    }
-
-    /**
-     * are all supporting PSMs "special" cases?
-     * @param specialcase 
-     */
-    @Override
-    public void setNegativeGrouping(String cause) {
-        if (cause == null) {
-            this.specialcase = null;
-        } else {
-            this.specialcase = new ArrayList<>();
-            this.specialcase.add(cause);
-        }
-    }
-    
-    @Override
-    public String getNegativeGrouping() {
-        if (this.specialcase == null)
-            return null;
-        
-        return RArrayUtils.toString(this.specialcase, " ");
-    }
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @return the specialcase
+//     */
+//    public boolean hasNegativeGrouping() {
+//        return negativeGroups!=null;
+//    }
+//
+////    /**
+////     * are all supporting PSMs "special" cases?
+////     * @param specialcase 
+////     */
+////    public void setNegativeGrouping(boolean specialcase) {
+////        if (specialcase) {
+////            this.negativeGroups = new ArrayList<>();
+////            this.negativeGroups.add("Special");
+////                    
+////        } else {
+////            this.negativeGroups = null;
+////        }
+////    }
+//
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @param specialcase 
+//     */
+//    @Override
+//    public void setNegativeGrouping(String cause) {
+//        if (cause == null) {
+//            this.negativeGroups = null;
+//        } else {
+//            this.negativeGroups = new HashSet<>();
+//            this.negativeGroups.add(cause);
+//        }
+//    }
+//    
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        return this.negativeGroups;
+//    }
     
     
     /**
@@ -1032,19 +1024,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         this.isNonCovalent = isNonCovalent;
     }
     
-    @Override
-    public boolean hasPositiveGrouping() {
-        return this.validated != null;
-    }
-    
-    @Override
-    public void setPositiveGrouping(String av) {
-        this.validated = av;
-    }
-
-    @Override
-    public String getPositiveGrouping() {
-        return this.validated;
-    }
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGroups != null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null) {
+//            this.positiveGroups = null;
+//        } else {
+//            this.positiveGroups = new HashSet<String>();
+//            this.positiveGroups.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return this.positiveGroups;
+//    }
     
 }

@@ -115,7 +115,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     //private boolean specialcase = false;
 
-    private String negativeGrouping = null;
+//    private HashSet<String> negativeGrouping = null;
     
     private PSM partOfUniquePSM;
     
@@ -148,7 +148,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private ArrayList<PSM> represents;
     private boolean isNonCovalent = false;
-    private String validated;
+//    private HashSet<String> positiveGroups;
     
     
 
@@ -563,11 +563,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setFDRGroup() {
         
-        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, PSM.this.getNegativeGrouping(),(isNonCovalent ? "NonCovalent":""));
-        if (validated!=null) {
-            fdrGroup+= " " + validated;
-            fdrGroup=FDRGroupNames.get(fdrGroup);
-        }
+        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, this.getNegativeGrouping(), getPositiveGrouping(),isNonCovalent ? "NonCovalent":"");
        
     }     
 
@@ -708,39 +704,45 @@ public class PSM extends AbstractFDRElement<PSM> {
         return 1;
     }
 
-    /**
-     * Is this a special case. E.g. PSMs that where matched with unknown 
-     * charge-state have a inherently higher chance to be wrong. Therefore it
-     * makes sense to calculate the FDR for these separately
-     * @return the specialcase
-     */
-    public boolean hasNegativeGrouping() {
-        return negativeGrouping != null;
-    }
+//    /**
+//     * Is this a special case. E.g. PSMs that where matched with unknown 
+//     * charge-state have a inherently higher chance to be wrong. Therefore it
+//     * makes sense to calculate the FDR for these separately
+//     * @return the specialcase
+//     */
+//    public boolean hasNegativeGrouping() {
+//        return negativeGrouping != null;
+//    }
+//
+//    public HashSet<String> getNegativeGrouping() {
+//        return negativeGrouping;
+//    }
+//
+//    /**
+//     * Is this a special case. E.g. PSMs that where matched with unknown 
+//     * charge-state have a inherently higher chance to be wrong. Therefore it
+//     * makes sense to calculate the FDR for these separately
+//     * @param specialcase the specialcase to set
+//     */
+//    public void setNegativeGrouping(boolean specialcase) {
+//        this.negativeGrouping = specialcase?"Special":null;
+//    }
 
-    public String getNegativeGrouping() {
-        return negativeGrouping;
-    }
-
-    /**
-     * Is this a special case. E.g. PSMs that where matched with unknown 
-     * charge-state have a inherently higher chance to be wrong. Therefore it
-     * makes sense to calculate the FDR for these separately
-     * @param specialcase the specialcase to set
-     */
-    public void setNegativeGrouping(boolean specialcase) {
-        this.negativeGrouping = specialcase?"Special":null;
-    }
-
-    /**
-     * Is this a special case. E.g. PSMs that where matched with unknown 
-     * charge-state have a inherently higher chance to be wrong. Therefore it
-     * makes sense to calculate the FDR for these separately
-     * @param specialcase the reason specialcase to set
-     */
-    public void setNegativeGrouping(String specialcase) {
-        this.negativeGrouping = specialcase;
-    }
+//    /**
+//    /**
+//     * Is this a special case. E.g. PSMs that where matched with unknown 
+//     * charge-state have a inherently higher chance to be wrong. Therefore it
+//     * makes sense to calculate the FDR for these separately
+//     * @param specialcase the reason specialcase to set
+//     */
+//    public void setNegativeGrouping(String specialcase) {
+//        if (specialcase == null) {
+//            this.negativeGrouping = null;
+//        } else {
+//            this.negativeGrouping = new HashSet<String>();
+//            this.negativeGrouping.add(specialcase);
+//        }
+//    }
     
     /**
      * Is this a non-cross-linked PSM?
@@ -989,19 +991,24 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.isNonCovalent = isNonCovalent;
     }
 
-    @Override
-    public boolean hasPositiveGrouping() {
-        return this.validated != null;
-    }
-    
-    @Override
-    public void setPositiveGrouping(String av) {
-        this.validated = av;
-    }
-
-    @Override
-    public String getPositiveGrouping() {
-        return this.validated;
-    }
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGroups != null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null)
+//            this.positiveGroups = null;
+//        else {
+//            this.positiveGroups = new HashSet<String>();
+//            this.positiveGroups.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return this.positiveGroups;
+//    }
 
 }
