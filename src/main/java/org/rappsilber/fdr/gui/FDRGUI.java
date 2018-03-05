@@ -3869,7 +3869,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
         jScrollPane6.setViewportView(jTabbedPane1);
 
-        jSplitPane1.setDividerLocation(400);
+        jSplitPane1.setDividerLocation(550);
         jSplitPane1.setDividerSize(5);
 
         txtStatus.setEditable(false);

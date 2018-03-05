@@ -537,7 +537,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 {"Crosslinker",  new Boolean(true), null},
                 {"experimental mz",  new Boolean(true), null},
                 {"calculated mass",  new Boolean(true), null},
-                {"Info Field", null, null},
+                {"Info Field",  new Boolean(true), null},
                 {"Negative Grouping",  new Boolean(true), null},
                 {"Positive Grouping",  new Boolean(true), null}
             },
