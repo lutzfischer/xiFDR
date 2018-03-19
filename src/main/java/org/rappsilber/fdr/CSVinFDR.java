@@ -45,29 +45,35 @@ public class CSVinFDR extends OfflineFDR {
     private Character delimiter;
     private Character quote;
     public static String[][] DEFAULT_COLUMN_MAPPING=new String[][]{
-        new String[]{"peptide1","Peptide1"},
-        new String[]{"peptide2","Peptide2"},
-        new String[]{"peptide length 1","LengthPeptide1"},
-        new String[]{"peptide length 2","LengthPeptide2"},
-        new String[]{"peptide link 1","Link1"},
-        new String[]{"peptide link 2","Link2"},
-        new String[]{"is decoy 1","Protein1decoy"},
-        new String[]{"is decoy 2","Protein2decoy"},
-        new String[]{"precursor charge","PrecoursorCharge"},
-        new String[]{"score","match score"},
-        new String[]{"accession1","Protein1"},
-        new String[]{"accession2","Protein2"},
-        new String[]{"description1","Fasta1"},
-        new String[]{"description2","Fasta2"},
-        new String[]{"peptide position 1","Start1"},
-        new String[]{"peptide position 2","Start2"},
-        new String[]{"peptide1 score","Pep1Score"},
-        new String[]{"peptide2 score","Pep2Score"},
-        new String[]{"experimental mz","expMZ"},
-        new String[]{"calculated mass","calcMass"},
-        new String[]{"negative grouping","NegativeGrouping"},
-        new String[]{"positive grouping","PositiveGrouping"},
-        new String[]{"info","info"},
+        {"matchid", "spectrummatchid", "match id", "spectrum match id", "psmid"},
+        {"isdecoy", "is decoy", "reverse", "decoy"},
+        {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy"},
+        {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy"},
+        {"score", "match score", "match score", "pep score"},
+        {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score"},
+        {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score"},
+        {"run", "run name", "raw file", "filename/id"},
+        {"scan", "scan number", "ms/ms scan number", "spectrum number"},
+        {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1"},
+        {"pep2 position", "peptide position2", "start2", "peptide position 2", "PepPos2"},
+        {"pep1 link pos", "link1", "peptide1 link pos", "peptide link1", "peptide link 1", "from site","LinkPos1"},
+        {"pep2 link pos", "link2", "peptide2 link pos", "peptide link2", "peptide link 2" , "to site","LinkPos2"},
+        {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1"},
+        {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2"},
+        {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence"},
+        {"peptide2" , "peptide 2", "pepseq2"},
+        {"precursermz", "precursor mz", "experimental mz", "exp mz"},
+        {"precursor charge", "precoursorcharge", "charge"},
+        {"calculated mass", "calc mass", "theoretical mass"},
+        {"description1", "fasta1"},
+        {"description2", "fasta2"},
+        {"protein1", "display protein1", "accession1"},
+        {"protein2", "display protein2", "accession2"},
+        {"rank", "match rank"},       
+        {"info","info"},
+        {"negative grouping","negativegrouping"},
+        {"positive grouping","positivegrouping"},
+        {"scan file index","scan index","file scan index","file spectrum index"},
     };
     
     public CSVinFDR() {
@@ -169,6 +175,8 @@ public class CSVinFDR extends OfflineFDR {
         Integer cInfo = getColumn(csv,"info",true);
         Integer cNegativeGrouping = getColumn(csv,"negative grouping",true);
         Integer cPositiveGrouping = getColumn(csv,"positive grouping",true);
+        Integer cScanInputIndex = getColumn(csv,"scan input index",true);
+        Integer cRank = getColumn(csv,"rank",true);
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
@@ -392,6 +400,13 @@ public class CSVinFDR extends OfflineFDR {
                     if (cInfo != null) {
                         psm.setInfo(csv.getValue(cInfo));
                     }
+                    if (cRank != null) {
+                        psm.setRank(csv.getInteger(cRank));
+                    }
+                    if (cScanInputIndex != null) {
+                        psm.setFileScanIndex(csv.getInteger(cScanInputIndex));
+                    }
+                    
 //    public PSM          addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
 
                 }

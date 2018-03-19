@@ -147,9 +147,22 @@ public class PSM extends AbstractFDRElement<PSM> {
      * list them here.
      */
     private ArrayList<PSM> represents;
+    /**
+     * This indicates that the PSM is not of a cross-linked peptide pair two
+     * peptide that are not cross-linked but only stayed together do to 
+     * non-covalent interactions 
+     */
     private boolean isNonCovalent = false;
-//    private HashSet<String> positiveGroups;
     
+    /**
+     * the rank of the psm for a the referenced spectrum
+     */
+    private int rank = 1;
+    
+    /**
+     * for the mzIdentML export we need the index in the referenced files.
+     */
+    private int fileScanIndex;
     
 
     /**
@@ -1011,4 +1024,34 @@ public class PSM extends AbstractFDRElement<PSM> {
 //        return this.positiveGroups;
 //    }
 
+    /**
+     * the rank of the psm for a the referenced spectrum
+     * @return the rank
+     */
+    public int getRank() {
+        return rank;
+    }
+
+    /**
+     * the rank of the psm for a the referenced spectrum
+     * @param rank the rank to set
+     */
+    public void setRank(int rank) {
+        this.rank = rank;
+    }
+
+    
+    /**
+     * @return the fileScanIndex
+     */
+    public int getFileScanIndex() {
+        return fileScanIndex;
+    }
+
+    /**
+     * @param fileScanIndex the fileScanIndex to set
+     */
+    public void setFileScanIndex(int fileScanIndex) {
+        this.fileScanIndex = fileScanIndex;
+    }    
 }

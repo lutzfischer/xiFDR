@@ -48,6 +48,7 @@ import org.rappsilber.gui.components.JoinedThreadedTextOuput;
 import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.data.csv.gui.filter.ConditionList;
+import org.rappsilber.fdr.CSVinFDR;
 
 /**
  *
@@ -67,31 +68,6 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
     private JoinedThreadedTextOuput m_status = null;
     
-   public static String[][] COLUMN_ALIASES = new String[][]{
-        {"matchid", "spectrummatchid", "match id", "spectrum match id", "psmid"},
-        {"isdecoy", "is decoy", "reverse", "decoy"},
-        {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy"},
-        {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy"},
-        {"score", "match score", "match score", "pep score"},
-        {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score"},
-        {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score"},
-        {"run", "run name", "raw file", "filename/id"},
-        {"scan", "scan number", "ms/ms scan number", "spectrum number"},
-        {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1"},
-        {"pep2 position", "peptide position2", "start2", "peptide position 2", "PepPos2"},
-        {"pep1 link pos", "link1", "peptide1 link pos", "peptide link1", "peptide link 1", "from site","LinkPos1"},
-        {"pep2 link pos", "link2", "peptide2 link pos", "peptide link2", "peptide link 2" , "to site","LinkPos2"},
-        {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1"},
-        {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2"},
-        {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence"},
-        {"peptide2" , "peptide 2", "pepseq2"},
-        {"precursermz", "precursor mz", "experimental mz", "exp mz"},
-        {"precursor charge", "precoursorcharge", "charge"},
-        {"calculated mass", "calc mass", "theoretical mass"},
-        {"description1", "fasta1"},
-        {"description2", "fasta2"},
-        {"protein1", "display protein1", "accession1"},
-        {"protein2", "display protein2", "accession2"},}; 
 
     
     private class NeededOptionalComboBoxCellEditor extends DefaultCellEditor {
@@ -178,19 +154,19 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         cbCSVHeaders.setModel(new DefaultComboBoxModel(csvColumns));
         cbCSVHeaderOptional.setModel(new DefaultComboBoxModel(csvColumnsOptional));
 
-        TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(2);
+        TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(3);
         columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
         resetColumnMappings();
         spAdditional.setVisible(false);
     }
 
-    protected void resetColumnMappings() {
+    public void resetColumnMappings() {
         TableModel tm = tblCSVColumns.getModel();
         for (int r = 0; r < tblCSVColumns.getRowCount(); r++) {
             if (Boolean.TRUE.equals(tm.getValueAt(r, 1))) {
-                tblCSVColumns.getModel().setValueAt(optionalColumn, r, 2);
+                tblCSVColumns.getModel().setValueAt(optionalColumn, r, 3);
             } else {
-                tblCSVColumns.getModel().setValueAt(missingColumn, r, 2);
+                tblCSVColumns.getModel().setValueAt(missingColumn, r, 3);
             }
         }
     }
@@ -201,7 +177,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
             CsvParser csv;
             try {
                 csv = CsvParser.guessCsv(f, 50);
-                ColumnAlternatives.setupAlternatives(csv,COLUMN_ALIASES);
+                ColumnAlternatives.setupAlternatives(csv,CSVinFDR.DEFAULT_COLUMN_MAPPING);
                 String delimiter = csv.getDelimiter();
                 if (delimiter.contentEquals(",")) {
                     delimiter = "Comma";
@@ -233,7 +209,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                     for (int r = 0; r < tm.getRowCount(); r++) {
                         Integer rc = csv.getColumn(tm.getValueAt(r, 0).toString());
                         if (rc != null) {
-                            tm.setValueAt(csv.getHeader(rc), r, 2);
+                            tm.setValueAt(csv.getHeader(rc), r, 3);
                         }
                     }
 
@@ -335,8 +311,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         CsvParser csv = new CsvParser();
         for (int r = 0; r < tm.getRowCount(); r++) {
-            if (tm.getValueAt(r, 2) != missingColumn) {
-                csv.setAlternative(tm.getValueAt(r, 2).toString(), tm.getValueAt(r, 0).toString());
+            if (tm.getValueAt(r, 3) != missingColumn) {
+                csv.setAlternative(tm.getValueAt(r, 3).toString(), tm.getValueAt(r, 0).toString());
             }
         }
         String delimiter = getDelimiter();
@@ -380,8 +356,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 File nf = inputs[n++];
                 CsvParser csv = new CsvParser();
                 for (int r = 0; r < tm.getRowCount(); r++) {
-                    if (tm.getValueAt(r, 2) != missingColumn && tm.getValueAt(r, 2) != optionalColumn) {
-                        csv.setAlternative(tm.getValueAt(r, 2).toString(), tm.getValueAt(r, 0).toString());
+                    if (tm.getValueAt(r, 3) != missingColumn && tm.getValueAt(r, 3) != optionalColumn) {
+                        csv.setAlternative(tm.getValueAt(r, 3).toString(), tm.getValueAt(r, 0).toString());
                     }
                 }
                 csv.setDelimiter(delimiter);
@@ -512,44 +488,46 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         tblCSVColumns.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {"run",  new Boolean(true), "", "raw file name that the spectrum derived from"},
-                {"scan",  new Boolean(true), null, "scan number within that run"},
-                {"psmid",  new Boolean(true), null, "a unique ID for the PSM - if not given will be defined based on run and scan"},
-                {"peptide1", null, null, "sequence of the first peptide"},
-                {"peptide2", null, null, "sequence of the second peptide"},
-                {"peptide length 1",  new Boolean(true), null, "length (in amino acids) of the first peptide"},
-                {"peptide length 2",  new Boolean(true), null, "length (in amino acids) of the second peptide"},
-                {"peptide link 1", null, null, "which residue of the first peptide does the cross-linker attach to"},
-                {"peptide link 2", null, null, "which residue of the second peptide does the cross-linker attach to"},
-                {"is decoy 1", null, null, "is the first peptide from the decoy database"},
-                {"is decoy 2", null, null, "is the second peptide from the decoy database"},
-                {"precursor charge", null, null, "charge state of the precursor ion"},
-                {"score",  new Boolean(true), null, "score of the spectrum match"},
-                {"score ratio",  new Boolean(true), null, "if there is a joined score given for the match how to separate the score for cases where each peptide individually has to be considered (only affects protein fdr)"},
-                {"peptide1 score",  new Boolean(true), null, "a score for the first peptide"},
-                {"peptide2 score",  new Boolean(true), null, "a score for the second peptide"},
-                {"accession1", null, null, "protein accession number(s) for the source of the first peptide"},
-                {"accession2", null, null, "protein accession number(s) for the source of the second peptide"},
-                {"description1",  new Boolean(true), null, "description of the first protein"},
-                {"description2",  new Boolean(true), null, "description of the second protein"},
-                {"peptide position 1", null, null, "position(s) of the first peptide in the protein(s)"},
-                {"peptide position 2", null, null, "position(s) of the second peptide in the protein(s)"},
-                {"Crosslinker",  new Boolean(true), null, "name of the cross-linker involved in this PSM"},
-                {"experimental mz",  new Boolean(true), null, "experimental precursor M/Z"},
-                {"calculated mass",  new Boolean(true), null, "calculated mass of the precursor"},
-                {"info",  new Boolean(true), null, "arbitrary info field to be forwarded to the results table"},
-                {"negative grouping",  new Boolean(true), null, "if some matches have an inherently higher chance to be false positive then they can be flaged here"},
-                {"positive grouping",  new Boolean(true), null, "if some matches have an inherently lower chance to be false positive then they can be flaged here"}
+                {"run",  new Boolean(true), "raw file name that the spectrum derived from", ""},
+                {"scan",  new Boolean(true), "scan number within that run", null},
+                {"psmid",  new Boolean(true), "a unique ID for the PSM - if not given will be defined based on run and scan", null},
+                {"rank",  new Boolean(true), "The rank of the PSM (e.g. 1=best match for a spectrum ;2 second best ...)", null},
+                {"peptide1", null, "sequence of the first peptide", null},
+                {"peptide2", null, "sequence of the second peptide", null},
+                {"peptide length 1",  new Boolean(true), "length (in amino acids) of the first peptide", null},
+                {"peptide length 2",  new Boolean(true), "length (in amino acids) of the second peptide", null},
+                {"peptide link 1", null, "which residue of the first peptide does the cross-linker attach to", null},
+                {"peptide link 2", null, "which residue of the second peptide does the cross-linker attach to", null},
+                {"is decoy 1", null, "is the first peptide from the decoy database", null},
+                {"is decoy 2", null, "is the second peptide from the decoy database", null},
+                {"precursor charge", null, "charge state of the precursor ion", null},
+                {"score",  new Boolean(true), "score of the spectrum match", null},
+                {"score ratio",  new Boolean(true), "if there is a joined score given for the match how to separate the score for cases where each peptide individually has to be considered (only affects protein fdr)", null},
+                {"peptide1 score",  new Boolean(true), "a score for the first peptide", null},
+                {"peptide2 score",  new Boolean(true), "a score for the second peptide", null},
+                {"accession1", null, "protein accession number(s) for the source of the first peptide", null},
+                {"accession2", null, "protein accession number(s) for the source of the second peptide", null},
+                {"description1",  new Boolean(true), "description of the first protein", null},
+                {"description2",  new Boolean(true), "description of the second protein", null},
+                {"peptide position 1", null, "position(s) of the first peptide in the protein(s)", null},
+                {"peptide position 2", null, "position(s) of the second peptide in the protein(s)", null},
+                {"Crosslinker",  new Boolean(true), "name of the cross-linker involved in this PSM", null},
+                {"experimental mz",  new Boolean(true), "experimental precursor M/Z", null},
+                {"calculated mass",  new Boolean(true), "calculated mass of the precursor", null},
+                {"scan file index",  new Boolean(true), "an index for the spectrum within the file(needed for mzML export)", null},
+                {"negative grouping",  new Boolean(true), "if some matches have an inherently higher chance to be false positive then they can be flaged here", null},
+                {"positive grouping",  new Boolean(true), "if some matches have an inherently lower chance to be false positive then they can be flaged here", null},
+                {"info",  new Boolean(true), "arbitrary info field to be forwarded to the results table", null}
             },
             new String [] {
-                "Column", "Optional", "Name in CSV", "Description"
+                "Column", "Optional", "Description", "Name in CSV"
             }
         ) {
             Class[] types = new Class [] {
                 java.lang.String.class, java.lang.Boolean.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, true, false
+                false, false, false, true
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -758,26 +736,26 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         final TableModel tm = tblCSVColumns.getModel();
         // check, whether we have all the neded columns
         for (int r = 0; r < tm.getRowCount(); r++) {
-            if ((!Boolean.TRUE.equals(tm.getValueAt(r, 1))) && tm.getValueAt(r, 2) == missingColumn) {
+            if ((!Boolean.TRUE.equals(tm.getValueAt(r, 1))) && tm.getValueAt(r, 3) == missingColumn) {
                 JOptionPane.showMessageDialog(this, "No column for " + tm.getValueAt(r, 0) + " selected", "Missing Column", JOptionPane.WARNING_MESSAGE);
                 return false;
             }
-            if (tm.getValueAt(r, 0).toString().contentEquals("Peptide1 Score") && tm.getValueAt(r, 2) != optionalColumn) {
+            if (tm.getValueAt(r, 0).toString().contentEquals("Peptide1 Score") && tm.getValueAt(r, 3) != optionalColumn) {
                 peptide1ScoreSelected = true;
             }
-            if (tm.getValueAt(r, 0).toString().contentEquals("Peptide2 Score") && tm.getValueAt(r, 2) != optionalColumn) {
+            if (tm.getValueAt(r, 0).toString().contentEquals("Peptide2 Score") && tm.getValueAt(r, 3) != optionalColumn) {
                 peptide2ScoreSelected = true;
             }
-            if (tm.getValueAt(r, 0).toString().contentEquals("score") && tm.getValueAt(r, 2) != optionalColumn) {
+            if (tm.getValueAt(r, 0).toString().contentEquals("score") && tm.getValueAt(r, 3) != optionalColumn) {
                 scoreSelected = true;
             }
-            if (tm.getValueAt(r, 0).toString().contentEquals("run") && tm.getValueAt(r, 2) != optionalColumn) {
+            if (tm.getValueAt(r, 0).toString().contentEquals("run") && tm.getValueAt(r, 3) != optionalColumn) {
                 runSelected = true;
             }
-            if (tm.getValueAt(r, 0).toString().contentEquals("scan") && tm.getValueAt(r, 2) != optionalColumn) {
+            if (tm.getValueAt(r, 0).toString().contentEquals("scan") && tm.getValueAt(r, 3) != optionalColumn) {
                 scanSelected = true;
             }
-            if (tm.getValueAt(r, 0).toString().contentEquals("psmid") && tm.getValueAt(r, 2) != optionalColumn) {
+            if (tm.getValueAt(r, 0).toString().contentEquals("psmid") && tm.getValueAt(r, 3) != optionalColumn) {
                 psmidSelected = true;
             }
         }
@@ -841,6 +819,6 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JRadioButton rbCSVHighBetter;
     private javax.swing.JRadioButton rbCSVLowBetter;
     public javax.swing.JScrollPane spAdditional;
-    private javax.swing.JTable tblCSVColumns;
+    public javax.swing.JTable tblCSVColumns;
     // End of variables declaration//GEN-END:variables
 }
