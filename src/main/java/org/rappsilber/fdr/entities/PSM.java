@@ -29,6 +29,7 @@ import org.rappsilber.utils.SelfAddHashSet;
  * represents a single PSM
  */
 public class PSM extends AbstractFDRElement<PSM> { 
+
     /**
      * unique id for the PSM.
      */
@@ -127,6 +128,11 @@ public class PSM extends AbstractFDRElement<PSM> {
     public String crosslinker = NOLINKER;
 
     /**
+     * the mass of the cross-linker
+     */
+    private double crosslinkerModMass = Double.NaN;
+    
+    /**
      * I filter all cross-linker names through this HashMap.
      * This way all PSMs that have the same cross-linker will actually refer to 
      * the same string for the cross-linker and I can compare them via 
@@ -162,7 +168,17 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * for the mzIdentML export we need the index in the referenced files.
      */
-    private int fileScanIndex;
+    private Integer fileScanIndex;
+    /**
+     * for the mzIdentML export we need the actual name of the peaklist that was 
+     * the spectra originated from.
+     */
+    private String peakListName;
+    
+    /**
+     * will be set to true if a psm gets assigned a peakListName
+     */
+    private static boolean peakListNameFound= false;
     
 
     /**
@@ -1044,7 +1060,7 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * @return the fileScanIndex
      */
-    public int getFileScanIndex() {
+    public Integer getFileScanIndex() {
         return fileScanIndex;
     }
 
@@ -1054,4 +1070,45 @@ public class PSM extends AbstractFDRElement<PSM> {
     public void setFileScanIndex(int fileScanIndex) {
         this.fileScanIndex = fileScanIndex;
     }    
+    
+    
+    
+    /**
+     * @return the fileScanIndex
+     */
+    public String getPeakListName() {
+        return peakListName;
+    }
+
+    /**
+     * @param fileScanIndex the fileScanIndex to set
+     */
+    public void setPeakListName(String peakListName) {
+        this.peakListName = peakListName;
+        this.peakListNameFound = true;
+    }    
+
+    /**
+     * @returwas a peakfilename provided
+     */
+    public static boolean getPeakListNameFound() {
+        return peakListNameFound;
+    }
+
+    /**
+     * the mass of the cross-linker
+     * @return the crosslinkerModMass
+     */
+    public double getCrosslinkerModMass() {
+        return crosslinkerModMass;
+    }
+
+    /**
+     * the mass of the cross-linker
+     * @param crosslinkerModMass the crosslinkerModMass to set
+     */
+    public void setCrosslinkerModMass(double crosslinkerModMass) {
+        this.crosslinkerModMass = crosslinkerModMass;
+    }
+    
 }

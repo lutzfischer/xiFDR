@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<Form version="1.3" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+<Form version="1.5" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
   <NonVisualComponents>
     <Component class="javax.swing.JComboBox" name="cbCSVHeaders">
       <Properties>
@@ -47,63 +47,65 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
-              <Group type="103" groupAlignment="1" attributes="0">
-                  <Group type="102" attributes="0">
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace min="-2" pref="13" max="-2" attributes="0"/>
-                              <Component id="jLabel11" min="-2" max="-2" attributes="0"/>
-                          </Group>
-                          <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jLabel26" min="-2" max="-2" attributes="0"/>
-                          </Group>
-                          <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="ckFilter" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="btnFilter" min="-2" max="-2" attributes="0"/>
-                          </Group>
-                      </Group>
-                      <EmptySpace max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" attributes="0">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="cbCSVDElimiter" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="ckCSVHasHeader" alignment="0" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" attributes="0">
-                                      <Component id="jLabel27" min="-2" max="-2" attributes="0"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="cbCSVQuote" min="-2" max="-2" attributes="0"/>
-                                  </Group>
-                                  <Component id="ckSmartMatch" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="rbCSVHighBetter" min="-2" max="-2" attributes="0"/>
-                                  <Component id="rbCSVLowBetter" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace max="32767" attributes="0"/>
-                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                  <Component id="btnReadCsv" pref="76" max="32767" attributes="0"/>
-                                  <Component id="btnAddCSV" max="32767" attributes="0"/>
-                              </Group>
-                          </Group>
-                          <Component id="fbCsvIn" max="32767" attributes="0"/>
-                      </Group>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace min="-2" pref="13" max="-2" attributes="0"/>
+                      <Component id="jLabel11" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <Group type="102" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jScrollPane2" alignment="1" max="32767" attributes="0"/>
-                          <Component id="spAdditional" max="32767" attributes="0"/>
-                      </Group>
+                      <Component id="jLabel26" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="ckFilter" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnFilter" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
-              <EmptySpace min="6" pref="6" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="ckCSVHasHeader" min="-2" max="-2" attributes="0"/>
+                          <Component id="cbCSVDElimiter" linkSize="5" min="-2" pref="132" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="1" attributes="0">
+                          <Group type="102" alignment="1" attributes="0">
+                              <Component id="ckSmartMatch" min="-2" pref="229" max="-2" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="1" attributes="0">
+                              <Component id="jLabel27" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="cbCSVQuote" linkSize="5" min="-2" pref="94" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="jLabel28" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="localPicker1" pref="80" max="32767" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="rbCSVHighBetter" min="-2" max="-2" attributes="0"/>
+                          <Component id="rbCSVLowBetter" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="btnReadCsv" linkSize="3" min="-2" pref="76" max="-2" attributes="0"/>
+                          <Component id="btnAddCSV" linkSize="3" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Component id="fbCsvIn" max="32767" attributes="0"/>
+              </Group>
+          </Group>
+          <Group type="102" alignment="1" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="jScrollPane2" alignment="1" max="32767" attributes="0"/>
+                  <Component id="spAdditional" max="32767" attributes="0"/>
+              </Group>
           </Group>
       </Group>
     </DimensionLayout>
@@ -128,22 +130,26 @@
                       <Component id="jLabel26" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="cbCSVDElimiter" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel27" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="cbCSVQuote" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="cbCSVQuote" alignment="3" max="-2" attributes="0"/>
+                      <Component id="localPicker1" alignment="3" max="-2" attributes="0"/>
+                      <Component id="jLabel28" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="2" attributes="0">
                   <Component id="btnReadCsv" alignment="2" min="-2" max="-2" attributes="0"/>
-                  <Component id="rbCSVLowBetter" alignment="2" min="-2" max="-2" attributes="0"/>
-                  <Component id="ckSmartMatch" alignment="2" min="-2" max="-2" attributes="0"/>
                   <Component id="ckCSVHasHeader" alignment="2" min="-2" max="-2" attributes="0"/>
                   <Component id="btnFilter" alignment="2" min="-2" max="-2" attributes="0"/>
                   <Component id="ckFilter" alignment="2" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="rbCSVLowBetter" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="ckSmartMatch" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="spAdditional" pref="44" max="32767" attributes="0"/>
+              <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
+              <Component id="spAdditional" pref="38" max="32767" attributes="0"/>
               <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
-              <Component id="jScrollPane2" pref="141" max="32767" attributes="0"/>
+              <Component id="jScrollPane2" pref="134" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -172,12 +178,13 @@
       <Properties>
         <Property name="editable" type="boolean" value="true"/>
         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-          <StringArray count="5">
-            <StringItem index="0" value="Comma"/>
-            <StringItem index="1" value="TAB"/>
-            <StringItem index="2" value="Space"/>
-            <StringItem index="3" value="|"/>
-            <StringItem index="4" value=" "/>
+          <StringArray count="6">
+            <StringItem index="0" value="Comma(,)"/>
+            <StringItem index="1" value="Semicolon(;)"/>
+            <StringItem index="2" value="Tab"/>
+            <StringItem index="3" value="Space"/>
+            <StringItem index="4" value="|"/>
+            <StringItem index="5" value=" "/>
           </StringArray>
         </Property>
       </Properties>
@@ -201,11 +208,13 @@
         <Component class="javax.swing.JTable" name="tblCSVColumns">
           <Properties>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="4" rowCount="30">
+              <Table columnCount="4" rowCount="32">
                 <Column editable="false" title="Column" type="java.lang.String">
                   <Data value="run"/>
                   <Data value="scan"/>
                   <Data value="psmid"/>
+                  <Data value="peak list file"/>
+                  <Data value="peak list index"/>
                   <Data value="rank"/>
                   <Data value="peptide1"/>
                   <Data value="peptide2"/>
@@ -226,15 +235,17 @@
                   <Data value="description2"/>
                   <Data value="peptide position 1"/>
                   <Data value="peptide position 2"/>
-                  <Data value="Crosslinker"/>
+                  <Data value="crosslinker"/>
+                  <Data value="crossLinkerModMass"/>
                   <Data value="experimental mz"/>
                   <Data value="calculated mass"/>
-                  <Data value="scan file index"/>
                   <Data value="negative grouping"/>
                   <Data value="positive grouping"/>
                   <Data value="info"/>
                 </Column>
                 <Column editable="false" title="Optional" type="java.lang.Boolean">
+                  <Data value="true"/>
+                  <Data value="true"/>
                   <Data value="true"/>
                   <Data value="true"/>
                   <Data value="true"/>
@@ -270,6 +281,8 @@
                   <Data value="raw file name that the spectrum derived from"/>
                   <Data value="scan number within that run"/>
                   <Data value="a unique ID for the PSM - if not given will be defined based on run and scan"/>
+                  <Data value="the name of the actual peak file containing the spectrum (needed for mzML export)"/>
+                  <Data value="an index for the spectrum within the file(needed for mzML export)"/>
                   <Data value="The rank of the PSM (e.g. 1=best match for a spectrum ;2 second best ...)"/>
                   <Data value="sequence of the first peptide"/>
                   <Data value="sequence of the second peptide"/>
@@ -291,9 +304,9 @@
                   <Data value="position(s) of the first peptide in the protein(s)"/>
                   <Data value="position(s) of the second peptide in the protein(s)"/>
                   <Data value="name of the cross-linker involved in this PSM"/>
+                  <Data value="mass difference between the sum of the non-cross-linked peptides and teh cross-linked peptides"/>
                   <Data value="experimental precursor M/Z"/>
                   <Data value="calculated mass of the precursor"/>
-                  <Data value="an index for the spectrum within the file(needed for mzML export)"/>
                   <Data value="if some matches have an inherently higher chance to be false positive then they can be flaged here"/>
                   <Data value="if some matches have an inherently lower chance to be false positive then they can be flaged here"/>
                   <Data value="arbitrary info field to be forwarded to the results table"/>
@@ -329,10 +342,39 @@
                   <Data value="null"/>
                   <Data value="null"/>
                   <Data value="null"/>
+                  <Data value="null"/>
+                  <Data value="null"/>
                 </Column>
               </Table>
             </Property>
             <Property name="autoResizeMode" type="int" value="3"/>
+            <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
+              <TableColumnModel selectionModel="0">
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+              </TableColumnModel>
+            </Property>
+            <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
+              <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
+            </Property>
           </Properties>
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
@@ -437,6 +479,24 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnFilterActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="org.rappsilber.gui.components.LocalPicker" name="localPicker1">
+      <Properties>
+        <Property name="defaultLocal" type="java.util.Locale" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="java.util.Locale.ENGLISH" type="code"/>
+        </Property>
+        <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[80, 27]"/>
+        </Property>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="localPicker1ActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel28">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Language"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

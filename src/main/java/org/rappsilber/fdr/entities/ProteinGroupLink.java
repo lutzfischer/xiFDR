@@ -443,29 +443,41 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         return getDescriptions(position2);
     }
     
-    public String site1Sites() {
+    public ArrayList<Integer> ProteinSites(int site) {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
         StringBuffer sb = new StringBuffer(); 
-        for (Protein p : position1.keySet()) {
-            IntArrayList pos = position1.get(p);
+        HashMap<Protein, IntArrayList> allpos;
+        if (site == 0)
+            allpos = position1;
+        else 
+            allpos = position2;
+        for (Protein p : allpos.keySet()) {
+            IntArrayList pos = allpos.get(p);
             for (Integer i : pos) {
-                sb.append(";");
-                sb.append(i);
+                ret.add(i);
             }
         }
-        return sb.substring(1);
+        return ret;
+    }
+    public ArrayList<Integer> site1Sites() {
+        return ProteinSites(0);
     }
 
-    public String site2Site() {
-        StringBuffer sb = new StringBuffer(); 
-        for (Protein p : position2.keySet()) {
-            IntArrayList pos = position2.get(p);
-            for (Integer i : pos) {
-                sb.append(";");
-                sb.append(i);
-            }
-        }
-        return sb.substring(1);
-    }    
+    public ArrayList<Integer> site2Sites() {
+        return ProteinSites(1);
+    }
+    
+//    public String site2Sites() {
+//        StringBuffer sb = new StringBuffer(); 
+//        for (Protein p : position2.keySet()) {
+//            IntArrayList pos = position2.get(p);
+//            for (Integer i : pos) {
+//                sb.append(";");
+//                sb.append(i);
+//            }
+//        }
+//        return sb.substring(1);
+//    }    
     
 
     public String toString() {

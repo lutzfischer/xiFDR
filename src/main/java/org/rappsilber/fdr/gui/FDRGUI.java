@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.EventObject;
@@ -573,12 +574,15 @@ public class FDRGUI extends javax.swing.JFrame {
 
     protected void writeResults() {
         final OfflineFDR ofdr = getFdr();
+        ofdr.setOutputLocale(lpCsvOutLocal.getSelectLocale());
 
         setEnableRead(false);
         setEnableCalc(false);
         setEnableWrite(false);
         final boolean prepostaa = ckPrePostAA.isSelected();
-        final String sep = rbTSV.isSelected() ? "\t" : ",";
+        
+        final String sep = rbTSV.isSelected() ? "\t" : (((DecimalFormat) ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator()==','? ";" : ",");
+        
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -597,7 +601,12 @@ public class FDRGUI extends javax.swing.JFrame {
                             basename = basename.substring(0, basename.lastIndexOf("_"));
                         }
                     }
-                    ofdr.writeFiles(folder, basename, sep, getResult());
+                    if (file.getName().replace(basename, "").contains(".")) {
+                        String fn  =file.getName();
+                        ofdr.writeFiles(folder, basename,fn.substring(fn.lastIndexOf(".")), sep, getResult());
+                    } else {
+                        ofdr.writeFiles(folder, basename, sep, getResult());
+                    }
                     setStatus("finished: " + ofdr.summaryString(getResult()));
 
                 } catch (FileNotFoundException ex) {
@@ -658,6 +667,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     CsvParser csv = csvs.next();
 
                     final CSVinFDR ofdr = new CSVinFDR();
+                    ofdr.setInputLocale(csvSelect.getLocale());
                     setFdr(ofdr);
                     addCSV(ofdr, null, csv,filter);
 
@@ -2927,6 +2937,8 @@ public class FDRGUI extends javax.swing.JFrame {
         fbFolder = new org.rappsilber.gui.components.FileBrowser();
         jLabel9 = new javax.swing.JLabel();
         ckPrePostAA = new javax.swing.JCheckBox();
+        lpCsvOutLocal = new org.rappsilber.gui.components.LocalPicker();
+        jLabel28 = new javax.swing.JLabel();
         jPanel14 = new javax.swing.JPanel();
         fbMzIdentMLOut = new org.rappsilber.gui.components.FileBrowser();
         btnWriteMzIdentML = new javax.swing.JButton();
@@ -3072,7 +3084,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                 .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(rbMZLowBetter)
                                     .addComponent(rbMZHighBetter))
-                                .addGap(88, 351, Short.MAX_VALUE))
+                                .addGap(88, 449, Short.MAX_VALUE))
                             .addComponent(cbMZMatchScoreName, javax.swing.GroupLayout.Alignment.TRAILING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
@@ -3174,7 +3186,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     .addComponent(spDecoyDBProt, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(spTargetDBProt, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblProtein, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(290, Short.MAX_VALUE))
+                .addContainerGap(388, Short.MAX_VALUE))
         );
         pDatabseSizeLayout.setVerticalGroup(
             pDatabseSizeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -3525,7 +3537,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
                         .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jPanel18, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel20, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE)
+                            .addComponent(jPanel20, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 702, Short.MAX_VALUE)
                             .addComponent(jPanel16, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jPanel15, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -3627,14 +3639,26 @@ public class FDRGUI extends javax.swing.JFrame {
         ckPrePostAA.setText("Pre and post amino-acids");
         ckPrePostAA.setEnabled(false);
 
+        lpCsvOutLocal.setDefaultLocal(java.util.Locale.ENGLISH);
+        lpCsvOutLocal.setMinimumSize(new java.awt.Dimension(80, 27));
+        lpCsvOutLocal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                lpCsvOutLocalActionPerformed(evt);
+            }
+        });
+
+        jLabel28.setText("Language");
+
         javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
         jPanel10.setLayout(jPanel10Layout);
         jPanel10Layout.setHorizontalGroup(
             jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel10Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel9)
-                .addGap(47, 47, 47)
+                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel9)
+                    .addComponent(jLabel28))
+                .addGap(26, 26, 26)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fbFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel10Layout.createSequentialGroup()
@@ -3644,8 +3668,9 @@ public class FDRGUI extends javax.swing.JFrame {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel10Layout.createSequentialGroup()
                         .addComponent(rbCSV)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 435, Short.MAX_VALUE)
-                        .addComponent(btnWrite)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 533, Short.MAX_VALUE)
+                        .addComponent(btnWrite))
+                    .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(23, 23, 23))
         );
         jPanel10Layout.setVerticalGroup(
@@ -3655,7 +3680,11 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fbFolder, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel9))
-                .addGap(45, 45, 45)
+                .addGap(18, 18, 18)
+                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel28))
+                .addGap(10, 10, 10)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(rbTSV)
                     .addComponent(ckPrePostAA))
@@ -3663,7 +3692,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(rbCSV)
                     .addComponent(btnWrite))
-                .addContainerGap(190, Short.MAX_VALUE))
+                .addContainerGap(180, Short.MAX_VALUE))
         );
 
         tpResult.addTab("CSV/TSV", jPanel10);
@@ -3755,7 +3784,7 @@ public class FDRGUI extends javax.swing.JFrame {
                             .addComponent(txtmzIdentOwnerEmail)
                             .addComponent(txtmzIdentOwnerOrg)
                             .addComponent(cmbPeakListFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 283, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 381, Short.MAX_VALUE)
                         .addComponent(btnWriteMzIdentML)))
                 .addContainerGap())
         );
@@ -3830,7 +3859,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(spLog)
-                    .addComponent(memory2, javax.swing.GroupLayout.DEFAULT_SIZE, 776, Short.MAX_VALUE)
+                    .addComponent(memory2, javax.swing.GroupLayout.DEFAULT_SIZE, 874, Short.MAX_VALUE)
                     .addComponent(cbLevel, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -3863,7 +3892,7 @@ public class FDRGUI extends javax.swing.JFrame {
             .addGroup(pVersionLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(pVersionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 771, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 869, Short.MAX_VALUE)
                     .addGroup(pVersionLayout.createSequentialGroup()
                         .addComponent(jLabel29)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -3933,7 +3962,7 @@ public class FDRGUI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 808, Short.MAX_VALUE)
+            .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 906, Short.MAX_VALUE)
             .addComponent(jSplitPane1)
         );
         layout.setVerticalGroup(
@@ -4138,6 +4167,10 @@ public class FDRGUI extends javax.swing.JFrame {
         loggingOutput.setLevel((Level) cbLevel.getSelectedItem());
     }//GEN-LAST:event_cbLevelActionPerformed
 
+    private void lpCsvOutLocalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lpCsvOutLocalActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_lpCsvOutLocalActionPerformed
+
 //    private void fdrSpinnerMaximumCheck(JSpinner sp, double max) {                                   
 //        SpinnerModel sm = sp.getModel();
 //        Double fdr = (Double) sm.getValue();
@@ -4219,6 +4252,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel22;
+    private javax.swing.JLabel jLabel28;
     private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel30;
@@ -4264,6 +4298,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JLabel lblSumInternal;
     private javax.swing.JLabel lblSumInternal1;
     private javax.swing.JLabel lblTargetDB;
+    private org.rappsilber.gui.components.LocalPicker lpCsvOutLocal;
     private org.rappsilber.gui.components.memory.Memory memory2;
     private org.rappsilber.gui.components.memory.Memory memory3;
     private javax.swing.JPanel pAbout;

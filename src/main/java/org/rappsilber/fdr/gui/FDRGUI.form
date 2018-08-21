@@ -71,7 +71,7 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="jScrollPane6" pref="808" max="32767" attributes="0"/>
+          <Component id="jScrollPane6" pref="906" max="32767" attributes="0"/>
           <Component id="jSplitPane1" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
@@ -204,7 +204,7 @@
                                                       <Component id="rbMZLowBetter" min="-2" max="-2" attributes="0"/>
                                                       <Component id="rbMZHighBetter" alignment="0" min="-2" max="-2" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace min="88" pref="351" max="32767" attributes="0"/>
+                                                  <EmptySpace min="88" pref="449" max="32767" attributes="0"/>
                                               </Group>
                                               <Component id="cbMZMatchScoreName" alignment="1" max="32767" attributes="0"/>
                                           </Group>
@@ -413,7 +413,7 @@
                                   <Component id="spTargetDBProt" min="-2" pref="100" max="-2" attributes="0"/>
                                   <Component id="lblProtein" alignment="0" min="-2" pref="100" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace pref="290" max="32767" attributes="0"/>
+                              <EmptySpace pref="388" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -766,7 +766,7 @@
                                           <Group type="102" alignment="1" attributes="0">
                                               <Group type="103" groupAlignment="1" attributes="0">
                                                   <Component id="jPanel18" alignment="0" max="32767" attributes="0"/>
-                                                  <Component id="jPanel20" alignment="0" pref="604" max="32767" attributes="0"/>
+                                                  <Component id="jPanel20" alignment="0" pref="702" max="32767" attributes="0"/>
                                                   <Component id="jPanel16" alignment="0" max="32767" attributes="0"/>
                                                   <Component id="jPanel15" alignment="0" max="32767" attributes="0"/>
                                               </Group>
@@ -1187,8 +1187,11 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jLabel9" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace min="-2" pref="47" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="0" attributes="0">
+                                      <Component id="jLabel9" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="jLabel28" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="fbFolder" max="32767" attributes="0"/>
                                       <Group type="102" alignment="0" attributes="0">
@@ -1199,9 +1202,10 @@
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="rbCSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace pref="435" max="32767" attributes="0"/>
+                                          <EmptySpace pref="533" max="32767" attributes="0"/>
                                           <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
                                       </Group>
+                                      <Component id="lpCsvOutLocal" max="32767" attributes="0"/>
                                   </Group>
                                   <EmptySpace min="-2" pref="23" max="-2" attributes="0"/>
                               </Group>
@@ -1215,7 +1219,12 @@
                                       <Component id="fbFolder" min="-2" max="-2" attributes="0"/>
                                       <Component id="jLabel9" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace min="-2" pref="45" max="-2" attributes="0"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="3" attributes="0">
+                                      <Component id="lpCsvOutLocal" alignment="3" max="-2" attributes="0"/>
+                                      <Component id="jLabel28" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="3" attributes="0">
                                       <Component id="rbTSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="ckPrePostAA" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -1225,7 +1234,7 @@
                                       <Component id="rbCSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="btnWrite" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="190" max="32767" attributes="0"/>
+                                  <EmptySpace pref="180" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1293,6 +1302,24 @@
                             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
                           </AuxValues>
                         </Component>
+                        <Component class="org.rappsilber.gui.components.LocalPicker" name="lpCsvOutLocal">
+                          <Properties>
+                            <Property name="defaultLocal" type="java.util.Locale" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                              <Connection code="java.util.Locale.ENGLISH" type="code"/>
+                            </Property>
+                            <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                              <Dimension value="[80, 27]"/>
+                            </Property>
+                          </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="lpCsvOutLocalActionPerformed"/>
+                          </Events>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="jLabel28">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Language"/>
+                          </Properties>
+                        </Component>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JPanel" name="jPanel14">
@@ -1333,7 +1360,7 @@
                                               <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
                                               <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
                                           </Group>
-                                          <EmptySpace type="unrelated" pref="283" max="32767" attributes="0"/>
+                                          <EmptySpace type="unrelated" pref="381" max="32767" attributes="0"/>
                                           <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                   </Group>
@@ -1533,7 +1560,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="spLog" alignment="0" max="32767" attributes="0"/>
-                              <Component id="memory2" alignment="0" pref="776" max="32767" attributes="0"/>
+                              <Component id="memory2" alignment="0" pref="874" max="32767" attributes="0"/>
                               <Component id="cbLevel" alignment="0" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -1629,7 +1656,7 @@
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jScrollPane2" pref="771" max="32767" attributes="0"/>
+                                      <Component id="jScrollPane2" pref="869" max="32767" attributes="0"/>
                                       <Group type="102" attributes="0">
                                           <Component id="jLabel29" min="-2" max="-2" attributes="0"/>
                                           <EmptySpace max="-2" attributes="0"/>
