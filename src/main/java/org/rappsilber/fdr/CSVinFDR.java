@@ -278,26 +278,13 @@ public class CSVinFDR extends OfflineFDR {
             
             // how to split up the score
             double scoreRatio = csv.getDouble(cscoreratio);
-            if (Double.isNaN(scoreRatio)) {
-                if (cPepScore1 != null && cPepScore2 != null) {
-                    Double s1 = csv.getDouble(cPepScore1);
-                    Double s2 = csv.getDouble(cPepScore2, 0.0);
-                    
-                    if (!Double.isNaN(s2))
-                        scoreRatio = s1/(s1+s2);
-                    else 
-                        scoreRatio = 1;
-                    
-                    // we don't have a sumed up score but two peptide scores
-                    if (Double.isNaN(score)) {
-                        if (Double.isNaN(s2))
-                            score = s1;
-                        else
-                            score = s1+s2;
-                    }
-                } else {
-                    scoreRatio = (4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
-                }
+            Double peptide1score = csv.getDouble(cPepScore1);
+            Double peptide2score = csv.getDouble(cPepScore2, 0.0);
+
+            if (Double.isNaN(peptide1score) && ! Double.isNaN(scoreRatio)) {
+                double ratio =(4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
+                peptide1score=score*ratio;
+                peptide2score=score*(1-ratio);
             }
             
             String[] accessions1 =saccession1.split(";");
@@ -386,7 +373,7 @@ public class CSVinFDR extends OfflineFDR {
                             site1, site2, isDecoy1, isDecoy2, charge, score, 
                             accessions1[p1], descriptions1[p1], accessions2[p2],
                             descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
-                            scoreRatio, negativeCase,crosslinker,run,scan);
+                            peptide1score, peptide2score, negativeCase,crosslinker,run,scan);
                     psm.setCrosslinkerModMass(crosslinkerMass);
                     if (poisitiveCase != null) {
                         psm.setPositiveGrouping(poisitiveCase);

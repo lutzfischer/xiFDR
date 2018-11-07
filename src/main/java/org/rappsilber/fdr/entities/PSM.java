@@ -73,10 +73,8 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private byte exp_charge;
     
-    /**
-     * 
-     */
-    private double scoreRatio;
+    double peptide1Score;
+    double peptide2Score;
     /** hash code for fast access in hashmaps */
     int hashcode;
     /** first peptide comes from a decoy sequence */
@@ -199,8 +197,8 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, String run, String scan, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double scoreRatio) {
-        this(psmID, peptide1, peptide2, (byte)site1, (byte)site2, isDecoy1, isDecoy2, (byte)charge, score, scoreRatio);
+    public PSM(String psmID, String run, String scan, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
+        this(psmID, peptide1, peptide2, (byte)site1, (byte)site2, isDecoy1, isDecoy2, (byte)charge, score, peptide1Score, peptide2Score);
         this.run = run;
         this.scan = scan;
     }
@@ -222,7 +220,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double scoreRatio) {
+    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
         this.psmID = psmID;
 //        this.id1 = id1;
 //        this.id2 = id2;
@@ -240,7 +238,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.charge = charge;
         this.score = score;
         this.preNormalisedScore = score;
-        this.scoreRatio = scoreRatio;
+        this.peptide1Score = peptide1Score;
+        this.peptide2Score = peptide2Score;
         this.peptide1 = peptide1;
         this.peptide2 = peptide2;
         
@@ -293,9 +292,9 @@ public class PSM extends AbstractFDRElement<PSM> {
             return false;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
         return this.score == c.score && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
-                (((c.scoreRatio == this.scoreRatio || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
+                ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
-                ((Math.round(100000*c.scoreRatio) == Math.round(100000-100000*this.scoreRatio) || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
+                ((c.peptide1Score == this.peptide2Score &&c.peptide2Score == this.peptide1Score) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }
 
     /**
@@ -449,15 +448,23 @@ public class PSM extends AbstractFDRElement<PSM> {
         return charge;
     }
 
-    /**
-     * Score ratio is used to split the score for the as support for the matched 
-     * protein groups
-     * @return the scoreRatio
-     */
-    public double getScoreRatio() {
-        return scoreRatio;
+//    /**
+//     * Score ratio is used to split the score for the as support for the matched 
+//     * protein groups
+//     * @return the scoreRatio
+//     */
+//    public double getScoreRatio() {
+//        return scoreRatio;
+//    }
+
+    public double getPeptide1Score() {
+        return peptide1Score;
     }
 
+    public double getPeptide2Score() {
+        return peptide1Score;
+    }
+    
     /**
      * @return is the first peptide a decoy
      */

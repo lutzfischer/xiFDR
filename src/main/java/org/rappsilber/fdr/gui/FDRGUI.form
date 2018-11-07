@@ -71,7 +71,7 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="jScrollPane6" pref="906" max="32767" attributes="0"/>
+          <Component id="jScrollPane6" pref="839" max="32767" attributes="0"/>
           <Component id="jSplitPane1" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
@@ -79,7 +79,7 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jScrollPane6" max="32767" attributes="0"/>
+              <Component id="jScrollPane6" pref="421" max="32767" attributes="0"/>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Component id="jSplitPane1" min="-2" max="-2" attributes="0"/>
           </Group>
@@ -156,7 +156,7 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="csvSelect" pref="298" max="32767" attributes="0"/>
+                                  <Component id="csvSelect" pref="285" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -204,7 +204,7 @@
                                                       <Component id="rbMZLowBetter" min="-2" max="-2" attributes="0"/>
                                                       <Component id="rbMZHighBetter" alignment="0" min="-2" max="-2" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace min="88" pref="449" max="32767" attributes="0"/>
+                                                  <EmptySpace min="88" pref="425" max="32767" attributes="0"/>
                                               </Group>
                                               <Component id="cbMZMatchScoreName" alignment="1" max="32767" attributes="0"/>
                                           </Group>
@@ -234,7 +234,7 @@
                                       </Group>
                                       <Component id="fbMZIdentMLIn" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="196" max="32767" attributes="0"/>
+                                  <EmptySpace pref="168" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -413,7 +413,7 @@
                                   <Component id="spTargetDBProt" min="-2" pref="100" max="-2" attributes="0"/>
                                   <Component id="lblProtein" alignment="0" min="-2" pref="100" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace pref="388" max="32767" attributes="0"/>
+                              <EmptySpace pref="319" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -589,7 +589,7 @@
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="ckIgnoreGroups1" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="spPepLength" pref="132" max="32767" attributes="0"/>
+                              <Component id="spPepLength" pref="87" max="32767" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
@@ -674,7 +674,7 @@
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="0" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="tpResult" max="32767" attributes="0"/>
+                          <Component id="tpResult" pref="355" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -723,7 +723,7 @@
                                       </Group>
                                       <Component id="jPanel9" alignment="0" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="39" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -766,7 +766,7 @@
                                           <Group type="102" alignment="1" attributes="0">
                                               <Group type="103" groupAlignment="1" attributes="0">
                                                   <Component id="jPanel18" alignment="0" max="32767" attributes="0"/>
-                                                  <Component id="jPanel20" alignment="0" pref="702" max="32767" attributes="0"/>
+                                                  <Component id="jPanel20" alignment="0" pref="648" max="32767" attributes="0"/>
                                                   <Component id="jPanel16" alignment="0" max="32767" attributes="0"/>
                                                   <Component id="jPanel15" alignment="0" max="32767" attributes="0"/>
                                               </Group>
@@ -1202,7 +1202,7 @@
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="rbCSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace pref="533" max="32767" attributes="0"/>
+                                          <EmptySpace pref="499" max="32767" attributes="0"/>
                                           <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                       <Component id="lpCsvOutLocal" max="32767" attributes="0"/>
@@ -1234,7 +1234,7 @@
                                       <Component id="rbCSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="btnWrite" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="180" max="32767" attributes="0"/>
+                                  <EmptySpace pref="155" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1345,23 +1345,30 @@
                                               <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="lblPeaklistExtension" alignment="0" min="-2" max="-2" attributes="0"/>
-                                              <Component id="lblScanConversion" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="lblMzMLScan2ID" alignment="0" min="-2" max="-2" attributes="0"/>
                                           </Group>
-                                          <EmptySpace type="separate" max="-2" attributes="0"/>
-                                          <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                              <Component id="txtScanConversion" max="32767" attributes="0"/>
-                                              <Component id="jScrollPane1" max="32767" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Group type="103" groupAlignment="0" attributes="0">
                                               <Group type="102" attributes="0">
-                                                  <Component id="txtmzIdentOwnerFirst" min="-2" pref="80" max="-2" attributes="0"/>
-                                                  <EmptySpace type="separate" max="-2" attributes="0"/>
-                                                  <Component id="txtmzIdentOwnerLast" min="-2" pref="80" max="-2" attributes="0"/>
+                                                  <Component id="cmbMzMLScan2ID" max="32767" attributes="0"/>
+                                                  <EmptySpace min="-2" pref="30" max="-2" attributes="0"/>
                                               </Group>
-                                              <Component id="txtmzIdentOwnerEmail" max="32767" attributes="0"/>
-                                              <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
-                                              <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
+                                              <Group type="102" attributes="0">
+                                                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                                      <Component id="jScrollPane1" max="32767" attributes="0"/>
+                                                      <Group type="102" attributes="0">
+                                                          <Component id="txtmzIdentOwnerFirst" min="-2" pref="80" max="-2" attributes="0"/>
+                                                          <EmptySpace type="separate" max="-2" attributes="0"/>
+                                                          <Component id="txtmzIdentOwnerLast" min="-2" pref="80" max="-2" attributes="0"/>
+                                                      </Group>
+                                                      <Component id="txtmzIdentOwnerEmail" max="32767" attributes="0"/>
+                                                      <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
+                                                      <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
+                                                  </Group>
+                                                  <EmptySpace type="unrelated" pref="293" max="32767" attributes="0"/>
+                                                  <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
+                                              </Group>
                                           </Group>
-                                          <EmptySpace type="unrelated" pref="381" max="32767" attributes="0"/>
-                                          <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                   </Group>
                                   <EmptySpace max="-2" attributes="0"/>
@@ -1400,12 +1407,11 @@
                                       <Component id="lblPeaklistExtension" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="cmbPeakListFormat" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="3" attributes="0">
-                                      <Component id="txtScanConversion" alignment="3" min="-2" max="-2" attributes="0"/>
-                                      <Component id="lblScanConversion" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="cmbMzMLScan2ID" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="lblMzMLScan2ID" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="50" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1507,22 +1513,6 @@
                             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
                           </AuxValues>
                         </Component>
-                        <Component class="javax.swing.JTextField" name="txtScanConversion">
-                          <Properties>
-                            <Property name="text" type="java.lang.String" value="-1"/>
-                          </Properties>
-                          <AuxValues>
-                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
-                          </AuxValues>
-                        </Component>
-                        <Component class="javax.swing.JLabel" name="lblScanConversion">
-                          <Properties>
-                            <Property name="text" type="java.lang.String" value="Scan-number conversion"/>
-                          </Properties>
-                          <AuxValues>
-                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
-                          </AuxValues>
-                        </Component>
                         <Component class="javax.swing.JComboBox" name="cmbPeakListFormat">
                           <Properties>
                             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
@@ -1538,8 +1528,54 @@
                             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
                           </AuxValues>
                         </Component>
+                        <Component class="javax.swing.JComboBox" name="cmbMzMLScan2ID">
+                          <Properties>
+                            <Property name="editable" type="boolean" value="true"/>
+                            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                              <StringArray count="5">
+                                <StringItem index="0" value="controllerType=0 controllerNumber=1 scan=%s%"/>
+                                <StringItem index="1" value="controllerType=0 controllerNumber=1 scan=%s-1%"/>
+                                <StringItem index="2" value="scan=%s%"/>
+                                <StringItem index="3" value="scan=%s-1%"/>
+                                <StringItem index="4" value="%s%"/>
+                              </StringArray>
+                            </Property>
+                            <Property name="toolTipText" type="java.lang.String" value="%s% will be replaced by the actuall scan-number&#xa;%s-1% will be replaced by scannumber-1&#xa;%s+1% will be replaced by scannumber+1&#xa;"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="lblMzMLScan2ID">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="mzML spectrumID template"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+                          </AuxValues>
+                        </Component>
                       </SubComponents>
                     </Container>
+                    <Component class="org.rappsilber.gui.components.FileList" name="flPeakLists">
+                      <Properties>
+                        <Property name="toolTipText" type="java.lang.String" value="if peak list file and peak list name are not readable from the input these can be suplemented here"/>
+                        <Property name="description" type="java.lang.String" value="PeakLists"/>
+                        <Property name="extensions" type="[Ljava.lang.String;" editor="org.netbeans.beaninfo.editors.StringArrayEditor">
+                          <StringArray count="2">
+                            <StringItem index="0" value=".apl"/>
+                            <StringItem index="1" value=".mgf"/>
+                          </StringArray>
+                        </Property>
+                      </Properties>
+                      <Constraints>
+                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
+                          <JTabbedPaneConstraints tabName="PeakListLookup">
+                            <Property name="tabTitle" type="java.lang.String" value="PeakListLookup"/>
+                          </JTabbedPaneConstraints>
+                        </Constraint>
+                      </Constraints>
+                    </Component>
                   </SubComponents>
                 </Container>
               </SubComponents>
@@ -1560,7 +1596,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="spLog" alignment="0" max="32767" attributes="0"/>
-                              <Component id="memory2" alignment="0" pref="874" max="32767" attributes="0"/>
+                              <Component id="memory2" alignment="0" pref="801" max="32767" attributes="0"/>
                               <Component id="cbLevel" alignment="0" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -1575,7 +1611,7 @@
                           <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
                           <Component id="cbLevel" min="-2" max="-2" attributes="0"/>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="spLog" pref="285" max="32767" attributes="0"/>
+                          <Component id="spLog" pref="277" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -1656,7 +1692,7 @@
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jScrollPane2" pref="869" max="32767" attributes="0"/>
+                                      <Component id="jScrollPane2" pref="789" max="32767" attributes="0"/>
                                       <Group type="102" attributes="0">
                                           <Component id="jLabel29" min="-2" max="-2" attributes="0"/>
                                           <EmptySpace max="-2" attributes="0"/>
@@ -1677,7 +1713,7 @@
                                       <Component id="txtXiFDRVersion" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jScrollPane2" pref="273" max="32767" attributes="0"/>
+                                  <Component id="jScrollPane2" pref="252" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>

@@ -71,15 +71,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     /**
      * overall score of this pair
      */
-    private double score;
+    private double score = Double.NaN;
     
+    /**
+     * overall score of this pair
+     */
+    private double peptide1score = Double.NaN;
     
+    /**
+     * overall score of this pair
+     */
+    private double peptide2score = Double.NaN;
+
     /**
      * Cross-linker
      */
     private String crosslinker;
-    /** top-score per charge state */
-    private DoubleArrayList chargeTopScoresRatios = new DoubleArrayList();
+    ///** top-score per charge state */
+    //private DoubleArrayList chargeTopScoresRatios = new DoubleArrayList();
     /**
      * top match per chare state
      */
@@ -165,7 +174,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         this.psms.add(psm);
         this.chargeTopScoresPSM = new PSM[psm.getCharge()+1];
         this.chargeTopScoresPSM[psm.getCharge()] = psm;
-        this.chargeTopScoresRatios.set(psm.getCharge(), psm.getScoreRatio());
+        //this.chargeTopScoresRatios.set(psm.getCharge(), psm.getScoreRatio());
 
         this.hashcode = (peptide1.hashCode() + peptide2.hashCode()) % 100000 * 10 + (pepsite1 + pepsite2) % 10;
 
@@ -211,7 +220,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             return;
         }
         this.psms.addAll(p.psms);
-        boolean invertScoreRatio = false;
+//        boolean invertScoreRatio = false;
         // transfer topScores and match-ids
         if (p.chargeTopScoresPSM.length > chargeTopScoresPSM.length) {
             PSM[] dummy = chargeTopScoresPSM;
@@ -230,11 +239,11 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             if (cpsm == null || ppsm.getScore() > cpsm.getScore()) {
 
                 chargeTopScoresPSM[i]= ppsm;
-                if (invertScoreRatio) {
-                    chargeTopScoresRatios.set(i, 1 - p.chargeTopScoresRatios.get(i));
-                } else {
-                    chargeTopScoresRatios.set(i, p.chargeTopScoresRatios.get(i));
-                }
+//                if (invertScoreRatio) {
+//                    chargeTopScoresRatios.set(i, 1 - p.chargeTopScoresRatios.get(i));
+//                } else {
+//                    chargeTopScoresRatios.set(i, p.chargeTopScoresRatios.get(i));
+//                }
                 
             }
             
@@ -271,11 +280,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      */
     public void setScore() {
         score = 0;
+        peptide1score=0;
+        peptide2score=0;
         for (PSM psm : chargeTopScoresPSM) {
-            if (psm!=null)
+            if (psm!=null) {
                 score += psm.getScore() * psm.getScore();
+                if (psm.getPeptide1() == getPeptide1()) {
+                    peptide1score+=psm.getPeptide1Score()*psm.getPeptide1Score();
+                    peptide2score+=psm.getPeptide2Score()*psm.getPeptide2Score();
+                } else {
+                    peptide1score+=psm.getPeptide2Score()*psm.getPeptide2Score();
+                    peptide2score+=psm.getPeptide1Score()*psm.getPeptide1Score();
+                }
+            }
+                        
         }
         score = Math.sqrt(score);
+        peptide1score = Math.sqrt(peptide1score);
+        peptide2score = Math.sqrt(peptide2score);
     }
 
     /**
@@ -343,18 +365,15 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     public double getProteinScore(Protein prot) {
+        if (Double.isNaN(peptide1score))
+            setScore();
         double score = 0;
         // is the protein among the first site of proteins
         ArrayList<Protein> prot1 = peptide1.getProteins();
         int prot1size = prot1.size();
         for (Protein p : prot1) {
             if (p.equals(prot)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                    double cscore = chargeTopScoresPSM[c].getScore() * chargeTopScoresRatios.get(c, 0) / prot1size;
-                    score += cscore * cscore;
-                }
+                score += peptide1score * peptide1score/prot1size;
                 break;
             }
         }
@@ -363,12 +382,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         int prot2size = prot2.size();
         for (Protein p : prot2) {
             if (p.equals(prot)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                    double cscore = chargeTopScoresPSM[c].getScore() * chargeTopScoresRatios.get(c, 0) / prot2size;
-                    score += cscore * cscore;
-                }
+                score += peptide1score * peptide1score/prot2size;
                 break;
             }
         }
@@ -381,24 +395,15 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     public double getPeptideScore(Peptide pep) {
-        double score = 0;
+        if (Double.isNaN(peptide1score))
+            setScore();
         // is the protein among the first site of proteins
         if (pep.equals(peptide1)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                double cscore = chargeTopScoresPSM[c].getScore() * chargeTopScoresRatios.get(c, 0);
-                score += cscore * cscore;
-            }
+            score += peptide1score * peptide1score;
         }
 
         if (pep.equals(peptide2)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                double cscore = chargeTopScoresPSM[c].getScore() * (1 - chargeTopScoresRatios.get(c, 0));
-                score += cscore * cscore;
-            }
+            score += peptide2score * peptide2score;
         }
 
         return Math.sqrt(score);
@@ -459,7 +464,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return the score
      */
     public double getScore() {
-        if (score == 0) {
+        if (Double.isNaN(score)) {
             setScore();
         }
         return score;

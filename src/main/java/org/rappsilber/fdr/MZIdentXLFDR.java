@@ -399,14 +399,14 @@ public class MZIdentXLFDR extends OfflineFDR {
                     
                     if (linkPositions.size() > 0) {
                         if (linkPositions.size() == 2) {
-                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, linkPositions.get(0), linkPositions.get(1), pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, null);
+                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, linkPositions.get(0), linkPositions.get(1), pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, score,0, null);
                         } else {
                             System.err.println(sii.getId() + ": Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match");
                             Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "{0}Currently only loop links with exactly two links within the peptide are supported - will add this match as linear (non-cross-linked) match", sii.getId());
-                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, null);
+                            addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, score,0, null);
                         }
                     } else {
-                        addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, 1, null);
+                        addMatch(sii.getId(), pepSeq, null, pep.getPeptideSequence().length(), 0, -1, -1, pepev.isIsDecoy(), false, sii.getChargeState(),score, acc, desc, null, null, pepstart, pepstart, score,0, null);
                     }
                     
                 }
@@ -484,20 +484,26 @@ public class MZIdentXLFDR extends OfflineFDR {
                         Double score2 = psmScores.get(sii2);
                         //boolean isDecoy = seq.getSearchDatabase().
                         double score  = 0;
+                        double peptide1score = 0;
+                        double peptide2score = 0;
                         double scoreRatio = 0;
                         if (score1 == score2)  {
                             score  = score1;
-                            scoreRatio = (2/3+pepSeq1.length()/pepSeq2.length())/2;
+                            scoreRatio = (4/5+pepSeq1.length()/pepSeq2.length())/2;
+                            peptide1score = score *scoreRatio;
+                            peptide1score = score * (1-scoreRatio);
                         } else  {
+                            // @TODO need to change that
                             score  = score1+score2;
-                            scoreRatio = score1/(score1+score2);
+                            peptide1score = score1;
+                            peptide2score = score2;
                         }
 
                         if (pepev1.isIsDecoy() || pepev2.isIsDecoy())
                             crosslinkedDecoys = true;
                         
                         countCrosslinkedPSM++;
-                        addMatch(sii1.getId(), pepSeq1, pepSeq2, pep1.getPeptideSequence().length(), pep2.getPeptideSequence().length(), peplinksite1, peplinksite2, pepev1.isIsDecoy(), pepev2.isIsDecoy(), sii1.getChargeState(),score, acc1, desc1, acc2, desc2, pepstart1, pepstart2, scoreRatio, null);
+                        addMatch(sii1.getId(), pepSeq1, pepSeq2, pep1.getPeptideSequence().length(), pep2.getPeptideSequence().length(), peplinksite1, peplinksite2, pepev1.isIsDecoy(), pepev2.isIsDecoy(), sii1.getChargeState(),score, acc1, desc1, acc2, desc2, pepstart1, pepstart2, peptide1score, peptide2score, null);
                     }
                     
                 }
