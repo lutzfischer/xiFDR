@@ -30,22 +30,33 @@ import java.util.regex.Pattern;
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
 public class MgfStyleTitleParser {
+    public class ParseEnrtry{
+        public int index;
+        public double expMZ;
+        public byte expCharge;
+        public String peakFileName;
+    }
     String header="TITLE=";
+    String pepMZ="PEPMASS=";
+    String pepCharge="CHARGE=";
+    String scanEnd="END IONS";
+    
     private File parsedFile;
+    public String fileName;
     HashMap<String,ArrayList<String>> parts2titles = new HashMap<String, ArrayList<String>>();
     HashMap<Integer,ArrayList<String>> int2titles = new HashMap<Integer, ArrayList<String>>();
-    Pattern isNummeric = Pattern.compile("^[0-9]+$");
+    Pattern isNummeric = Pattern.compile("^[\\+\\-]?[0-9]+(:?\\.[0-9]+)?$");
     
-    HashMap<String,Integer> titlesToID = new HashMap<String, Integer>();
+    HashMap<String,ParseEnrtry> titlesToID = new HashMap<String, ParseEnrtry>();
 
     public int parseFile(File f) throws IOException {
         if (f.getName().endsWith(".apl"))
-            return parseFile(f,"header=", null);
-        return parseFile(f,header, null);
+            return parseFile(f,"header=", "mz=", "charge=","peaklist end", null);
+        return parseFile(f,header, pepMZ, pepCharge, scanEnd, null);
     }
 
-    private void registerTitleParts(String key, String title, int index) {
-        titlesToID.put(title, index);
+    private void registerTitleParts(String key, String title, ParseEnrtry entry) {
+        titlesToID.put(title, entry);
         ArrayList<String> titles = parts2titles.get(key);
         if (titles == null) {
             titles = new ArrayList<>();
@@ -71,39 +82,72 @@ public class MgfStyleTitleParser {
      * @return
      * @throws IOException 
      */
-    public int parseFile(File f, String header, Pattern ignoreTitle) throws IOException {
+    public int parseFile(File f, String header,  String pepMZ, String pepCharge, String scanEnd, Pattern ignoreTitle) throws IOException {
         parsedFile = f;
+        fileName = f.getName();
         this.header=header;
+        this.pepMZ = pepMZ;
+        this.pepCharge = pepCharge;
+        this.scanEnd = scanEnd;
         BufferedReader in = new BufferedReader(new FileReader(f));
         String line;
         int index=-1;
+        byte charge= 0;
+        double mz = Double.NaN;
+        String title=null;
+        ArrayList<String> titelParts = new ArrayList<>();
         while ((line =in.readLine())!= null) {
-            if (line.startsWith(header)) {
+            if (line.startsWith(scanEnd)) {
                 index++;
+                ParseEnrtry e = new ParseEnrtry();
+                e.index = index;
+                e.expMZ = mz;
+                e.expCharge = charge;
+                for (String p : titelParts)
+                    registerTitleParts(p, title, e);
+                mz = Double.NaN;
+                charge = -1;
+                titelParts.clear();
+                title=null;
+            } else if (line.startsWith(pepMZ)) {
+                String smz = line.substring(pepMZ.length()).trim();
+                smz = smz.split("\\s")[0];
+                if (isNummeric.matcher(smz).matches()) {
+                    mz = Double.parseDouble(smz);
+                }
+            } else if (line.startsWith(pepCharge)) {
+                String scharge = line.substring(pepCharge.length()).trim();
+                scharge = scharge.replaceAll("[\\+\\s]", "");
+                if (isNummeric.matcher(scharge).matches()) {
+                    charge = Byte.parseByte(scharge);
+                }
+                
+            } else if (line.startsWith(header)) {
+                title = line;
                 if (ignoreTitle!= null && ignoreTitle.matcher(line).matches())
                     continue;
                 String[] parts=line.split("\\b");
                 for (String p : parts) {
                     if (p.trim().length()>0) {
-                        registerTitleParts(p, line, index);
+                        titelParts.add(p);
                         String pt  = p.trim();
                         if (pt.length()!=p.length()) 
-                            registerTitleParts(pt, line, index);
+                            titelParts.add(pt);
                     }
                 }
                 parts=line.split("\\.");
                 for (String p : parts) {
                     if (p.trim().length()>0) {
-                        registerTitleParts(p, line, index);
+                        titelParts.add(p);
                         String pt  = p.trim();
                         if (pt.length()!=p.length()) 
-                            registerTitleParts(pt, line, index);
+                            titelParts.add(pt);
                     }
                 }
                 parts=line.split("\\s+");
                 for (String p : parts) {
                     if (p.trim().length()>0)
-                        registerTitleParts(p, line, index);
+                        titelParts.add(p);
                 }
             }
         }
@@ -116,7 +160,7 @@ public class MgfStyleTitleParser {
      * @param scan
      * @return null if nothing could be found; -1 if no unambiguous scan was found; index of matching scan otherwise
      */
-    public Integer findScanIndex(String run, String scan) {
+    public ParseEnrtry findScanIndex(String run, String scan) {
         HashSet<String> runTitles = new HashSet<String>();
         HashSet<String> scanTitles = new HashSet<String>();
         ArrayList<String> rt = parts2titles.get(run);

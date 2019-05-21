@@ -36,11 +36,11 @@ public class FDRLevelInformations extends javax.swing.JFrame {
         this.setTitle(title);
 
         CSVRandomAccess csv = new CSVRandomAccess(',', '\"');
-        csv.setHeader(new String[]{"Group","Input","TargetFDR","Next FDR","Accepted FDR", "Lower FDR","Passed","Filtered Result","Worst Score"});
+        csv.setHeader(new String[]{"Group","Input","TargetFDR","Next FDR","Accepted FDR", "Lower FDR","Passed","Filtered Result","Worst Score", "passed check"});
         csvLevelInfo.setCSV(csv);
         Set<String> ids = level.getGroupIDs();
         for (String fg: ids) {
-            String[] rowString = new String[9];
+            String[] rowString = new String[10];
             SubGroupFdrInfo sg = level.getGroup(fg);
             
             
@@ -61,9 +61,11 @@ public class FDRLevelInformations extends javax.swing.JFrame {
             rowString[4] = String.format("<"+ formatString + "%% H", sg.higherFDR*100);
             rowString[5] = String.format(">"+ formatString + "%% L", sg.lowerFDR*100);
             
-            rowString[6] = "" + sg.results.size();
-            rowString[7] = "" + sg.filteredResult.size();
+            rowString[6] = "" + sg.results.size()  + "(" + sg.resultTT + " TT)";
+            rowString[7] = "" + sg.filteredResult.size() ;
             rowString[8] = "" + sg.worstAcceptedScore;
+
+            rowString[9] = "" + !sg.didntPassCheck;
             
             csv.insertLine(csv.getRowCount(), rowString);
         }

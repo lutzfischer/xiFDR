@@ -82,6 +82,7 @@
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="ckGroupByPSMs" min="-2" max="-2" attributes="0"/>
                                   <Component id="ckUniquePSM" min="-2" max="-2" attributes="0"/>
+                                  <Component id="ckFilterConsecutives" alignment="0" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
@@ -160,7 +161,9 @@
                   <Component id="spMinTDChance" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="6" max="32767" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="ckFilterConsecutives" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="separate" pref="36" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="cbBoostWhat" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -395,6 +398,9 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnStopBoostActionPerformed"/>
       </Events>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
     </Component>
     <Component class="javax.swing.JCheckBox" name="ckUniquePSM">
       <Properties>
@@ -410,7 +416,7 @@
     </Component>
     <Component class="javax.swing.JButton" name="btnBoostIgnores">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Boost Ignores"/>
+        <Property name="text" type="java.lang.String" value="Boost Includes"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnBoostIgnoresActionPerformed"/>
@@ -440,6 +446,15 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="Min TD Chance"/>
       </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckFilterConsecutives">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="no consecutive"/>
+        <Property name="toolTipText" type="java.lang.String" value="Filter out cross-linked PSMs to consecutive peptides"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckFilterConsecutivesActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>

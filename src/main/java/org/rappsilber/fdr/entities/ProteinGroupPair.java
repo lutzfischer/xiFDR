@@ -17,12 +17,9 @@ package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import org.rappsilber.utils.SelfAdd;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
-import org.rappsilber.fdr.utils.FDRSelfAdd;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 
@@ -94,14 +91,14 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         else 
             fdrGroup = "Between";
 
-        if (m_NegativeGrouping != null)
-            fdrGroup += " [n" + RArrayUtils.toString(m_NegativeGrouping,", n") +"]";
+        if (m_negativeGroups != null)
+            fdrGroup += " [n" + RArrayUtils.toString(m_negativeGroups,", n") +"]";
 
         if (isNonCovalent) 
             fdrGroup += " NonCovalent";
 
-        if (positiveGroups!= null)
-            fdrGroup += " has [p" + RArrayUtils.toString(positiveGroups,", p") + "]";
+        if (m_positiveGroups!= null)
+            fdrGroup += " has [p" + RArrayUtils.toString(m_positiveGroups,", p") + "]";
         
         fdrGroup = FDRGroupNames.get(fdrGroup);
     }
@@ -110,16 +107,16 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
     public ProteinGroupPair(PeptidePair pp) {
         this(pp.getPeptide1().getProteinGroup(), pp.getPeptide2().getProteinGroup(), pp.getScore(), pp.hasNegativeGrouping());
         isNonCovalent = pp.isNonCovalent();
-        this.positiveGroups = pp.getPositiveGrouping();
-        this.m_NegativeGrouping = pp.getNegativeGrouping();
+        this.m_positiveGroups = pp.getPositiveGrouping();
+        this.m_negativeGroups = pp.getNegativeGrouping();
     }
 
     public ProteinGroupPair(ProteinGroupLink l) {
         this(l.getProteinGroup1(), l.getProteinGroup2(),  l.getScore(), l.hasNegativeGrouping());
         this.links.add(l);
         isNonCovalent = l.isNonCovalent();
-        this.positiveGroups = l.getPositiveGrouping();
-        this.m_NegativeGrouping = l.getNegativeGrouping();
+        this.m_positiveGroups = l.getPositiveGrouping();
+        this.m_negativeGroups = l.getNegativeGrouping();
     }
 
     @Override
@@ -157,20 +154,8 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         this.links.addAll(pp.links);
         this.score = Math.sqrt(this.score * this.score + pp.score * pp.score);
         
-        if (this.m_NegativeGrouping != null) {
-            if (pp.m_NegativeGrouping == null) {
-                this.m_NegativeGrouping = null;
-            } else if (!m_NegativeGrouping.containsAll(pp.m_NegativeGrouping)) {
-                m_NegativeGrouping.addAll(pp.m_NegativeGrouping);
-            }
-        }        
-        if (pp.hasPositiveGrouping()) {
-            if (this.positiveGroups == null) {
-                this.positiveGroups = pp.getPositiveGrouping();
-            } else if (!this.positiveGroups.containsAll(pp.getPositiveGrouping())) {
-                this.positiveGroups.addAll(pp.getPositiveGrouping());
-            }
-        }
+        addFDRGroups(pp);
+        
     }
 
     /**

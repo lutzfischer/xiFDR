@@ -15,8 +15,6 @@
  */
 package org.rappsilber.fdr.entities;
 
-import org.rappsilber.fdr.groups.ProteinGroup;
-
 /**
  *
  * @author lfischer

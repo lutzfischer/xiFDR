@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
@@ -220,7 +219,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
             }
         }
     }
-    
+
     /**
      * add a new source for the peptide - does not test, whether the peptide 
      * position was already registered for a protein

@@ -21,7 +21,7 @@ import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
-import org.rappsilber.fdr.groups.ProteinGroup;
+import org.rappsilber.fdr.entities.ProteinGroup;
 
 /**
  *

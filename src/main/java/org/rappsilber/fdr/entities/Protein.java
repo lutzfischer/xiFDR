@@ -18,7 +18,6 @@ package org.rappsilber.fdr.entities;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 
@@ -41,6 +40,8 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     private boolean betweenSupport = false;
     //private boolean isAmbigious = true;
     private double m_fdr = -1;
+    private int size = -1;
+    
     
     
     private String fdrgroup = null;
@@ -466,4 +467,21 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 //    }
 //        
+
+    /**
+     * @return the size
+     */
+    public int getSize() {
+        if (size < 0) {
+            this.size = this.sequence.replaceAll("[^A-Z]", "").length();
+        }
+        return size;
+    }
+
+    /**
+     * @param size the size to set
+     */
+    public void setSize(int size) {
+        this.size = size;
+    }
 }

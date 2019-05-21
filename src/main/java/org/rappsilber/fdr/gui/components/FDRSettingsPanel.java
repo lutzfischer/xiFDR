@@ -37,11 +37,14 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     protected ArrayList<java.awt.event.ActionListener> m_calc_listener = new ArrayList<ActionListener>();
 
 //    protected OfflineFDR.FDRLevel m_optimizeWhat; 
+//    protected boolean boostSubScores = false;
     protected boolean boostPSM = true;
     protected boolean boostPeptidePairs = true;
     protected boolean boostProteins = true;
     protected boolean boostLinks = true;
     protected boolean groupByPSMCount = false;
+    private boolean filterConsectutivePeptides;
+//    private double subScoreCutOff = 1;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -98,6 +101,14 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
 
     }
 
+//    public boolean boostSubScores() {
+//        return boostSubScores;
+//    }
+//
+//    public void boostSubScores(boolean boost) {
+//        boostSubScores = boost;
+//    }
+
     public boolean boostPSMs() {
         return boostPSM;
     }
@@ -130,7 +141,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
         }
         if (c!= null) {
             final JDialog fi = new JDialog((Frame) c,"Boost Ignores",true);
-            BoostIgnores bi = new BoostIgnores(this);
+            BoostIncludes bi = new BoostIncludes(this);
             fi.getContentPane().add(bi);
             fi.pack();
             bi.addActionListener(new ActionListener() {
@@ -144,7 +155,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
             fi.setVisible(true);
         } else {
             final JFrame fi = new JFrame("Boost Ignores");
-            BoostIgnores bi = new BoostIgnores(this);
+            BoostIncludes bi = new BoostIncludes(this);
             fi.getContentPane().add(bi);
             fi.pack();
             bi.addActionListener(new ActionListener() {
@@ -200,6 +211,9 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
         this.setGroupByPSMCount(settings.isGroupByPSMCount());
         this.setGroupByPSMCount(settings.isGroupByPSMCount());
         this.setMinTD(settings.getMinTD());        
+        this.setFilterConsecutivePeptides(settings.filterConsecutivePeptides());
+//        this.boostSubScores(settings.boostSubScores());
+//        this.setSubScoreCutOff(settings.getSubScoreCutOff());
     }
     
 //    public abstract void setEnabled(boolean e);
@@ -227,4 +241,22 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public boolean filterConsecutivePeptides() {
+        return filterConsectutivePeptides;
+    }
+
+    @Override
+    public void setFilterConsecutivePeptides(boolean filterConsecutive) {
+        this.filterConsectutivePeptides=filterConsecutive;
+    }
+    
+    
+//    public double getSubScoreCutOff() {
+//        return this.subScoreCutOff;
+//    }
+//    public void setSubScoreCutOff(double localfdr) {
+//        this.subScoreCutOff = localfdr;
+//    }    
 }

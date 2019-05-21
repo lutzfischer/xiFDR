@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.IntArrayList;
@@ -131,9 +130,9 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             for (int p : ia) 
                 hashcode += p;
         }
-        m_NegativeGrouping = pp.getNegativeGrouping();
+        this.m_negativeGroups = pp.getNegativeGrouping();
         
-        this.positiveGroups = pp.getPositiveGrouping();
+        this.m_positiveGroups = pp.getPositiveGrouping();
     }
 
     @Override
@@ -237,20 +236,8 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             support.addAll(o.getPeptidePairs());
             this.score = Math.sqrt(score*score + o.getScore() * o.getScore());
         }
-        if (this.m_NegativeGrouping != null) {
-            if (o.m_NegativeGrouping == null) {
-                this.m_NegativeGrouping = null;
-            } else if (!m_NegativeGrouping.containsAll(o.m_NegativeGrouping)) {
-                m_NegativeGrouping.addAll(o.m_NegativeGrouping);
-            }
-        }
-        if (o.hasPositiveGrouping()) {
-            if (this.positiveGroups == null) {
-                this.positiveGroups = o.getPositiveGrouping();
-            } else if (!this.positiveGroups.containsAll(o.getPositiveGrouping())) {
-                this.positiveGroups.addAll(o.getPositiveGrouping());
-            }
-        }
+        
+        addFDRGroups(o);
         
     }
 
@@ -262,14 +249,14 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             } else {
                 fdrGroup = "Between";
             }
-            if (m_NegativeGrouping != null)
-                fdrGroup += " [n" + RArrayUtils.toString(m_NegativeGrouping,", n") +"]";
+            if (m_negativeGroups != null)
+                fdrGroup += " [n" + RArrayUtils.toString(m_negativeGroups,", n") +"]";
             
             if (isNonCovalent)
                 fdrGroup += " NonCovalent";
 
-            if (positiveGroups!= null)
-                fdrGroup += " has [p" + RArrayUtils.toString(positiveGroups,", p") + "]";
+            if (m_positiveGroups!= null)
+                fdrGroup += " has [p" + RArrayUtils.toString(m_positiveGroups,", p") + "]";
 
             if (MIN_DISTANCE_FOR_LONG > 0 && isInternal && getProteinGroup1().size() + getProteinGroup1().size() ==2) {
                 for (int f : getPosition1().values().iterator().next()) {

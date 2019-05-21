@@ -15,9 +15,11 @@
  */
 package org.rappsilber.fdr.utils;
 
+import java.util.Collection;
 import java.util.HashSet;
+import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.Site;
-import org.rappsilber.fdr.groups.ProteinGroup;
+import org.rappsilber.fdr.entities.ProteinGroup;
 import org.rappsilber.utils.SelfAdd;
 
 /**
@@ -29,8 +31,9 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     protected double m_lowerFDR;
     
     protected double m_linkedSupport = 1;
-    protected HashSet<String> m_NegativeGrouping;
-    protected HashSet<String> positiveGroups;
+    protected HashSet<String> m_negativeGroups;
+    protected HashSet<String> m_positiveGroups;
+    private HashSet<String> m_additionalGroups = new HashSet<>();
     
     public abstract Site getLinkSite1();
     public abstract Site getLinkSite2();
@@ -81,20 +84,20 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     public abstract ProteinGroup getProteinGroup2();
 
     public boolean hasPositiveGrouping() {
-        return this.positiveGroups!=null;
+        return this.m_positiveGroups!=null;
     }
     
     public void setPositiveGrouping(String av) {
         if (av == null) {
-            this.positiveGroups = null;
+            this.m_positiveGroups = null;
         }else {
-            this.positiveGroups = new HashSet<String>(1);
-            this.positiveGroups.add(av);
+            this.m_positiveGroups = new HashSet<String>(1);
+            this.m_positiveGroups.add(av);
         }
     }
 
     public HashSet<String> getPositiveGrouping() {
-        return positiveGroups;
+        return m_positiveGroups;
     }
 
 
@@ -103,7 +106,7 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
      * inherently less likely to be true
      */
     public boolean hasNegativeGrouping() {
-        return m_NegativeGrouping != null;
+        return m_negativeGroups != null;
     }
     
     /**
@@ -112,17 +115,50 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
      */
     public void setNegativeGrouping(String cause) {
         if (cause == null) {
-            this.m_NegativeGrouping = null;
+            this.m_negativeGroups = null;
         } else {
-            this.m_NegativeGrouping = new HashSet<>(1);
-            this.m_NegativeGrouping.add(cause);
+            this.m_negativeGroups = new HashSet<>(1);
+            this.m_negativeGroups.add(cause);
         }
     }
     
     public HashSet<String> getNegativeGrouping() {
-        return this.m_NegativeGrouping;
+        return this.m_negativeGroups;
     }
  
+    public void addNegativeGrouping(String cause) {
+        if (this.m_negativeGroups == null) {
+            this.m_negativeGroups = new HashSet<>(1);
+        }
+        this.m_negativeGroups.add(cause);
+    }
     
+    
+    public void addFDRGroups(AbstractFDRElement e) {
+        if (this.m_negativeGroups != null) {
+            if (e.m_negativeGroups == null) {
+                this.m_negativeGroups = null;
+            } else {
+                m_negativeGroups.retainAll(e.m_negativeGroups);
+            }
+        }
+        if (e.hasPositiveGrouping()) {
+            if (this.m_positiveGroups == null) {
+                this.m_positiveGroups = e.getPositiveGrouping();
+            } else if (!this.m_positiveGroups.containsAll(e.getPositiveGrouping())) {
+                this.m_positiveGroups.addAll(e.getPositiveGrouping());
+            }
+        }
+        
+    }
+
+    public abstract Collection<PeptidePair> getPeptidePairs();
+
+    /**
+     * @return the m_additionalGroups
+     */
+    public HashSet<String> getAdditionalFDRGroups() {
+        return m_additionalGroups;
+    }
     
 }

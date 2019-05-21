@@ -58,6 +58,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spMinPPIPepCount.setSpecialValue(1);
         spReportFactor.setVisible(false);
         lblReportFactor.setVisible(false);
+        setMinTD(DEFAULT_MIN_TD_COUNT);
     }
     
     
@@ -323,6 +324,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spMinTDChance.setValue(c);
     }
 
+    @Override
     public int getMinTD() {
         return (Integer) spMinTDChance.getValue();
     }
@@ -410,6 +412,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckGroupByPSMs = new javax.swing.JCheckBox();
         spMinTDChance = new org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner();
         jLabel7 = new javax.swing.JLabel();
+        ckFilterConsecutives = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -511,7 +514,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckBoostBetween.setText("Between");
         ckBoostBetween.setToolTipText("optimize settings for maximizing between matches");
 
-        btnBoostIgnores.setText("Boost Ignores");
+        btnBoostIgnores.setText("Boost Includes");
         btnBoostIgnores.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBoostIgnoresActionPerformed(evt);
@@ -531,6 +534,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spMinTDChance.setSpecialValue(0);
 
         jLabel7.setText("Min TD Chance");
+
+        ckFilterConsecutives.setText("no consecutive");
+        ckFilterConsecutives.setToolTipText("Filter out cross-linked PSMs to consecutive peptides");
+        ckFilterConsecutives.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckFilterConsecutivesActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -594,7 +605,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(ckGroupByPSMs)
-                                    .addComponent(ckUniquePSM))
+                                    .addComponent(ckUniquePSM)
+                                    .addComponent(ckFilterConsecutives))
                                 .addGap(0, 0, Short.MAX_VALUE))))))
         );
         layout.setVerticalGroup(
@@ -652,7 +664,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                     .addComponent(ckGroupByPSMs)
                     .addComponent(spMinTDChance, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel7))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 6, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckFilterConsecutives)
+                .addGap(18, 36, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(ckMaximize)
                     .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -693,16 +707,21 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         }
     }//GEN-LAST:event_ckGroupByPSMsActionPerformed
 
+    private void ckFilterConsecutivesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckFilterConsecutivesActionPerformed
+        setFilterConsecutivePeptides(ckFilterConsecutives.isSelected());
+    }//GEN-LAST:event_ckFilterConsecutivesActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBoostIgnores;
     private javax.swing.JButton btnCalc;
-    private javax.swing.JButton btnStopBoost;
+    public javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbBoostWhat;
     private javax.swing.JCheckBox ckBoostBetween;
     private javax.swing.JCheckBox ckDirectionalLink;
     private javax.swing.JCheckBox ckDirectionalPPI;
     private javax.swing.JCheckBox ckDirectionalPSM;
     private javax.swing.JCheckBox ckDirectionalPeptidePair;
+    private javax.swing.JCheckBox ckFilterConsecutives;
     private javax.swing.JCheckBox ckGroupByPSMs;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JCheckBox ckUniquePSM;

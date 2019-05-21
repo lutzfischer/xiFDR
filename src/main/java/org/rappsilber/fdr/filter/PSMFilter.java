@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Lutz Fischer <lfischer at staffmail.ed.ac.uk>.
+ * Copyright 2019 Lutz Fischer <lfischer@staffmail.ed.ac.uk>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.entities;
+package org.rappsilber.fdr.filter;
+
+import java.util.ArrayList;
+import org.rappsilber.fdr.entities.PSM;
 
 /**
  *
- * @author lfischer
+ * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
-public class ProteinGroupDirectionalPair extends ProteinGroupPair {
-    
-    public ProteinGroupDirectionalPair(ProteinGroup Prot1, ProteinGroup Prot2, double score, boolean isSpecialOnly) {
-        super(Prot1, Prot2, score, isSpecialOnly);
-    }
-
-    public ProteinGroupDirectionalPair(PeptidePair dpp) {
-        super(dpp);
-    }
-
-    public ProteinGroupDirectionalPair(ProteinGroupLink l) {
-        super(l);
-    }
-    
-    
+public interface PSMFilter {
+    /**
+     * filter the list of PSMs
+     * @param psm
+     * @return 
+     */
+    ArrayList<PSM> filter(ArrayList<PSM> psm);
 }

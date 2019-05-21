@@ -72,6 +72,8 @@ public class SubGroupFdrInfo<T extends FDRSelfAdd> implements Iterable<T> {
     public int between;
     public int linear;
     
+    public boolean didntPassCheck = false;
+    
     public Iterator<T> iterator() {
         return filteredResult.iterator();
     }

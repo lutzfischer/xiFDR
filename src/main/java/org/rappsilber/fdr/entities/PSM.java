@@ -19,9 +19,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
+import java.util.Map;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
-import org.rappsilber.fdr.utils.FDRGroupNames;
+import org.rappsilber.utils.IntArrayList;
+import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
 
 
@@ -29,6 +30,22 @@ import org.rappsilber.utils.SelfAddHashSet;
  * represents a single PSM
  */
 public class PSM extends AbstractFDRElement<PSM> { 
+
+    /**
+     * store arbitrary information
+     * @return the otherInfo
+     */
+    public HashMap<String,Object> getOtherInfo() {
+        return otherInfo;
+    }
+
+    /**
+     * the type of each information
+     * @return the otherInfoType
+     */
+    public HashMap<String,Class> getOtherInfoType() {
+        return otherInfoType;
+    }
 
     /**
      * unique id for the PSM.
@@ -63,15 +80,15 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * M/Z value of the spectrum
      */
-    private double experimentalMZ;
+    private double experimentalMZ = 0;
     /**
      * Mass value of the matched peptide(pair)
      */
-    private double calcMass;
+    private double calcMass = 0;
     /**
      * Charge value of the matched peptide(pair)
      */
-    private byte exp_charge;
+    private byte exp_charge = 0;
     
     double peptide1Score;
     double peptide2Score;
@@ -176,7 +193,20 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * will be set to true if a psm gets assigned a peakListName
      */
-    private static boolean peakListNameFound= false;
+    private static boolean peakListNameFound = false;
+    
+    /**
+     * store arbitrary information
+     */
+    private HashMap<String,Object> otherInfo = new HashMap<>();
+    /**
+     * the type of each information
+     */
+    private HashMap<String,Class> otherInfoType = new HashMap<>();
+    /**
+     * is this a cross-link of consecutive peptides
+     */
+    private Boolean isConsecutive;
     
 
     /**
@@ -523,7 +553,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     @Override
     public String getFDRGroup() {
-        return fdrGroup;
+        return fdrGroup; 
     }
 
 //    /**
@@ -600,7 +630,9 @@ public class PSM extends AbstractFDRElement<PSM> {
     public void setFDRGroup() {
         
         fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, this.getNegativeGrouping(), getPositiveGrouping(),isNonCovalent ? "NonCovalent":"");
-       
+        String ag = RArrayUtils.toString(getAdditionalFDRGroups(), " ");
+        if (!ag.isEmpty())
+            fdrGroup = ag + " " + fdrGroup;
     }     
 
     /**
@@ -740,46 +772,6 @@ public class PSM extends AbstractFDRElement<PSM> {
         return 1;
     }
 
-//    /**
-//     * Is this a special case. E.g. PSMs that where matched with unknown 
-//     * charge-state have a inherently higher chance to be wrong. Therefore it
-//     * makes sense to calculate the FDR for these separately
-//     * @return the specialcase
-//     */
-//    public boolean hasNegativeGrouping() {
-//        return negativeGrouping != null;
-//    }
-//
-//    public HashSet<String> getNegativeGrouping() {
-//        return negativeGrouping;
-//    }
-//
-//    /**
-//     * Is this a special case. E.g. PSMs that where matched with unknown 
-//     * charge-state have a inherently higher chance to be wrong. Therefore it
-//     * makes sense to calculate the FDR for these separately
-//     * @param specialcase the specialcase to set
-//     */
-//    public void setNegativeGrouping(boolean specialcase) {
-//        this.negativeGrouping = specialcase?"Special":null;
-//    }
-
-//    /**
-//    /**
-//     * Is this a special case. E.g. PSMs that where matched with unknown 
-//     * charge-state have a inherently higher chance to be wrong. Therefore it
-//     * makes sense to calculate the FDR for these separately
-//     * @param specialcase the reason specialcase to set
-//     */
-//    public void setNegativeGrouping(String specialcase) {
-//        if (specialcase == null) {
-//            this.negativeGrouping = null;
-//        } else {
-//            this.negativeGrouping = new HashSet<String>();
-//            this.negativeGrouping.add(specialcase);
-//        }
-//    }
-    
     /**
      * Is this a non-cross-linked PSM?
      * @return the isLinear
@@ -1116,6 +1108,47 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setCrosslinkerModMass(double crosslinkerModMass) {
         this.crosslinkerModMass = crosslinkerModMass;
+    }
+
+    /**
+     * is this a cross-link of consecutive peptides
+     * @return the isConsecutive
+     */
+    public boolean isConsecutive() {
+        if (isConsecutive == null) {
+            if (!isInternal()) {
+                isConsecutive = false;
+            } else {
+                HashMap<Protein,IntArrayList> pep1pos =  this.peptide1.getPositions();
+                int peplen1 = this.peptide1.length;
+                HashMap<Protein,IntArrayList> pep2pos =  this.peptide2.getPositions();
+                int peplen2 = this.peptide2.length;
+                
+                for (Map.Entry<Protein,IntArrayList> e : pep1pos.entrySet()) {
+                    IntArrayList pos2 = pep2pos.get(e.getKey());
+                    if (pos2 != null) {
+                        for (int p2 : pos2) {
+                            for (int p1 : e.getValue()) {
+                                if (p1+peplen1 == p2 || p2+peplen2 == p1) {
+                                    isConsecutive = true;
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+                isConsecutive = false;
+            }
+        }
+        return isConsecutive;
+    }
+
+    /**
+     * is this a cross-link of consecutive peptides
+     * @param isConsecutive the isConsecutive to set
+     */
+    public void setConsecutive(boolean isConsecutive) {
+        this.isConsecutive = isConsecutive;
     }
     
 }
