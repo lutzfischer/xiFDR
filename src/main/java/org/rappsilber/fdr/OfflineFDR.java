@@ -213,8 +213,8 @@ public abstract class OfflineFDR {
     HashMap<String, String> foundRuns = new HashMap<>();
     HashMap<String, Integer> runToInt = new HashMap<>();
     ArrayList<String> runs = new ArrayList<>();
-    private Locale outputlocale;
-    private NumberFormat numberFormat;
+    private Locale outputlocale = Locale.getDefault();
+    private NumberFormat numberFormat = NumberFormat.getNumberInstance(outputlocale);
 //    private String localNumberGroupingSeperator;
 //    private String localNumberDecimalSeparator;
 //    private String quoteDoubles;
@@ -621,11 +621,12 @@ public abstract class OfflineFDR {
         return r;
     }
 
-    public void calculateWriteFDR(String path, String baseName, String seperator) throws FileNotFoundException {
-        calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits);
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator) throws FileNotFoundException {
+        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits);
     }
 
-    public void calculateWriteFDR(String path, String baseName, String seperator, int minDigits) throws FileNotFoundException {
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits) throws FileNotFoundException {
+        FDRResult result = null;
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "BaseName: " + baseName);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Seperator: " + seperator);
@@ -676,7 +677,6 @@ public abstract class OfflineFDR {
                                         + "\nProteinGroupPairFDR: " + String.format(format, pgpfdr / 1000000.0)
                                         + "\nReport-Factor:       " + String.format(format, getSafetyFactorSetting())
                                         + "\nIgnore Groups:       " + isIgnoreGroupsSetting());
-                                FDRResult result = null;
                                 FDRSettingsImpl s = new FDRSettingsImpl();
                                 s.BoostingSteps = 4;
                                 s.PSMFDR = psmfdr / 1000000;
@@ -729,6 +729,7 @@ public abstract class OfflineFDR {
             }
 
         }
+        return result;
     }
 
     
@@ -3361,7 +3362,7 @@ public abstract class OfflineFDR {
                 + "                         sinlge file\n"
                 + "--uniquePSMs=X           filtr PSMs to unique PSMs \n"
                 + "                         options are true,false,1,0\n"
-                + "--outputlocale           numbers in csv-files are writen \n"
+                + "--outputlocale=          numbers in csv-files are writen \n"
                 + "                         according to this locale\n"
                 + "--boost=(pep|link|prot)  boost results on the given level\n";
 
@@ -3800,6 +3801,10 @@ public abstract class OfflineFDR {
                 csvsummaryonly = true;
                 csvsinglesummary = true;
 
+            } else if (arg.startsWith("--outputlocale=")) {
+                String l = arg.substring(arg.indexOf("=") + 1).trim();
+                setOutputLocale(l);
+                
             } else if (arg.startsWith("--uniquePSMs=")) {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
                 setFilterUniquePSMs(bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$"));
