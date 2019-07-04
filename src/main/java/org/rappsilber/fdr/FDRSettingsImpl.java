@@ -38,7 +38,7 @@ public class FDRSettingsImpl implements FDRSettings {
     boolean PPIDirectional;
     boolean PSMDirectional;
     boolean PeptidePairDirectional;
-    double ReportFactor;
+    double ReportFactor = 1000000;
     boolean filterToUniquePSM;
     protected boolean boostPSM = true;
     protected boolean boostPeptidePairs = true;

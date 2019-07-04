@@ -3331,7 +3331,7 @@ public abstract class OfflineFDR {
                 + "--ppifdr=X               protein pair fdr\n"
                 + "                         can either be a single value or \n"
                 + "                         a range (min,max,stepsize)\n"
-                + "--reportfactor=X         better be ignored\n"
+                + "--reportfactor=X         is ignored\n"
                 + "--maxProteinAmbiguity=X  any peptide that can be in more \n"
                 + "                         then this number of proteins will\n"
                 + "                         be ignored\n"

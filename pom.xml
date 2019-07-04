@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rappsilberlab</groupId>
     <artifactId>xiFDR</artifactId>
-    <version>1.2.31</version>
+    <version>1.2.32</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -87,5 +87,5 @@
     </properties>
     <description>Application for FDR estimation cross-linking massspectrometry data
 V1.1.25 CSV gui had the info field falsly as an mandatory field</description>
-    <name>xiFDR-1.2.31</name>
+    <name>xiFDR-1.2.32</name>
 </project>
