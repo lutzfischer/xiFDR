@@ -621,11 +621,11 @@ public abstract class OfflineFDR {
         return r;
     }
 
-    public FDRResult calculateWriteFDR(String path, String baseName, String seperator) throws FileNotFoundException {
-        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits);
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, FDRSettings settings) throws FileNotFoundException {
+        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits, settings);
     }
 
-    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits) throws FileNotFoundException {
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits, FDRSettings settings) throws FileNotFoundException {
         FDRResult result = null;
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "BaseName: " + baseName);
@@ -639,7 +639,7 @@ public abstract class OfflineFDR {
         allvalues.addAll(getPpiFDRSetting());
 
         String format = MiscUtils.formatStringForPrettyPrintingRelatedValues(allvalues.toDoubleArray(), minDigits);
-
+        
         for (double psmfdr = Math.round(getPsmFDRSetting()[0] * 1000000); psmfdr <= Math.round(getPsmFDRSetting()[1] * 1000000); psmfdr += Math.round(getPsmFDRSetting()[2] * 1000000)) {
             for (double pepfdr = Math.round(getPeptidePairFDRSetting()[0] * 1000000); pepfdr <= Math.round(getPeptidePairFDRSetting()[1] * 1000000); pepfdr += Math.round(getPeptidePairFDRSetting()[2] * 1000000)) {
                 for (double pgfdr = Math.round(getProteinGroupFDRSetting()[0] * 1000000); pgfdr <= Math.round(getProteinGroupFDRSetting()[1] * 1000000); pgfdr += Math.round(getProteinGroupFDRSetting()[2] * 1000000)) {
@@ -678,6 +678,7 @@ public abstract class OfflineFDR {
                                         + "\nReport-Factor:       " + String.format(format, getSafetyFactorSetting())
                                         + "\nIgnore Groups:       " + isIgnoreGroupsSetting());
                                 FDRSettingsImpl s = new FDRSettingsImpl();
+                                s.setAll(settings);
                                 s.BoostingSteps = 4;
                                 s.PSMFDR = psmfdr / 1000000;
                                 s.PeptidePairFDR = pepfdr / 1000000;
@@ -685,7 +686,7 @@ public abstract class OfflineFDR {
                                 s.ProteinGroupLinkFDR = pglfdr / 1000000;
                                 s.ProteinGroupPairFDR = pgpfdr / 1000000;
                                 if (maximizeWhat == null) {
-                                    result = this.calculateFDR(s, isIgnoreGroupsSetting(), true);
+                                    result = this.calculateFDR(s, true);
                                 } else {
 
                                     MaximisingStatus m = this.maximise(s, maximizeWhat, uniquePSMs, new MaximizingUpdate() {
@@ -1376,8 +1377,9 @@ public abstract class OfflineFDR {
         result.psmFDR.retainAll(keep);
     }
 
-    public FDRResult calculateFDR(FDRSettings settings, boolean ignoreGroups, boolean setElementFDR) {
+    public FDRResult calculateFDR(FDRSettings settings, boolean setElementFDR) {
         FDRResult result = new FDRResult();
+        boolean ignoreGroups = this.ignoreGroupsSetting;
         result.reportFactor = settings.getReportFactor();
         reset();
 
@@ -3562,7 +3564,7 @@ public abstract class OfflineFDR {
         this.csvOutBaseSetting = csvOutBaseSetting;
     }
 
-    public String[] parseArgs(String[] argv) {
+    public String[] parseArgs(String[] argv, FDRSettings settings) {
         ArrayList<String> unknown = new ArrayList<String>();
         int[] lengthgroups = new int[]{4};
         double[] psmFDR = new double[]{1, 1, 1};
@@ -3576,7 +3578,6 @@ public abstract class OfflineFDR {
         int minPepPerProtein = 1;
         int minPepPerPPI = 1;
         int minPepLength = 6;
-        double reportfactor = 1.5;
         boolean ignoreGroups = false;
         boolean csvsummaryonly = false;
         boolean csvsinglesummary = false;
@@ -3616,8 +3617,6 @@ public abstract class OfflineFDR {
 
             } else if (arg.startsWith("--reportfactor=")) {
 
-                String spsm = arg.substring(arg.indexOf("=") + 1).trim();
-                reportfactor = Double.parseDouble(spsm);
 
             } else if (arg.startsWith("--psmfdr=")) {
                 double from, to, step;
@@ -3807,7 +3806,9 @@ public abstract class OfflineFDR {
                 
             } else if (arg.startsWith("--uniquePSMs=")) {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
-                setFilterUniquePSMs(bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$"));
+                boolean filter = bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$");
+                settings.setFilterToUniquePSM(filter);
+                setFilterUniquePSMs(filter);
             } else {
                 unknown.add(arg);
             }
@@ -3817,11 +3818,17 @@ public abstract class OfflineFDR {
 
         commandlineFDRDigits = fdrDigits;
         setPsmFDRSetting(psmFDR[0], psmFDR[1], psmFDR[2]);
+        settings.setPSMFDR(psmFDR[0]);
         setPeptidePairFDRSetting(pepFDR[0], pepFDR[1], pepFDR[2]);
+        settings.setPeptidePairFDR(pepFDR[0]);
         setProteinGroupFDRSetting(protFDR[0], protFDR[1], protFDR[2]);
+        settings.setProteinGroupFDR(protFDR[0]);
         setLinkFDRSetting(linkFDR[0], linkFDR[1], linkFDR[2]);
+        settings.setProteinGroupLinkFDR(linkFDR[0]);
         setPpiFDRSetting(ppiFDR[0], ppiFDR[1], ppiFDR[2]);
-        setSafetyFactorSetting(reportfactor);
+        settings.setProteinGroupPairFDR(ppiFDR[0]);
+        //setSafetyFactorSetting(reportfactor);
+        //settings.setReportFactor(reportfactor);
         setIgnoreGroupsSetting(ignoreGroups);
         setCSVSummaryOnly(csvsummaryonly);
         setCSVSingleSummary(csvsinglesummary);
@@ -3829,11 +3836,17 @@ public abstract class OfflineFDR {
         setCsvOutDirSetting(csvdir);
 
         setMaximumLinkAmbiguity(maxLinkAmbiguity);
+        settings.setMaxLinkAmbiguity(maxLinkAmbiguity);
         setMaximumProteinAmbiguity(maxProteinGroupAmbiguity);
+        settings.setMaxProteinAmbiguity(maxProteinGroupAmbiguity);
         setMinPepPerProteinGroup(minPepPerProtein);
+        settings.setMinProteinPepCount(minPepPerProtein);
         setMinPepPerProteinGroupLink(minPepPerLink);
+        settings.setMinLinkPepCount(minPepPerLink);
         setMinPepPerProteinGroupPair(minPepPerPPI);
+        settings.setMinPPIPepCount(minPepPerPPI);
         setMinimumPeptideLength(minPepLength);
+        settings.setMinPeptideLength(minPepLength);
 
         String[] ret = new String[unknown.size()];
         ret = unknown.toArray(ret);
@@ -4989,7 +5002,7 @@ public abstract class OfflineFDR {
                     settings.setProteinGroupFDR(protFDRInfo.maximumFDR);
                     settings.setProteinGroupLinkFDR(linkFDRInfo.maximumFDR);
                     settings.setProteinGroupPairFDR(ppiFDRInfo.maximumFDR);
-                    FDRResult ret = this.calculateFDR(settings, ignoreGroups, true);
+                    FDRResult ret = this.calculateFDR(settings, true);
 
                     final int foundCount = maxCount;
                     MaximisingStatus res = new MaximisingStatus();

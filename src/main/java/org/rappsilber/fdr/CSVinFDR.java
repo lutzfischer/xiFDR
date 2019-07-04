@@ -548,10 +548,10 @@ public class CSVinFDR extends OfflineFDR {
     
         
     @Override
-    public String[] parseArgs(String[] argv) {
+    public String[] parseArgs(String[] argv, FDRSettings setings) {
         ArrayList<String> unknown = new ArrayList<String>();
         
-        argv = super.parseArgs(argv);
+        argv = super.parseArgs(argv, setings);
         
         for (String arg : argv) {
             if (arg.toLowerCase().startsWith("--map=")) {
@@ -642,8 +642,9 @@ public class CSVinFDR extends OfflineFDR {
     public static void main (String[] argv) throws SQLException, FileNotFoundException {
         
         CSVinFDR ofdr = new CSVinFDR();
-        
-        String[] files = ofdr.parseArgs(argv);
+        FDRSettings settings = new FDRSettingsImpl();
+                
+        String[] files = ofdr.parseArgs(argv, settings);
         
         // assume that everything that was not matched to an argument is a file
         
@@ -723,11 +724,9 @@ public class CSVinFDR extends OfflineFDR {
         
         Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
         if (((DecimalFormat)ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator() == ',') {
-            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";");
+            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";", settings);
         } else 
-            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",");
-
-
+            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
 
         System.exit(0);
 

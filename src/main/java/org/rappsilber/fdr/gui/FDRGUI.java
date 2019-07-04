@@ -980,7 +980,8 @@ public class FDRGUI extends javax.swing.JFrame {
         }
             
 //        final FDRResult result = ofdr.calculateFDR(psmfdr, pepfdr, protfdr, linkfdr, ppifdr, saftyfactor, ckIgnoreGroups1.isSelected(), true, filterToUniquePSM);
-        final FDRResult result = ofdr.calculateFDR(fdrSettings, ckIgnoreGroups1.isSelected(), true);
+        ofdr.setIgnoreGroupsSetting(ckIgnoreGroups1.isSelected());
+        final FDRResult result = ofdr.calculateFDR(fdrSettings, true);
         setResult(result);
         EventQueue.invokeLater(new Runnable() {
             public void run() {
