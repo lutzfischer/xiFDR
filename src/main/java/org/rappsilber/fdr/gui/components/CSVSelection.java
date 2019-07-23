@@ -158,7 +158,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(3);
         columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
         resetColumnMappings();
-        spAdditional.setVisible(false);
+        //spAdditional.setVisible(false);
     }
 
     public void resetColumnMappings() {
@@ -487,6 +487,13 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         ckSmartMatch = new javax.swing.JCheckBox();
         spAdditional = new javax.swing.JScrollPane();
         pAdditional = new javax.swing.JPanel();
+        pXiConfig = new javax.swing.JPanel();
+        fbConfigIn = new org.rappsilber.gui.components.FileBrowser();
+        jLabel12 = new javax.swing.JLabel();
+        jLabel13 = new javax.swing.JLabel();
+        fbFastaIn = new org.rappsilber.gui.components.FileBrowser();
+        ckCSVMarkModifications = new javax.swing.JCheckBox();
+        jPanel2 = new javax.swing.JPanel();
         ckFilter = new javax.swing.JCheckBox();
         btnFilter = new javax.swing.JButton();
         localPicker1 = new org.rappsilber.gui.components.LocalPicker();
@@ -618,6 +625,68 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         });
 
         pAdditional.setLayout(new javax.swing.BoxLayout(pAdditional, javax.swing.BoxLayout.Y_AXIS));
+
+        fbConfigIn.setDescription("Xi-Config");
+        fbConfigIn.setExtensions(new String[] {"config", "conf"});
+
+        jLabel12.setText("XiConfig");
+
+        jLabel13.setText("FASTA");
+
+        fbFastaIn.setDescription("Text Files");
+        fbFastaIn.setExtensions(new String[] {"fasta", "txt"});
+
+        ckCSVMarkModifications.setText("Flag Modifications");
+
+        javax.swing.GroupLayout pXiConfigLayout = new javax.swing.GroupLayout(pXiConfig);
+        pXiConfig.setLayout(pXiConfigLayout);
+        pXiConfigLayout.setHorizontalGroup(
+            pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pXiConfigLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel12)
+                    .addComponent(jLabel13))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(pXiConfigLayout.createSequentialGroup()
+                        .addComponent(ckCSVMarkModifications)
+                        .addGap(0, 663, Short.MAX_VALUE))
+                    .addComponent(fbFastaIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(fbConfigIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        pXiConfigLayout.setVerticalGroup(
+            pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pXiConfigLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(fbConfigIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel12))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(fbFastaIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel13))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(ckCSVMarkModifications)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        pAdditional.add(pXiConfig);
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 917, Short.MAX_VALUE)
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+
+        pAdditional.add(jPanel2);
+
         spAdditional.setViewportView(pAdditional);
 
         ckFilter.setEnabled(false);
@@ -672,7 +741,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(ckSmartMatch, javax.swing.GroupLayout.PREFERRED_SIZE, 229, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel27)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -680,8 +749,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel28)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(localPicker1, javax.swing.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
+                                .addComponent(localPicker1, javax.swing.GroupLayout.DEFAULT_SIZE, 106, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(rbCSVHighBetter)
                             .addComponent(rbCSVLowBetter))
@@ -690,11 +759,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                             .addComponent(btnReadCsv, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(btnAddCSV)))
                     .addComponent(fbCsvIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(spAdditional)))
+                    .addComponent(spAdditional, javax.swing.GroupLayout.DEFAULT_SIZE, 881, Short.MAX_VALUE)))
         );
 
         layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {btnAddCSV, btnReadCsv});
@@ -731,10 +800,10 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(rbCSVLowBetter)
                         .addComponent(ckSmartMatch)))
-                .addGap(19, 19, 19)
-                .addComponent(spAdditional, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
-                .addGap(10, 10, 10)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 134, Short.MAX_VALUE))
+                .addGap(23, 23, 23)
+                .addComponent(spAdditional, javax.swing.GroupLayout.DEFAULT_SIZE, 105, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 201, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -879,17 +948,24 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JComboBox cbCSVHeaders;
     private javax.swing.JComboBox cbCSVQuote;
     private javax.swing.JCheckBox ckCSVHasHeader;
+    public javax.swing.JCheckBox ckCSVMarkModifications;
     private javax.swing.JCheckBox ckFilter;
     private javax.swing.JCheckBox ckSmartMatch;
+    public org.rappsilber.gui.components.FileBrowser fbConfigIn;
     private org.rappsilber.gui.components.FileBrowser fbCsvIn;
+    public org.rappsilber.gui.components.FileBrowser fbFastaIn;
     private org.rappsilber.data.csv.gui.filter.ConditionList filter;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
     private javax.swing.JLabel jLabel28;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane2;
     private org.rappsilber.gui.components.LocalPicker localPicker1;
     private javax.swing.JPanel pAdditional;
+    private javax.swing.JPanel pXiConfig;
     private javax.swing.JRadioButton rbCSVHighBetter;
     private javax.swing.JRadioButton rbCSVLowBetter;
     public javax.swing.JScrollPane spAdditional;
