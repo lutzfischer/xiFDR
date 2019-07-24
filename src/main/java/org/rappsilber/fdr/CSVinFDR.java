@@ -19,9 +19,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -43,29 +47,41 @@ public class CSVinFDR extends OfflineFDR {
     private ArrayList<CsvCondition> m_filter = new ArrayList<>();
     private ArrayList<String[]> commandLineColumnMapping;
     private Character delimiter;
+    private Locale numberlocale;// = Locale.getDefault();
     private Character quote;
     public static String[][] DEFAULT_COLUMN_MAPPING=new String[][]{
-        new String[]{"peptide1","Peptide1"},
-        new String[]{"peptide2","Peptide2"},
-        new String[]{"peptide length 1","LengthPeptide1"},
-        new String[]{"peptide length 2","LengthPeptide2"},
-        new String[]{"peptide link 1","Link1"},
-        new String[]{"peptide link 2","Link2"},
-        new String[]{"is decoy 1","Protein1decoy"},
-        new String[]{"is decoy 2","Protein2decoy"},
-        new String[]{"precursor charge","PrecoursorCharge"},
-        new String[]{"score","match score"},
-        new String[]{"accession1","Protein1"},
-        new String[]{"accession2","Protein2"},
-        new String[]{"description1","Fasta1"},
-        new String[]{"description2","Fasta2"},
-        new String[]{"peptide position 1","Start1"},
-        new String[]{"peptide position 2","Start2"},
-        new String[]{"peptide1 score","Pep1Score"},
-        new String[]{"peptide2 score","Pep2Score"},
-        new String[]{"experimental mz","expMZ"},
-        new String[]{"calculated mass","calcMass"},
-        new String[]{"info","info"},
+        {"matchid", "spectrummatchid", "match id", "spectrum match id", "psmid"},
+        {"isdecoy", "is decoy", "reverse", "decoy"},
+        {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy"},
+        {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy"},
+        {"score", "match score", "match score", "pep score"},
+        {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score"},
+        {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score"},
+        {"run", "run name", "raw file", "filename/id"},
+        {"scan", "scan number", "ms/ms scan number", "spectrum number"},
+        {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1"},
+        {"pep2 position", "peptide position2", "start2", "peptide position 2", "PepPos2"},
+        {"pep1 link pos", "link1", "peptide1 link pos", "peptide link1", "peptide link 1", "from site","LinkPos1"},
+        {"pep2 link pos", "link2", "peptide2 link pos", "peptide link2", "peptide link 2" , "to site","LinkPos2"},
+        {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1"},
+        {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2"},
+        {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence"},
+        {"peptide2" , "peptide 2", "pepseq2"},
+        {"precursermz", "precursor mz", "experimental mz", "exp mz"},
+        {"precursor charge", "precoursorcharge", "charge"},
+        {"calculated mass", "calc mass", "theoretical mass"},
+        {"description1", "fasta1"},
+        {"description2", "fasta2"},
+        {"protein1", "display protein1", "accession1"},
+        {"protein2", "display protein2", "accession2"},
+        {"rank", "match rank"},       
+        {"info","info"},
+        {"negative grouping","negativegrouping"},
+        {"positive grouping","positivegrouping"},
+        {"scan file index","scan index","scan id","file scan index","peak file index","peakfileindex","peakFileIndex","file spectrum index", "peak list index"},
+        {"peak file name","peakfilename","peakFilename","file spectrum name","peak list file","peak list file name"},
+        {"crosslinker","cross linker","cross linker name","cross-linker","cross-linker name"},
+        {"crosslinker mass","cross linker mass","crossLinkerModMass","cross linker mod mass","crosslinkerModMass"},
     };
     
     public CSVinFDR() {
@@ -85,13 +101,13 @@ public class CSVinFDR extends OfflineFDR {
 //                + seperator + "match charge" + seperator + "match mass" + seperator + "match fractionalmass"   
 //                
 //                + seperator + "Protein1" + seperator + "Description1" + seperator + "Decoy1" + seperator + "Protein2" + seperator + "Description2" + seperator + "Decoy2" + seperator + "Peptide1" + seperator + "Peptide2" + seperator + "PeptidePosition1" + seperator + "PeptidePosition2" + seperator + "PeptideLength1" + seperator + "PeptideLength2" + seperator + "fromSite" + seperator + "ToSite" + seperator + "Charge" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr" + seperator + "" + seperator + "PeptidePairFDR" + seperator + "Protein1FDR" + seperator + "Protein2FDR" + seperator + "LinkFDR" + seperator + "PPIFDR" + seperator + seperator + "peptide pair id" + seperator + "link id" + seperator + "ppi id";
-        ret.add(2, "exp charge");
-        ret.add(3, "exp m/z");
-        ret.add(4, "exp mass");
-        ret.add(5, "exp fractionalmass");
-        ret.add(6, "match charge");
-        ret.add(7,  "match mass");
-        ret.add(8, "match fractionalmass");
+        ret.add(5, "exp charge");
+        ret.add(6, "exp m/z");
+        ret.add(7, "exp mass");
+        ret.add(8, "exp fractionalmass");
+        ret.add(9, "match charge");
+        ret.add(10,  "match mass");
+        ret.add(11, "match fractionalmass");
         return ret;
     }
 
@@ -106,13 +122,13 @@ public class CSVinFDR extends OfflineFDR {
         double calcfraction = pp.getCalcMass()-Math.floor(pp.getCalcMass());
 
         
-        ret.add(2,""+ charge);
-        ret.add(3, sixDigits.format(mz));
-        ret.add(4, sixDigits.format(mass));
-        ret.add(5, sixDigits.format(fraction));
-        ret.add(6,""+ pp.getCharge());
-        ret.add(7,  sixDigits.format(pp.getCalcMass()));
-        ret.add(8, sixDigits.format(calcfraction));
+        ret.add(5,""+ charge);
+        ret.add(6, d2s(mz));
+        ret.add(7, d2s(mass));
+        ret.add(8, d2s(fraction));
+        ret.add(9,i2s(pp.getCharge()));
+        ret.add(10,  d2s(pp.getCalcMass()));
+        ret.add(11, d2s(calcfraction));
         
 
         return ret;
@@ -131,6 +147,9 @@ public class CSVinFDR extends OfflineFDR {
     }
 
     public void readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException  {
+        OfflineFDR.getXiFDRVersion();
+        if (numberlocale != null)
+            csv.setLocale(numberlocale);
         if (csv.getInputFile()!= null) {
             m_source.add(csv.getInputFile().getAbsolutePath());
         } else {
@@ -162,9 +181,15 @@ public class CSVinFDR extends OfflineFDR {
         Integer cPepScore1 = getColumn(csv,"peptide1 score",true);
         Integer cPepScore2 = getColumn(csv,"peptide2 score",true);
         Integer cCrosslinker = getColumn(csv,"crosslinker",true);
+        Integer cCrosslinkerMass = getColumn(csv,"crossLinkerModMass",true);
         Integer cExpMZ = getColumn(csv,"experimental mz",true);
         Integer cCalcMass = getColumn(csv,"calculated mass",true);
         Integer cInfo = getColumn(csv,"info",true);
+        Integer cNegativeGrouping = getColumn(csv,"negative grouping",true);
+        Integer cPositiveGrouping = getColumn(csv,"positive grouping",true);
+        Integer cScanInputIndex = getColumn(csv,"peak list index",true);
+        Integer cPeakFileName = getColumn(csv,"peak list file",true);
+        Integer cRank = getColumn(csv,"rank",true);
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
@@ -253,34 +278,21 @@ public class CSVinFDR extends OfflineFDR {
             
             // how to split up the score
             double scoreRatio = csv.getDouble(cscoreratio);
-            if (Double.isNaN(scoreRatio)) {
-                if (cPepScore1 != null && cPepScore2 != null) {
-                    Double s1 = csv.getDouble(cPepScore1);
-                    Double s2 = csv.getDouble(cPepScore2, 0.0);
-                    
-                    if (!Double.isNaN(s2))
-                        scoreRatio = s1/(s1+s2);
-                    else 
-                        scoreRatio = 1;
-                    
-                    // we don't have a sumed up score but two peptide scores
-                    if (Double.isNaN(score)) {
-                        if (Double.isNaN(s2))
-                            score = s1;
-                        else
-                            score = s1+s2;
-                    }
-                } else {
-                    scoreRatio = (4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
-                }
+            Double peptide1score = csv.getDouble(cPepScore1);
+            Double peptide2score = csv.getDouble(cPepScore2, 0.0);
+
+            if (Double.isNaN(peptide1score) && ! Double.isNaN(scoreRatio)) {
+                double ratio =(4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
+                peptide1score=score*ratio;
+                peptide2score=score*(1-ratio);
             }
             
             String[] accessions1 =saccession1.split(";");
             String[] accessions2 =saccession2.split(";");
-            String[] descriptions1 =sdescription1.split(";");
-            String[] descriptions2 =sdescription2.split(";");
-            String[] pepPositions1 =spepPosition1.split(";");
-            String[] pepPositions2 =spepPosition2.split(";");
+            String[] descriptions1 =sdescription1.split(";",-1);
+            String[] descriptions2 =sdescription2.split(";",-1);
+            String[] pepPositions1 =spepPosition1.split(";",-1);
+            String[] pepPositions2 =spepPosition2.split(";",-1);
             
             if (!sdescription1.isEmpty()) {
                 if (descriptions1.length != accessions1.length)
@@ -343,13 +355,29 @@ public class CSVinFDR extends OfflineFDR {
                     String run = crun == null ? "":csv.getValue(crun);
                     String scan = cscan == null ? "":csv.getValue(cscan);
                     String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
+                    double crosslinkerMass = cCrosslinkerMass == null ? -1:csv.getDouble(cCrosslinkerMass);
+                    String negativeCase = null;
+                    String poisitiveCase = null;
+                    if (cNegativeGrouping != null && cNegativeGrouping >=0) {
+                        negativeCase = csv.getValue(cNegativeGrouping);
+                        if (negativeCase.isEmpty())
+                            negativeCase=null;
+                    }
+                    if (cPositiveGrouping != null && cPositiveGrouping >=0) {
+                        poisitiveCase = csv.getValue(cPositiveGrouping);
+                        if (poisitiveCase.isEmpty())
+                            poisitiveCase=null;
+                    }
                     
                     psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, 
                             site1, site2, isDecoy1, isDecoy2, charge, score, 
                             accessions1[p1], descriptions1[p1], accessions2[p2],
                             descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
-                            scoreRatio, false,crosslinker,run,scan);
-                    
+                            peptide1score, peptide2score, negativeCase,crosslinker,run,scan);
+                    psm.setCrosslinkerModMass(crosslinkerMass);
+                    if (poisitiveCase != null) {
+                        psm.setPositiveGrouping(poisitiveCase);
+                    }
                     Double expMZ = null;
                     if (cExpMZ != null) {
                         expMZ=csv.getDouble(cExpMZ);
@@ -374,6 +402,16 @@ public class CSVinFDR extends OfflineFDR {
                     if (cInfo != null) {
                         psm.setInfo(csv.getValue(cInfo));
                     }
+                    if (cRank != null) {
+                        psm.setRank(csv.getInteger(cRank));
+                    }
+                    if (cScanInputIndex != null) {
+                        psm.setFileScanIndex(csv.getInteger(cScanInputIndex));
+                    }
+                    if (cPeakFileName != null) {
+                        psm.setPeakListName(csv.getValue(cPeakFileName));
+                    }
+                    
 //    public PSM          addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
 
                 }
@@ -458,7 +496,7 @@ public class CSVinFDR extends OfflineFDR {
     }
     
     public String argList() {
-        return super.argList() + " --map=col:name,col:name --delimiter= --quote= csv-file1 csv-file2";
+        return super.argList() + " --map=col:name,col:name --delimiter= --quote= --inputlocale=  csv-file1 csv-file2";
     }
     
     public String argDescription() {
@@ -499,6 +537,8 @@ public class CSVinFDR extends OfflineFDR {
                 + "                          maps scan to spectrum and\n"
                 + "                          psmid to id as the columns\n"
                 + "                          in the CSV\n"
+                + "--inputlocale            local to use to interpret numbers\n"
+                + "                         default: en\n "
                 + "--delimiter              what separates fields in the file\n "
                 + "--quote                  how are text fields qoted\n"
                 + "                         e.g. each field that contains the\n"
@@ -508,10 +548,10 @@ public class CSVinFDR extends OfflineFDR {
     
         
     @Override
-    public String[] parseArgs(String[] argv) {
+    public String[] parseArgs(String[] argv, FDRSettings setings) {
         ArrayList<String> unknown = new ArrayList<String>();
         
-        argv = super.parseArgs(argv);
+        argv = super.parseArgs(argv, setings);
         
         for (String arg : argv) {
             if (arg.toLowerCase().startsWith("--map=")) {
@@ -548,6 +588,12 @@ public class CSVinFDR extends OfflineFDR {
                     System.exit(-1);
                 }
                 delimiter = delchar.charAt(0);
+            } else if(arg.toLowerCase().startsWith("--inputlocale=")) {
+                String locale=arg.substring("--inputlocale=".length());
+                if (!CSVinFDR.this.setInputLocale(locale)) {
+                    Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "could not set the locale "+ locale);
+                    System.exit(-1);
+                }
             } else if(arg.toLowerCase().contentEquals("--help")) {
                 printUsage();
                 System.exit(0);
@@ -560,12 +606,45 @@ public class CSVinFDR extends OfflineFDR {
         ret = unknown.toArray(ret);
         return ret;        
     }
+
+    public boolean setInputLocale(String locale) {
+        locale=locale.toLowerCase();
+        boolean isSet = false;
+        for (Locale l  : Locale.getAvailableLocales()) {
+            if (l.toString().toLowerCase().contentEquals(locale)) {
+                setInputLocale(l);
+                return true;
+            }
+            if (l.getDisplayName().toLowerCase().contentEquals(locale)) {
+                setInputLocale(l);
+                return true;
+            }
+            if (l.getCountry().toLowerCase().contentEquals(locale)) {
+                setInputLocale(l);
+                isSet=true;
+            }
+            if (l.getDisplayScript().toLowerCase().contentEquals(locale)) {
+                setInputLocale(l);
+                isSet=true;
+            }
+            if (l.getDisplayLanguage().toLowerCase().contentEquals(locale)) {
+                setInputLocale(l);
+                isSet=true;
+            }
+        }
+        return isSet;
+    }
+    
+    public void setInputLocale(Locale locale) {
+        this.numberlocale = locale;
+    }
     
     public static void main (String[] argv) throws SQLException, FileNotFoundException {
         
         CSVinFDR ofdr = new CSVinFDR();
-        
-        String[] files = ofdr.parseArgs(argv);
+        FDRSettings settings = new FDRSettingsImpl();
+                
+        String[] files = ofdr.parseArgs(argv, settings);
         
         // assume that everything that was not matched to an argument is a file
         
@@ -644,9 +723,10 @@ public class CSVinFDR extends OfflineFDR {
         }
         
         Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
-        ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",");
-
-
+        if (((DecimalFormat)ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator() == ',') {
+            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";", settings);
+        } else 
+            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
 
         System.exit(0);
 

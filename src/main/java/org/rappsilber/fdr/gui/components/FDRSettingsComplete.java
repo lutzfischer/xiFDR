@@ -58,6 +58,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         spMinPPIPepCount.setSpecialValue(1);
         spReportFactor.setVisible(false);
         lblReportFactor.setVisible(false);
+        setMinTD(DEFAULT_MIN_TD_COUNT);
     }
     
     
@@ -319,7 +320,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckUniquePSM.setSelected(filterToUniquePSM);
     }
     
+    public void setMinTD(Integer c) {
+        spMinTDChance.setValue(c);
+    }
 
+    @Override
+    public int getMinTD() {
+        return (Integer) spMinTDChance.getValue();
+    }
 
     
     /**
@@ -402,6 +410,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckBoostBetween = new javax.swing.JCheckBox();
         btnBoostIgnores = new javax.swing.JButton();
         ckGroupByPSMs = new javax.swing.JCheckBox();
+        spMinTDChance = new org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner();
+        jLabel7 = new javax.swing.JLabel();
+        ckFilterConsecutives = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -431,7 +442,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         lblReportFactor.setText("Report Factor");
         lblReportFactor.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
 
-        spReportFactor.setModel(new javax.swing.SpinnerNumberModel(1.1d, 1.0d, null, 0.1d));
+        spReportFactor.setModel(new javax.swing.SpinnerNumberModel(100000.0d, 1.0d, null, 0.1d));
         spReportFactor.setToolTipText("maximum factor the next step in fdr is permited to exced the target fdr");
 
         jLabel8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -503,7 +514,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckBoostBetween.setText("Between");
         ckBoostBetween.setToolTipText("optimize settings for maximizing between matches");
 
-        btnBoostIgnores.setText("Boost Ignores");
+        btnBoostIgnores.setText("Boost Includes");
         btnBoostIgnores.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnBoostIgnoresActionPerformed(evt);
@@ -515,6 +526,20 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckGroupByPSMs.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 ckGroupByPSMsActionPerformed(evt);
+            }
+        });
+
+        spMinTDChance.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
+        spMinTDChance.setToolTipText("The total number of matches times the fdr should be larger then the given number - otherwise the subgroup will not be considered on its own");
+        spMinTDChance.setSpecialValue(0);
+
+        jLabel7.setText("Min TD Chance");
+
+        ckFilterConsecutives.setText("no consecutive");
+        ckFilterConsecutives.setToolTipText("Filter out cross-linked PSMs to consecutive peptides");
+        ckFilterConsecutives.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckFilterConsecutivesActionPerformed(evt);
             }
         });
 
@@ -551,14 +576,15 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addComponent(ckDirectionalLink)
                             .addComponent(ckDirectionalPeptidePair)
                             .addComponent(ckDirectionalPSM)
-                            .addComponent(jLabel1)))
+                            .addComponent(jLabel1)
+                            .addComponent(jLabel7)))
                     .addComponent(btnStopBoost))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(70, 70, 70)
                         .addComponent(btnBoostIgnores)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(btnCalc))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -567,7 +593,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addComponent(spMinLinkPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(spMinProteinPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jLabel28, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(jLabel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(jLabel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinTDChance, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(spMaxLinkAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -578,7 +605,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(ckGroupByPSMs)
-                                    .addComponent(ckUniquePSM))
+                                    .addComponent(ckUniquePSM)
+                                    .addComponent(ckFilterConsecutives))
                                 .addGap(0, 0, Short.MAX_VALUE))))))
         );
         layout.setVerticalGroup(
@@ -633,8 +661,12 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(spReportFactor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblReportFactor)
-                    .addComponent(ckGroupByPSMs))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(ckGroupByPSMs)
+                    .addComponent(spMinTDChance, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckFilterConsecutives)
+                .addGap(18, 36, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(ckMaximize)
                     .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -670,18 +702,26 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
     private void ckGroupByPSMsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckGroupByPSMsActionPerformed
         setGroupByPSMCount(ckGroupByPSMs.isSelected());
+        if (ckGroupByPSMs.isSelected() && ((Integer)spMinTDChance.getValue())==0 ) {
+            spMinTDChance.setValue(1);
+        }
     }//GEN-LAST:event_ckGroupByPSMsActionPerformed
+
+    private void ckFilterConsecutivesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckFilterConsecutivesActionPerformed
+        setFilterConsecutivePeptides(ckFilterConsecutives.isSelected());
+    }//GEN-LAST:event_ckFilterConsecutivesActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBoostIgnores;
     private javax.swing.JButton btnCalc;
-    private javax.swing.JButton btnStopBoost;
+    public javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbBoostWhat;
     private javax.swing.JCheckBox ckBoostBetween;
     private javax.swing.JCheckBox ckDirectionalLink;
     private javax.swing.JCheckBox ckDirectionalPPI;
     private javax.swing.JCheckBox ckDirectionalPSM;
     private javax.swing.JCheckBox ckDirectionalPeptidePair;
+    private javax.swing.JCheckBox ckFilterConsecutives;
     private javax.swing.JCheckBox ckGroupByPSMs;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JCheckBox ckUniquePSM;
@@ -694,6 +734,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     public javax.swing.JLabel lblReportFactor;
@@ -705,6 +746,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMinPPIPepCount;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMinPeptideLength;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMinProteinPepCount;
+    private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMinTDChance;
     private javax.swing.JSpinner spPPIFdr;
     private javax.swing.JSpinner spPepFDR;
     private javax.swing.JSpinner spProteinFDR;

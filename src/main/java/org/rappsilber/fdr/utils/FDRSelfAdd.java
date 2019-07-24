@@ -31,17 +31,17 @@ public interface FDRSelfAdd<T> extends SelfAdd<T> { //, Comparable<T> {
      * an ID for the FDRgroup the match belongs to.
      * @return 
      */
-    int getFDRGroup();
+    String getFDRGroup();
     
     /**
      * defines the fdr-group for a single entry
      */
-    void setFDRGroup(int fdrGroup);
-    /**
-     * Name of the FDR-group this match belongs to
-     * @return 
-     */
-    String getFDRGroupName();
+    void setFDRGroup(String fdrGroup);
+//    /**
+//     * Name of the FDR-group this match belongs to
+//     * @return 
+//     */
+//    String getFDRGroupName();
     /**
      * Non of the sites are decoy
      * @return 

@@ -22,7 +22,8 @@ import java.awt.event.ActionListener;
  * @author lfischer
  */
 public interface FDRSettings {
-
+    public static int DEFAULT_MIN_TD_COUNT=2;
+    
     void addCalcListener(ActionListener al);
 
     OfflineFDR.FDRLevel doOptimize();
@@ -108,6 +109,10 @@ public interface FDRSettings {
     
     void setFilterToUniquePSM(boolean filterToUnique);
     
+    boolean filterConsecutivePeptides();
+    
+    void setFilterConsecutivePeptides(boolean filterConsecutive);
+
     
     public void setAll(FDRSettings settings);
     
@@ -116,10 +121,20 @@ public interface FDRSettings {
 
     public boolean boostPSMs();
     public void boostPSMs(boolean boost);
+//    public boolean boostSubScores();
+//    public void boostSubScores(boolean boost);
     public boolean boostPeptidePairs();
     public void boostPeptidePairs(boolean boost);
     public boolean boostLinks();
     public void boostLinks(boolean boost);
     public boolean isGroupByPSMCount();
     public void setGroupByPSMCount(boolean groupByPPI);
+    
+    public void setMinTD(Integer c) ;
+
+    public int getMinTD();
+
+//    public double getSubScoreCutOff();
+//    public void setSubScoreCutOff(double localfdr);
+    
 }

@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.5" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <NonVisualComponents>
+    <Component class="javax.swing.ButtonGroup" name="bgCrosslinkTypes">
+    </Component>
+  </NonVisualComponents>
+  <SyntheticProperties>
+    <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
+  </SyntheticProperties>
+  <Events>
+    <EventHandler event="windowClosed" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosed"/>
+    <EventHandler event="windowClosing" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosing"/>
+  </Events>
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="1" attributes="0">
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="jButton1" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="lblPep1" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblProt1" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="txtPep1" pref="84" max="32767" attributes="0"/>
+                          <Component id="txtProt1" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" attributes="0">
+                              <Component id="lblPep2" linkSize="4" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                          </Group>
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="jLabel1" linkSize="4" min="-2" max="-2" attributes="0"/>
+                                  <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
+                                      <Group type="102" attributes="0">
+                                          <Component id="lblPrecCharge" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace max="32767" attributes="0"/>
+                                          <Component id="lblMinPrecCharge" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="jLabel2" linkSize="4" alignment="0" min="-2" pref="160" max="-2" attributes="0"/>
+                                          <Component id="jLabel3" linkSize="4" alignment="0" min="-2" pref="169" max="-2" attributes="0"/>
+                                          <Component id="jLabel4" linkSize="4" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="lblProt2" linkSize="4" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="lblPep3" linkSize="4" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                  </Group>
+                                  <Component id="lblPrecCharge1" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="lblPrecCharge2" alignment="0" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="1" attributes="0">
+                                  <Component id="stspMaxMGXRank" max="32767" attributes="0"/>
+                                  <Component id="stspMinDSSOPep" max="32767" attributes="0"/>
+                                  <Component id="stspMinLinkSiteDelta" alignment="0" pref="110" max="32767" attributes="0"/>
+                                  <Component id="stspMinDelta" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="stspMinFrags" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="txtProt2" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="txtPep2" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="txtCrosslinker" alignment="1" max="32767" attributes="0"/>
+                                  <Component id="cbRun" pref="0" max="32767" attributes="0"/>
+                                  <Component id="stspMinPrecCharge" max="32767" attributes="0"/>
+                              </Group>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Group type="102" attributes="0">
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="lblMaxPrecCharge" alignment="1" min="-2" max="-2" attributes="0"/>
+                                          <Component id="lblProt12" alignment="1" min="-2" max="-2" attributes="0"/>
+                                          <Component id="lblPep12" alignment="1" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="stspMaxPrecCharge" alignment="1" pref="109" max="32767" attributes="0"/>
+                                          <Component id="txtProt12" alignment="0" pref="109" max="32767" attributes="0"/>
+                                          <Component id="txtPep12" alignment="0" pref="109" max="32767" attributes="0"/>
+                                      </Group>
+                                  </Group>
+                                  <Group type="102" attributes="0">
+                                      <Component id="ckDeltaTimesScore" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                                  </Group>
+                              </Group>
+                          </Group>
+                      </Group>
+                  </Group>
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" attributes="0">
+                              <Component id="ckSpecial" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="ckAutovalidated" min="-2" pref="169" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="cbNonCovalent" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Component id="ckXLOnly" min="-2" max="-2" attributes="0"/>
+                          <Component id="pWithinBetween" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="ckXLOnly" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblPep3" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="txtCrosslinker" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="separate" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="txtPep12" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblPep12" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="txtProt12" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblProt12" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="txtPep2" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="txtProt2" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblProt2" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txtProt1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblProt1" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="stspMinFrags" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="stspMinDelta" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="ckDeltaTimesScore" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="stspMinLinkSiteDelta" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="cbRun" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel4" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="stspMinPrecCharge" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblPrecCharge" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblMinPrecCharge" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="stspMaxPrecCharge" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblMaxPrecCharge" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Group type="103" alignment="0" groupAlignment="3" attributes="0">
+                      <Component id="txtPep1" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="lblPep1" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="lblPep2" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="stspMinDSSOPep" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblPrecCharge1" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="stspMaxMGXRank" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="lblPrecCharge2" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace pref="50" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="ckSpecial" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckAutovalidated" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="cbNonCovalent" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="pWithinBetween" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="jButton1" alignment="0" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Component class="javax.swing.JCheckBox" name="ckXLOnly">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Crosslinks Only"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckXLOnlyActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtPep1">
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtPep2">
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPep1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Peptide1"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPep2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Peptide2"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPep12">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Either"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtPep12">
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblProt1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Protein1"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblProt2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Protein2"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblProt12">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Either"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtProt12">
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtProt2">
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtProt1">
+    </Component>
+    <Component class="javax.swing.JButton" name="jButton1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Ok"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton1ActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMinFrags">
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Min frags per peptide"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Minimum DeltaScore"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMinDelta">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="minimum delta score"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel3">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Minimum LinkSiteDelta"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMinLinkSiteDelta">
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckSpecial">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Exclude unknown charge state"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckAutovalidated">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="autovalidated only"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel4">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Run name"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JComboBox" name="cbRun">
+      <Properties>
+        <Property name="editable" type="boolean" value="true"/>
+        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+          <StringArray count="0"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMinPrecCharge">
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMaxPrecCharge">
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPrecCharge">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Precursor Charge"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblMinPrecCharge">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="min"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblMaxPrecCharge">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="max"/>
+      </Properties>
+    </Component>
+    <Container class="javax.swing.JPanel" name="pWithinBetween">
+      <Properties>
+        <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+          <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
+            <TitledBorder title="Cross-link types"/>
+          </Border>
+        </Property>
+      </Properties>
+
+      <Layout>
+        <DimensionLayout dim="0">
+          <Group type="103" groupAlignment="0" attributes="0">
+              <Group type="102" alignment="0" attributes="0">
+                  <Component id="rbAll" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Component id="rbWithin" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Component id="rbBetween" min="-2" max="-2" attributes="0"/>
+              </Group>
+          </Group>
+        </DimensionLayout>
+        <DimensionLayout dim="1">
+          <Group type="103" groupAlignment="0" attributes="0">
+              <Group type="102" attributes="0">
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="rbAll" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="rbWithin" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="rbBetween" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace pref="10" max="32767" attributes="0"/>
+              </Group>
+          </Group>
+        </DimensionLayout>
+      </Layout>
+      <SubComponents>
+        <Component class="javax.swing.JRadioButton" name="rbAll">
+          <Properties>
+            <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
+              <ComponentRef name="bgCrosslinkTypes"/>
+            </Property>
+            <Property name="selected" type="boolean" value="true"/>
+            <Property name="text" type="java.lang.String" value="All"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JRadioButton" name="rbWithin">
+          <Properties>
+            <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
+              <ComponentRef name="bgCrosslinkTypes"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Within Only"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JRadioButton" name="rbBetween">
+          <Properties>
+            <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
+              <ComponentRef name="bgCrosslinkTypes"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="Between only"/>
+          </Properties>
+        </Component>
+      </SubComponents>
+    </Container>
+    <Component class="javax.swing.JTextField" name="txtCrosslinker">
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPep3">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Cross-linker"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckDeltaTimesScore">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="x score"/>
+        <Property name="toolTipText" type="java.lang.String" value="dektascore &gt;= x * score"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPrecCharge1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="DSSO Peps Found"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMinDSSOPep">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="0" maximum="3" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPrecCharge2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="max Candidate Pair Rank"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="stspMaxMGXRank">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="0" maximum="3" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="cbNonCovalent">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="exclude non-covalent"/>
+      </Properties>
+    </Component>
+  </SubComponents>
+</Form>

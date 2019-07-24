@@ -71,15 +71,16 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="jScrollPane6" pref="814" max="32767" attributes="0"/>
+          <Component id="jScrollPane6" pref="839" max="32767" attributes="0"/>
           <Component id="jSplitPane1" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
-              <Component id="jScrollPane6" pref="493" max="32767" attributes="0"/>
-              <EmptySpace min="-2" pref="7" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="jScrollPane6" pref="466" max="32767" attributes="0"/>
+              <EmptySpace type="separate" max="-2" attributes="0"/>
               <Component id="jSplitPane1" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -111,7 +112,10 @@
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="tpInput" alignment="0" max="32767" attributes="0"/>
+                      <Group type="102" alignment="0" attributes="0">
+                          <Component id="tpInput" pref="824" max="32767" attributes="0"/>
+                          <EmptySpace min="0" pref="7" max="32767" attributes="0"/>
+                      </Group>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -132,6 +136,40 @@
 
                   <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
                   <SubComponents>
+                    <Container class="javax.swing.JPanel" name="pDatabase">
+                      <Constraints>
+                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
+                          <JTabbedPaneConstraints tabName="Database">
+                            <Property name="tabTitle" type="java.lang.String" value="Database"/>
+                          </JTabbedPaneConstraints>
+                        </Constraint>
+                      </Constraints>
+
+                      <Layout>
+                        <DimensionLayout dim="0">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="102" alignment="0" attributes="0">
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="getDBFDR" max="32767" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                        </DimensionLayout>
+                        <DimensionLayout dim="1">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="102" alignment="0" attributes="0">
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="getDBFDR" pref="361" max="32767" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                        </DimensionLayout>
+                      </Layout>
+                      <SubComponents>
+                        <Component class="org.rappsilber.fdr.gui.components.GetDBFDR" name="getDBFDR">
+                        </Component>
+                      </SubComponents>
+                    </Container>
                     <Container class="javax.swing.JPanel" name="jPanel6">
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
@@ -155,7 +193,7 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="csvSelect" pref="388" max="32767" attributes="0"/>
+                                  <Component id="csvSelect" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -203,7 +241,7 @@
                                                       <Component id="rbMZLowBetter" min="-2" max="-2" attributes="0"/>
                                                       <Component id="rbMZHighBetter" alignment="0" min="-2" max="-2" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace min="88" pref="357" max="32767" attributes="0"/>
+                                                  <EmptySpace min="88" pref="375" max="32767" attributes="0"/>
                                               </Group>
                                               <Component id="cbMZMatchScoreName" alignment="1" max="32767" attributes="0"/>
                                           </Group>
@@ -233,7 +271,7 @@
                                       </Group>
                                       <Component id="fbMZIdentMLIn" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="286" max="32767" attributes="0"/>
+                                  <EmptySpace pref="259" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -344,7 +382,7 @@
                               <Group type="102" alignment="1" attributes="0">
                                   <Component id="spFDRSettingsWrapper" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="pFDRGroups" min="-2" max="-2" attributes="0"/>
+                                  <Component id="pFDRGroups" min="-2" pref="227" max="-2" attributes="0"/>
                               </Group>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -412,7 +450,7 @@
                                   <Component id="spTargetDBProt" min="-2" pref="100" max="-2" attributes="0"/>
                                   <Component id="lblProtein" alignment="0" min="-2" pref="100" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace pref="296" max="32767" attributes="0"/>
+                              <EmptySpace pref="321" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -573,26 +611,44 @@
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="spPepLength" alignment="1" pref="0" max="32767" attributes="0"/>
-                          <Group type="102" alignment="1" attributes="0">
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="ckIgnoreGroups1" pref="134" max="32767" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="cbGroupPPIBySelf" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="cbGroupLinksBySelf" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="cbGroupRun" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="spPepLength" alignment="0" min="-2" pref="226" max="-2" attributes="0"/>
+                                  <Group type="102" attributes="0">
+                                      <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="spDistanceGroup" min="-2" pref="86" max="-2" attributes="0"/>
+                                  </Group>
+                                  <Component id="ckIgnoreGroups1" alignment="0" min="-2" pref="226" max="-2" attributes="0"/>
+                                  <Component id="cbGroupPepsBySelf" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace max="32767" attributes="0"/>
                           </Group>
-                          <Component id="spDistanceGroup" alignment="0" max="32767" attributes="0"/>
-                          <Component id="jLabel1" alignment="0" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="ckIgnoreGroups1" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Component id="spPepLength" min="-2" pref="69" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="spPepLength" pref="222" max="32767" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="spDistanceGroup" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbGroupRun" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="cbGroupPepsBySelf" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="cbGroupLinksBySelf" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="cbGroupPPIBySelf" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="35" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="3" attributes="0">
+                                  <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  <Component id="spDistanceGroup" alignment="3" min="-2" pref="27" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -640,6 +696,26 @@
                     <Component class="javax.swing.JLabel" name="jLabel1">
                       <Properties>
                         <Property name="text" type="java.lang.String" value="Sequnce Distance"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JCheckBox" name="cbGroupPepsBySelf">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="Peptides by self-links support"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JCheckBox" name="cbGroupLinksBySelf">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="Links by self-links support"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JCheckBox" name="cbGroupPPIBySelf">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="PPIs by self-links support"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JCheckBox" name="cbGroupRun">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="PSMs by Run"/>
                       </Properties>
                     </Component>
                   </SubComponents>
@@ -722,7 +798,7 @@
                                       </Group>
                                       <Component id="jPanel9" alignment="0" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="129" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -765,7 +841,7 @@
                                           <Group type="102" alignment="1" attributes="0">
                                               <Group type="103" groupAlignment="1" attributes="0">
                                                   <Component id="jPanel18" alignment="0" max="32767" attributes="0"/>
-                                                  <Component id="jPanel20" alignment="0" pref="610" max="32767" attributes="0"/>
+                                                  <Component id="jPanel20" alignment="0" pref="635" max="32767" attributes="0"/>
                                                   <Component id="jPanel16" alignment="0" max="32767" attributes="0"/>
                                                   <Component id="jPanel15" alignment="0" max="32767" attributes="0"/>
                                               </Group>
@@ -1186,8 +1262,11 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jLabel9" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace min="-2" pref="47" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="0" attributes="0">
+                                      <Component id="jLabel9" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="jLabel28" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="fbFolder" max="32767" attributes="0"/>
                                       <Group type="102" alignment="0" attributes="0">
@@ -1198,9 +1277,10 @@
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="rbCSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace pref="441" max="32767" attributes="0"/>
+                                          <EmptySpace pref="466" max="32767" attributes="0"/>
                                           <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
                                       </Group>
+                                      <Component id="lpCsvOutLocal" max="32767" attributes="0"/>
                                   </Group>
                                   <EmptySpace min="-2" pref="23" max="-2" attributes="0"/>
                               </Group>
@@ -1214,7 +1294,12 @@
                                       <Component id="fbFolder" min="-2" max="-2" attributes="0"/>
                                       <Component id="jLabel9" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace min="-2" pref="45" max="-2" attributes="0"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="3" attributes="0">
+                                      <Component id="lpCsvOutLocal" alignment="3" max="-2" attributes="0"/>
+                                      <Component id="jLabel28" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="3" attributes="0">
                                       <Component id="rbTSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="ckPrePostAA" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -1224,7 +1309,7 @@
                                       <Component id="rbCSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="btnWrite" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="280" max="32767" attributes="0"/>
+                                  <EmptySpace pref="243" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1292,6 +1377,24 @@
                             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
                           </AuxValues>
                         </Component>
+                        <Component class="org.rappsilber.gui.components.LocalPicker" name="lpCsvOutLocal">
+                          <Properties>
+                            <Property name="defaultLocal" type="java.util.Locale" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                              <Connection code="java.util.Locale.ENGLISH" type="code"/>
+                            </Property>
+                            <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                              <Dimension value="[80, 27]"/>
+                            </Property>
+                          </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="lpCsvOutLocalActionPerformed"/>
+                          </Events>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="jLabel28">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Language"/>
+                          </Properties>
+                        </Component>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JPanel" name="jPanel14">
@@ -1316,20 +1419,31 @@
                                               <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="lblPeaklistExtension" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="lblMzMLScan2ID" alignment="0" min="-2" max="-2" attributes="0"/>
                                           </Group>
-                                          <EmptySpace type="separate" max="-2" attributes="0"/>
-                                          <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                              <Component id="jScrollPane1" max="32767" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Group type="103" groupAlignment="0" attributes="0">
                                               <Group type="102" attributes="0">
-                                                  <Component id="txtmzIdentOwnerFirst" min="-2" pref="80" max="-2" attributes="0"/>
-                                                  <EmptySpace type="separate" max="-2" attributes="0"/>
-                                                  <Component id="txtmzIdentOwnerLast" min="-2" pref="80" max="-2" attributes="0"/>
+                                                  <Component id="cmbMzMLScan2ID" max="32767" attributes="0"/>
+                                                  <EmptySpace min="-2" pref="30" max="-2" attributes="0"/>
                                               </Group>
-                                              <Component id="txtmzIdentOwnerEmail" max="32767" attributes="0"/>
-                                              <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
+                                              <Group type="102" attributes="0">
+                                                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                                      <Component id="jScrollPane1" max="32767" attributes="0"/>
+                                                      <Group type="102" attributes="0">
+                                                          <Component id="txtmzIdentOwnerFirst" min="-2" pref="80" max="-2" attributes="0"/>
+                                                          <EmptySpace type="separate" max="-2" attributes="0"/>
+                                                          <Component id="txtmzIdentOwnerLast" min="-2" pref="80" max="-2" attributes="0"/>
+                                                      </Group>
+                                                      <Component id="txtmzIdentOwnerEmail" max="32767" attributes="0"/>
+                                                      <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
+                                                      <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
+                                                  </Group>
+                                                  <EmptySpace type="unrelated" pref="302" max="32767" attributes="0"/>
+                                                  <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
+                                              </Group>
                                           </Group>
-                                          <EmptySpace pref="341" max="32767" attributes="0"/>
-                                          <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                   </Group>
                                   <EmptySpace max="-2" attributes="0"/>
@@ -1363,7 +1477,16 @@
                                       <Component id="jScrollPane1" min="-2" max="-2" attributes="0"/>
                                       <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="207" max="32767" attributes="0"/>
+                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="3" attributes="0">
+                                      <Component id="lblPeaklistExtension" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="cmbPeakListFormat" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace max="32767" attributes="0"/>
+                                  <Group type="103" groupAlignment="3" attributes="0">
+                                      <Component id="cmbMzMLScan2ID" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="lblMzMLScan2ID" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1457,8 +1580,133 @@
                             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txtmzIdentOwnerOrgActionPerformed"/>
                           </Events>
                         </Component>
+                        <Component class="javax.swing.JLabel" name="lblPeaklistExtension">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Peak-list file extension"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JComboBox" name="cmbPeakListFormat">
+                          <Properties>
+                            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                              <StringArray count="3">
+                                <StringItem index="0" value="mzML"/>
+                                <StringItem index="1" value="raw"/>
+                                <StringItem index="2" value="mgf"/>
+                              </StringArray>
+                            </Property>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value=""/>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JComboBox" name="cmbMzMLScan2ID">
+                          <Properties>
+                            <Property name="editable" type="boolean" value="true"/>
+                            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                              <StringArray count="5">
+                                <StringItem index="0" value="controllerType=0 controllerNumber=1 scan=%s%"/>
+                                <StringItem index="1" value="controllerType=0 controllerNumber=1 scan=%s-1%"/>
+                                <StringItem index="2" value="scan=%s%"/>
+                                <StringItem index="3" value="scan=%s-1%"/>
+                                <StringItem index="4" value="%s%"/>
+                              </StringArray>
+                            </Property>
+                            <Property name="toolTipText" type="java.lang.String" value="%s% will be replaced by the actuall scan-number&#xa;%s-1% will be replaced by scannumber-1&#xa;%s+1% will be replaced by scannumber+1&#xa;"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+                          </AuxValues>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="lblMzMLScan2ID">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="mzML spectrumID template"/>
+                          </Properties>
+                          <AuxValues>
+                            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+                          </AuxValues>
+                        </Component>
                       </SubComponents>
                     </Container>
+                    <Container class="javax.swing.JPanel" name="pPeakListLookup">
+                      <Constraints>
+                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
+                          <JTabbedPaneConstraints tabName="PeakListLookup">
+                            <Property name="tabTitle" type="java.lang.String" value="PeakListLookup"/>
+                          </JTabbedPaneConstraints>
+                        </Constraint>
+                      </Constraints>
+
+                      <Layout>
+                        <DimensionLayout dim="0">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="102" alignment="1" attributes="0">
+                                  <EmptySpace pref="739" max="32767" attributes="0"/>
+                                  <Component id="btnPeakListParse" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                              </Group>
+                              <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="flPeakLists" pref="802" max="32767" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                  </Group>
+                              </Group>
+                          </Group>
+                        </DimensionLayout>
+                        <DimensionLayout dim="1">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="102" alignment="1" attributes="0">
+                                  <EmptySpace pref="348" max="32767" attributes="0"/>
+                                  <Component id="btnPeakListParse" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                              </Group>
+                              <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="flPeakLists" min="-2" pref="284" max="-2" attributes="0"/>
+                                      <EmptySpace pref="89" max="32767" attributes="0"/>
+                                  </Group>
+                              </Group>
+                          </Group>
+                        </DimensionLayout>
+                      </Layout>
+                      <SubComponents>
+                        <Component class="org.rappsilber.gui.components.FileList" name="flPeakLists">
+                          <Properties>
+                            <Property name="toolTipText" type="java.lang.String" value="if peak list file and peak list name are not readable from the input these can be suplemented here"/>
+                            <Property name="description" type="java.lang.String" value="PeakLists"/>
+                            <Property name="extensions" type="[Ljava.lang.String;" editor="org.netbeans.beaninfo.editors.StringArrayEditor">
+                              <StringArray count="2">
+                                <StringItem index="0" value=".apl"/>
+                                <StringItem index="1" value=".mgf"/>
+                              </StringArray>
+                            </Property>
+                          </Properties>
+                        </Component>
+                        <Component class="javax.swing.JButton" name="btnPeakListParse">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Parse"/>
+                          </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnPeakListParseActionPerformed"/>
+                          </Events>
+                        </Component>
+                      </SubComponents>
+                    </Container>
+                    <Component class="org.rappsilber.fdr.gui.components.WriteToDB" name="writeDB">
+                      <Constraints>
+                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
+                          <JTabbedPaneConstraints tabName="To Database">
+                            <Property name="tabTitle" type="java.lang.String" value="To Database"/>
+                          </JTabbedPaneConstraints>
+                        </Constraint>
+                      </Constraints>
+                    </Component>
                   </SubComponents>
                 </Container>
               </SubComponents>
@@ -1479,7 +1727,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="spLog" alignment="0" max="32767" attributes="0"/>
-                              <Component id="memory2" alignment="0" pref="782" max="32767" attributes="0"/>
+                              <Component id="memory2" alignment="0" pref="801" max="32767" attributes="0"/>
                               <Component id="cbLevel" alignment="0" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -1494,7 +1742,7 @@
                           <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
                           <Component id="cbLevel" min="-2" max="-2" attributes="0"/>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="spLog" pref="375" max="32767" attributes="0"/>
+                          <Component id="spLog" pref="348" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -1574,10 +1822,16 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jLabel29" min="-2" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="0" attributes="0">
+                                      <Component id="jScrollPane2" pref="789" max="32767" attributes="0"/>
+                                      <Group type="102" attributes="0">
+                                          <Component id="jLabel29" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Component id="txtXiFDRVersion" min="-2" pref="119" max="-2" attributes="0"/>
+                                          <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                                      </Group>
+                                  </Group>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="txtXiFDRVersion" min="-2" pref="119" max="-2" attributes="0"/>
-                                  <EmptySpace pref="604" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1589,7 +1843,9 @@
                                       <Component id="jLabel29" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="txtXiFDRVersion" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="381" max="32767" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="jScrollPane2" pref="336" max="32767" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -1605,6 +1861,18 @@
                             <Property name="editable" type="boolean" value="false"/>
                           </Properties>
                         </Component>
+                        <Container class="javax.swing.JScrollPane" name="jScrollPane2">
+
+                          <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+                          <SubComponents>
+                            <Component class="javax.swing.JTextArea" name="txtchangelog">
+                              <Properties>
+                                <Property name="columns" type="int" value="20"/>
+                                <Property name="rows" type="int" value="5"/>
+                              </Properties>
+                            </Component>
+                          </SubComponents>
+                        </Container>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JScrollPane" name="jScrollPane3">
@@ -1665,7 +1933,7 @@
     </Container>
     <Container class="javax.swing.JSplitPane" name="jSplitPane1">
       <Properties>
-        <Property name="dividerLocation" type="int" value="400"/>
+        <Property name="dividerLocation" type="int" value="600"/>
         <Property name="dividerSize" type="int" value="5"/>
       </Properties>
 
@@ -1686,6 +1954,11 @@
           </Constraints>
         </Component>
         <Component class="org.rappsilber.gui.components.memory.Memory" name="memory3">
+          <Properties>
+            <Property name="showAutoGCButton" type="boolean" value="false"/>
+            <Property name="showGCButton" type="boolean" value="false"/>
+            <Property name="showLogButton" type="boolean" value="false"/>
+          </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout$JSplitPaneConstraintsDescription">
               <JSplitPaneConstraints position="right"/>

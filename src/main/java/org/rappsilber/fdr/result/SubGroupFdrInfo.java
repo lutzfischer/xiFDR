@@ -24,8 +24,7 @@ import org.rappsilber.fdr.utils.HashedArrayList;
  * @author lfischer
  */
 public class SubGroupFdrInfo<T extends FDRSelfAdd> implements Iterable<T> {
-    public int fdrGroup;
-    public String fdrGroupName;
+    public String fdrGroup;
     /**  how many TD cases are there in total */
     public int TD;
     /**  how many DD cases are there in total */
@@ -72,6 +71,8 @@ public class SubGroupFdrInfo<T extends FDRSelfAdd> implements Iterable<T> {
     public int within;
     public int between;
     public int linear;
+    
+    public boolean didntPassCheck = false;
     
     public Iterator<T> iterator() {
         return filteredResult.iterator();

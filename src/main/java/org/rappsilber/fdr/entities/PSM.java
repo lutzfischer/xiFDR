@@ -19,8 +19,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
+import java.util.Map;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
+import org.rappsilber.utils.IntArrayList;
+import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
 
 
@@ -28,6 +30,23 @@ import org.rappsilber.utils.SelfAddHashSet;
  * represents a single PSM
  */
 public class PSM extends AbstractFDRElement<PSM> { 
+
+    /**
+     * store arbitrary information
+     * @return the otherInfo
+     */
+    public HashMap<String,Object> getOtherInfo() {
+        return otherInfo;
+    }
+
+    /**
+     * the type of each information
+     * @return the otherInfoType
+     */
+    public HashMap<String,Class> getOtherInfoType() {
+        return otherInfoType;
+    }
+
     /**
      * unique id for the PSM.
      */
@@ -61,20 +80,18 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * M/Z value of the spectrum
      */
-    private double experimentalMZ;
+    private double experimentalMZ = 0;
     /**
      * Mass value of the matched peptide(pair)
      */
-    private double calcMass;
+    private double calcMass = 0;
     /**
      * Charge value of the matched peptide(pair)
      */
-    private byte exp_charge;
+    private byte exp_charge = 0;
     
-    /**
-     * 
-     */
-    private double scoreRatio;
+    double peptide1Score;
+    double peptide2Score;
     /** hash code for fast access in hashmaps */
     int hashcode;
     /** first peptide comes from a decoy sequence */
@@ -96,7 +113,7 @@ public class PSM extends AbstractFDRElement<PSM> {
 //    /** are all peptides from the decoy database */
 //    private boolean isDD = false;
     /** an id for the fdr-group of this PSM */
-    private int fdrGroup;
+    private String fdrGroup;
     /** what is the calculated FDR for the score of this PSM */
     public double m_fdr = -1;
     /** protein group for the first peptide*/
@@ -112,7 +129,9 @@ public class PSM extends AbstractFDRElement<PSM> {
      * charge-state have a inherently higher chance to be wrong. Therefore it
      * makes sense to calculate the FDR for these separately
      */
-    private boolean specialcase = false;
+    //private boolean specialcase = false;
+
+//    private HashSet<String> negativeGrouping = null;
     
     private PSM partOfUniquePSM;
     
@@ -123,6 +142,11 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public String crosslinker = NOLINKER;
 
+    /**
+     * the mass of the cross-linker
+     */
+    private double crosslinkerModMass = Double.NaN;
+    
     /**
      * I filter all cross-linker names through this HashMap.
      * This way all PSMs that have the same cross-linker will actually refer to 
@@ -144,7 +168,45 @@ public class PSM extends AbstractFDRElement<PSM> {
      * list them here.
      */
     private ArrayList<PSM> represents;
+    /**
+     * This indicates that the PSM is not of a cross-linked peptide pair two
+     * peptide that are not cross-linked but only stayed together do to 
+     * non-covalent interactions 
+     */
+    private boolean isNonCovalent = false;
     
+    /**
+     * the rank of the psm for a the referenced spectrum
+     */
+    private int rank = 1;
+    
+    /**
+     * for the mzIdentML export we need the index in the referenced files.
+     */
+    private Integer fileScanIndex;
+    /**
+     * for the mzIdentML export we need the actual name of the peaklist that was 
+     * the spectra originated from.
+     */
+    private String peakListName;
+    
+    /**
+     * will be set to true if a psm gets assigned a peakListName
+     */
+    private static boolean peakListNameFound = false;
+    
+    /**
+     * store arbitrary information
+     */
+    private HashMap<String,Object> otherInfo = new HashMap<>();
+    /**
+     * the type of each information
+     */
+    private HashMap<String,Class> otherInfoType = new HashMap<>();
+    /**
+     * is this a cross-link of consecutive peptides
+     */
+    private Boolean isConsecutive;
     
 
     /**
@@ -165,8 +227,8 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, String run, String scan, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double scoreRatio) {
-        this(psmID, peptide1, peptide2, (byte)site1, (byte)site2, isDecoy1, isDecoy2, (byte)charge, score, scoreRatio);
+    public PSM(String psmID, String run, String scan, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
+        this(psmID, peptide1, peptide2, (byte)site1, (byte)site2, isDecoy1, isDecoy2, (byte)charge, score, peptide1Score, peptide2Score);
         this.run = run;
         this.scan = scan;
     }
@@ -188,7 +250,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double scoreRatio) {
+    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
         this.psmID = psmID;
 //        this.id1 = id1;
 //        this.id2 = id2;
@@ -206,7 +268,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.charge = charge;
         this.score = score;
         this.preNormalisedScore = score;
-        this.scoreRatio = scoreRatio;
+        this.peptide1Score = peptide1Score;
+        this.peptide2Score = peptide2Score;
         this.peptide1 = peptide1;
         this.peptide2 = peptide2;
         
@@ -218,8 +281,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.isInternal = peptide1.sameProtein(peptide2);
         represents = new ArrayList<PSM>();
         represents.add(this);
-        
-//        setFDRGroup();
+        isNonCovalent = pepsite1<=0 && pepsite2<=0 && !isLinear;
         
     }
 
@@ -256,11 +318,13 @@ public class PSM extends AbstractFDRElement<PSM> {
     @Override
     public boolean equals(Object l) {
         PSM c = (PSM) l;
+        if (isNonCovalent != c.isNonCovalent)
+            return false;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
         return this.score == c.score && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
-                (((c.scoreRatio == this.scoreRatio || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
+                ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
-                ((Math.round(100000*c.scoreRatio) == Math.round(100000-100000*this.scoreRatio) || (Double.isNaN(c.scoreRatio) && Double.isNaN(this.scoreRatio))) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
+                ((c.peptide1Score == this.peptide2Score &&c.peptide2Score == this.peptide1Score) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }
 
     /**
@@ -414,15 +478,23 @@ public class PSM extends AbstractFDRElement<PSM> {
         return charge;
     }
 
-    /**
-     * Score ratio is used to split the score for the as support for the matched 
-     * protein groups
-     * @return the scoreRatio
-     */
-    public double getScoreRatio() {
-        return scoreRatio;
+//    /**
+//     * Score ratio is used to split the score for the as support for the matched 
+//     * protein groups
+//     * @return the scoreRatio
+//     */
+//    public double getScoreRatio() {
+//        return scoreRatio;
+//    }
+
+    public double getPeptide1Score() {
+        return peptide1Score;
     }
 
+    public double getPeptide2Score() {
+        return peptide1Score;
+    }
+    
     /**
      * @return is the first peptide a decoy
      */
@@ -480,28 +552,28 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @return 
      */
     @Override
-    public int getFDRGroup() {
-        return fdrGroup;
+    public String getFDRGroup() {
+        return fdrGroup; 
     }
 
-    /**
-     * a name for the FDR-group
-     * @return 
-     */
-    @Override
-    public String getFDRGroupName() {
-        return PeptidePair.fdrGroupNames.get(fdrGroup);
-    }
+//    /**
+//     * a name for the FDR-group
+//     * @return 
+//     */
+//    @Override
+//    public String getFDRGroupName() {
+//        return PeptidePair.fdrGroupNames.get(fdrGroup);
+//    }
     
-    /**
-     * Returns the name for the given FDR-group-id
-     * @param fdrgroup
-     * @return 
-     */
-    public static String getFDRGroupName(int fdrgroup) {
-        return PeptidePair.getFDRGroupName(fdrgroup);
-    }    
-    
+//    /**
+//     * Returns the name for the given FDR-group-id
+//     * @param fdrgroup
+//     * @return 
+//     */
+//    public static String getFDRGroupName(int fdrgroup) {
+//        return PeptidePair.getFDRGroupName(fdrgroup);
+//    }    
+//    
     /**
      * Returns a list of links supported by this PSM.
      * As the ambiguity is handled in the Protein groups this will report 
@@ -557,14 +629,16 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setFDRGroup() {
         
-        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, isSpecialcase());
-       
+        fdrGroup = PeptidePair.getFDRGroup(peptide1, peptide2, isLinear(), isInternal, this.getNegativeGrouping(), getPositiveGrouping(),isNonCovalent ? "NonCovalent":"");
+        String ag = RArrayUtils.toString(getAdditionalFDRGroups(), " ");
+        if (!ag.isEmpty())
+            fdrGroup = ag + " " + fdrGroup;
     }     
 
     /**
      * set the FDR group according to the information on this PSM
      */
-    public void setFDRGroup(int fdrGroup) {
+    public void setFDRGroup(String fdrGroup) {
         
         this.fdrGroup = fdrGroup;
        
@@ -696,26 +770,6 @@ public class PSM extends AbstractFDRElement<PSM> {
     @Override
     public int getPeptidePairCount() {
         return 1;
-    }
-
-    /**
-     * Is this a special case. E.g. PSMs that where matched with unknown 
-     * charge-state have a inherently higher chance to be wrong. Therefore it
-     * makes sense to calculate the FDR for these separately
-     * @return the specialcase
-     */
-    public boolean isSpecialcase() {
-        return specialcase;
-    }
-
-    /**
-     * Is this a special case. E.g. PSMs that where matched with unknown 
-     * charge-state have a inherently higher chance to be wrong. Therefore it
-     * makes sense to calculate the FDR for these separately
-     * @param specialcase the specialcase to set
-     */
-    public void setSpecialcase(boolean specialcase) {
-        this.specialcase = specialcase;
     }
 
     /**
@@ -950,4 +1004,151 @@ public class PSM extends AbstractFDRElement<PSM> {
     public ProteinGroup getProteinGroup2() {
         return getPeptide2().getProteinGroup();
     }
+
+    /**
+     * @return the isNonCovalent
+     */
+    public boolean isNonCovalent() {
+        return isNonCovalent;
+    }
+
+    /**
+     * @param isNonCovalent the isNonCovalent to set
+     */
+    public void setNonCovalent(boolean isNonCovalent) {
+        this.isNonCovalent = isNonCovalent;
+    }
+
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGroups != null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null)
+//            this.positiveGroups = null;
+//        else {
+//            this.positiveGroups = new HashSet<String>();
+//            this.positiveGroups.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return this.positiveGroups;
+//    }
+
+    /**
+     * the rank of the psm for a the referenced spectrum
+     * @return the rank
+     */
+    public int getRank() {
+        return rank;
+    }
+
+    /**
+     * the rank of the psm for a the referenced spectrum
+     * @param rank the rank to set
+     */
+    public void setRank(int rank) {
+        this.rank = rank;
+    }
+
+    
+    /**
+     * @return the fileScanIndex
+     */
+    public Integer getFileScanIndex() {
+        return fileScanIndex;
+    }
+
+    /**
+     * @param fileScanIndex the fileScanIndex to set
+     */
+    public void setFileScanIndex(int fileScanIndex) {
+        this.fileScanIndex = fileScanIndex;
+    }    
+    
+    
+    
+    /**
+     * @return the fileScanIndex
+     */
+    public String getPeakListName() {
+        return peakListName;
+    }
+
+    /**
+     * @param fileScanIndex the fileScanIndex to set
+     */
+    public void setPeakListName(String peakListName) {
+        this.peakListName = peakListName;
+        this.peakListNameFound = true;
+    }    
+
+    /**
+     * @returwas a peakfilename provided
+     */
+    public static boolean getPeakListNameFound() {
+        return peakListNameFound;
+    }
+
+    /**
+     * the mass of the cross-linker
+     * @return the crosslinkerModMass
+     */
+    public double getCrosslinkerModMass() {
+        return crosslinkerModMass;
+    }
+
+    /**
+     * the mass of the cross-linker
+     * @param crosslinkerModMass the crosslinkerModMass to set
+     */
+    public void setCrosslinkerModMass(double crosslinkerModMass) {
+        this.crosslinkerModMass = crosslinkerModMass;
+    }
+
+    /**
+     * is this a cross-link of consecutive peptides
+     * @return the isConsecutive
+     */
+    public boolean isConsecutive() {
+        if (isConsecutive == null) {
+            if (!isInternal()) {
+                isConsecutive = false;
+            } else {
+                HashMap<Protein,IntArrayList> pep1pos =  this.peptide1.getPositions();
+                int peplen1 = this.peptide1.length;
+                HashMap<Protein,IntArrayList> pep2pos =  this.peptide2.getPositions();
+                int peplen2 = this.peptide2.length;
+                
+                for (Map.Entry<Protein,IntArrayList> e : pep1pos.entrySet()) {
+                    IntArrayList pos2 = pep2pos.get(e.getKey());
+                    if (pos2 != null) {
+                        for (int p2 : pos2) {
+                            for (int p1 : e.getValue()) {
+                                if (p1+peplen1 == p2 || p2+peplen2 == p1) {
+                                    isConsecutive = true;
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+                isConsecutive = false;
+            }
+        }
+        return isConsecutive;
+    }
+
+    /**
+     * is this a cross-link of consecutive peptides
+     * @param isConsecutive the isConsecutive to set
+     */
+    public void setConsecutive(boolean isConsecutive) {
+        this.isConsecutive = isConsecutive;
+    }
+    
 }

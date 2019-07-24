@@ -20,10 +20,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
+import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.MapUtils;
+import org.rappsilber.utils.RArrayUtils;
 
 /**
  *
@@ -48,11 +49,13 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     protected double m_PPIfdr = -1;
     protected ProteinGroupPair m_ppi;
     protected boolean m_linkssorted = false;
-    private boolean m_specialOnly = true;
+//    private HashSet<String> m_NegativeGrouping;
     private HashMap<String, HashSet<String>> runtoScan = null;  
-    private Integer fdrGroup = null;
+    private String fdrGroup = null;
+    private boolean isNonCovalent  = false;
     
     public static int MIN_DISTANCE_FOR_LONG = 0;
+//    private HashSet<String> positiveGroups;
     
 
 
@@ -61,6 +64,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         Peptide peptide2 = pp.getPeptide2();
         int pepSite1 = pp.getPeptideLinkSite1();
         int pepSite2 = pp.getPeptideLinkSite2();
+        isNonCovalent = pp.isNonCovalent();
         position1=new HashMap<Protein, IntArrayList>(peptide1.getPositions().size());
         for (Protein p : peptide1.getPositions().keySet()) {
             IntArrayList peppos = peptide1.getPositions().get(p).clone();
@@ -126,7 +130,9 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             for (int p : ia) 
                 hashcode += p;
         }
-        m_specialOnly = pp.isSpecialcase();
+        this.m_negativeGroups = pp.getNegativeGrouping();
+        
+        this.m_positiveGroups = pp.getPositiveGrouping();
     }
 
     @Override
@@ -159,6 +165,12 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         if (o instanceof ProteinGroupLink) {
             
             ProteinGroupLink pgl = (ProteinGroupLink) o;
+
+            if (isNonCovalent != pgl.isNonCovalent)
+                return false;
+
+            if (isNonCovalent != ((ProteinGroupLink) o).isNonCovalent)
+                return false;
 
             // is it a complete internal link? - meaning a link within the same protein-group (as opposed links between groups that contain a comon protein)
             if (pg1.equals(pg2) && pg1.equals(pgl.pg1) && pg1.equals(pgl.pg2))
@@ -224,51 +236,74 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             support.addAll(o.getPeptidePairs());
             this.score = Math.sqrt(score*score + o.getScore() * o.getScore());
         }
-        this.m_specialOnly &= o.m_specialOnly;
+        
+        addFDRGroups(o);
+        
     }
 
 
-    public int getFDRGroup() {
+    public String getFDRGroup() {
         if (fdrGroup == null) {
-            int group = (isInternal?1:0) + (m_specialOnly?2:0);
+            if (isInternal) {
+                fdrGroup = "Internal";
+            } else {
+                fdrGroup = "Between";
+            }
+            if (m_negativeGroups != null)
+                fdrGroup += " [n" + RArrayUtils.toString(m_negativeGroups,", n") +"]";
+            
+            if (isNonCovalent)
+                fdrGroup += " NonCovalent";
+
+            if (m_positiveGroups!= null)
+                fdrGroup += " has [p" + RArrayUtils.toString(m_positiveGroups,", p") + "]";
+
             if (MIN_DISTANCE_FOR_LONG > 0 && isInternal && getProteinGroup1().size() + getProteinGroup1().size() ==2) {
                 for (int f : getPosition1().values().iterator().next()) {
                     for (int t : getPosition2().values().iterator().next()) {
                         if (Math.abs(f-t) > MIN_DISTANCE_FOR_LONG) {
-                            group+=4;
+                            fdrGroup += " SeqDist>"+MIN_DISTANCE_FOR_LONG;
+                            break;
                         }
                     }
                 }
             }
-            fdrGroup = group;
+            
+            fdrGroup = FDRGroupNames.get(fdrGroup);
         }
         return fdrGroup;
     }
 
-    public String getFDRGroupName() {
-        return getFDRGroupName(getFDRGroup());
-    }
+//    public String getFDRGroupName() {
+//        return getFDRGroupName(getFDRGroup());
+//    }
 
-    public static String getFDRGroupName(int group) {
-        String name = "";
-        switch(group % 4) {
-            case 0 : name = "Between";
-                break;
-            case 1 : name =  "Within";
-                break;
-            case 2 : name = "Special Between";
-                break;
-            case 3 : name = "Special Within";
-                break;
-            case -1 : name = "ALL";
-        }
-        if (group / 4 == 1 && !name.isEmpty()) {
-            name += " long";
-        }
-        if (name.isEmpty())
-            return "Unknown";
-        return name;
-    }
+//    public static String getFDRGroupName(int group) {
+//        String name = "";
+//        int g=group;
+//        if (group < -1)
+//            group = (-group)-2;
+//        switch(group % 4) {
+//            case 0 : name = "Between";
+//                break;
+//            case 1 : name =  "Within";
+//                break;
+//            case 2 : name = "Special Between";
+//                break;
+//            case 3 : name = "Special Within";
+//                break;
+//            case -1 : name = "ALL";
+//        }
+//        if (group / 4 == 1 && !name.isEmpty()) {
+//            name += " long";
+//        }
+//        if (g<-2)
+//            name = "NonCovalent " + name;
+//            
+//        if (name.isEmpty())
+//            return "Unknown";
+//        return name;
+//    }
     
 //    public static String getFDRGroupName(int group) {
 //        return group == 1? "Internal" : "Between";
@@ -395,29 +430,41 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         return getDescriptions(position2);
     }
     
-    public String site1Sites() {
+    public ArrayList<Integer> ProteinSites(int site) {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
         StringBuffer sb = new StringBuffer(); 
-        for (Protein p : position1.keySet()) {
-            IntArrayList pos = position1.get(p);
+        HashMap<Protein, IntArrayList> allpos;
+        if (site == 0)
+            allpos = position1;
+        else 
+            allpos = position2;
+        for (Protein p : allpos.keySet()) {
+            IntArrayList pos = allpos.get(p);
             for (Integer i : pos) {
-                sb.append(";");
-                sb.append(i);
+                ret.add(i);
             }
         }
-        return sb.substring(1);
+        return ret;
+    }
+    public ArrayList<Integer> site1Sites() {
+        return ProteinSites(0);
     }
 
-    public String site2Site() {
-        StringBuffer sb = new StringBuffer(); 
-        for (Protein p : position2.keySet()) {
-            IntArrayList pos = position2.get(p);
-            for (Integer i : pos) {
-                sb.append(";");
-                sb.append(i);
-            }
-        }
-        return sb.substring(1);
-    }    
+    public ArrayList<Integer> site2Sites() {
+        return ProteinSites(1);
+    }
+    
+//    public String site2Sites() {
+//        StringBuffer sb = new StringBuffer(); 
+//        for (Protein p : position2.keySet()) {
+//            IntArrayList pos = position2.get(p);
+//            for (Integer i : pos) {
+//                sb.append(";");
+//                sb.append(i);
+//            }
+//        }
+//        return sb.substring(1);
+//    }    
     
 
     public String toString() {
@@ -444,8 +491,8 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         return m_fdr;
     }
     
-    public void setFDRGroup(int fdrGroup) {
-        this.fdrGroup = fdrGroup;
+    public void setFDRGroup(String fdrGroup) {
+        this.fdrGroup = FDRGroupNames.get(fdrGroup);
     }
 
 //    /**
@@ -531,12 +578,44 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     }
     
     /**
-     * @return the m_specialOnly
+     * are all supporting PSMs "special" cases?
+     * @return the specialcase
      */
-    public boolean isSpecialOnly() {
-        return m_specialOnly;
-    }
-
+//    public boolean hasNegativeGrouping() {
+//        return m_NegativeGrouping!=null;
+//    }
+//
+////    /**
+////     * are all supporting PSMs "special" cases?
+////     * @param specialcase 
+////     */
+////    public void setNegativeGrouping(boolean specialcase) {
+////        if (specialcase) {
+////            this.m_NegativeGrouping = "Special";
+////        } else {
+////            this.m_NegativeGrouping = null;
+////        }
+////    }
+//
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @param cause
+//     * @param specialcase 
+//     */
+//    @Override
+//    public void setNegativeGrouping(String cause) {
+//        if (cause == null) {
+//            this.m_NegativeGrouping = null;
+//        } else {
+//            this.m_NegativeGrouping = new HashSet<String>();
+//            this.m_NegativeGrouping.add(cause);
+//        }
+//    }
+//    
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        return this.m_NegativeGrouping;
+//    }
     /**
      * @return the position1
      */
@@ -570,5 +649,41 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     public boolean isBetween() {
         return !isInternal;
     }
+
+    /**
+     * @return the isNonCovalent
+     */
+    public boolean isNonCovalent() {
+        return isNonCovalent;
+    }
+
+    /**
+     * @param isNonCovalent the isNonCovalent to set
+     */
+    public void setNonCovalent(boolean isNonCovalent) {
+        this.isNonCovalent = isNonCovalent;
+    }
+
+//
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGroups != null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null) {
+//            this.positiveGroups = null;
+//        }else {
+//            this.positiveGroups = new HashSet<String>(1);
+//            this.positiveGroups.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return this.positiveGroups;
+//    }
+
     
 }

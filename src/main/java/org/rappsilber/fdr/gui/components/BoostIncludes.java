@@ -26,7 +26,7 @@ import javax.swing.event.EventListenerList;
  *
  * @author lfischer
  */
-public class BoostIgnores extends javax.swing.JPanel {
+public class BoostIncludes extends javax.swing.JPanel {
 
 //    protected EventListenerList listenerList = new EventListenerList();
     private FDRSettings settings;
@@ -34,17 +34,18 @@ public class BoostIgnores extends javax.swing.JPanel {
     /**
      * Creates new form BoostIgnores
      */
-    public BoostIgnores() {
+    public BoostIncludes() {
         initComponents();
     }
 
-    public BoostIgnores(FDRSettings settings) {
+    public BoostIncludes(FDRSettings settings) {
         this();
         this.settings = settings;
         ckPSM.setSelected(settings.boostPSMs());
         ckPepPair.setSelected(settings.boostPeptidePairs());
         ckProt.setSelected(settings.boostProteins());
         ckLinks.setSelected(settings.boostLinks());
+//        ckSubScores.setSelected(settings.boostSubScores());
     }
 
     /**
@@ -129,26 +130,30 @@ public class BoostIgnores extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton1, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(ckPSM)
-                    .addComponent(ckPepPair)
-                    .addComponent(ckProt)
-                    .addComponent(ckLinks)
-                    .addComponent(jLabel1)))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jButton1, javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addGroup(layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(ckPSM)
+                                .addComponent(ckPepPair)
+                                .addComponent(ckProt)
+                                .addComponent(jLabel1))
+                            .addContainerGap(18, Short.MAX_VALUE)))
+                    .addComponent(ckLinks)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(ckPSM)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(ckPSM)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPepPair)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckProt)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckLinks)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
                 .addComponent(jButton1))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -158,6 +163,7 @@ public class BoostIgnores extends javax.swing.JPanel {
         settings.boostPeptidePairs(ckPepPair.isSelected());
         settings.boostProteins(ckProt.isSelected());
         settings.boostLinks(ckLinks.isSelected());
+        //settings.boostSubScores(ckSubScores.isSelected());
         fireActionPerformed(evt);
     }//GEN-LAST:event_jButton1ActionPerformed
 

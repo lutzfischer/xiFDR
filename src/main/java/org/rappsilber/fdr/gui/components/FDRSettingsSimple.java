@@ -40,6 +40,8 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private double m_protfdr = 100;
     private double m_linkfdr = 100;
     private double m_ppifdr = 100;
+    private int m_minTD = DEFAULT_MIN_TD_COUNT;
+
     
     private boolean m_filterToUniquePSM = true;
     
@@ -122,11 +124,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
             }
             btnStopBoost.setEnabled(ckMaximize.isSelected());            
             raiseStartCalc(ckMaximize.isSelected());
-///        } else {
-//            for (ActionListener al : m_calc_listener) {
-//                al.actionPerformed(new ActionEvent(this, -1, "calc"));
-//            }
-//        }
 
     }
     
@@ -162,7 +159,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         if (cbFDRLevel.getSelectedItem() == OfflineFDR.FDRLevel.PROTEINGROUPLINK)
             return ((Double) spFDR.getValue())/100.0;
         else 
-            return m_ppifdr;
+            return m_linkfdr;
     }
 
     @Override
@@ -170,7 +167,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         if (cbFDRLevel.getSelectedItem() == OfflineFDR.FDRLevel.PROTEINGROUPPAIR)
             return ((Double) spFDR.getValue())/100.0;
         else 
-            return 1;
+            return m_ppifdr;
     }
 
     @Override
@@ -519,7 +516,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCalc;
-    private javax.swing.JButton btnStopBoost;
+    public javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbFDRLevel;
     private javax.swing.JCheckBox ckBoostBetween;
     private javax.swing.JCheckBox ckDirectional;
@@ -543,6 +540,16 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 //    @Override
 //    public boolean isEnabeled(boolean e) {
 //    }
+
+    @Override
+    public void setMinTD(Integer c) {
+        m_minTD = c;
+    }
+
+    @Override
+    public int getMinTD() {
+        return m_minTD;
+    }
 
 
 }

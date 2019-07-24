@@ -38,13 +38,17 @@ public class FDRSettingsImpl implements FDRSettings {
     boolean PPIDirectional;
     boolean PSMDirectional;
     boolean PeptidePairDirectional;
-    double ReportFactor;
+    double ReportFactor = 1000000;
     boolean filterToUniquePSM;
     protected boolean boostPSM = true;
     protected boolean boostPeptidePairs = true;
     protected boolean boostProteins = true;
     protected boolean boostLinks = true;
+//    private boolean boostSubScores = false;
     protected boolean groupByPPI = false;
+    int minTD = DEFAULT_MIN_TD_COUNT;
+    private boolean filterConsectutivePeptides;
+    private double subScoreCutOff = 1;
     
     @Override
     public void addCalcListener(ActionListener al) {
@@ -265,6 +269,7 @@ public class FDRSettingsImpl implements FDRSettings {
         this.setMinPPIPepCount(settings.getMinPPIPepCount());
         this.setMinPeptideLength(settings.getMinPeptideLength());
         this.setMinProteinPepCount(settings.getMinProteinPepCount());
+        this.setMinTD(settings.getMinTD());
         this.setPSMFDR(settings.getPSMFDR());
         this.setPSMDirectional(settings.isPSMDirectional());
         this.setPPIDirectional(settings.isPPIDirectional());
@@ -282,6 +287,9 @@ public class FDRSettingsImpl implements FDRSettings {
         this.boostPSMs(settings.boostPSMs());
         this.boostPeptidePairs(settings.boostPeptidePairs());
         this.boostProteins(settings.boostProteins());
+//        this.boostSubScores(settings.boostSubScores());
+//        this.setSubScoreCutOff(settings.getSubScoreCutOff());
+        this.setFilterConsecutivePeptides(settings.filterConsecutivePeptides());
     }
 
 
@@ -294,6 +302,15 @@ public class FDRSettingsImpl implements FDRSettings {
 
     }
 
+    
+//    public boolean boostSubScores() {
+//        return boostSubScores;
+//    }
+//
+//    public void boostSubScores(boolean boost) {
+//        boostSubScores = boost;
+//    }
+    
     public boolean boostPSMs() {
         return boostPSM;
     }
@@ -328,4 +345,32 @@ public class FDRSettingsImpl implements FDRSettings {
     public void setGroupByPSMCount(boolean groupByPPI) {
         this.groupByPPI=groupByPPI;
     }
+
+    @Override
+    public void setMinTD(Integer c) {
+        minTD =c;
+    }
+
+    @Override
+    public int getMinTD() {
+        return minTD;
+    }
+
+    @Override
+    public boolean filterConsecutivePeptides() {
+        return filterConsectutivePeptides;
+    }
+
+    @Override
+    public void setFilterConsecutivePeptides(boolean filterConsecutive) {
+        this.filterConsectutivePeptides=filterConsecutive;
+    }
+    
+    public double getSubScoreCutOff() {
+        return this.subScoreCutOff;
+    }
+    public void setSubScoreCutOff(double localfdr) {
+        this.subScoreCutOff = localfdr;
+    }
+    
 }

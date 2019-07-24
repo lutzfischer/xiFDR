@@ -18,13 +18,11 @@ package org.rappsilber.fdr.entities;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
-import org.rappsilber.utils.DoubleArrayList;
+import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
 
@@ -45,10 +43,10 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     public static boolean ISTARGETED = false;
     /** length groups used for doing a length depended FDR-grouping */
     protected static int[] lenghtGroup;
-    /** meaningful names for the FDR-groups */
-    public static HashMap<Integer, String> fdrGroupNames = new HashMap<Integer, String>();
+//    /** meaningful names for the FDR-groups */
+//    public static HashMap<Integer, String> fdrGroupNames = new HashMap<Integer, String>();
     /** is used in the rappsilber group internally for a a specific search type */ 
-    private static Pattern targetMod = Pattern.compile("X([0-9]+(\\.[0-9]+)?)");
+    private static Pattern targetMod = Pattern.compile("X(-?[0-9]+(\\.[0-9]+)?)");
     
     /**
      * id of peptide1
@@ -70,15 +68,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     /**
      * overall score of this pair
      */
-    private double score;
+    private double score = Double.NaN;
     
+    /**
+     * overall score of this pair
+     */
+    private double peptide1score = Double.NaN;
     
+    /**
+     * overall score of this pair
+     */
+    private double peptide2score = Double.NaN;
+
     /**
      * Cross-linker
      */
     private String crosslinker;
-    /** top-score per charge state */
-    private DoubleArrayList chargeTopScoresRatios = new DoubleArrayList();
+    ///** top-score per charge state */
+    //private DoubleArrayList chargeTopScoresRatios = new DoubleArrayList();
     /**
      * top match per chare state
      */
@@ -116,7 +123,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     private boolean isDD = false;
 
     /** FDR group assigned to this peptide pair */
-    private int fdrGroup;
+    private String fdrGroup;
     /** fdr assigned to the score of this peptidepair */
     public double m_fdr = -1;
     /** the fdr of the link that is supported by this peptide pair*/
@@ -128,8 +135,17 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     /** proteingroup supported by this peptidepair that passed the fdr */
     public ProteinGroup fdrProteinGroup2 = null;
     /** are all supporting PSMs special cases? */
-    private boolean specialcase = false;
+//    private HashSet<String> negativeGroups = null;
 
+    /** indicates that the two peptides where in the same spectrum but non-covalently linked */
+    private boolean isNonCovalent = false;
+//    private HashSet<String> positiveGroups;
+        /**
+     * is this a cross-link of consecutive peptides
+     */
+    private Boolean isConsecutive;
+    
+    
     /**
      * constructor
      * @param psm 
@@ -159,17 +175,20 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         this.psms.add(psm);
         this.chargeTopScoresPSM = new PSM[psm.getCharge()+1];
         this.chargeTopScoresPSM[psm.getCharge()] = psm;
-        this.chargeTopScoresRatios.set(psm.getCharge(), psm.getScoreRatio());
+        //this.chargeTopScoresRatios.set(psm.getCharge(), psm.getScoreRatio());
 
         this.hashcode = (peptide1.hashCode() + peptide2.hashCode()) % 100000 * 10 + (pepsite1 + pepsite2) % 10;
 
         this.isLinear = peptide1 == Peptide.NOPEPTIDE || peptide2 == Peptide.NOPEPTIDE;
         this.isLoop = isLinear && pepsite1 >= 0 && pepsite2 >= 0;
         this.isInternal = peptide1.sameProtein(peptide2);
-        this.specialcase = psm.isSpecialcase();
+        addFDRGroups(psm);
         //this.score = psm.getScore();
+        isNonCovalent = psm.isNonCovalent();
 
         setFDRGroup();
+        this.m_positiveGroups = psm.getPositiveGrouping();
+        this.m_negativeGroups = psm.getNegativeGrouping();
 
     }
 
@@ -181,6 +200,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     @Override
     public boolean equals(Object l) {
         PeptidePair c = (PeptidePair) l;
+        if (isNonCovalent != c.isNonCovalent)
+            return false;
+        
         return  crosslinker == c.crosslinker && 
                 ((c.peptide1.equals(peptide1) && c.peptide2.equals(peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2)
                 || (c.peptide2.equals(peptide1) && c.peptide1.equals(peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
@@ -197,7 +219,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             return;
         }
         this.psms.addAll(p.psms);
-        boolean invertScoreRatio = false;
+//        boolean invertScoreRatio = false;
         // transfer topScores and match-ids
         if (p.chargeTopScoresPSM.length > chargeTopScoresPSM.length) {
             PSM[] dummy = chargeTopScoresPSM;
@@ -216,29 +238,25 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             if (cpsm == null || ppsm.getScore() > cpsm.getScore()) {
 
                 chargeTopScoresPSM[i]= ppsm;
-                if (invertScoreRatio) {
-                    chargeTopScoresRatios.set(i, 1 - p.chargeTopScoresRatios.get(i));
-                } else {
-                    chargeTopScoresRatios.set(i, p.chargeTopScoresRatios.get(i));
-                }
+//                if (invertScoreRatio) {
+//                    chargeTopScoresRatios.set(i, 1 - p.chargeTopScoresRatios.get(i));
+//                } else {
+//                    chargeTopScoresRatios.set(i, p.chargeTopScoresRatios.get(i));
+//                }
                 
             }
             
         }
+        boolean setFDR = false;
+        addFDRGroups(p);
         
         if (p.isInternal && !isInternal) {
-            
             isInternal = true;
-            if (specialcase && !p.isSpecialcase())
-                specialcase = false;
+            setFDR = true;
+        } 
+        
+        if (setFDR)
             setFDRGroup();
-            
-        } else if (specialcase && !p.isSpecialcase()) {
-            
-            specialcase = false;
-            setFDRGroup();
-            
-        }
         
     }
 
@@ -248,11 +266,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      */
     public void setScore() {
         score = 0;
+        peptide1score=0;
+        peptide2score=0;
         for (PSM psm : chargeTopScoresPSM) {
-            if (psm!=null)
+            if (psm!=null) {
                 score += psm.getScore() * psm.getScore();
+                if (psm.getPeptide1() == getPeptide1()) {
+                    peptide1score+=psm.getPeptide1Score()*psm.getPeptide1Score();
+                    peptide2score+=psm.getPeptide2Score()*psm.getPeptide2Score();
+                } else {
+                    peptide1score+=psm.getPeptide2Score()*psm.getPeptide2Score();
+                    peptide2score+=psm.getPeptide1Score()*psm.getPeptide1Score();
+                }
+            }
+                        
         }
         score = Math.sqrt(score);
+        peptide1score = Math.sqrt(peptide1score);
+        peptide2score = Math.sqrt(peptide2score);
     }
 
     /**
@@ -320,18 +351,15 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     public double getProteinScore(Protein prot) {
+        if (Double.isNaN(peptide1score))
+            setScore();
         double score = 0;
         // is the protein among the first site of proteins
         ArrayList<Protein> prot1 = peptide1.getProteins();
         int prot1size = prot1.size();
         for (Protein p : prot1) {
             if (p.equals(prot)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                    double cscore = chargeTopScoresPSM[c].getScore() * chargeTopScoresRatios.get(c, 0) / prot1size;
-                    score += cscore * cscore;
-                }
+                score += peptide1score * peptide1score/prot1size;
                 break;
             }
         }
@@ -340,12 +368,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         int prot2size = prot2.size();
         for (Protein p : prot2) {
             if (p.equals(prot)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                    double cscore = chargeTopScoresPSM[c].getScore() * chargeTopScoresRatios.get(c, 0) / prot2size;
-                    score += cscore * cscore;
-                }
+                score += peptide1score * peptide1score/prot2size;
                 break;
             }
         }
@@ -358,24 +381,15 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     public double getPeptideScore(Peptide pep) {
-        double score = 0;
+        if (Double.isNaN(peptide1score))
+            setScore();
         // is the protein among the first site of proteins
         if (pep.equals(peptide1)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                double cscore = chargeTopScoresPSM[c].getScore() * chargeTopScoresRatios.get(c, 0);
-                score += cscore * cscore;
-            }
+            score += peptide1score * peptide1score;
         }
 
         if (pep.equals(peptide2)) {
-                for (int c =0; c<chargeTopScoresPSM.length;c++) {
-                    if (chargeTopScoresPSM[c]==null)
-                        continue;
-                double cscore = chargeTopScoresPSM[c].getScore() * (1 - chargeTopScoresRatios.get(c, 0));
-                score += cscore * cscore;
-            }
+            score += peptide2score * peptide2score;
         }
 
         return Math.sqrt(score);
@@ -436,7 +450,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return the score
      */
     public double getScore() {
-        if (score == 0) {
+        if (Double.isNaN(score)) {
             setScore();
         }
         return score;
@@ -510,35 +524,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return 
      */
     @Override
-    public int getFDRGroup() {
+    public String getFDRGroup() {
         return fdrGroup;
     }
-    /**
-     * a name for the fdr group that this peptide pair is assigned to
-     * @return 
-     */
-    @Override
-    public String getFDRGroupName() {
-        if (fdrGroup >= 100) {
-            return Integer.toString(fdrGroup);
-        }
-        return fdrGroupNames.get(fdrGroup);
-    }
 
-    /**
-     * translates FDR-group IDs into FDR-group names
-     * @param fdrgroup
-     * @return 
-     */
-    public static String getFDRGroupName(int fdrgroup) {
-        String name = fdrGroupNames.get(fdrgroup);
-        
-        if (name == null) {
-            return Integer.toString(fdrgroup);
-        }
 
-        return fdrGroupNames.get(fdrgroup);
-    }
+//    /**
+//     * translates FDR-group IDs into FDR-group names
+//     * @param fdrgroup
+//     * @return 
+//     */
+//    public static String getFDRGroupName(int fdrgroup) {
+//        String name = fdrGroupNames.get(fdrgroup);
+//        
+//        if (name == null) {
+//            return Integer.toString(fdrgroup);
+//        }
+//        return fdrGroupNames.get(fdrgroup);
+//    }
 
     /**
      * returns all supporting peptide pairs - meaning itself
@@ -648,15 +651,15 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         }
 
 
-        // give groups a name
-        String[] groupNames = new String[]{"Linear", "Within", "Between", "Linear Special", "Within Special", "Between Special"};
-        fdrGroupNames.put(-1, "all combined");
-        for (int gn = 0; gn < groupNames.length; gn++) {
-            int g = gn * (lenghtGroup.length);
-            for (int i = 0; i < lenghtGroup.length; i++) {
-                fdrGroupNames.put(g + i, groupNames[gn] + "  >" + lenghtGroup[i]);
-            }
-        }
+//        // give groups a name
+//        String[] groupNames = new String[]{"Linear", "Within", "Between", "Linear Special", "Within Special", "Between Special"};
+//        fdrGroupNames.put(-1, "all combined");
+//        for (int gn = 0; gn < groupNames.length; gn++) {
+//            int g = gn * (lenghtGroup.length);
+//            for (int i = 0; i < lenghtGroup.length; i++) {
+//                fdrGroupNames.put(g + i, groupNames[gn] + "  >" + lenghtGroup[i]);
+//            }
+//        }
 
     }
 
@@ -669,85 +672,69 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @param specialCase
      * @return 
      */
-    public static int getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, boolean specialCase) {
-        int metaGroup = (isLinear ? 0 : (isInternal ? 1 :2));
-        //int metaGroup = (isLinear ? 0 : 1);//(isInternal ? 1 :2));
-        if (specialCase)
-            metaGroup+=3;
-        
+    public static String getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, Collection<String> negativeGroups, Collection<String> positiveGroups, String groupExt) {
+        String group = (isLinear ? "linear" : (isInternal ? "internal" :"between"));
+        groupExt=" " + groupExt;
+        if (negativeGroups != null && negativeGroups.size() > 0) {
+            ArrayList<String> ng = new ArrayList<>(negativeGroups);            
+            java.util.Collections.sort(ng);
+            groupExt += " n:" + RArrayUtils.toString(ng, " n:");
+        }
+        if (positiveGroups != null && positiveGroups.size() > 0) {
+            ArrayList<String> pg = new ArrayList<>(positiveGroups);
+            java.util.Collections.sort(pg);
+            groupExt += " p:" + RArrayUtils.toString(pg, " p:");
+        }
 
-        
-        int fdrGroup = metaGroup * lenghtGroup.length;
-
-        if (ISTARGETED) {
+        if (ISTARGETED) { // for targetd modifications add the mass to the fdr group
             // sorry is used rappsilber internally for targeted modification search 
             Matcher m = targetMod.matcher(pep1.getSequence());
             if (m.matches()) {
                 int mass = (int)(Math.round(Double.parseDouble(m.group(1))*10));
-                fdrGroup +=100 * mass;
-                for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                    if (pep2.length() > lenghtGroup[lg]) {
-                        fdrGroup += lg;
-                        if (fdrGroupNames.get(fdrGroup) == null) {
-                            String name = "Target " + mass/10 + " > " + lenghtGroup[lg] + (specialCase ? " special-case":"");
-                            fdrGroupNames.put(fdrGroup, name);
-                        }
-                        break;
-                    }
-                }
+//                fdrGroup +=100 * mass;
+                groupExt = " " + (mass/10.0) + groupExt;
                 
             } else {
                 m = targetMod.matcher(pep2.getSequence());
                 if (m.matches()) {
                     int mass = (int)(Math.round(Double.parseDouble(m.group(1))*10));
-                    fdrGroup += (100 * mass);
-                    for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                        if (pep1.length() > lenghtGroup[lg] && pep2.length() > lenghtGroup[lg]) {
-                            fdrGroup += lg;
-                            if (fdrGroupNames.get(fdrGroup) == null) {
-                                String name =  "Target " + mass/10 + " > " + lenghtGroup[lg] + (specialCase ? " special-case":"");
-                                fdrGroupNames.put(fdrGroup, name);
-                            }
-                            break;
-                        }
-                    }
-                } else {
-                    for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                        if (pep1.length() > lenghtGroup[lg] && pep2.length() > lenghtGroup[lg]) {
-                            fdrGroup += lg;
-                            break;
-                        }
-                    }
-                    
-                }
-            } 
-            return fdrGroup;
-            
-        } else {  
-        
-            if (isLinear) {
-
-                // and the next decision is based on minimum peptide length
-                for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                    if (pep1.length() > lenghtGroup[lg]) {
-                        fdrGroup += lg;
-                        break;
-                    }
-                }
-
-            } else {
-                // and the next decision is based on minimum peptide length
-                for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                    if (pep1.length() > lenghtGroup[lg] && pep2.length() > lenghtGroup[lg]) {
-                        fdrGroup += lg;
-                        break;
-                    }
+                    groupExt = " " + (mass/10.0) + groupExt;
                 }
             }
-            
+        }  
+        
+        if (isLinear) {
+            // and the next decision is based on minimum peptide length
+            for (int lg = 0; lg < lenghtGroup.length; lg++) {
+                if (pep1.length() > lenghtGroup[lg]) {
+                    group += " > " + lenghtGroup[lg];
+                    break;
+                }
+            }
+
+        } else {
+            int peplength1 = pep1.length();
+            int peplength2 = pep2.length();
+            int pepMinLen;
+            if (peplength1 == 1 && pep1.getSequence().matches("^X-?[0-9\\.,]*")) {
+                pepMinLen = peplength2;
+            } else if (peplength2 == 1 && pep2.getSequence().matches("^X-?[0-9\\.,]*")) {
+                pepMinLen = peplength1;
+            } else {
+                pepMinLen = Math.min(peplength1, peplength2);
+            }
+                
+            // and the next decision is based on minimum peptide length
+            for (int lg = 0; lg < lenghtGroup.length; lg++) {
+                if (pepMinLen > lenghtGroup[lg] ) {
+                    group += " > " +  lenghtGroup[lg];
+                    break;
+                }
+            }
         }
         
-        return fdrGroup;
+        String g = FDRGroupNames.get(group+groupExt);
+        return g;
         
     }
     
@@ -755,14 +742,14 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * define the fdr-group for this match
      */
     public void setFDRGroup() {
-        fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, specialcase);
-
+        String sc = null;
+        fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, m_negativeGroups, m_positiveGroups, isNonCovalent ? "NonCovalent":"");
     }
     /**
      * define the fdr-group for this match
      */
-    public void setFDRGroup(int fdrGroup) {
-        this.fdrGroup = fdrGroup;
+    public void setFDRGroup(String fdrGroup) {
+        this.fdrGroup = FDRGroupNames.get(fdrGroup);
     }
 
     /**
@@ -905,21 +892,47 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         return 1;
     }
 
-    /**
-     * are all supporting PSMs "special" cases?
-     * @return the specialcase
-     */
-    public boolean isSpecialcase() {
-        return specialcase;
-    }
-
-    /**
-     * are all supporting PSMs "special" cases?
-     * @param specialcase 
-     */
-    public void setSpecialcase(boolean specialcase) {
-        this.specialcase = specialcase;
-    }
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @return the specialcase
+//     */
+//    public boolean hasNegativeGrouping() {
+//        return negativeGroups!=null;
+//    }
+//
+////    /**
+////     * are all supporting PSMs "special" cases?
+////     * @param specialcase 
+////     */
+////    public void setNegativeGrouping(boolean specialcase) {
+////        if (specialcase) {
+////            this.negativeGroups = new ArrayList<>();
+////            this.negativeGroups.add("Special");
+////                    
+////        } else {
+////            this.negativeGroups = null;
+////        }
+////    }
+//
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @param specialcase 
+//     */
+//    @Override
+//    public void setNegativeGrouping(String cause) {
+//        if (cause == null) {
+//            this.negativeGroups = null;
+//        } else {
+//            this.negativeGroups = new HashSet<>();
+//            this.negativeGroups.add(cause);
+//        }
+//    }
+//    
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        return this.negativeGroups;
+//    }
+    
     
     /**
      * get the peptide at the given site
@@ -996,4 +1009,57 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     public ProteinGroup getProteinGroup2() {
         return peptide2.getProteinGroup();
     }
+
+    /**
+     * indicates that the two peptides where in the same spectrum but non-covalently linked
+     * @return the isNonCovalent
+     */
+    public boolean isNonCovalent() {
+        return isNonCovalent;
+    }
+
+    /**
+     * indicates that the two peptides where in the same spectrum but non-covalently linked
+     * @param isNonCovalent the isNonCovalent to set
+     */
+    public void setNonCovalent(boolean isNonCovalent) {
+        this.isNonCovalent = isNonCovalent;
+    }
+    
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGroups != null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null) {
+//            this.positiveGroups = null;
+//        } else {
+//            this.positiveGroups = new HashSet<String>();
+//            this.positiveGroups.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return this.positiveGroups;
+//    }
+
+    /**
+     * is this a cross-link of consecutive peptides
+     * @return the isConsecutive
+     */
+    public boolean isConsecutive() {
+        return psms.get(0).isConsecutive();
+    }
+
+    /**
+     * is this a cross-link of consecutive peptides
+     * @param isConsecutive the isConsecutive to set
+     */
+    public void setConsecutive(boolean isConsecutive) {
+        this.isConsecutive = isConsecutive;
+    }
+    
 }

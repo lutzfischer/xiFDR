@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
@@ -49,7 +48,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     private HashMap<Protein,IntArrayList> m_positions = new HashMap<Protein, IntArrayList>();
     //int posSize = 0;
     /** unique ID for this peptide */
-    private int id;
+    private long id;
     /** assigned FDR for this peptide */
     public double m_fdr = -1;
     /** mass of this peptide */
@@ -66,7 +65,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      * @param pos position in the protein
      * @param length the length of the peptide
      */
-    public Peptide(int id, String sequence, boolean isDecoy, Protein protein, int pos, int length) {
+    public Peptide(long id, String sequence, boolean isDecoy, Protein protein, int pos, int length) {
         this(id, sequence, isDecoy, new Protein[]{protein}, new int[]{pos}, length);
     }
     
@@ -82,7 +81,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      * @param pos positions within the proteins
      * @param length the length of the peptide
      */
-    public Peptide(int id, String sequence, boolean isDecoy, Protein[] protein, int[] pos, int length) {
+    public Peptide(long id, String sequence, boolean isDecoy, Protein[] protein, int[] pos, int length) {
         this.sequence = sequence;
         this.isDecoy = isDecoy;
         this.length = length;
@@ -165,17 +164,17 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      * @return 
      */
     @Override
-    public int getFDRGroup() {
+    public String getFDRGroup() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    /**
-     * Currently not considered for peptides outside peptide pairs
-     * @return 
-     */
-    @Override
-    public String getFDRGroupName() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+//    /**
+//     * Currently not considered for peptides outside peptide pairs
+//     * @return 
+//     */
+//    @Override
+//    public String getFDRGroupName() {
+//        throw new UnsupportedOperationException("Not supported yet.");
+//    }
 
     /**
      * is this a target peptide
@@ -220,7 +219,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
             }
         }
     }
-    
+
     /**
      * add a new source for the peptide - does not test, whether the peptide 
      * position was already registered for a protein
@@ -512,14 +511,14 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     /**
      * @return the unique peptide id
      */
-    public int getId() {
+    public long getId() {
         return id;
     }
 
     /**
      * @param id the peptide-id
      */
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -576,7 +575,39 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     }
 
     @Override
-    public void setFDRGroup(int fdrGroup) {
+    public void setFDRGroup(String fdrGroup) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public boolean hasNegativeGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public void setNegativeGrouping(String v) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+
 }

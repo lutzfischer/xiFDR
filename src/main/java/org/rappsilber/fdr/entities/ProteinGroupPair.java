@@ -17,12 +17,11 @@ package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import org.rappsilber.utils.SelfAdd;
 import java.util.HashSet;
-import org.rappsilber.fdr.groups.ProteinGroup;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
-import org.rappsilber.fdr.utils.FDRSelfAdd;
+import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.IntArrayList;
+import org.rappsilber.utils.RArrayUtils;
 
 /**
  *
@@ -52,12 +51,15 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
     private boolean isTT = false;
     private boolean isTD = false;
     private boolean isDD = false;
-    private int fdrGroup = 0;
+    private String fdrGroup;
     public double m_fdr = -1;
-    private boolean m_specialOnly = true;
+//    private boolean m_specialOnly = true;
+    private boolean isNonCovalent = false;
+//    private HashSet<String> positiveGroups;
+//    private HashSet<String> m_NegativeGrouping;
 
     
-    public ProteinGroupPair(ProteinGroup Prot1, ProteinGroup Prot2, double score, boolean isSpecialOnly) {
+    protected ProteinGroupPair(ProteinGroup Prot1, ProteinGroup Prot2, double score, boolean isSpecialOnly) {
         this.protein1 = Prot1;
         this.protein2 = Prot2;
         
@@ -78,24 +80,43 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         } else {
             isTT = true;
         }
+        if (isSpecialOnly)
+            setNegativeGrouping("Special");
         
-        fdrGroup = 0;
-        if (Prot1 == Prot2 || Prot1.hasOverlap(Prot2))
-            fdrGroup = 1;
-        m_specialOnly = isSpecialOnly;
-        if (m_specialOnly)
-            fdrGroup +=2;
-                
+    }
+
+    public void setFDRGroup() {
+        if (protein1 == protein2 || protein1.hasOverlap(protein2))
+            fdrGroup = "Internal";
+        else 
+            fdrGroup = "Between";
+
+        if (m_negativeGroups != null)
+            fdrGroup += " [n" + RArrayUtils.toString(m_negativeGroups,", n") +"]";
+
+        if (isNonCovalent) 
+            fdrGroup += " NonCovalent";
+
+        if (m_positiveGroups!= null)
+            fdrGroup += " has [p" + RArrayUtils.toString(m_positiveGroups,", p") + "]";
+        
+        fdrGroup = FDRGroupNames.get(fdrGroup);
     }
     
     
     public ProteinGroupPair(PeptidePair pp) {
-        this(pp.getPeptide1().getProteinGroup(), pp.getPeptide2().getProteinGroup(), pp.getScore(), pp.isSpecialcase());
+        this(pp.getPeptide1().getProteinGroup(), pp.getPeptide2().getProteinGroup(), pp.getScore(), pp.hasNegativeGrouping());
+        isNonCovalent = pp.isNonCovalent();
+        this.m_positiveGroups = pp.getPositiveGrouping();
+        this.m_negativeGroups = pp.getNegativeGrouping();
     }
 
     public ProteinGroupPair(ProteinGroupLink l) {
-        this(l.getProteinGroup1(), l.getProteinGroup2(),  l.getScore(), l.isSpecialOnly());
+        this(l.getProteinGroup1(), l.getProteinGroup2(),  l.getScore(), l.hasNegativeGrouping());
         this.links.add(l);
+        isNonCovalent = l.isNonCovalent();
+        this.m_positiveGroups = l.getPositiveGrouping();
+        this.m_negativeGroups = l.getNegativeGrouping();
     }
 
     @Override
@@ -118,6 +139,8 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         if (l ==  this)
             return true;
         ProteinGroupPair c = (ProteinGroupPair) l;
+        if (isNonCovalent != c.isNonCovalent)
+            return false;
         return (c.protein1.equals(protein1) && c.protein2.equals(protein2)) || (c.protein1.equals(protein2) && c.protein2.equals(protein1));
     }
 
@@ -130,10 +153,8 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
             return;
         this.links.addAll(pp.links);
         this.score = Math.sqrt(this.score * this.score + pp.score * pp.score);
-        m_specialOnly &= pp.m_specialOnly;
-        if (!m_specialOnly) {
-            fdrGroup = fdrGroup & 1;
-        }
+        
+        addFDRGroups(pp);
         
     }
 
@@ -215,24 +236,32 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         return isDD;
     }
 
-    public int getFDRGroup() {
+    public String getFDRGroup() {
+        if (fdrGroup == null) {
+            setFDRGroup();
+        }
         return fdrGroup;
     }
 
-    public String getFDRGroupName() {
-        return getFDRGroupName(fdrGroup);
-
-    }
 
     public static String getFDRGroupName(int fdrGroup) {
+        int g=fdrGroup;
+        if (fdrGroup < -1)
+            fdrGroup = (-fdrGroup)-2;
+        String n;
         switch (fdrGroup) {
-            case -1 : return "all combined";
-            case 0 : return "Between";
-            case 1 : return "Within";
-            case 2 : return "Special Between";
-            case 3 : return "Special Within";
-            default : return "Unknown";
+            case -1 : n= "all combined"; break;
+            case 0 : n= "Between"; break;
+            case 1 : n= "Within"; break;
+            case 2 : n= "Special Between"; break;
+            case 3 : n= "Special Within"; break;
+            default : return "Unknown"; 
         }
+        if (g<-2) {
+            return "NonCovalent " + n;
+        }
+        return n;
+        
     }
     
     
@@ -370,8 +399,68 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
     /**
      * @param fdrGroup the fdrGroup to set
      */
-    public void setFDRGroup(int fdrGroup) {
-        this.fdrGroup = fdrGroup;
+    public void setFDRGroup(String fdrGroup) {
+        this.fdrGroup = FDRGroupNames.get(fdrGroup);
     }
+    
+    
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGroups!=null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null) {
+//            this.positiveGroups = null;
+//        }else {
+//            this.positiveGroups = new HashSet<String>(1);
+//            this.positiveGroups.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return positiveGroups;
+//    }
+        
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @return the specialcase
+//     */
+//    public boolean hasNegativeGrouping() {
+//        return m_NegativeGrouping!=null;
+//    }
+//
+////    /**
+////     * are all supporting PSMs "special" cases?
+////     * @param specialcase 
+////     */
+////    public void setNegativeGrouping(boolean specialcase) {
+////        if (specialcase) {
+////            this.m_NegativeGrouping = "Special";
+////        } else {
+////            this.m_NegativeGrouping = null;
+////        }
+////    }
+//
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @param specialcase 
+//     */
+//    @Override
+//    public void setNegativeGrouping(String cause) {
+//        if (cause == null) {
+//            this.m_NegativeGrouping = null;
+//        } else {
+//            this.m_NegativeGrouping = new HashSet<>(1);
+//            this.m_NegativeGrouping.add(cause);
+//        }
+//    }
+//    
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        return this.m_NegativeGrouping;
+//    }
     
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.groups;
+package org.rappsilber.fdr.entities;
 
 import org.rappsilber.fdr.entities.Protein;
 import java.util.ArrayList;
@@ -26,6 +26,8 @@ import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupSite;
 import org.rappsilber.fdr.entities.Site;
 import org.rappsilber.fdr.utils.AbstractFDRElement;
+import org.rappsilber.fdr.utils.FDRGroupNames;
+import org.rappsilber.utils.RArrayUtils;
 
 /**
  *
@@ -44,9 +46,8 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     int hashcode = 5;
     public double m_fdr = -1;
     public static final ProteinGroup NOPROTEINGROUP = Peptide.NOPEPTIDE.getProteinGroup();
-    private static final int NOFDRGROUPDEFINED = -9999;
-    private volatile int fdrgroup = NOFDRGROUPDEFINED;
-    private boolean fdrgroupSet = false;
+    private static final String NOFDRGROUPDEFINED = "NOFDRGROUPDEFINED";
+    private volatile String fdrgroup;
     private boolean isDecoy = true;
 
 //    static {
@@ -62,6 +63,10 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
                 add(pep);
             }
         });
+        
+        this.m_positiveGroups = pep.getPositiveGrouping();
+        this.m_negativeGroups = pep.getNegativeGrouping();
+        
     }
 
     public ProteinGroup(Collection<Protein> proteins, Collection<PeptidePair> peps, boolean isDecoy) {
@@ -75,6 +80,14 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
             hashcode+= p.hashCode();
             this.isDecoy &= p.isDecoy();
         }
+        if (peps.size() > 0) {
+            PeptidePair first = peps.iterator().next();
+            this.m_positiveGroups = first.getPositiveGrouping();
+            this.m_negativeGroups = first.getNegativeGrouping();
+        }
+        
+        boolean hng = true;
+        HashSet<String> ng = new HashSet<>();
         for (PeptidePair pp : peps) {
             addPeptidePair(pp);
         }
@@ -104,6 +117,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         hasBetweenSupport |= p.hasBetweenSupport();
         isDecoy &= p.isDecoy();
         //setFDRGroup();
+        fdrgroup = null;
     }
 
     
@@ -118,23 +132,20 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     
 
     private void setFDRGroup() {
-//        boolean internalSupport = false;
-//        boolean linearSupport = false;
-//        boolean betweenSupport = false;
-//        int fdrgroup;
-//        for (PeptidePair pp : peppairs) {
-//            internalSupport |= pp.isInternal();
-//            linearSupport |= pp.isLinear();
-//            betweenSupport |= pp.isBetween();
-//            isDecoy &= pp.isDecoy();
-//        }
-//
-        fdrgroup = (hasInternalSupport ? 2:0) + (hasLinearSupport ?1 :0);
-        if (fdrgroup == 0 && hasBetweenSupport)
-            fdrgroup = 4;
+        fdrgroup ="";
+        if (hasLinearSupport)
+            fdrgroup="Linear";
+        if (hasInternalSupport) 
+            fdrgroup="LinearInternal";
+        if (fdrgroup.isEmpty())
+            fdrgroup = "Between";
+        if (hasNegativeGrouping()) 
+            fdrgroup += " [n" + RArrayUtils.toString(getNegativeGrouping(),", n") +"]";
+        if (hasPositiveGrouping()) 
+            fdrgroup += " [p" + RArrayUtils.toString(getPositiveGrouping(), " p") +"]";
+        
+        fdrgroup = FDRGroupNames.get(fdrgroup);
 
-        //this.fdrgroup=fdrgroup;
-        fdrgroupSet = true;
     }
 
     public double getScore() {
@@ -253,18 +264,20 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         hasLinearSupport |= o.hasLinearSupport();
         hasBetweenSupport |= o.hasBetweenSupport();
         isDecoy &= o.isDecoy();
-        
+        fdrgroup = null;
+        addFDRGroups(o);
+
     }
 
-    public int getFDRGroup() {
-        if (!fdrgroupSet)
+    public String getFDRGroup() {
+        if (fdrgroup==null)
             setFDRGroup();
         return fdrgroup;
     }
 
     @Override
-    public void setFDRGroup(int fdrGroup) {
-        this.fdrgroup = fdrGroup;
+    public void setFDRGroup(String fdrGroup) {
+        this.fdrgroup =FDRGroupNames.get(fdrGroup);
     }
     
     
@@ -318,7 +331,8 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         hasLinearSupport |= pp.isLinear();
         hasBetweenSupport |= pp.isBetween();
         isDecoy &= pp.isDecoy();
-
+        fdrgroup = null;
+        addFDRGroups(pp);
     }
 
     public String accessions() {
@@ -390,13 +404,13 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return isDecoy;
     }
 
-    public String getFDRGroupName() {
-        return Protein.getFDRGroupName(fdrgroup);
-    }
-
-    public static String getFDRGroupName(int fdrGroup) {
-        return Protein.getFDRGroupName(fdrGroup);
-    }
+//    public String getFDRGroupName() {
+//        return Protein.getFDRGroupName(fdrgroup);
+//    }
+//
+//    public static String getFDRGroupName(int fdrGroup) {
+//        return Protein.getFDRGroupName(fdrGroup);
+//    }
 
     public int proteinCount() {
         return groupproteins.size();
@@ -521,4 +535,64 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return NOPROTEINGROUP;
     }
     
+//    @Override
+//    public boolean hasPositiveGrouping() {
+//        return this.positiveGrouping!=null;
+//    }
+//    
+//    @Override
+//    public void setPositiveGrouping(String av) {
+//        if (av == null) {
+//            this.positiveGrouping = null;
+//        } else {
+//            this.positiveGrouping = new HashSet<String>(1);
+//            this.positiveGrouping.add(av);
+//        }
+//    }
+//
+//    @Override
+//    public HashSet<String> getPositiveGrouping() {
+//        return positiveGrouping;
+//    }
+//    
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @return the specialcase
+//     */
+//    public boolean hasNegativeGrouping() {
+//        return m_NegativeGrouping!=null;
+//    }
+////
+////    /**
+////     * are all supporting PSMs "special" cases?
+////     * @param specialcase 
+////     */
+////    public void setNegativeGrouping(boolean specialcase) {
+////        if (specialcase) {
+////            this.m_NegativeGrouping = "Special";
+////        } else {
+////            this.m_NegativeGrouping = null;
+////        }
+////    }
+////
+//    /**
+//     * are all supporting PSMs "special" cases?
+//     * @param cause
+//     * @param specialcase 
+//     */
+//    @Override
+//    public void setNegativeGrouping(String cause) {
+//        if (cause == null) {
+//            this.m_NegativeGrouping = null;
+//        } else {
+//            this.m_NegativeGrouping = new HashSet<String>(1);
+//            this.m_NegativeGrouping.add( cause);
+//        }
+//    }
+//    
+//    @Override
+//    public HashSet<String> getNegativeGrouping() {
+//        return this.m_NegativeGrouping;
+//    }    
+        
 }

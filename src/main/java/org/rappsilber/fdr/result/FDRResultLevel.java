@@ -27,7 +27,7 @@ import org.rappsilber.fdr.utils.HashedArrayList;
  * @author lfischer
  */
 public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
-    HashMap<Integer,SubGroupFdrInfo<T>> groups = new HashMap<>();
+    HashMap<String,SubGroupFdrInfo<T>> groups = new HashMap<>();
     public boolean isDirectional = false;
     private int within;
     private int between;
@@ -238,7 +238,7 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         this.linear = linear;
     }
 
-    public Set<Integer> getGroupIDs() {
+    public Set<String> getGroupIDs() {
         return groups.keySet();
     }
 
@@ -246,11 +246,11 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         return groups.values();
     }
 
-    public SubGroupFdrInfo<T> getGroup(Integer id) {
+    public SubGroupFdrInfo<T> getGroup(String id) {
         return groups.get(id);
     }
 
-    public void addGroup(int id, SubGroupFdrInfo<T> group) {
+    public void addGroup(String id, SubGroupFdrInfo<T> group) {
         groups.put(id, group);
     }    
     
