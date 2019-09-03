@@ -119,6 +119,12 @@ public interface FDRSettings {
     public boolean boostProteins();
     public void boostProteins(boolean boost);
 
+    public boolean boostPepCoverage();    
+    public void boostPepCoverage(boolean boost);    
+    public boolean boostDeltaScore();
+
+    public void boostDeltaScore(boolean boost);
+
     public boolean boostPSMs();
     public void boostPSMs(boolean boost);
 //    public boolean boostSubScores();
@@ -126,14 +132,33 @@ public interface FDRSettings {
     public boolean boostPeptidePairs();
     public void boostPeptidePairs(boolean boost);
     public boolean boostLinks();
+
     public void boostLinks(boolean boost);
     public boolean isGroupByPSMCount();
     public void setGroupByPSMCount(boolean groupByPPI);
+    
+    public double getMinPeptideCoverageFilter();
+    public void setMinPeptideCoverageFilter(double d);
+
+    public double getMinDeltaScoreFilter();
+    public void setMinDeltaScoreFilter(double d);
     
     public void setMinTD(Integer c) ;
 
     public int getMinTD();
 
+    public Boolean psmLocalFDR();
+    public Boolean peppairLocalFDR();
+    public Boolean protLocalFDR();
+    public Boolean linkLocalFDR();
+    public Boolean ppiLocalFDR();
+    public void psmLocalFDR(Boolean local);
+    public void peppairLocalFDR(Boolean local);
+    public void protLocalFDR(Boolean local);
+    public void linkLocalFDR(Boolean local);
+    public void ppiLocalFDR(Boolean local);
+    public boolean combineScoreAndDelta();
+    public void combineScoreAndDelta(boolean c);
 //    public double getSubScoreCutOff();
 //    public void setSubScoreCutOff(double localfdr);
     

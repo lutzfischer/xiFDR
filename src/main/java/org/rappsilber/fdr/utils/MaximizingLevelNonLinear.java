@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.filter;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import org.rappsilber.fdr.entities.PSM;
+package org.rappsilber.fdr.utils;
 
 /**
  *
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
-public interface PSMFilter {
-    /**
-     * filter the list of PSMs
-     * @param psm
-     * @return 
-     */
-    ArrayList<PSM> filter(Collection<PSM> psm);
+public class MaximizingLevelNonLinear extends MaximizeLevelInfo {
+    
+    public MaximizingLevelNonLinear(double maximumFDR, boolean boost, int steps) {
+        super(maximumFDR, boost, steps);
+    }
+    
+    
+    
 }

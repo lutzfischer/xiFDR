@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.MapUtils;

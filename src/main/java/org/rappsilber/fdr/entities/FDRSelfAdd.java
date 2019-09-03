@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.utils;
+package org.rappsilber.fdr.entities;
 
 import org.rappsilber.utils.SelfAdd;
 
@@ -89,6 +89,19 @@ public interface FDRSelfAdd<T> extends SelfAdd<T> { //, Comparable<T> {
      * @return 
      */
     double getFDR();
+
+    /**
+     * set the local FDR, of a match
+     * @param fdr 
+     */
+    void setPEP(double pep);
+    /**
+     * get the local FDR that is assigned to the score of this match
+     * @return 
+     */
+    Double getPEP();
+    
+    
     /**
      * how many unique peptides support this match
      * @return 

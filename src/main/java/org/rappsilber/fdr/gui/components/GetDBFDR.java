@@ -25,6 +25,7 @@ public class GetDBFDR extends javax.swing.JPanel {
     javax.swing.JButton btnSelectIDS = new javax.swing.JButton();
     public javax.swing.JButton btnRead = new javax.swing.JButton();
     public javax.swing.JCheckBox ckAdd = new javax.swing.JCheckBox();
+    public javax.swing.JCheckBox ckNormalize = new javax.swing.JCheckBox();
     javax.swing.JButton btnGetDBSize = new javax.swing.JButton();
     javax.swing.JTextField txtReadFilter = new javax.swing.JTextField();
     AdditionalFDRGroups additionalFDRGroups= new AdditionalFDRGroups();
@@ -52,14 +53,17 @@ public class GetDBFDR extends javax.swing.JPanel {
         btnRead.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 if (ckAdd.isSelected()) {
+                    
                     addNormalizedFromDB();
-                } else
+                } else {
                     readNewFromDB();
+                }
                 
             }
         });
 
         ckAdd.setText("Add");
+        ckNormalize.setText("Normalize");
 
         ckAdd.setEnabled(false);
 
@@ -119,6 +123,8 @@ public class GetDBFDR extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnSelectIDS)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(ckNormalize)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(ckAdd)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnRead)
@@ -146,6 +152,7 @@ public class GetDBFDR extends javax.swing.JPanel {
                 .addGroup(pInputDBLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnRead)
                     .addComponent(ckAdd)
+                    .addComponent(ckNormalize)
                     .addComponent(btnGetDBSize)
                     .addComponent(btnReadFilter)
                     .addComponent(btnSelectIDS))
@@ -188,7 +195,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             m_fdr = ofdr;
             btnGetDBSize.setEnabled(true);
 
-            readData(ofdr, searchIds);
+            readData(ofdr, searchIds, ckNormalize.isSelected());
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
             setStatus("error:" + ex);
@@ -197,7 +204,7 @@ public class GetDBFDR extends javax.swing.JPanel {
 
     protected void addNormalizedFromDB() {
         try {
-
+            final boolean normalize = ckNormalize.isSelected();
             setStatus("Start");
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Start");
 //            String searchId;
@@ -225,7 +232,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             ofdr.setDatabaseProvider(getSearch);
             btnGetDBSize.setEnabled(true);
 
-            readData(ofdr, searchIds, m_fdr);
+            readData(ofdr, searchIds, m_fdr, ckNormalize.isSelected());
             
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
@@ -264,18 +271,18 @@ public class GetDBFDR extends javax.swing.JPanel {
             // Establish network connection to database
             btnGetDBSize.setEnabled(false);
 
-            readData(m_fdr, searchIds);
+            readData(m_fdr, searchIds, ckNormalize.isSelected());
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
             setStatus("error:" + ex);
         }
     }
 
-    protected void readData(final DBinFDR ofdr, final int[] searchIds) {
-        this.readData(ofdr, searchIds, null);
+    protected void readData(final DBinFDR ofdr, final int[] searchIds, boolean normalize) {
+        this.readData(ofdr, searchIds, null, normalize);
     }
     
-    protected void readData(final DBinFDR ofdr, final int[] searchIds, final DBinFDR addTo) {
+    protected void readData(final DBinFDR ofdr, final int[] searchIds, final DBinFDR addTo, final boolean normalize) {
         fdrgui.setEnableCalc(false);
         fdrgui.setEnableRead(false);
         if (additionalFDRGroups.getFlagAutoValidated())
@@ -305,12 +312,25 @@ public class GetDBFDR extends javax.swing.JPanel {
                     fdrgui.setFdr(m_fdr);
                     fdrgui.setEnableRead(true);
                     fdrgui.setEnableCalc(true);
+                    if (normalize) {
+                        ofdr.normalizePSMsToFDR();
+                    }
                     
                     if (addTo != null) {
-                        ofdr.normalizePSMs();
-                        if (!addTo.isNormalized())
-                            addTo.normalizePSMs();
-                        addTo.addNormalisedPsmList(ofdr.getAllPSMs(), ofdr.getPsmNormalizationOffset());
+                        if (normalize && !addTo.isNormalized()) {
+                            addTo.normalizePSMsToFDR();
+                        }
+                        addTo.getAllPSMs().addAll(ofdr.getAllPSMs());
+//                        if (normalize) {
+//                            
+//                            addTo.addNormalisedPsmList(ofdr.getAllPSMs(), ofdr.getPsmNormalizationOffset());
+//                        } else {
+//                            addTo.getAllPSMs().addAll(ofdr.getAllPSMs());
+//                        }
+//                        ofdr.normalizePSMs();
+//                        if (!addTo.isNormalized())
+//                            addTo.normalizePSMs();
+//                        addTo.addNormalisedPsmList(ofdr.getAllPSMs(), ofdr.getPsmNormalizationOffset());
                     }
                     
                     

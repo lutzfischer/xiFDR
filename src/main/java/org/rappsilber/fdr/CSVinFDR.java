@@ -25,11 +25,13 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.PSM;
@@ -52,36 +54,40 @@ public class CSVinFDR extends OfflineFDR {
     public static String[][] DEFAULT_COLUMN_MAPPING=new String[][]{
         {"matchid", "spectrummatchid", "match id", "spectrum match id", "psmid"},
         {"isdecoy", "is decoy", "reverse", "decoy"},
-        {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy"},
-        {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy"},
+        {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy", "decoy p1"},
+        {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy", "decoy p2"},
         {"score", "match score", "match score", "pep score"},
         {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score"},
         {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score"},
         {"run", "run name", "raw file", "filename/id"},
         {"scan", "scan number", "ms/ms scan number", "spectrum number"},
-        {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1"},
-        {"pep2 position", "peptide position2", "start2", "peptide position 2", "PepPos2"},
-        {"pep1 link pos", "link1", "peptide1 link pos", "peptide link1", "peptide link 1", "from site","LinkPos1"},
-        {"pep2 link pos", "link2", "peptide2 link pos", "peptide link2", "peptide link 2" , "to site","LinkPos2"},
-        {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1"},
-        {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2"},
-        {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence"},
-        {"peptide2" , "peptide 2", "pepseq2"},
+        {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1", "start_pos_p1"},
+        {"pep2 position", "peptide position2", "start2", "peptide position 2", "PepPos2", "start_pos_p2"},
+        {"pep1 link pos", "link1", "peptide1 link pos", "peptide link1", "peptide link 1", "from site","LinkPos1", "link pos p1"},
+        {"pep2 link pos", "link2", "peptide2 link pos", "peptide link2", "peptide link 2" , "to site","LinkPos2", "link pos p2"},
+        {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1", "aa_len_p1"},
+        {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2", "aa_len_p2"},
+        {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence", "sequence_p1"},
+        {"peptide2" , "peptide 2", "pepseq2", "sequence_p2"},
         {"precursermz", "precursor mz", "experimental mz", "exp mz"},
         {"precursor charge", "precoursorcharge", "charge"},
         {"calculated mass", "calc mass", "theoretical mass"},
-        {"description1", "fasta1"},
-        {"description2", "fasta2"},
-        {"protein1", "display protein1", "accession1"},
-        {"protein2", "display protein2", "accession2"},
+        {"description1", "fasta1", "fasta_p1"},
+        {"description2", "fasta2", "fasta_p2"},
+        {"protein1", "display protein1", "accession1", "protein_p1"},
+        {"protein2", "display protein2", "accession2", "protein_p2"},
         {"rank", "match rank"},       
         {"info","info"},
         {"negative grouping","negativegrouping"},
         {"positive grouping","positivegrouping"},
         {"scan file index","scan index","scan id","file scan index","peak file index","peakfileindex","peakFileIndex","file spectrum index", "peak list index"},
-        {"peak file name","peakfilename","peakFilename","file spectrum name","peak list file","peak list file name"},
-        {"crosslinker","cross linker","cross linker name","cross-linker","cross-linker name"},
+        {"peak file name","peakfilename","peakFilename","file spectrum name","peak list file","peak list file name", "peaklist file"},
+        {"crosslinker","cross linker","cross linker name","cross-linker","cross-linker name", "crosslinker_name"},
         {"crosslinker mass","cross linker mass","crossLinkerModMass","cross linker mod mass","crosslinkerModMass"},
+        {"peptide coverage1", "peptide1 unique matched non lossy coverage", "unique_peak_primary_coverage_p1"},
+        {"peptide coverage2", "peptide2 unique matched non lossy coverage", "unique_peak_primary_coverage_p2"},
+        {"minimum peptide coverage", "min coverage pp"},
+        {"delta", "delta score", "dscore"},
     };
     
     public CSVinFDR() {
@@ -189,6 +195,10 @@ public class CSVinFDR extends OfflineFDR {
         Integer cPositiveGrouping = getColumn(csv,"positive grouping",true);
         Integer cScanInputIndex = getColumn(csv,"peak list index",true);
         Integer cPeakFileName = getColumn(csv,"peak list file",true);
+        Integer cDelta = getColumn(csv,"delta",true);
+        Integer cPep1Coverage = getColumn(csv,"peptide coverage1",true);
+        Integer cPep2Coverage = getColumn(csv,"peptide coverage1",true);
+        Integer cPepMinCoverage = getColumn(csv,"minimum peptide coverage",true);
         Integer cRank = getColumn(csv,"rank",true);
         
         int noID = 0;
@@ -200,223 +210,245 @@ public class CSVinFDR extends OfflineFDR {
         Pattern cterminalAminoAcids = Pattern.compile("\\."+terminalAminoAcids +"$");
         
         int noPSMID =0;
-        while (csv.next()) {
-            lineNumber++;
-            if (filter != null && !filter.fits(csv))
-                continue;
-            String psmID;
+        try {
+            while (csv.next()) {
+                lineNumber++;
+                if (filter != null && !filter.fits(csv))
+                    continue;
+                String psmID;
 
-            String pepSeq1 = csv.getValue(cpep1);
-            String pepSeq2 = csv.getValue(cpep2);
+                String pepSeq1 = csv.getValue(cpep1);
+                String pepSeq2 = csv.getValue(cpep2);
 
-            // if the sequence looks like K.PEPTIDEK.A assume that the first and 
-            // last aminoacid are leading and trailing aminoacids and not really part of the peptide
-            Matcher m1=hasTerminalAminoAcids.matcher(pepSeq1);
-            Matcher m2=hasTerminalAminoAcids.matcher(pepSeq2);
-            if ((pepSeq2 == null || pepSeq2.isEmpty()) && m1.matches()) {
-                pepSeq1 = m1.replaceAll("$1");
-            }
-                
-            if (m1.matches() && m2.matches()) {
-                pepSeq1 = m1.replaceAll("$1");
-                pepSeq2 = m2.replaceAll("$1");
-            }
+                // if the sequence looks like K.PEPTIDEK.A assume that the first and 
+                // last aminoacid are leading and trailing aminoacids and not really part of the peptide
+                Matcher m1=hasTerminalAminoAcids.matcher(pepSeq1);
+                Matcher m2=hasTerminalAminoAcids.matcher(pepSeq2);
+                if ((pepSeq2 == null || pepSeq2.isEmpty()) && m1.matches()) {
+                    pepSeq1 = m1.replaceAll("$1");
+                }
 
-            
-            Integer site1 = csv.getInteger(cpep1site,-1);
-            Integer site2 = csv.getInteger(cpep2site,-1); //pepSeq2 == null || pepSeq2.trim().isEmpty() ? -1 : csv.getInteger(cpep2site,-1);
-            
-            // do we have to generate an ID?
-            if (cpsmID == null) {
-                if (cscan == null || crun == null) {
-                    psmID = Integer.toString(noPSMID++);
-                } else {
-                    String key = "Scan: " + csv.getValue(cscan) + " Run: " + csv.getValue(crun);
-                    int c= pepSeq1.compareTo(pepSeq2) ;
-                    if (c > 0 || (c==0 && site1 > site2) ) {
-                        key=key +" P1_" + csv.getValue(cpep1) + " P2_" + csv.getValue(cpep2) + " " + csv.getInteger(cpep1site) + " " + csv.getInteger(cpep2site);
+                if (m1.matches() && m2.matches()) {
+                    pepSeq1 = m1.replaceAll("$1");
+                    pepSeq2 = m2.replaceAll("$1");
+                }
+
+
+                Integer site1 = csv.getInteger(cpep1site,-1);
+                Integer site2 = csv.getInteger(cpep2site,-1); //pepSeq2 == null || pepSeq2.trim().isEmpty() ? -1 : csv.getInteger(cpep2site,-1);
+
+                // do we have to generate an ID?
+                if (cpsmID == null) {
+                    if (cscan == null || crun == null) {
+                        psmID = Integer.toString(noPSMID++);
                     } else {
-                        key=key +" P1_" + csv.getValue(cpep2) + " P2_" + csv.getValue(cpep1) + " " + csv.getInteger(cpep2site) + " " + csv.getInteger(cpep1site);;
-                    }
-                    //psmID = PSMIDs.toIntValue(key);
-                    psmID = key;
-                }
-            }else
-                //psmID=csv.getInteger(cpsmID);
-                psmID=csv.getValue(cpsmID);
-            
-            
-            // if we have a column for the peptide length take that value
-            // otherwise count all capital letters in the sequence and define 
-            // this as length 
-            int peplen1 = cpep1len == null ? pepSeq1.replaceAll("[^A-Z]", "").length() : csv.getInteger(cpep1len);
-
-            Integer peplen2 = null;
-            if (cpep2len == null) 
-                if (pepSeq2 == null) {
-                    peplen2 = 0; 
-                } else {
-                    peplen2 = pepSeq2.replaceAll("[^A-Z]", "").length();
-                }
-            else {
-                peplen2 = csv.getInteger(cpep2len, 0);
-            }
-            
-            boolean isDecoy1 = csv.getBool(cpep1decoy,false);
-            boolean isDecoy2=  cpep2decoy == null ? false : csv.getBool(cpep2decoy, false);
-            int charge = csv.getInteger(cprecZ);
-            Double score = csv.getDouble(cscore);
-            String saccession1 = csv.getValue(caccession1);
-            String sdescription1 = csv.getValue(cdescription1);
-            String saccession2 = csv.getValue(caccession2);
-            String sdescription2 = csv.getValue(cdescription2);
-            String spepPosition1 = csv.getValue(cpeptide_position1);
-            String spepPosition2= csv.getValue(cpeptide_position2);
-            if (spepPosition2 == null || spepPosition2.trim().isEmpty()) 
-                spepPosition2 = "-1";
-            
-            
-            // how to split up the score
-            double scoreRatio = csv.getDouble(cscoreratio);
-            Double peptide1score = csv.getDouble(cPepScore1);
-            Double peptide2score = csv.getDouble(cPepScore2, 0.0);
-
-            if (Double.isNaN(peptide1score) && ! Double.isNaN(scoreRatio)) {
-                double ratio =(4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
-                peptide1score=score*ratio;
-                peptide2score=score*(1-ratio);
-            }
-            
-            String[] accessions1 =saccession1.split(";");
-            String[] accessions2 =saccession2.split(";");
-            String[] descriptions1 =sdescription1.split(";",-1);
-            String[] descriptions2 =sdescription2.split(";",-1);
-            String[] pepPositions1 =spepPosition1.split(";",-1);
-            String[] pepPositions2 =spepPosition2.split(";",-1);
-            
-            if (!sdescription1.isEmpty()) {
-                if (descriptions1.length != accessions1.length)
-                    throw new ParseException("Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
-            } else {
-                descriptions1 = accessions1;
-            }
-
-            if (!sdescription2.isEmpty()) {
-                if (descriptions2.length != accessions2.length)
-                    throw new ParseException("Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
-            } else {
-                descriptions2 = accessions2;
-            }
-            
-            if (accessions1.length ==1) {
-                if (pepPositions1.length > 1) {
-                    String[] daccessions1 = new String[pepPositions1.length];
-                    String[] ddescriptions1 = new String[pepPositions1.length];
-                    for (int i = 0; i< pepPositions1.length; i++) {
-                        daccessions1[i] = saccession1;
-                        ddescriptions1[i] = descriptions1[0];
-                    }
-                    accessions1 = daccessions1;
-                    descriptions1 = ddescriptions1;
-                }
-            } else if (accessions1.length != pepPositions1.length){
-                throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
-            }
-
-            if (accessions2.length ==1) {
-                if (pepPositions2.length > 1) {
-                    String[] daccessions2 = new String[pepPositions2.length];
-                    String[] ddescriptions2 = new String[pepPositions2.length];
-                    for (int i = 0; i< pepPositions1.length; i++) {
-                        daccessions2[i] = saccession2;
-                        ddescriptions2[i] = descriptions2[0];
-                    }
-                    accessions2 = daccessions2;
-                    descriptions2 = ddescriptions2;
-                }
-            } else if (accessions2.length != pepPositions2.length){
-                throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
-            }
-            
-            int[] ipeppos1 = new int[pepPositions1.length];
-            for (int i = 0; i<pepPositions1.length; i++) {
-                ipeppos1[i] = Integer.parseInt(pepPositions1[i]);
-            }
-            
-            int[] ipeppos2 = new int[pepPositions2.length];
-            for (int i = 0; i<pepPositions2.length; i++) {
-                ipeppos2[i] = Integer.parseInt(pepPositions2[i]);
-            }
-            
-            
-            PSM psm = null;
-            for (int p1 = 0; p1< accessions1.length; p1++) {
-                for (int p2 = 0; p2< accessions2.length; p2++) {
-                    String run = crun == null ? "":csv.getValue(crun);
-                    String scan = cscan == null ? "":csv.getValue(cscan);
-                    String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
-                    double crosslinkerMass = cCrosslinkerMass == null ? -1:csv.getDouble(cCrosslinkerMass);
-                    String negativeCase = null;
-                    String poisitiveCase = null;
-                    if (cNegativeGrouping != null && cNegativeGrouping >=0) {
-                        negativeCase = csv.getValue(cNegativeGrouping);
-                        if (negativeCase.isEmpty())
-                            negativeCase=null;
-                    }
-                    if (cPositiveGrouping != null && cPositiveGrouping >=0) {
-                        poisitiveCase = csv.getValue(cPositiveGrouping);
-                        if (poisitiveCase.isEmpty())
-                            poisitiveCase=null;
-                    }
-                    
-                    psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, 
-                            site1, site2, isDecoy1, isDecoy2, charge, score, 
-                            accessions1[p1], descriptions1[p1], accessions2[p2],
-                            descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
-                            peptide1score, peptide2score, negativeCase,crosslinker,run,scan);
-                    psm.setCrosslinkerModMass(crosslinkerMass);
-                    if (poisitiveCase != null) {
-                        psm.setPositiveGrouping(poisitiveCase);
-                    }
-                    Double expMZ = null;
-                    if (cExpMZ != null) {
-                        expMZ=csv.getDouble(cExpMZ);
-                        psm.setExperimentalMZ(expMZ);
-                    }
-
-                    // read exp- and calc-mass
-                    if (cCalcMass != null) {
-                        Double calcMass=csv.getDouble(cCalcMass);
-                        
-                        psm.setCalcMass(calcMass);
-                        
-                        if (expMZ != null) {
-                            psm.setExpCharge((byte)Math.round(calcMass/expMZ));
-                            
+                        String key = "Scan: " + csv.getValue(cscan) + " Run: " + csv.getValue(crun);
+                        int c= pepSeq1.compareTo(pepSeq2) ;
+                        if (c > 0 || (c==0 && site1 > site2) ) {
+                            key=key +" P1_" + csv.getValue(cpep1) + " P2_" + csv.getValue(cpep2) + " " + csv.getInteger(cpep1site) + " " + csv.getInteger(cpep2site);
+                        } else {
+                            key=key +" P1_" + csv.getValue(cpep2) + " P2_" + csv.getValue(cpep1) + " " + csv.getInteger(cpep2site) + " " + csv.getInteger(cpep1site);;
                         }
+                        //psmID = PSMIDs.toIntValue(key);
+                        psmID = key;
                     }
-                    
-                    
-                    
+                }else
+                    //psmID=csv.getInteger(cpsmID);
+                    psmID=csv.getValue(cpsmID);
 
-                    if (cInfo != null) {
-                        psm.setInfo(csv.getValue(cInfo));
-                    }
-                    if (cRank != null) {
-                        psm.setRank(csv.getInteger(cRank));
-                    }
-                    if (cScanInputIndex != null) {
-                        psm.setFileScanIndex(csv.getInteger(cScanInputIndex));
-                    }
-                    if (cPeakFileName != null) {
-                        psm.setPeakListName(csv.getValue(cPeakFileName));
-                    }
-                    
-//    public PSM          addMatch(String psmID, Integer pepid1, Integer pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Integer protid1, String accession1, String description1, Integer protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double scoreRatio, boolean isSpecialCase, String crosslinker, String run, String Scan) {
 
+                // if we have a column for the peptide length take that value
+                // otherwise count all capital letters in the sequence and define 
+                // this as length 
+                int peplen1 = cpep1len == null ? pepSeq1.replaceAll("[^A-Z]", "").length() : csv.getInteger(cpep1len);
+
+                Integer peplen2 = null;
+                if (cpep2len == null) 
+                    if (pepSeq2 == null) {
+                        peplen2 = 0; 
+                    } else {
+                        peplen2 = pepSeq2.replaceAll("[^A-Z]", "").length();
+                    }
+                else {
+                    peplen2 = csv.getInteger(cpep2len, 0);
                 }
+
+                boolean isDecoy1 = csv.getBool(cpep1decoy,false);
+                boolean isDecoy2=  cpep2decoy == null ? false : csv.getBool(cpep2decoy, false);
+                int charge = csv.getInteger(cprecZ);
+                Double score = csv.getDouble(cscore);
+                String saccession1 = csv.getValue(caccession1);
+                String sdescription1 = csv.getValue(cdescription1);
+                String saccession2 = csv.getValue(caccession2);
+                String sdescription2 = csv.getValue(cdescription2);
+                String spepPosition1 = csv.getValue(cpeptide_position1);
+                String spepPosition2= csv.getValue(cpeptide_position2);
+                if (spepPosition2 == null || spepPosition2.trim().isEmpty()) 
+                    spepPosition2 = "-1";
+
+
+                // how to split up the score
+                double scoreRatio = csv.getDouble(cscoreratio);
+                Double peptide1score = csv.getDouble(cPepScore1);
+                Double peptide2score = csv.getDouble(cPepScore2, 0.0);
+
+                if (Double.isNaN(peptide1score) && ! Double.isNaN(scoreRatio)) {
+                    double ratio =(4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
+                    peptide1score=score*ratio;
+                    peptide2score=score*(1-ratio);
+                }
+
+                String[] accessions1 =saccession1.split(";");
+                String[] accessions2 =saccession2.split(";");
+                String[] descriptions1 =sdescription1.split(";",-1);
+                String[] descriptions2 =sdescription2.split(";",-1);
+                String[] pepPositions1 =spepPosition1.split(";",-1);
+                String[] pepPositions2 =spepPosition2.split(";",-1);
+
+                if (!sdescription1.isEmpty()) {
+                    if (descriptions1.length != accessions1.length)
+                        throw new ParseException("Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                } else {
+                    descriptions1 = accessions1;
+                }
+
+                if (!sdescription2.isEmpty()) {
+                    if (descriptions2.length != accessions2.length)
+                        throw new ParseException("Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                } else {
+                    descriptions2 = accessions2;
+                }
+
+                if (accessions1.length ==1) {
+                    if (pepPositions1.length > 1) {
+                        String[] daccessions1 = new String[pepPositions1.length];
+                        String[] ddescriptions1 = new String[pepPositions1.length];
+                        for (int i = 0; i< pepPositions1.length; i++) {
+                            daccessions1[i] = saccession1;
+                            ddescriptions1[i] = descriptions1[0];
+                        }
+                        accessions1 = daccessions1;
+                        descriptions1 = ddescriptions1;
+                    }
+                } else if (accessions1.length != pepPositions1.length){
+                    throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
+                }
+
+                if (accessions2.length ==1) {
+                    if (pepPositions2.length > 1) {
+                        String[] daccessions2 = new String[pepPositions2.length];
+                        String[] ddescriptions2 = new String[pepPositions2.length];
+                        for (int i = 0; i< pepPositions1.length; i++) {
+                            daccessions2[i] = saccession2;
+                            ddescriptions2[i] = descriptions2[0];
+                        }
+                        accessions2 = daccessions2;
+                        descriptions2 = ddescriptions2;
+                    }
+                } else if (accessions2.length != pepPositions2.length){
+                    throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
+                }
+
+                int[] ipeppos1 = new int[pepPositions1.length];
+                for (int i = 0; i<pepPositions1.length; i++) {
+                    ipeppos1[i] = Integer.parseInt(pepPositions1[i]);
+                }
+
+                int[] ipeppos2 = new int[pepPositions2.length];
+                for (int i = 0; i<pepPositions2.length; i++) {
+                    ipeppos2[i] = Integer.parseInt(pepPositions2[i]);
+                }
+
+
+                PSM psm = null;
+                for (int p1 = 0; p1< accessions1.length; p1++) {
+                    for (int p2 = 0; p2< accessions2.length; p2++) {
+                        String run = crun == null ? "":csv.getValue(crun);
+                        String scan = cscan == null ? "":csv.getValue(cscan);
+                        String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
+                        double crosslinkerMass = cCrosslinkerMass == null ? -1:csv.getDouble(cCrosslinkerMass);
+                        String negativeCase = null;
+                        String poisitiveCase = null;
+                        if (cNegativeGrouping != null && cNegativeGrouping >=0) {
+                            negativeCase = csv.getValue(cNegativeGrouping);
+                            if (negativeCase.isEmpty())
+                                negativeCase=null;
+                        }
+                        if (cPositiveGrouping != null && cPositiveGrouping >=0) {
+                            poisitiveCase = csv.getValue(cPositiveGrouping);
+                            if (poisitiveCase.isEmpty())
+                                poisitiveCase=null;
+                        }
+
+                        psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, 
+                                site1, site2, isDecoy1, isDecoy2, charge, score, 
+                                accessions1[p1], descriptions1[p1], accessions2[p2],
+                                descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
+                                peptide1score, peptide2score, negativeCase,crosslinker,run,scan);
+                        psm.setCrosslinkerModMass(crosslinkerMass);
+                        if (poisitiveCase != null) {
+                            psm.setPositiveGrouping(poisitiveCase);
+                        }
+                        Double expMZ = null;
+                        if (cExpMZ != null) {
+                            expMZ=csv.getDouble(cExpMZ);
+                            psm.setExperimentalMZ(expMZ);
+                        }
+
+                        // read exp- and calc-mass
+                        if (cCalcMass != null) {
+                            Double calcMass=csv.getDouble(cCalcMass);
+
+                            psm.setCalcMass(calcMass);
+
+                            if (expMZ != null) {
+                                psm.setExpCharge((byte)Math.round(calcMass/expMZ));
+
+                            }
+                        }
+
+
+
+
+                        if (cInfo != null) {
+                            psm.setInfo(csv.getValue(cInfo));
+                        }
+                        if (cRank != null) {
+                            psm.setRank(csv.getInteger(cRank));
+                        }
+                        if (cScanInputIndex != null) {
+                            psm.setFileScanIndex(csv.getInteger(cScanInputIndex));
+                        }
+                        if (cPeakFileName != null) {
+                            psm.setPeakListName(csv.getValue(cPeakFileName));
+                        }
+
+                    }
+                }
+                if (cDelta != null)
+                    psm.setDeltaScore(csv.getDouble(cDelta));
+                if (cPepMinCoverage != null) {
+                    
+                    psm.addOtherInfo("minPepCoverage", csv.getDouble(cPepMinCoverage));
+                    
+                } else if (cPep1Coverage != null && cPep2Coverage != null) {
+                    if (psm.isLinear()) {
+                        
+                        psm.addOtherInfo("minPepCoverage", csv.getDouble(cPep1Coverage));
+                        
+                    } else {
+                        
+                        psm.addOtherInfo("minPepCoverage", 
+                                Math.min(csv.getDouble(cPep1Coverage),csv.getDouble(cPep2Coverage)));
+                        
+                    }
+                    
+                }
+                
             }
             
+        } catch (Exception ex) {
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE,"Unexecpted exception while parsing line " + lineNumber, ex);
         }
     }
 
@@ -604,6 +636,11 @@ public class CSVinFDR extends OfflineFDR {
         }        
         String[] ret = new String[unknown.size()];
         ret = unknown.toArray(ret);
+        if (ret.length == 0) {
+            printUsage();
+            System.exit(1);
+        }
+        
         return ret;        
     }
 
@@ -646,14 +683,6 @@ public class CSVinFDR extends OfflineFDR {
                 
         String[] files = ofdr.parseArgs(argv, settings);
         
-        // assume that everything that was not matched to an argument is a file
-        
-        if (files.length == 0) {
-            ofdr.printUsage();
-            System.exit(1);
-        }
-        
-        
         if (ofdr.getCsvOutDirSetting() != null) {
             if (ofdr.getCsvOutBaseSetting() == null) {
                 ofdr.setCsvOutBaseSetting("FDR");
@@ -670,17 +699,31 @@ public class CSVinFDR extends OfflineFDR {
 
         CsvParser csv = new CsvParser();
         if (ofdr.commandLineColumnMapping != null) {
+            HashSet<String> definedMappings = new HashSet<String>();
             for (String[] map : ofdr.commandLineColumnMapping) {
+                definedMappings.add(map[0]);
                 for (int i = 1; i<map.length;i++) {
                     csv.setAlternative(map[0], map[i]);
+                    definedMappings.add(map[i]);
                 }
             }
+            
+            ArrayList<String[]> otherDefaults = new ArrayList<String[]>();
+            for (String[] defmap : CSVinFDR.DEFAULT_COLUMN_MAPPING) {
+                boolean keep =true;
+                for (String s :defmap) {
+                    if (definedMappings.contains(s)) {
+                        keep = false;
+                        break;
+                    }
+                }
+                if (keep)
+                    otherDefaults.add(defmap);
+            }
+            if (otherDefaults.size()>0)
+                ColumnAlternatives.setupAlternatives(csv,otherDefaults.toArray(new String[0][]));
         } else {
-            for (String[] map : ofdr.DEFAULT_COLUMN_MAPPING) {
-                for (int i = 1; i<map.length;i++) {
-                    csv.setAlternative(map[0], map[i]);
-                }
-            }
+            ColumnAlternatives.setupAlternatives(csv,CSVinFDR.DEFAULT_COLUMN_MAPPING);
         }
         
         
@@ -703,7 +746,9 @@ public class CSVinFDR extends OfflineFDR {
                     Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "error while quessing csv-definitions", ex);
                 }
             }
+            Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "setting up csv input");
             try {
+                
                 csv.openFile(new File(f), true);
             } catch (IOException ex) {
                 Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "Could not read the file", ex);

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rappsilberlab</groupId>
     <artifactId>xiFDR</artifactId>
-    <version>1.2.34</version>
+    <version>1.3.34</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -98,6 +98,11 @@
             <artifactId>woodstox-core</artifactId>
             <version>6.0.0.pr2</version>
         </dependency>
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>7.2.1</version>
+        </dependency>
     </dependencies>
     <build>
 	<plugins>
@@ -106,7 +111,7 @@
 			<configuration>
 				<archive>
 					<manifest>
-						<mainClass>org.rappsilber.fdr.gui.FDRGUI</mainClass>
+						<mainClass>org.rappsilber.fdr.CommandLine</mainClass>
 					</manifest>
 				</archive>
 				<descriptorRefs>
@@ -140,5 +145,5 @@
     </properties>
     <description>Application for FDR estimation cross-linking massspectrometry data
 </description>
-    <name>xiFDR-1.2.34</name>
+    <name>xiFDR-1.3.34</name>
 </project>

@@ -25,7 +25,6 @@ import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupSite;
 import org.rappsilber.fdr.entities.Site;
-import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.RArrayUtils;
 

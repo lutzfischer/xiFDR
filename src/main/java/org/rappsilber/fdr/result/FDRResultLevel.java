@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-import org.rappsilber.fdr.utils.FDRSelfAdd;
+import org.rappsilber.fdr.entities.FDRSelfAdd;
 import org.rappsilber.fdr.utils.HashedArrayList;
 
 /**
@@ -29,6 +29,7 @@ import org.rappsilber.fdr.utils.HashedArrayList;
 public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
     HashMap<String,SubGroupFdrInfo<T>> groups = new HashMap<>();
     public boolean isDirectional = false;
+    private boolean localFDR = false;
     private int within;
     private int between;
     private int linear;
@@ -266,5 +267,19 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         for (SubGroupFdrInfo si : groups.values()) {
             si.clear();
         }        
+    }
+
+    /**
+     * @return the localFDR
+     */
+    public boolean isLocalFDR() {
+        return localFDR;
+    }
+
+    /**
+     * @param localFDR the localFDR to set
+     */
+    public void setLocalFDR(boolean localFDR) {
+        this.localFDR = localFDR;
     }
 }

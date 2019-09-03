@@ -15,12 +15,13 @@
  */
 package org.rappsilber.fdr.entities;
 
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
@@ -31,22 +32,8 @@ import org.rappsilber.utils.SelfAddHashSet;
  */
 public class PSM extends AbstractFDRElement<PSM> { 
 
-    /**
-     * store arbitrary information
-     * @return the otherInfo
-     */
-    public HashMap<String,Object> getOtherInfo() {
-        return otherInfo;
-    }
-
-    /**
-     * the type of each information
-     * @return the otherInfoType
-     */
-    public HashMap<String,Class> getOtherInfoType() {
-        return otherInfoType;
-    }
-
+    private double deltaScore = Double.POSITIVE_INFINITY;
+    
     /**
      * unique id for the PSM.
      */
@@ -74,7 +61,8 @@ public class PSM extends AbstractFDRElement<PSM> {
     /** positions of peptide2 */
     Peptide peptide2;
     /** overall score of this pair */
-    private double score;
+    private double origScore;
+    private Double score=null; 
     /** top-score per charge state */
     private byte charge = 0;
     /**
@@ -158,11 +146,6 @@ public class PSM extends AbstractFDRElement<PSM> {
     private static HashMap<String,String> allLinker = new HashMap<String, String>();
 
     /**
-     * what was the score prior normalisation
-     */
-    private double preNormalisedScore;
-    
-    /**
      * If we filter to unique PSMs then the top-scoring will represent a set of 
      * psms. As we don't want to lose the info which ones are represented we 
      * list them here.
@@ -195,14 +178,28 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     private static boolean peakListNameFound = false;
     
+    private DoubleArrayList numericInfo = new DoubleArrayList();
+    private static Object2IntOpenHashMap<String> numericInfoColumn = new Object2IntOpenHashMap<String>();
+    private static Object2IntOpenHashMap<String> allInfoColumn = new Object2IntOpenHashMap<String>();
     /**
      * store arbitrary information
      */
-    private HashMap<String,Object> otherInfo = new HashMap<>();
+    private ArrayList<Object> otherInfo = new ArrayList<>();
+
     /**
      * the type of each information
      */
-    private HashMap<String,Class> otherInfoType = new HashMap<>();
+    private static ArrayList<Class> otherInfoType  = new ArrayList<>();
+
+    private static Object2IntOpenHashMap<String> otherInfoColumn = new Object2IntOpenHashMap<String>();
+    
+    static {
+        numericInfoColumn.defaultReturnValue​(-1);
+        allInfoColumn.defaultReturnValue​(-1);
+        otherInfoColumn.defaultReturnValue(-1);
+    }
+
+
     /**
      * is this a cross-link of consecutive peptides
      */
@@ -266,8 +263,7 @@ public class PSM extends AbstractFDRElement<PSM> {
             isTT_TD_DD++;
         }
         this.charge = charge;
-        this.score = score;
-        this.preNormalisedScore = score;
+        this.origScore = score;
         this.peptide1Score = peptide1Score;
         this.peptide2Score = peptide2Score;
         this.peptide1 = peptide1;
@@ -321,7 +317,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         if (isNonCovalent != c.isNonCovalent)
             return false;
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
-        return this.score == c.score && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
+        return this.origScore == c.origScore && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
                 ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
                 ((c.peptide1Score == this.peptide2Score &&c.peptide2Score == this.peptide1Score) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
@@ -461,7 +457,28 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     @Override
     public double getScore() {
-        return score;
+        return score==null?origScore:score;
+    }
+
+    
+    /**
+     * @return the score
+     */
+    public double getDeltaScore() {
+        return score==null?this.deltaScore:score* (this.deltaScore/origScore);
+    }
+
+    /**
+     * @return the score
+     */
+    public void setDeltaScore(double ds) {
+        this.deltaScore = ds;
+    }
+    
+    
+    @Override
+    public double getOriginalScore() {
+        return origScore;
     }
 
     /**
@@ -716,6 +733,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         setPartOfUniquePSM(null);
         represents.clear();
         represents.add(this);
+        this.m_fdr = -1;
+        this.setPEP(Double.NaN);
     }
     
     /**
@@ -956,20 +975,6 @@ public class PSM extends AbstractFDRElement<PSM> {
     }
 
     /**
-     * @return the normScore
-     */
-    public double getNonnormalizedScore() {
-        return preNormalisedScore;
-    }
-
-    /**
-     * @param normScore the normScore to set
-     */
-    public void setNonnormalizedScore(double score) {
-        this.preNormalisedScore = score;
-    }
-
-    /**
      * @return the partOfUniquePSM
      */
     public PSM getPartOfUniquePSM() {
@@ -1149,6 +1154,103 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public void setConsecutive(boolean isConsecutive) {
         this.isConsecutive = isConsecutive;
+    }
+    
+    String ukey = null;
+    public String getNonDirectionalUnifyingKey() {
+        if (ukey == null) {
+            if (getPeptide1().getSequence().compareTo(getPeptide2().getSequence()) >0) {
+                ukey = getPeptide1().getSequence() + "_!xl!_"
+                        + getPeptide2().getSequence() + "_!xl!_"
+                        + getPeptideLinkSite1() + "_!xl!_"
+                        + getPeptideLinkSite2() + "_!xl!_"
+                        + getCharge();
+            } else {
+                ukey = getPeptide2().getSequence() + "_!xl!_"
+                        + getPeptide1().getSequence() + "_!xl!_"
+                        + getPeptideLinkSite2() + "_!xl!_"
+                        + getPeptideLinkSite1() + "_!xl!_"
+                        + getCharge();
+            }
+        }
+        return ukey;
+    }
+
+    /**
+     * store arbitrary information
+     * @return the otherInfo
+     */
+    public static String[] getOtherInfoNames() {
+        
+        String[] names = allInfoColumn.keySet().toArray(new String[otherInfoColumn.size()]);
+        return names;
+    }
+
+    public static String[] getDoubleInfoNames() {
+        
+        String[] names = numericInfoColumn.keySet().toArray(new String[otherInfoColumn.size()]);
+        return names;
+    }
+    
+    /**
+     * store arbitrary information
+     * @return the otherInfo
+     */
+    public Object getOtherInfo(String name) {
+        int column = allInfoColumn.getInt(name);
+        if (column == -1)
+            return null;
+        if (column >= 1000)
+            return numericInfo.get(column - 1000);
+        return otherInfo.get(column);
+    }
+
+    /**
+     * store arbitrary information
+     * @return the otherInfo
+     */
+    public double getDoubleInfo(String name) {
+        int column = numericInfoColumn.getInt(name);
+        if (column == -1)
+            return Double.NaN;
+        return numericInfo.getDouble(column);
+    }
+    
+    public void addOtherInfo(String name, Object value) {
+        if (value instanceof Number) {
+            double d  = ((Number)value).doubleValue();
+            int column = numericInfoColumn.getInt(name);
+            if (column == -1) {
+                column = numericInfoColumn.size();
+                numericInfoColumn.put(name, column);
+                allInfoColumn.put(name, column+1000);
+            }
+            numericInfo.add(column, d);
+        } else {
+        
+            int column = otherInfoColumn.getInt(name);
+            if (column == -1) {
+                column = otherInfoColumn.size();
+                otherInfoColumn.put(name, column);
+                allInfoColumn.put(name, column);
+            }
+            otherInfo.add(column, value);
+        }
+    }
+    
+    
+    /**
+     * the type of each information
+     * @return the otherInfoType
+     */
+    public static Class getOtherInfoType(String name) {
+        int col = allInfoColumn.getInt(name);
+        if (col == -1) {
+            return Object.class;
+        } if (col >=1000) {
+            return Double.class;
+        }
+        return otherInfoType.get(col);
     }
     
 }

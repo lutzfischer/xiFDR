@@ -46,6 +46,14 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private boolean m_filterToUniquePSM = true;
     
     private boolean scaleByContectedness = false;
+    private Boolean ppiLocalFDR;
+    private Boolean linkLocalFDR;
+    private Boolean protLocalFDR;
+    private Boolean peppairLocalFDR;
+    private Boolean psmLocalFDR;
+    private double minPeptideCoverageFilter;
+    private double minDeltaScoreFilter;
+    private boolean combineScoreAndDelta;
 
     @Override
     public boolean getBoostBetween() {
@@ -348,6 +356,12 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         m_filterToUniquePSM = filterToUniquePSM;
     }
     
+    public boolean combineScoreAndDelta() {
+        return this.combineScoreAndDelta;
+    }
+    public void combineScoreAndDelta(boolean c) {
+        this.combineScoreAndDelta = c;
+    }
 
     
     /**
@@ -551,5 +565,71 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         return m_minTD;
     }
 
+    @Override
+    public Boolean psmLocalFDR() {
+        return this.psmLocalFDR;
+    }
 
+    @Override
+    public Boolean peppairLocalFDR() {
+        return this.peppairLocalFDR;
+    }
+
+    @Override
+    public Boolean protLocalFDR() {
+        return this.protLocalFDR;
+    }
+
+    @Override
+    public Boolean linkLocalFDR() {
+        return this.linkLocalFDR;
+    }
+
+    @Override
+    public Boolean ppiLocalFDR() {
+        return this.ppiLocalFDR;
+    }
+
+    @Override
+    public void psmLocalFDR(Boolean local) {
+       this.psmLocalFDR = local;
+    }
+
+    @Override
+    public void peppairLocalFDR(Boolean local) {
+        this.peppairLocalFDR = local;
+    }
+
+    @Override
+    public void protLocalFDR(Boolean local) {
+        this.protLocalFDR = local;
+    }
+
+    @Override
+    public void linkLocalFDR(Boolean local) {
+        this.linkLocalFDR = local;
+    }
+
+    @Override
+    public void ppiLocalFDR(Boolean local) {
+        this.ppiLocalFDR = local;
+    }    
+
+    
+    public double getMinPeptideCoverageFilter() {
+        return this.minPeptideCoverageFilter;
+    }
+    public void setMinPeptideCoverageFilter(double d) {
+        this.minPeptideCoverageFilter = d;
+    }
+
+    public double getMinDeltaScoreFilter() {
+        return this.minDeltaScoreFilter;
+    }
+    
+    public void setMinDeltaScoreFilter(double d) {
+        this.minDeltaScoreFilter = d;
+    }
+
+    
 }

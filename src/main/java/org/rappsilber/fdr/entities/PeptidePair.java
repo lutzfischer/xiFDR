@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;

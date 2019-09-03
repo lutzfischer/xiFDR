@@ -50,7 +50,7 @@ public class SubScoreFilter extends javax.swing.JPanel {
         initComponents();
 
         PSM psm  = allPSM.iterator().next();
-        psm.getOtherInfo().keySet();
+//        psm.getOtherInfo().keySet();
         
     }
 

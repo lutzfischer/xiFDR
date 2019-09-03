@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import org.rappsilber.fdr.FDRSettingsImpl;
 
 /**
  *
@@ -43,8 +44,10 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     protected boolean boostProteins = true;
     protected boolean boostLinks = true;
     protected boolean groupByPSMCount = false;
-    private boolean filterConsectutivePeptides;
+    private boolean filterConsectutivePeptides = false;
 //    private double subScoreCutOff = 1;
+    private boolean boostPepCoverage = true;
+    private boolean boostPepDeltaScore = true;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -184,36 +187,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     }    
     
     public void setAll(FDRSettings settings) {
-        this.setBoostingSteps(settings.getBoostingSteps());
-        this.setMaxLinkAmbiguity(settings.getMaxLinkAmbiguity());
-        this.setMaxProteinAmbiguity(settings.getMaxProteinAmbiguity());
-        this.setMinLinkPepCount(settings.getMinLinkPepCount());
-        this.setMinPPIPepCount(settings.getMinPPIPepCount());
-        this.setMinPeptideLength(settings.getMinPeptideLength());
-        this.setMinProteinPepCount(settings.getMinProteinPepCount());
-        this.setPSMFDR(settings.getPSMFDR());
-        this.setPSMDirectional(settings.isPSMDirectional());
-        this.setPPIDirectional(settings.isPPIDirectional());
-        this.setLinkDirectional(settings.isLinkDirectional());
-        this.setPeptidePairDirectional(settings.isPeptidePairDirectional());
-        this.setPeptidePairFDR(settings.getPeptidePairFDR());
-        this.setProteinGroupFDR(settings.getProteinGroupFDR());
-        this.setProteinGroupLinkFDR(settings.getProteinGroupLinkFDR());
-        this.setProteinGroupPairFDR(settings.getProteinGroupPairFDR());
-        this.setReportFactor(settings.getReportFactor());
-        this.doOptimize(settings.doOptimize());
-        this.setFilterToUniquePSM(settings.filterToUniquePSM());
-        this.setBoostBetween(settings.getBoostBetween());
-        this.boostLinks(settings.boostLinks());
-        this.boostPSMs(settings.boostPSMs());
-        this.boostPeptidePairs(settings.boostPeptidePairs());
-        this.boostProteins(settings.boostProteins());
-        this.setGroupByPSMCount(settings.isGroupByPSMCount());
-        this.setGroupByPSMCount(settings.isGroupByPSMCount());
-        this.setMinTD(settings.getMinTD());        
-        this.setFilterConsecutivePeptides(settings.filterConsecutivePeptides());
-//        this.boostSubScores(settings.boostSubScores());
-//        this.setSubScoreCutOff(settings.getSubScoreCutOff());
+        FDRSettingsImpl.transferSettings(settings, this);
     }
     
 //    public abstract void setEnabled(boolean e);
@@ -252,6 +226,26 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
         this.filterConsectutivePeptides=filterConsecutive;
     }
     
+  
+    @Override
+    public boolean boostPepCoverage(){
+        return this.boostPepCoverage;
+    }
+    
+    @Override
+    public void boostPepCoverage(boolean boost){
+        this.boostPepCoverage = boost;
+    }
+
+    @Override
+    public boolean boostDeltaScore(){
+        return this.boostPepDeltaScore;
+    }
+
+    @Override
+    public void boostDeltaScore(boolean boost){
+        this.boostPepDeltaScore = boost;
+    }
     
 //    public double getSubScoreCutOff() {
 //        return this.subScoreCutOff;

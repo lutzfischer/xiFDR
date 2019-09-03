@@ -16,6 +16,7 @@
 package org.rappsilber.fdr.filter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,15 +49,23 @@ public class AbovePercentFilter implements PSMFilter{
     public AbovePercentFilter(double targetPercent) {
         this.targetPercent = targetPercent;
     }
+
+
+    private ArrayList<PSM> toArrayList(Collection<PSM> psms) {
+        if (psms instanceof ArrayList)
+            return (ArrayList<PSM>)psms;
+        else
+            return new ArrayList<PSM>(psms);
+    }
     
     @Override
-    public ArrayList<PSM> filter(ArrayList<PSM> psms) {
-        PSM first =  psms.get(0);
+    public ArrayList<PSM> filter(Collection<PSM> psms) {
+        PSM first =  psms.iterator().next();
         ArrayList<PSM> all = new ArrayList<>(psms.size());
-        HashMap<String,Object> infos = first.getOtherInfo();
-        ArrayList<String> comparableInfos = new ArrayList<>(infos.size());
-        HashMap<String,Object[]> lowcutoffs = new HashMap<>();
-        HashMap<String,Object[]> highcutoffs = new HashMap<>();
+        String[] infos = PSM.getDoubleInfoNames();
+        ArrayList<String> comparableInfos = new ArrayList<>(infos.length);
+        HashMap<String,double[]> lowcutoffs = new HashMap<>();
+        HashMap<String,double[]> highcutoffs = new HashMap<>();
         
         int allTT = 0;
         int allTD = 0;
@@ -73,15 +82,16 @@ public class AbovePercentFilter implements PSMFilter{
         
         double allFDR=(allTD - allDD)/(double)allTT;
         
-        for (Map.Entry<String,Object> e : infos.entrySet()) {
-            Object o = e.getValue();
-            if (o instanceof Comparable) {
+        for (String n : infos) {
+            Class o = PSM.getOtherInfoType(n);
+            
+            if (o.isAssignableFrom(Comparable.class)) {
                 // sort by this value
-                final String name = e.getKey();
+                final String name = n;
                 java.util.Collections.sort(all, new Comparator<PSM>() {
                     @Override
                     public int compare(PSM arg0, PSM arg1) {
-                        return ((Comparable) arg0.getOtherInfo().get(name)).compareTo(arg1.getOtherInfo().get(name));
+                        return Double.compare(arg0.getDoubleInfo(name),arg1.getDoubleInfo(name));
                     }
                 });
                 // take the higest portion and the lowest portion of the data
@@ -103,20 +113,20 @@ public class AbovePercentFilter implements PSMFilter{
         }
         
         if (lowcutoffs.size() == 0 && highcutoffs.size() == 0)
-            return psms;
+            return toArrayList(psms);
         ArrayList<PSM> ret = new ArrayList<>();
         // delete everything in that is below the lowcutoffs
         for (PSM psm : psms) {
             boolean keep = true;
-            for (Map.Entry<String,Object[]> e : lowcutoffs.entrySet()) {
-                if (((Comparable) psm.getOtherInfo().get(e.getKey())).compareTo(e.getValue()[0])<=0) {
+            for (Map.Entry<String,double[]> e : lowcutoffs.entrySet()) {
+                if (psm.getDoubleInfo(e.getKey()) <= e.getValue()[0]) {
                     keep = false;
                     break;
                 }
             }
             if (keep) {
-                for (Map.Entry<String,Object[]> e : highcutoffs.entrySet()) {
-                    if (((Comparable) psm.getOtherInfo().get(e.getKey())).compareTo(e.getValue()[0])>=0) {
+                for (Map.Entry<String,double[]> e : highcutoffs.entrySet()) {
+                    if (psm.getDoubleInfo(e.getKey())>=e.getValue()[0]) {
                         keep = false;
                         break;
                     }
@@ -130,7 +140,7 @@ public class AbovePercentFilter implements PSMFilter{
         
     }
 
-    protected void defineLimits(ArrayList<PSM> all, final String name, int start, int lowLimit, int increment, HashMap<String, Object[]> lowcutoffs, double allfdr) {
+    protected void defineLimits(ArrayList<PSM> all, final String name, int start, int lowLimit, int increment, HashMap<String, double[]> lowcutoffs, double allfdr) {
         // count TT TD and DD in both sets
         double windowTT = 0;
         double windowTD = 0;
@@ -140,13 +150,13 @@ public class AbovePercentFilter implements PSMFilter{
         
         LinkedList<PSM> window = new LinkedList<>();
         
-        Object last = all.get(0).getOtherInfo().get(name);
+        double last = all.get(0).getDoubleInfo(name);
         int c = 0;
         for (int i = start; i!=lowLimit; i+=increment) {
             PSM l = all.get(i);
             c++;
             // current score
-            Object s = l.getOtherInfo().get(name);
+            double s = l.getDoubleInfo(name);
             if (l.isTT())
                 windowTT++;
             if (l.isTD())
@@ -163,8 +173,8 @@ public class AbovePercentFilter implements PSMFilter{
                     }
                 }
                 double windowFDR = (windowTD-windowDD)/windowTT;
-                if (cutSensible && windowFDR<= targetPercent && windowFDR >maxReducedFDR  && !last.equals(s)) {
-                    lowcutoffs.put(name,new Object[]{last,c});
+                if (cutSensible && windowFDR<= targetPercent && windowFDR >maxReducedFDR  && last!=s) {
+                    lowcutoffs.put(name,new double[]{last,c});
                     break;
                 }
                 PSM r = window.removeFirst();
@@ -175,7 +185,7 @@ public class AbovePercentFilter implements PSMFilter{
                 if (r.isDD())
                     windowDD--;
             }
-            last = l.getOtherInfo().get(name);
+            last = l.getDoubleInfo(name);
         }
     }
 

@@ -17,7 +17,7 @@ package org.rappsilber.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.Iterator;
 
 /**
@@ -25,7 +25,7 @@ import java.util.Iterator;
  * @param <T>
  */
 public class SelfAddHashSet<T extends SelfAdd<T>> implements Iterable<T>, Collection<T> {
-    protected HashMap<T,T> m_innermap = new HashMap<T, T>();
+    protected Object2ObjectOpenHashMap<T,T> m_innermap = new Object2ObjectOpenHashMap<T, T>();
     /**
      * if selfAdd is false then the actual add is not called but only the previously stored instance is returned.
      */

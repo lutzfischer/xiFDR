@@ -18,7 +18,6 @@ package org.rappsilber.fdr.entities;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import org.rappsilber.fdr.utils.AbstractFDRElement;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 
 /**

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.DBPSM;
@@ -317,11 +318,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                 }
             }
         } else {
-            for (String[] map : ofdr.DEFAULT_COLUMN_MAPPING) {
-                for (int i = 1; i<map.length;i++) {
-                    csv.setAlternative(map[0], map[i]);
-                }
-            }
+            ColumnAlternatives.setupAlternatives(csv,CSVinFDR.DEFAULT_COLUMN_MAPPING);
         }
         
         

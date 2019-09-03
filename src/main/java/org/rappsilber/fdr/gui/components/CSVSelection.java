@@ -558,7 +558,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 {"calculated mass",  new Boolean(true), "calculated mass of the precursor", null},
                 {"negative grouping",  new Boolean(true), "if some matches have an inherently higher chance to be false positive then they can be flaged here", null},
                 {"positive grouping",  new Boolean(true), "if some matches have an inherently lower chance to be false positive then they can be flaged here", null},
-                {"info",  new Boolean(true), "arbitrary info field to be forwarded to the results table", null}
+                {"info",  new Boolean(true), "arbitrary info field to be forwarded to the results table", null},
+                {"delta score",  new Boolean(true), "the delta score of the match", null},
+                {"peptide coverage1",  new Boolean(true), "how well is peptide explained", null},
+                {"peptide coverage2",  new Boolean(true), "how well is peptide 2 explained", null},
+                {"minimum peptide coverage",  new Boolean(true), "how well is the wors explained peptide explained", null}
             },
             new String [] {
                 "Column", "Optional", "Description", "Name in CSV"

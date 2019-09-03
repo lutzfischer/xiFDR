@@ -16,60 +16,63 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="lblReportFactor" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
-                      </Group>
-                      <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="1" max="-2" attributes="0">
-                          <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spPPIFdr" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spLinkFDR" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spProteinFDR" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spPepFDR" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spPsmFDR" alignment="0" max="32767" attributes="0"/>
-                          <Component id="jLabel9" alignment="0" pref="92" max="32767" attributes="0"/>
-                          <Component id="cbBoostWhat" pref="0" max="32767" attributes="0"/>
-                      </Group>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jLabel23" alignment="0" max="-2" attributes="0"/>
-                          <Component id="ckDirectionalPPI" alignment="0" max="-2" attributes="0"/>
-                          <Component id="ckDirectionalLink" alignment="0" max="-2" attributes="0"/>
-                          <Component id="ckDirectionalPeptidePair" alignment="0" max="-2" attributes="0"/>
-                          <Component id="ckDirectionalPSM" alignment="0" max="-2" attributes="0"/>
-                          <Component id="jLabel1" alignment="0" max="-2" attributes="0"/>
-                          <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
-                      </Group>
-                  </Group>
-                  <Component id="btnStopBoost" alignment="0" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
-                      <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="32767" attributes="0"/>
-                      <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
+                      <Component id="spOtherFilter" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
                   <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="spMaximizeSteps" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spMinPPIPepCount" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spMinLinkPepCount" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spMinProteinPepCount" alignment="0" max="32767" attributes="0"/>
-                          <Component id="jLabel28" alignment="0" pref="0" max="32767" attributes="0"/>
-                          <Component id="jLabel18" alignment="0" max="32767" attributes="0"/>
-                          <Component id="spMinTDChance" alignment="0" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="lblReportFactor" alignment="0" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                                  <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spPPIFdr" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spLinkFDR" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spProteinFDR" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spPepFDR" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spPsmFDR" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="jLabel9" alignment="0" pref="92" max="32767" attributes="0"/>
+                              </Group>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="jLabel1" alignment="0" max="-2" attributes="0"/>
+                                  <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
+                                  <Group type="102" attributes="0">
+                                      <EmptySpace min="25" pref="25" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="tsLocalPPIFDR" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="tsLocalLinkFDR" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="tsLocalPepPairFDR" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="tsLocalPSMFDR" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="tsLocalProtFDR" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                  </Group>
+                              </Group>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="spMinPPIPepCount" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spMinLinkPepCount" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="spMinProteinPepCount" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="jLabel28" alignment="0" pref="0" max="32767" attributes="0"/>
+                                  <Component id="jLabel18" alignment="0" pref="176" max="32767" attributes="0"/>
+                                  <Component id="spMinTDChance" alignment="0" max="32767" attributes="0"/>
+                              </Group>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Component id="ckMoreOptions" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                          </Group>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
@@ -77,14 +80,39 @@
                           <Component id="jLabel8" alignment="0" max="32767" attributes="0"/>
                           <Component id="spMinPeptideLength" alignment="0" max="32767" attributes="0"/>
                           <Component id="spMaxProteinAmbiguity" alignment="0" max="32767" attributes="0"/>
-                          <Component id="ckBoostBetween" max="32767" attributes="0"/>
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="ckGroupByPSMs" min="-2" max="-2" attributes="0"/>
                                   <Component id="ckUniquePSM" min="-2" max="-2" attributes="0"/>
                                   <Component id="ckFilterConsecutives" alignment="0" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                              <EmptySpace min="0" pref="56" max="32767" attributes="0"/>
+                          </Group>
+                      </Group>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
+                              <Component id="ckMaximize" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+                              <Component id="cbBoostWhat" pref="0" max="32767" attributes="0"/>
+                          </Group>
+                          <Component id="btnStopBoost" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="jLabel23" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
+                              <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace pref="260" max="32767" attributes="0"/>
+                              <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Component id="spMaximizeSteps" max="32767" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="ckBoostBetween" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -95,63 +123,76 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
-              <EmptySpace min="19" pref="19" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jLabel9" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
-                      <Component id="spPsmFDR" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel5" alignment="3" min="-2" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="1" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="1" attributes="0">
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="1" attributes="0">
+                                  <Group type="102" attributes="0">
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="jLabel9" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                                              <Component id="spPsmFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jLabel5" alignment="3" min="-2" max="-2" attributes="0"/>
+                                          </Group>
+                                          <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                                              <Component id="spMinPeptideLength" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jLabel18" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="tsLocalPSMFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                                          </Group>
+                                      </Group>
+                                      <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                                              <Component id="spPepFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
+                                          </Group>
+                                          <Component id="jLabel28" alignment="1" min="-2" pref="19" max="-2" attributes="0"/>
+                                          <Component id="jLabel8" alignment="1" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                  </Group>
+                                  <Component id="tsLocalPepPairFDR" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="1" attributes="0">
+                                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                                      <Component id="spProteinFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="jLabel6" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <Component id="spMinProteinPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
+                                  <Component id="spMaxProteinAmbiguity" alignment="1" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                          <Component id="tsLocalProtFDR" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="spMaxLinkAmbiguity" alignment="1" min="-2" max="-2" attributes="0"/>
+                          <Component id="spMinLinkPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
+                          <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                              <Component id="spLinkFDR" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
                   </Group>
-                  <Component id="ckDirectionalPSM" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
-                      <Component id="spMinPeptideLength" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel18" alignment="3" min="-2" max="-2" attributes="0"/>
-                  </Group>
+                  <Component id="tsLocalLinkFDR" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
-                      <Component id="spPepFDR" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
-                  </Group>
-                  <Component id="ckDirectionalPeptidePair" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Component id="jLabel28" alignment="1" min="-2" pref="19" max="-2" attributes="0"/>
-                  <Component id="jLabel8" alignment="1" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
-                      <Component id="spProteinFDR" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel6" alignment="3" min="-2" max="-2" attributes="0"/>
-                  </Group>
-                  <Component id="spMinProteinPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Component id="spMaxProteinAmbiguity" alignment="1" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="spMaxLinkAmbiguity" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Component id="spMinLinkPepCount" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Component id="ckDirectionalLink" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
-                      <Component id="spLinkFDR" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
-                  </Group>
-              </Group>
-              <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
+              <Group type="103" groupAlignment="1" attributes="0">
                   <Group type="103" alignment="1" groupAlignment="3" attributes="0">
                       <Component id="spMinPPIPepCount" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="ckUniquePSM" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <Component id="ckDirectionalPPI" alignment="1" min="-2" max="-2" attributes="0"/>
                   <Group type="103" alignment="1" groupAlignment="3" attributes="0">
                       <Component id="spPPIFdr" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel4" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
+                  <Component id="tsLocalPPIFDR" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
@@ -162,8 +203,13 @@
                   <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="ckFilterConsecutives" min="-2" max="-2" attributes="0"/>
-              <EmptySpace type="separate" pref="36" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="ckFilterConsecutives" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckMoreOptions" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="spOtherFilter" pref="96" max="32767" attributes="0"/>
+              <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="cbBoostWhat" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -190,9 +236,6 @@
     </Component>
     <Component class="javax.swing.JSpinner" name="spPsmFDR">
       <Properties>
-        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
-        </Property>
         <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for PSMs"/>
       </Properties>
     </Component>
@@ -203,9 +246,6 @@
     </Component>
     <Component class="javax.swing.JSpinner" name="spPepFDR">
       <Properties>
-        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
-        </Property>
         <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for Peptide Pairs (including linksite within the peptide)"/>
       </Properties>
     </Component>
@@ -216,22 +256,16 @@
     </Component>
     <Component class="javax.swing.JSpinner" name="spProteinFDR">
       <Properties>
-        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
-        </Property>
         <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for protein-groups"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel3">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Link"/>
+        <Property name="text" type="java.lang.String" value="Residue Pairs"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JSpinner" name="spLinkFDR">
       <Properties>
-        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-          <SpinnerModel initial="5.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
-        </Property>
         <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for Links (Protein-group-links)"/>
       </Properties>
     </Component>
@@ -242,9 +276,6 @@
     </Component>
     <Component class="javax.swing.JSpinner" name="spPPIFdr">
       <Properties>
-        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-          <SpinnerModel initial="100.0" minimum="0.0" numberType="java.lang.Double" stepSize="1.0" type="number"/>
-        </Property>
         <Property name="toolTipText" type="java.lang.String" value="FDR value accepted for protein-pairs"/>
       </Properties>
     </Component>
@@ -284,29 +315,10 @@
     </Component>
     <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMaxProteinAmbiguity">
     </Component>
-    <Component class="javax.swing.JCheckBox" name="ckDirectionalPeptidePair">
-      <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Are peptide-pairs directional (E.g. is peptide1 linked to peptide2 distinct from peptide 2 linked to peptide1)"/>
-      </Properties>
-    </Component>
-    <Component class="javax.swing.JCheckBox" name="ckDirectionalLink">
-      <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Are residue-pairs directional (E.g. is residue 1 linked to residue 2 distinct from residue 2 linked to residue 1)"/>
-      </Properties>
-    </Component>
-    <Component class="javax.swing.JCheckBox" name="ckDirectionalPPI">
-      <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Are protein pairs directional (E.g. is protein 1 linked to protein 2 distinct from protein 2 linked to protein 1)"/>
-      </Properties>
-    </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Directional"/>
-      </Properties>
-    </Component>
-    <Component class="javax.swing.JCheckBox" name="ckDirectionalPSM">
-      <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Are PSM-matches directional (E.g. is peptide1 linked to peptide2 distinct from peptide 2 linked to peptide1)"/>
+        <Property name="text" type="java.lang.String" value="Local FDR"/>
+        <Property name="toolTipText" type="java.lang.String" value="ticked calculate and filtert by PEP; unticked: do not calculate calculate PEP; square: calculate PEP but do not filter (default)"/>
       </Properties>
     </Component>
     <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinPeptideLength">
@@ -456,5 +468,46 @@
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckFilterConsecutivesActionPerformed"/>
       </Events>
     </Component>
+    <Component class="org.rappsilber.gui.components.TriStateCheckBox" name="tsLocalPSMFDR">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="calculate (PEP) (square); calculate and filter by PEP (tick); or do not calculate PEP"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.gui.components.TriStateCheckBox" name="tsLocalPepPairFDR">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="calculate (PEP) (square); calculate and filter by PEP (tick); or do not calculate PEP"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.gui.components.TriStateCheckBox" name="tsLocalProtFDR">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="calculate (PEP) (square); calculate and filter by PEP (tick); or do not calculate PEP"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.gui.components.TriStateCheckBox" name="tsLocalLinkFDR">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="calculate (PEP) (square); calculate and filter by PEP (tick); or do not calculate PEP"/>
+      </Properties>
+    </Component>
+    <Component class="org.rappsilber.gui.components.TriStateCheckBox" name="tsLocalPPIFDR">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="calculate (PEP) (square); calculate and filter by PEP (tick); or do not calculate PEP"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckMoreOptions">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="More"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckMoreOptionsActionPerformed"/>
+      </Events>
+    </Component>
+    <Container class="javax.swing.JScrollPane" name="spOtherFilter">
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+      <SubComponents>
+        <Component class="org.rappsilber.fdr.gui.components.OtherFilter" name="otherFilter">
+        </Component>
+      </SubComponents>
+    </Container>
   </SubComponents>
 </Form>

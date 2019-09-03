@@ -16,6 +16,7 @@
 package org.rappsilber.fdr.filter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -47,14 +48,22 @@ public class SingleFDRFilter implements PSMFilter{
         this.targetPercent = targetPercent;
     }
     
+     
+    private ArrayList<PSM> toArrayList(Collection<PSM> psms) {
+        if (psms instanceof ArrayList)
+            return (ArrayList<PSM>)psms;
+        else
+            return new ArrayList<PSM>(psms);
+    }
+     
     @Override
-    public ArrayList<PSM> filter(ArrayList<PSM> psms) {
-        PSM first =  psms.get(0);
+    public ArrayList<PSM> filter(Collection<PSM> psms) {
+        PSM first =  psms.iterator().next();
         ArrayList<PSM> all = new ArrayList<>(psms.size());
-        HashMap<String,Object> infos = first.getOtherInfo();
-        ArrayList<String> comparableInfos = new ArrayList<>(infos.size());
-        HashMap<String,Object[]> lowcutoffs = new HashMap<>();
-        HashMap<String,Object[]> highcutoffs = new HashMap<>();
+        String[] infos = PSM.getDoubleInfoNames();
+        ArrayList<String> comparableInfos = new ArrayList<>(infos.length);
+        HashMap<String,Double[]> lowcutoffs = new HashMap<>();
+        HashMap<String,Double[]> highcutoffs = new HashMap<>();
         
         int allTT = 0;
         int allTD = 0;
@@ -71,50 +80,45 @@ public class SingleFDRFilter implements PSMFilter{
         
         double allFDR=(allTD - allDD)/(double)allTT;
         
-        for (Map.Entry<String,Object> e : infos.entrySet()) {
-            Object o = e.getValue();
-            if (o instanceof Comparable) {
-                // sort by this value
-                final String name = e.getKey();
-                java.util.Collections.sort(all, new Comparator<PSM>() {
-                    @Override
-                    public int compare(PSM arg0, PSM arg1) {
-                        return ((Comparable) arg0.getOtherInfo().get(name)).compareTo(arg1.getOtherInfo().get(name));
-                    }
-                });
-                // take the higest portion and the lowest portion of the data
-                int lowLimit = (int)(psms.size()*maxReduction);
-
-
-                defineLimits(all, name, 0, lowLimit, 1, lowcutoffs);
-
-                defineLimits(all, name, all.size()-1, all.size()-lowLimit, -1, highcutoffs);
-                if (lowcutoffs.containsKey(name) && highcutoffs.containsKey(name)) {
-                    if (lowcutoffs.get(name).length > highcutoffs.get(name).length) {
-                        highcutoffs.remove(name);
-                    } else {
-                        lowcutoffs.remove(name);
-                    }
+        for (final String name : infos) {
+            // sort by this value
+            java.util.Collections.sort(all, new Comparator<PSM>() {
+                @Override
+                public int compare(PSM arg0, PSM arg1) {
+                    return Double.compare(arg0.getDoubleInfo(name), arg1.getDoubleInfo(name));
                 }
-                
+            });
+            // take the higest portion and the lowest portion of the data
+            int lowLimit = (int)(psms.size()*maxReduction);
+
+
+            defineLimits(all, name, 0, lowLimit, 1, lowcutoffs);
+
+            defineLimits(all, name, all.size()-1, all.size()-lowLimit, -1, highcutoffs);
+            if (lowcutoffs.containsKey(name) && highcutoffs.containsKey(name)) {
+                if (lowcutoffs.get(name).length > highcutoffs.get(name).length) {
+                    highcutoffs.remove(name);
+                } else {
+                    lowcutoffs.remove(name);
+                }
             }
         }
         
         if (lowcutoffs.size() == 0 && highcutoffs.size() == 0)
-            return psms;
+            return toArrayList(psms);
         ArrayList<PSM> ret = new ArrayList<>();
         // delete everything in that is below the lowcutoffs
         for (PSM psm : psms) {
             boolean keep = true;
-            for (Map.Entry<String,Object[]> e : lowcutoffs.entrySet()) {
-                if (((Comparable) psm.getOtherInfo().get(e.getKey())).compareTo(e.getValue()[0])<=0) {
+            for (Map.Entry<String,Double[]> e : lowcutoffs.entrySet()) {
+                if (Double.compare(psm.getDoubleInfo(e.getKey()), e.getValue()[0])<=0) {
                     keep = false;
                     break;
                 }
             }
             if (keep) {
-                for (Map.Entry<String,Object[]> e : highcutoffs.entrySet()) {
-                    if (((Comparable) psm.getOtherInfo().get(e.getKey())).compareTo(e.getValue()[0])>=0) {
+                for (Map.Entry<String,Double[]> e : highcutoffs.entrySet()) {
+                    if (Double.compare(psm.getDoubleInfo(e.getKey()), e.getValue()[0])>=0) {
                         keep = false;
                         break;
                     }
@@ -128,7 +132,7 @@ public class SingleFDRFilter implements PSMFilter{
         
     }
 
-    protected void defineLimits(ArrayList<PSM> all, final String name, int start, int lowLimit, int increment, HashMap<String, Object[]> lowcutoffs) {
+    protected void defineLimits(ArrayList<PSM> all, final String name, int start, int lowLimit, int increment, HashMap<String, Double[]> lowcutoffs) {
         // count TT TD and DD in both sets
         double windowTT = 0;
         double windowTD = 0;
@@ -138,13 +142,13 @@ public class SingleFDRFilter implements PSMFilter{
         
         LinkedList<PSM> window = new LinkedList<>();
         
-        Object last = all.get(0).getOtherInfo().get(name);
+        Double last = all.get(0).getDoubleInfo(name);
         int c = 0;
         for (int i = start; i!=lowLimit; i+=increment) {
             PSM l = all.get(i);
             c++;
             // current score
-            Object s = l.getOtherInfo().get(name);
+            Double s = l.getDoubleInfo(name);
             if (l.isTT())
                 windowTT++;
             if (l.isTD())
@@ -162,7 +166,7 @@ public class SingleFDRFilter implements PSMFilter{
                 }
                 double windowFDR = (windowTD-windowDD)/windowTT;
                 if (cutSensible && windowFDR<= targetPercent && windowFDR >maxReducedFDR  && !last.equals(s)) {
-                    lowcutoffs.put(name,new Object[]{last,c});
+                    lowcutoffs.put(name,new Double[]{last,(double)c});
                     break;
                 }
                 PSM r = window.removeFirst();
@@ -173,7 +177,7 @@ public class SingleFDRFilter implements PSMFilter{
                 if (r.isDD())
                     windowDD--;
             }
-            last = l.getOtherInfo().get(name);
+            last = l.getDoubleInfo(name);
         }
     }
 

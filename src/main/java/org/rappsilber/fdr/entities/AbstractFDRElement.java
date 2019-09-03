@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.utils;
+package org.rappsilber.fdr.entities;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,13 +27,24 @@ import org.rappsilber.utils.SelfAdd;
  * @author lfischer
  */
 public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSelfAdd<T>{
+
+
     protected double m_higherFDR;
     protected double m_lowerFDR;
+    /**
+     * The next Target-Decoy match with a lower FDR
+     */
+    private AbstractFDRElement<T> m_lowerTD;
+    /**
+     * The next Target-Decoy match with a higher FDR
+     */
+    private AbstractFDRElement<T> m_higherTD;
     
     protected double m_linkedSupport = 1;
     protected HashSet<String> m_negativeGroups;
     protected HashSet<String> m_positiveGroups;
     private HashSet<String> m_additionalGroups = new HashSet<>();
+    private double m_pep;
     
     public abstract Site getLinkSite1();
     public abstract Site getLinkSite2();
@@ -160,5 +171,69 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     public HashSet<String> getAdditionalFDRGroups() {
         return m_additionalGroups;
     }
+    
+    
+    /**
+     * The next Target-Decoy match with a lower FDR
+     * @return the m_lowerTD
+     */
+    public AbstractFDRElement<T> getLowerTD() {
+        return m_lowerTD;
+    }
+
+    /**
+     * The next Target-Decoy match with a lower FDR
+     * @param m_lowerTD the m_lowerTD to set
+     */
+    public void setLowerTD(AbstractFDRElement<T> TD) {
+        this.m_lowerTD = TD;
+    }
+
+    /**
+     * The next Target-Decoy match with a higher FDR
+     * @return the m_higherTD
+     */
+    public AbstractFDRElement<T> getHigherTD() {
+        return m_higherTD;
+    }
+
+    /**
+     * The next Target-Decoy match with a higher FDR
+     * @param m_higherTD the m_higherTD to set
+     */
+    public void setHigherTD(AbstractFDRElement<T> TD) {
+        this.m_higherTD = TD;
+    }    
+    
+    
+    public double getEstimatedFDR() {
+        if (isTD())
+            return getFDR();
+        double lowerScore = this.getLowerTD().getOriginalScore();
+        double higherScore = this.getHigherTD().getOriginalScore();
+        double lowerFDR = this.getLowerTD().getFDR();
+        double higherFDR = this.getHigherTD().getFDR();
+        double stepScore = higherScore - lowerScore;
+        double stepFDR = higherFDR - lowerFDR;
+        double myStepScore = this.getOriginalScore() - lowerScore;
+        return lowerFDR + stepFDR*(myStepScore/stepScore);
+        
+    }
+
+    public double getOriginalScore() {
+        return getScore();
+    }
+
+    @Override
+    public void setPEP(double pep) {
+        this.m_pep = pep;
+    }
+
+    @Override
+    public Double getPEP() {
+        return this.m_pep;
+    }
+    
+    
     
 }

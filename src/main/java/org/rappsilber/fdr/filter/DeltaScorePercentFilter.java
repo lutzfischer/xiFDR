@@ -23,32 +23,28 @@ import org.rappsilber.fdr.entities.PSM;
  *
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
-public class SplitApply implements PSMFilter{
-    PSMFilter inner;
+public class DeltaScorePercentFilter  implements PSMFilter{
+    /**
+     * what is the value above or below we discard PSMs
+     */
+    double splitValue;
 
-    public SplitApply(PSMFilter inner) {
-        this.inner = inner;
+    public DeltaScorePercentFilter(double splitValue) {
+        this.splitValue = splitValue;
     }
-    
-    
+
     @Override
     public ArrayList<PSM> filter(Collection<PSM> psm) {
-        ArrayList<PSM>  linear = new ArrayList<PSM>(psm.size()/3);
-        ArrayList<PSM>  within = new ArrayList<PSM>(psm.size()/3);
-        ArrayList<PSM>  between = new ArrayList<PSM>(psm.size()/3);
-        
+        ArrayList<PSM> ret = new ArrayList<>();
         for (PSM p : psm) {
-            if (p.isBetween())
-                between.add(p);
-            else if (p.isInternal())
-                within.add(p);
-            else
-                linear.add(p);
+            if (p.getDeltaScore()/p.getOriginalScore()>= splitValue) {
+                ret.add(p);
+            }
         }
-        linear = inner.filter(linear);
-        linear.addAll(inner.filter(within));
-        linear.addAll(inner.filter(between));
-        return linear;
+        return ret;
     }
+    
+    
+    
     
 }

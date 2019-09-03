@@ -16,7 +16,7 @@
 package org.rappsilber.fdr.result;
 
 import java.util.Iterator;
-import org.rappsilber.fdr.utils.FDRSelfAdd;
+import org.rappsilber.fdr.entities.FDRSelfAdd;
 import org.rappsilber.fdr.utils.HashedArrayList;
 
 /**

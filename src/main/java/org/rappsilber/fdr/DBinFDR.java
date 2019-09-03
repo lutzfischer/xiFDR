@@ -663,6 +663,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             if (m_search_ids.contains(searchId)) {
                 continue;
             }
+            String sPepCoverage1 = "peptide1 unique matched non lossy coverage";
+            String sPepCoverage2 = "peptide2 unique matched non lossy coverage";
+            int cPepCoverage1 = -1;
+            int cPepCoverage2 = -1;
 
             ArrayList<String> scorenames = new ArrayList<>();
             if (xi3db) {
@@ -670,7 +674,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 String scoreNameQuerry = 
                         "SELECT scorenames FROM search WHERE id = " + searchId +";";
                 Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                stm.setFetchSize(100);
+                stm.setFetchSize(500);
                 ResultSet rs = stm.executeQuery(scoreNameQuerry);
                 if (rs.next()) {
                     java.sql.Array sn = rs.getArray(1);
@@ -681,6 +685,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         }
                     }
                 }
+                cPepCoverage1 = scorenames.indexOf(sPepCoverage1);
+                cPepCoverage2 = scorenames.indexOf(sPepCoverage2);
             }
             
 
@@ -747,6 +753,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , " + (xi3db ? " scorecleavclpep1fragmatched AS cleavclpep1fragmatched\n" : " 0 AS cleavclpep1fragmatched\n")
                     + " , " + (xi3db ? " scorecleavclpep2fragmatched AS cleavclpep2fragmatched\n" : " 0 AS cleavclpep2fragmatched\n")
                     + " , " + (xi3db ? " scores AS subscores\n" : " null AS subscores\n")
+                    + " , " + (xi3db ? " scoredelta AS delta\n" : " score AS delta\n")
                     + " , s.precursor_intensity\n"
                     + " , s.elution_time_start as retentiontime\n"
                     + " \n"
@@ -856,8 +863,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             int precIntensityColumn = rs.findColumn("precursor_intensity");
             int retentiontimeColumn = rs.findColumn("retentiontime");
             int clMassColumn = rs.findColumn("clmass");
+            int clDeltaColumn = rs.findColumn("delta");
             Pattern modDetect = Pattern.compile(".*[^A-Z].*");
             HashSet<Double> tmmodcount = new HashSet<>();
+            HashMap<Double,Double> xlmodmasses = new HashMap<Double,Double>(1);
 
             int total = 0;
             try {
@@ -965,21 +974,46 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 //                    if (subscores != null) {
 //                        Float[] scoresf = (Float[])subscores.getArray();
 //                        for (int i =0; i<scorenames.size(); i++) {
-//                            psm.getOtherInfo().put(scorenames.get(i),scoresf[i]);
+//                            psm.addOtherInfo(scorenames.get(i),scoresf[i]);
 //                        }
 //                    }
-                    psm.getOtherInfo().put("scoreP1Coverage",p1c);
-                    psm.getOtherInfo().put("scoreP2Coverage",p2c);
-                    psm.getOtherInfo().put("cleavclpep1fragmatched",cleavclpep1fragmatched ? 1:0);
-                    psm.getOtherInfo().put("cleavclpep2fragmatched",cleavclpep2fragmatched ? 1:0);
-                    psm.getOtherInfo().put("cleavclpepfragmatched",(cleavclpep2fragmatched ? 1:0) + (cleavclpep1fragmatched ? 1:0));
-                    psm.getOtherInfo().put("deltaScore",rs.getDouble(deltaScoreColumn));
-                    psm.getOtherInfo().put("ScoreDivDelta",rs.getDouble(scoreColumn)/rs.getDouble(deltaScoreColumn));
-                    psm.getOtherInfo().put("linkSiteDelta",rs.getDouble(LinkSiteDeltaColumn));
-                    psm.getOtherInfo().put("mgxrank",rs.getDouble(mgxrankColumn));
-                    psm.getOtherInfo().put("PrecursorIntensity",rs.getDouble(precIntensityColumn));
-                    psm.getOtherInfo().put("RetentionTime",rs.getDouble(retentiontimeColumn));
+                    if (cPepCoverage1 > 0) {
+                        Float[] scoresf = (Float[])subscores.getArray();
+                        if (cPepCoverage2 <0 || Double.isNaN(scoresf[cPepCoverage2]))
+                            psm.addOtherInfo("minPepCoverage",
+                                scoresf[cPepCoverage1]);
+                        else
+                            psm.addOtherInfo("minPepCoverage",
+                                Math.min(scoresf[cPepCoverage1], 
+                                        scoresf[cPepCoverage2])
+                        );
+                    }
+                    psm.addOtherInfo("scoreP1Coverage",p1c);
+                    psm.addOtherInfo("scoreP2Coverage",p2c);
+                    if (pep2mass>0) {
+                        psm.addOtherInfo("minPepCoverageAbsolute",
+                            Math.min(p1c, p2c));
+                    } else {
+                        psm.addOtherInfo("minPepCoverageAbsolute", p1c);
+                    }
+                    
+                    psm.addOtherInfo("cleavclpep1fragmatched",cleavclpep1fragmatched ? 1:0);
+                    psm.addOtherInfo("cleavclpep2fragmatched",cleavclpep2fragmatched ? 1:0);
+                    psm.addOtherInfo("cleavclpepfragmatched",(cleavclpep2fragmatched ? 1:0) + (cleavclpep1fragmatched ? 1:0));
+                    psm.addOtherInfo("deltaScore",rs.getDouble(deltaScoreColumn));
+                    psm.addOtherInfo("ScoreDivDelta",rs.getDouble(scoreColumn)/rs.getDouble(deltaScoreColumn));
+                    psm.addOtherInfo("linkSiteDelta",rs.getDouble(LinkSiteDeltaColumn));
+                    psm.addOtherInfo("mgxrank",rs.getDouble(mgxrankColumn));
+                    psm.addOtherInfo("PrecursorIntensity",rs.getDouble(precIntensityColumn));
+                    psm.addOtherInfo("RetentionTime",rs.getDouble(retentiontimeColumn));
+                    Double xlModmassPre = rs.getDouble(clMassColumn);
+                    Double xlModmass = xlmodmasses.get(xlModmassPre);
+                    if (xlModmass == null) {
+                        xlmodmasses.put(xlModmassPre,xlModmassPre);
+                        xlModmass = xlModmassPre;
+                    }
                     psm.setCrosslinkerModMass(rs.getDouble(clMassColumn));
+                    psm.setDeltaScore(rs.getDouble(deltaScoreColumn));
 
                     if  (autovalidated) {
                         psm.setAutoValidated(autovalidated);

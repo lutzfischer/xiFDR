@@ -16,6 +16,7 @@
 package org.rappsilber.fdr.filter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,19 +52,26 @@ public class RemoveWorstEntries implements PSMFilter{
     public RemoveWorstEntries(double targetPercent) {
         this.targetPercent = targetPercent;
     }
+
+    private ArrayList<PSM> toArrayList(Collection<PSM> psms) {
+        if (psms instanceof ArrayList)
+            return (ArrayList<PSM>)psms;
+        else
+            return new ArrayList<PSM>(psms);
+    }
     
     @Override
-    public ArrayList<PSM> filter(ArrayList<PSM> psms) {
+    public ArrayList<PSM> filter(Collection<PSM> psms) {
         if (targetPercent == 0 ||  targetPercent == 1)
-            return psms;
+            return toArrayList(psms);
         if (psms.size() == 0)
-            return psms;
-        PSM first =  psms.get(0);
+            return new ArrayList<PSM>(0);
+        PSM first =  psms.iterator().next();
         ArrayList<PSM> all = new ArrayList<>(psms.size());
-        HashMap<String,Object> infos = first.getOtherInfo();
-        ArrayList<String> comparableInfos = new ArrayList<>(infos.size());
-        HashMap<String,Object> lowcutoffs = new HashMap<>();
-        HashMap<String,Object> highcutoffs = new HashMap<>();
+        String[] infos = PSM.getDoubleInfoNames();
+        ArrayList<String> comparableInfos = new ArrayList<>(infos.length);
+        HashMap<String,Double> lowcutoffs = new HashMap<>();
+        HashMap<String,Double> highcutoffs = new HashMap<>();
         
         int allTT = 0;
         int allTD = 0;
@@ -80,15 +88,14 @@ public class RemoveWorstEntries implements PSMFilter{
         
         double allFDR=(allTD - allDD)/(double)allTT;
         
-        for (Map.Entry<String,Object> e : infos.entrySet()) {
-            Object o = e.getValue();
-            if (o instanceof Comparable) {
+        for (final String name : infos) {
+            Class o = PSM.getOtherInfoType(name);
+            if (o.isAssignableFrom(Comparable.class)) {
                 // sort by this value
-                final String name = e.getKey();
                 java.util.Collections.sort(all, new Comparator<PSM>() {
                     @Override
                     public int compare(PSM arg0, PSM arg1) {
-                        return ((Comparable) arg0.getOtherInfo().get(name)).compareTo(arg1.getOtherInfo().get(name));
+                        return Double.compare(arg0.getDoubleInfo(name), arg1.getDoubleInfo(name));
                     }
                 });
                 // take the higest portion and the lowest portion of the data
@@ -103,22 +110,22 @@ public class RemoveWorstEntries implements PSMFilter{
         }
         
         if (lowcutoffs.size() == 0 && highcutoffs.size() == 0)
-            return psms;
+            return toArrayList(psms);
         ArrayList<PSM> ret = new ArrayList<>();
 
         // delete everything in that is below the lowcutoffs
         for (PSM psm : psms) {
             boolean keep = true;
-            for (Map.Entry<String,Object> e : lowcutoffs.entrySet()) {
-                if (((Comparable) psm.getOtherInfo().get(e.getKey())).compareTo(e.getValue())<=0) {
+            for (Map.Entry<String,Double> e : lowcutoffs.entrySet()) {
+                if (Double.compare(psm.getDoubleInfo(e.getKey()), e.getValue())<=0) {
                     keep = false;
                     break;
                 }
             }
 
             if (keep) {
-                for (Map.Entry<String,Object> e : highcutoffs.entrySet()) {
-                    if (((Comparable) psm.getOtherInfo().get(e.getKey())).compareTo(e.getValue())>=0) {
+                for (Map.Entry<String,Double> e : highcutoffs.entrySet()) {
+                    if (Double.compare(psm.getDoubleInfo(e.getKey()),e.getValue())>=0) {
                         keep = false;
                         break;
                     }
@@ -132,7 +139,7 @@ public class RemoveWorstEntries implements PSMFilter{
         
     }
 
-    protected void defineLimits(ArrayList<PSM> all, final String name, boolean fromHigh, double percentDelete, HashMap<String, Object> cutoffs, double allfdr) {
+    protected void defineLimits(ArrayList<PSM> all, final String name, boolean fromHigh, double percentDelete, HashMap<String, Double> cutoffs, double allfdr) {
         // count TT TD and DD in both sets
         double TT = 0;
         double TD = 0;
@@ -150,10 +157,10 @@ public class RemoveWorstEntries implements PSMFilter{
             increment=1;
         }
         
-        Comparable o = (Comparable) all.get(cutpoint).getOtherInfo().get(name);
-        Comparable c = null;
+        Double o = all.get(cutpoint).getDoubleInfo(name);
+        Double c = null;
         
-        while (o.equals(c = (Comparable) all.get(cutpoint).getOtherInfo().get(name))) {
+        while (o.equals(c = all.get(cutpoint).getDoubleInfo(name))) {
             cutpoint += increment;
             if (cutpoint<0 || cutpoint>=all.size())
                 return;
