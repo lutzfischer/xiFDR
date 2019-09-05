@@ -359,26 +359,27 @@ public class CSVinFDR extends OfflineFDR {
                     ipeppos2[i] = Integer.parseInt(pepPositions2[i]);
                 }
 
+                String run = crun == null ? "":csv.getValue(crun);
+                String scan = cscan == null ? "":csv.getValue(cscan);
+                String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
+                double crosslinkerMass = cCrosslinkerMass == null ? -1:csv.getDouble(cCrosslinkerMass);
+                String negativeCase = null;
+                String poisitiveCase = null;
+                if (cNegativeGrouping != null && cNegativeGrouping >=0) {
+                    negativeCase = csv.getValue(cNegativeGrouping);
+                    if (negativeCase.isEmpty())
+                        negativeCase=null;
+                }
+                if (cPositiveGrouping != null && cPositiveGrouping >=0) {
+                    poisitiveCase = csv.getValue(cPositiveGrouping);
+                    if (poisitiveCase.isEmpty())
+                        poisitiveCase=null;
+                }
+
 
                 PSM psm = null;
                 for (int p1 = 0; p1< accessions1.length; p1++) {
                     for (int p2 = 0; p2< accessions2.length; p2++) {
-                        String run = crun == null ? "":csv.getValue(crun);
-                        String scan = cscan == null ? "":csv.getValue(cscan);
-                        String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
-                        double crosslinkerMass = cCrosslinkerMass == null ? -1:csv.getDouble(cCrosslinkerMass);
-                        String negativeCase = null;
-                        String poisitiveCase = null;
-                        if (cNegativeGrouping != null && cNegativeGrouping >=0) {
-                            negativeCase = csv.getValue(cNegativeGrouping);
-                            if (negativeCase.isEmpty())
-                                negativeCase=null;
-                        }
-                        if (cPositiveGrouping != null && cPositiveGrouping >=0) {
-                            poisitiveCase = csv.getValue(cPositiveGrouping);
-                            if (poisitiveCase.isEmpty())
-                                poisitiveCase=null;
-                        }
 
                         psm = addMatch(psmID, pepSeq1, pepSeq2, peplen1, peplen2, 
                                 site1, site2, isDecoy1, isDecoy2, charge, score, 
@@ -406,9 +407,6 @@ public class CSVinFDR extends OfflineFDR {
 
                             }
                         }
-
-
-
 
                         if (cInfo != null) {
                             psm.setInfo(csv.getValue(cInfo));

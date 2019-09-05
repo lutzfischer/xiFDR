@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rappsilberlab</groupId>
     <artifactId>xiFDR</artifactId>
-    <version>1.3.34</version>
+    <version>1.3.35</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -33,11 +33,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>RUtils</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>CSV</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -103,6 +98,11 @@
             <artifactId>fastutil</artifactId>
             <version>7.2.1</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>CSV</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
     <build>
 	<plugins>
@@ -145,5 +145,5 @@
     </properties>
     <description>Application for FDR estimation cross-linking massspectrometry data
 </description>
-    <name>xiFDR-1.3.34</name>
+    <name>xiFDR-1.3.35</name>
 </project>

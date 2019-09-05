@@ -316,9 +316,18 @@ public class PSM extends AbstractFDRElement<PSM> {
         PSM c = (PSM) l;
         if (isNonCovalent != c.isNonCovalent)
             return false;
+        if (this.origScore != c.origScore)
+            return false;
+        if (this.crosslinker != c.crosslinker)
+            return false; 
+        if (this.charge != c.charge)
+            return false;
+        
+        if (!this.psmID.contentEquals(c.psmID))
+            return false;
+        
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
-        return this.origScore == c.origScore && this.crosslinker == c.crosslinker && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID) &&
-                ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
+        return ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
                 ((c.peptide1Score == this.peptide2Score &&c.peptide2Score == this.peptide1Score) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }

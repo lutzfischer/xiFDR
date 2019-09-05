@@ -759,7 +759,7 @@ public abstract class OfflineFDR {
             score = 10 - (10 * score);
         }
 
-        PSM psm = new PSM(psmID, npepid1, npepid2, (byte) nsite1, (byte) nsite2, proteinId1.isDecoy(), proteinId2.isDecoy(), (byte) charge, score, peptide1Score, peptide2Score);
+        PSM psm = new PSM(psmID, npepid1, npepid2, (byte) nsite1, (byte) nsite2, nproteinId1.isDecoy(), nproteinId2.isDecoy(), (byte) charge, score, npeptide1Score, npeptide2Score);
         psm.setNegativeGrouping(isSpecialCase);
 
         psm.setRun(registerRun(run));
