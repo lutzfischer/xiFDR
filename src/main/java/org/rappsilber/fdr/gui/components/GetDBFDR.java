@@ -74,7 +74,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             }
         });
 
-        txtReadFilter.setText("");
+        txtReadFilter.setText("(site1>0 OR pepSeq2 isnull)");
 
         btnReadFilter.setText("Filter");
         btnReadFilter.addActionListener(new java.awt.event.ActionListener() {

@@ -593,5 +593,9 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
 //    public HashSet<String> getNegativeGrouping() {
 //        return this.m_NegativeGrouping;
 //    }    
-        
+ 
+    public boolean isNonCovalent() {
+        return false;
+    }
+    
 }

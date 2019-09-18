@@ -130,7 +130,7 @@ public class FDRGUI extends javax.swing.JFrame {
         loggingOutput.setLevel(Level.ALL);
 
         Handler tabRiser = riseLoggignTabOnError();
-
+        
         // make sure we display one of the possible fdrsettings-panel
         changeFDRSettings(null);
 
@@ -281,7 +281,21 @@ public class FDRGUI extends javax.swing.JFrame {
                             });
                             break;
                         }
+
                     }
+                    final String message = record.getMessage();
+                    final int level = record.getLevel().intValue();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (level >= Level.SEVERE.intValue()) {
+                                JOptionPane.showMessageDialog(FDRGUI.this, message, "Error", JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(FDRGUI.this, message, "Warning", JOptionPane.WARNING_MESSAGE);
+                            }
+                        }
+                    });
+                    
                 }
             }
             
@@ -2640,9 +2654,7 @@ public class FDRGUI extends javax.swing.JFrame {
         txtStatus.setPreferredSize(new java.awt.Dimension(200, 19));
         jSplitPane1.setLeftComponent(txtStatus);
 
-        memory3.setShowAutoGCButton(false);
         memory3.setShowGCButton(false);
-        memory3.setShowLogButton(false);
         jSplitPane1.setRightComponent(memory3);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -2846,12 +2858,20 @@ public class FDRGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_rbCSVActionPerformed
 
     private void cbLevelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbLevelActionPerformed
-        Handler[] handlers =
-            Logger.getLogger( "" ).getHandlers();
-        for ( int index = 0; index < handlers.length; index++ ) {
-            handlers[index].setLevel((Level) cbLevel.getSelectedItem());
-        }
-        loggingOutput.setLevel((Level) cbLevel.getSelectedItem());
+        Runnable runnable = new Runnable() {
+            public void run() {
+                Handler[] handlers
+                        = Logger.getLogger("").getHandlers();
+                for (int index = 0; index < handlers.length; index++) {
+                    handlers[index].setLevel((Level) cbLevel.getSelectedItem());
+                }
+                loggingOutput.setLevel((Level) cbLevel.getSelectedItem());
+            }
+        };
+        Thread t = new Thread(runnable);
+        t.setName("Thread-" + t.getId()+ " UpdateLogLevel");
+        t.setDaemon(true);
+        t.start();
     }//GEN-LAST:event_cbLevelActionPerformed
 
     private void lpCsvOutLocalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lpCsvOutLocalActionPerformed

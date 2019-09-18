@@ -609,4 +609,8 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 //    }
 
+    public boolean isNonCovalent() {
+        return false;
+    }
+    
 }

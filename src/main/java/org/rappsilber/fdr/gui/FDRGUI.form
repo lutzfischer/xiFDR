@@ -1955,9 +1955,7 @@
         </Component>
         <Component class="org.rappsilber.gui.components.memory.Memory" name="memory3">
           <Properties>
-            <Property name="showAutoGCButton" type="boolean" value="false"/>
             <Property name="showGCButton" type="boolean" value="false"/>
-            <Property name="showLogButton" type="boolean" value="false"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout$JSplitPaneConstraintsDescription">

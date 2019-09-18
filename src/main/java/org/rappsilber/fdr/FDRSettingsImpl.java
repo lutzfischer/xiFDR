@@ -59,6 +59,8 @@ public class FDRSettingsImpl implements FDRSettings {
     private double minDeltaScoreFilter;
     private boolean boostPepDeltaScore =true;
     private boolean combineScoreAndDelta;
+    private int minFragments;
+    private boolean boostMinFragments = false;
     
     @Override
     public void addCalcListener(ActionListener al) {
@@ -301,6 +303,7 @@ public class FDRSettingsImpl implements FDRSettings {
         to.boostPSMs(from.boostPSMs());
         to.boostPeptidePairs(from.boostPeptidePairs());
         to.boostProteins(from.boostProteins());
+        to.boostMinFragments(from.boostMinFragments());
 //        to.boostSubScores(from.boostSubScores());
 //        to.setSubScoreCutOff(from.getSubScoreCutOff());
         to.setFilterConsecutivePeptides(from.filterConsecutivePeptides());
@@ -310,6 +313,7 @@ public class FDRSettingsImpl implements FDRSettings {
         to.linkLocalFDR(from.linkLocalFDR());    
         to.ppiLocalFDR(from.ppiLocalFDR());    
         to.setMinDeltaScoreFilter(from.getMinDeltaScoreFilter());    
+        to.setMinPeptideFragmentsFilter(from.getMinPeptideFragmentsFilter()); 
         to.setMinPeptideCoverageFilter(from.getMinPeptideCoverageFilter()); 
         to.boostPepCoverage(from.boostPepCoverage());
         to.boostDeltaScore(from.boostDeltaScore());
@@ -419,10 +423,19 @@ public class FDRSettingsImpl implements FDRSettings {
         return this.boostPepCoverage;
     }
 
-    
     @Override
     public void boostPepCoverage(boolean boost){
         this.boostPepCoverage = boost;
+    }
+
+    @Override
+    public boolean boostMinFragments(){
+        return this.boostMinFragments;
+    }
+
+    @Override
+    public void boostMinFragments(boolean boost){
+        this.boostMinFragments = boost;
     }
 
     @Override
@@ -492,6 +505,16 @@ public class FDRSettingsImpl implements FDRSettings {
 
     void setMinAbsolutePepCoverFilter(double d) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int getMinPeptideFragmentsFilter() {
+        return this.minFragments;
+    }
+
+    @Override
+    public void setMinPeptideFragmentsFilter(int frags) {
+        this.minFragments = frags;
     }
     
     

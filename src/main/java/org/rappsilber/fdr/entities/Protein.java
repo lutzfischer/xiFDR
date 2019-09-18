@@ -483,4 +483,9 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     public void setSize(int size) {
         this.size = size;
     }
+    
+    public boolean isNonCovalent() {
+        return false;
+    }
+    
 }

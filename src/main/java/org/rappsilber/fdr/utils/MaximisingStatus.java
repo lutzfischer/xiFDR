@@ -25,6 +25,7 @@ import org.rappsilber.fdr.result.FDRResult;
 public class MaximisingStatus {
         public double showDelta;
         public double showPepCoverage;
+        public int    showMinFrags;
         public double showPSMFDR;
         public double showPepFDR;
         public double showProtFDR;

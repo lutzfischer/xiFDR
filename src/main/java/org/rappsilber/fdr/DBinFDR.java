@@ -98,22 +98,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     
     private String command_line_auto_validate = null;
 
-    static {
-        setVersion();
-    }
-
-    public static void setVersion() {
-        if (!versionSet) {
-            versionSet = true;
-            Version v = DBinFDR.getXiFDRVersion();
-            String prevExt = v.extension;
-            v.setExtension("$Rev: 69 $"); 
-            //v.setExtension(v.extension +".dev"); 
-            if (prevExt != null && !prevExt.isEmpty()) {
-                v.setExtension(prevExt + "." + v.extension);
-            }
-        }
-    }
 
     private Sequence loadSequence(long id) throws SQLException {
         Connection con = getDBConnection();
@@ -656,6 +640,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         } else if (filter != null && !filter.isEmpty()) {
             filterSetting = filter;
         }
+        boolean shownMinPepWarning =false;
 
         for (int currentsearch = 0 ; currentsearch<searchIds.length;currentsearch++){
             int searchId = searchIds[currentsearch];
@@ -688,9 +673,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 cPepCoverage1 = scorenames.indexOf(sPepCoverage1);
                 cPepCoverage2 = scorenames.indexOf(sPepCoverage2);
             }
+
+            if (cPepCoverage2 <0 && !shownMinPepWarning) {
+                shownMinPepWarning = true;
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Warning - no relative peptide coverage for peptide 2 - bossting on minimum peptide coverage likely not helpfull");
+            }
             
-
-
             String matchQuerry;
             matchQuerry
                     = "SELECT * FROM (SELECT sm.id AS psmID, \n"
@@ -929,6 +917,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
                     double p1c = rs.getDouble(scoreP1CoverageColumn);
                     double p2c = rs.getDouble(scoreP2CoverageColumn);
+                    double pminc = p1c;
+                    
+                    if (sequence2 != null && !sequence2.isEmpty()) {
+                        pminc = Math.min(p1c,p2c);
+                    }
+                    
                     double pmz = rs.getDouble(exp_mzColumn);
                     double f = 1;
                     if (pepSeq2 != null && !pepSeq2.isEmpty() && p1c + p2c > 0) {
@@ -988,8 +982,11 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                                         scoresf[cPepCoverage2])
                         );
                     }
-                    psm.addOtherInfo("scoreP1Coverage",p1c);
-                    psm.addOtherInfo("scoreP2Coverage",p2c);
+
+                    
+                    psm.addOtherInfo("P1Fragments",p1c);
+                    psm.addOtherInfo("P2Fragments",p2c);
+                    psm.addOtherInfo("MinFragments",pminc);
                     if (pep2mass>0) {
                         psm.addOtherInfo("minPepCoverageAbsolute",
                             Math.min(p1c, p2c));

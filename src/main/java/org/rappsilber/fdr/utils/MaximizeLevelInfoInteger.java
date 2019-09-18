@@ -24,21 +24,33 @@ import org.rappsilber.fdr.result.FDRResultLevel;
 public class MaximizeLevelInfoInteger extends MaximizeLevelInfo{
 
     
-    public MaximizeLevelInfoInteger(double maximumFDR, boolean boost, int steps) {
-        super(maximumFDR, boost, steps);
+    public MaximizeLevelInfoInteger(double maximumValue, boolean boost, int steps) {
+        super(maximumValue, boost, steps);
         correctStepWidth();
     }
 
     protected void correctStepWidth() {
         stepWidth = Math.round(stepWidth);
-        if (stepWidth <0) {
+        if (stepWidth < 1) {
             stepWidth = 1;
         }
     }
-    
+ 
     public void calcNextFDRRange(boolean startLow, int stepChange) {
         super.calcNextFDRRange(startLow, stepChange);
         correctStepWidth();
     }
+
+    @Override
+    public double getCurrentFDR() {
+        return Math.round(super.getCurrentFDR()); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    public void setNewMaxFDR() {
+        maximumFDR = getCurrentFDR();
+        smallestEqualFDR = maximumFDR;
+        largestEqualFDR = maximumFDR;
+    }
+    
 
 }

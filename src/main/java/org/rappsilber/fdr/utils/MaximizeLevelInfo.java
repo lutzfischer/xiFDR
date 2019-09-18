@@ -22,9 +22,10 @@ import org.rappsilber.fdr.result.FDRResultLevel;
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
 public class MaximizeLevelInfo {
-
+    public String name;
     public double firstFDR;
     public double maximumFDR = 0;
+    public double minimumFDR = 0;
     public double fromFDR;
     public double toFDR;
     public double steps;
@@ -32,7 +33,7 @@ public class MaximizeLevelInfo {
     public double smallestEqualFDR = 0;
     public double largestEqualFDR = 0;
     public boolean boost;
-    public double currentFDR;
+    private double currentFDR;
 
     public int count = 0;
     public int countBetween = 0;
@@ -43,14 +44,20 @@ public class MaximizeLevelInfo {
     public int countLinearPreFilter = 0;
 
     public MaximizeLevelInfo(double maximumFDR, boolean boost, int steps) {
+        this(maximumFDR, 0, boost, steps);
+    }
+
+    public MaximizeLevelInfo(double maximumFDR, double minimumFDR, boolean boost, int steps) {
         this.maximumFDR = maximumFDR;
         this.firstFDR = maximumFDR;
         this.currentFDR = maximumFDR;
         this.steps = steps;
         this.toFDR = maximumFDR;
         this.boost = boost;
+        this.minimumFDR = minimumFDR;
         if (boost) {
-            fromFDR = Math.min(0.005, toFDR / steps);
+            double min = Math.max(minimumFDR, 0.0005);
+            fromFDR = Math.min(min, toFDR / steps);
             stepWidth = (toFDR - fromFDR) / steps;
         } else {
             fromFDR = toFDR;
@@ -107,12 +114,26 @@ public class MaximizeLevelInfo {
                 }
             }
             if (startLow)  {
-                newFrom = Math.min(newFrom, 0.001);
+                newFrom = Math.min(newFrom, Math.max(minimumFDR,0.001));
             }
             fromFDR = newFrom;
             steps += stepChange;
             stepWidth = (toFDR - fromFDR) / steps;
         }
+    }
+
+    /**
+     * @return the currentFDR
+     */
+    public double getCurrentFDR() {
+        return currentFDR;
+    }
+
+    /**
+     * @return the currentFDR
+     */
+    public void setCurrentFDR(double fdr) {
+        currentFDR = fdr;
     }
 
 }

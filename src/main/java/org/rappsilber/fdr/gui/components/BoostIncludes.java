@@ -45,6 +45,7 @@ public class BoostIncludes extends javax.swing.JPanel {
         ckPepPair.setSelected(settings.boostPeptidePairs());
         ckProt.setSelected(settings.boostProteins());
         ckLinks.setSelected(settings.boostLinks());
+        ckMinFragments.setSelected(settings.boostMinFragments());
         ckPeptideCoverage.setSelected(settings.boostPepCoverage());
         ckDeltaScore.setSelected(settings.boostDeltaScore());
 //        ckSubScores.setSelected(settings.boostSubScores());
@@ -109,6 +110,7 @@ public class BoostIncludes extends javax.swing.JPanel {
         jButton1 = new javax.swing.JButton();
         ckPeptideCoverage = new javax.swing.JCheckBox();
         ckDeltaScore = new javax.swing.JCheckBox();
+        ckMinFragments = new javax.swing.JCheckBox();
 
         ckPSM.setText("PSM");
 
@@ -131,6 +133,8 @@ public class BoostIncludes extends javax.swing.JPanel {
 
         ckDeltaScore.setText("Delta Score");
 
+        ckMinFragments.setText("Minimum Fragmnets");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -138,27 +142,31 @@ public class BoostIncludes extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButton1))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(ckPSM)
-                            .addComponent(ckPepPair)
-                            .addComponent(ckProt)
-                            .addComponent(ckLinks)
-                            .addComponent(jLabel1)
-                            .addComponent(ckDeltaScore)
-                            .addComponent(ckPeptideCoverage))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(ckDeltaScore)
+                        .addComponent(ckPSM)
+                        .addComponent(ckPepPair)
+                        .addComponent(ckProt)
+                        .addComponent(ckLinks)
+                        .addComponent(ckPeptideCoverage)
+                        .addComponent(ckMinFragments))
+                    .addComponent(jLabel1))
+                .addContainerGap(76, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton1)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPeptideCoverage)
-                .addGap(4, 4, 4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckMinFragments)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckDeltaScore)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPSM)
@@ -168,9 +176,9 @@ public class BoostIncludes extends javax.swing.JPanel {
                 .addComponent(ckProt)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckLinks)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jButton1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -181,6 +189,7 @@ public class BoostIncludes extends javax.swing.JPanel {
         settings.boostPeptidePairs(ckPepPair.isSelected());
         settings.boostProteins(ckProt.isSelected());
         settings.boostLinks(ckLinks.isSelected());
+        settings.boostMinFragments(ckMinFragments.isSelected());
         //settings.boostSubScores(ckSubScores.isSelected());
         fireActionPerformed(evt);
     }//GEN-LAST:event_jButton1ActionPerformed
@@ -189,6 +198,7 @@ public class BoostIncludes extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox ckDeltaScore;
     private javax.swing.JCheckBox ckLinks;
+    private javax.swing.JCheckBox ckMinFragments;
     private javax.swing.JCheckBox ckPSM;
     private javax.swing.JCheckBox ckPepPair;
     private javax.swing.JCheckBox ckPeptideCoverage;

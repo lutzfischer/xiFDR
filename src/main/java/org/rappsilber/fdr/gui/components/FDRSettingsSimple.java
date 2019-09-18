@@ -54,6 +54,8 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private double minPeptideCoverageFilter;
     private double minDeltaScoreFilter;
     private boolean combineScoreAndDelta;
+    private int minFragments;
+    private boolean boostMinFragments;
 
     @Override
     public boolean getBoostBetween() {
@@ -616,20 +618,35 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     }    
 
     
+    @Override
     public double getMinPeptideCoverageFilter() {
         return this.minPeptideCoverageFilter;
     }
+    @Override
     public void setMinPeptideCoverageFilter(double d) {
         this.minPeptideCoverageFilter = d;
     }
 
+    @Override
     public double getMinDeltaScoreFilter() {
         return this.minDeltaScoreFilter;
     }
     
+    @Override
     public void setMinDeltaScoreFilter(double d) {
         this.minDeltaScoreFilter = d;
     }
 
+    @Override
+    public int getMinPeptideFragmentsFilter() {
+        return this.minFragments;
+    }
+
+    @Override
+    public void setMinPeptideFragmentsFilter(int frags) {
+        this.minFragments = frags;
+    }
+
+    
     
 }

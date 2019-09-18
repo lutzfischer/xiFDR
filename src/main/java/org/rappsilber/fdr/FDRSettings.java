@@ -121,8 +121,11 @@ public interface FDRSettings {
 
     public boolean boostPepCoverage();    
     public void boostPepCoverage(boolean boost);    
-    public boolean boostDeltaScore();
 
+    public boolean boostMinFragments();
+    public void boostMinFragments(boolean boost);
+    
+    public boolean boostDeltaScore();
     public void boostDeltaScore(boolean boost);
 
     public boolean boostPSMs();
@@ -139,6 +142,9 @@ public interface FDRSettings {
     
     public double getMinPeptideCoverageFilter();
     public void setMinPeptideCoverageFilter(double d);
+    
+    public int getMinPeptideFragmentsFilter();
+    public void setMinPeptideFragmentsFilter(int frags);
 
     public double getMinDeltaScoreFilter();
     public void setMinDeltaScoreFilter(double d);

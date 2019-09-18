@@ -140,4 +140,10 @@ public interface FDRSelfAdd<T> extends SelfAdd<T> { //, Comparable<T> {
      */
     int getSites();
     
+    /**
+     * returns if this is derived from a non-covalent Peptide-Pair
+     */
+    public boolean isNonCovalent();
+    
+    
 }

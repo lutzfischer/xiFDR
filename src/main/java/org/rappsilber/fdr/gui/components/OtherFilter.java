@@ -32,6 +32,7 @@ public class OtherFilter extends javax.swing.JPanel {
     public OtherFilter() {
         initComponents();
         ckCombineScoreAndDelta.setVisible(false);
+        txtMinPepFrags.setHorizontalAlignment(SwingConstants.RIGHT);
         txtDeltaScore.setHorizontalAlignment(SwingConstants.RIGHT);
         txtMinPepCoverage.setHorizontalAlignment(SwingConstants.RIGHT);
     }
@@ -50,6 +51,8 @@ public class OtherFilter extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         txtDeltaScore = new javax.swing.JTextField();
         ckCombineScoreAndDelta = new javax.swing.JCheckBox();
+        txtMinPepFrags = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
 
         txtMinPepCoverage.setText("0");
         txtMinPepCoverage.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -71,6 +74,15 @@ public class OtherFilter extends javax.swing.JPanel {
 
         ckCombineScoreAndDelta.setText("PSM Score=(Score+Delta)/2");
 
+        txtMinPepFrags.setText("0");
+        txtMinPepFrags.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtMinPepFragshigherThen1Test(evt);
+            }
+        });
+
+        jLabel3.setText("Min Peptide Fragments");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -78,39 +90,48 @@ public class OtherFilter extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(ckCombineScoreAndDelta, javax.swing.GroupLayout.DEFAULT_SIZE, 309, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtDeltaScore, javax.swing.GroupLayout.DEFAULT_SIZE, 121, Short.MAX_VALUE)
-                            .addComponent(txtMinPepCoverage))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE))
-                    .addComponent(ckCombineScoreAndDelta, javax.swing.GroupLayout.DEFAULT_SIZE, 317, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addComponent(jLabel3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(txtMinPepFrags))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel1)
+                                    .addComponent(jLabel2))
+                                .addGap(28, 28, 28)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(txtMinPepCoverage)
+                                    .addComponent(txtDeltaScore))))
+                        .addGap(28, 28, 28)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtMinPepFrags, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtMinPepCoverage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1))
-                .addGap(18, 18, 18)
+                .addGap(12, 12, 12)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(txtDeltaScore, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(ckCombineScoreAndDelta)
-                .addContainerGap(24, Short.MAX_VALUE))
+                .addContainerGap(11, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void higherThen1Test(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_higherThen1Test
         JTextField txt  = (JTextField) (evt.getSource());
         String sValue = txt.getText();
-        sValue = sValue.replaceAll("[^0-9+\\-\\.Ee]", "");
+        sValue = sValue.replaceAll("[^0-9+\\-\\.,Ee]", "");
         if (sValue.length()< txt.getText().length())
             txt.setText(sValue);
         Double v = Double.parseDouble(sValue);
@@ -119,6 +140,14 @@ public class OtherFilter extends javax.swing.JPanel {
             txt.setText(v.toString());
         }
     }//GEN-LAST:event_higherThen1Test
+
+    private void txtMinPepFragshigherThen1Test(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtMinPepFragshigherThen1Test
+        JTextField txt  = (JTextField) (evt.getSource());
+        String sValue = txt.getText();
+        sValue = sValue.replaceAll("[^0-9+\\-\\.Ee]", "");
+        if (sValue.length()< txt.getText().length())
+            txt.setText(sValue);
+    }//GEN-LAST:event_txtMinPepFragshigherThen1Test
 
     public double getMinDeltaScore() {
         return Double.parseDouble(txtDeltaScore.getText());
@@ -149,7 +178,9 @@ public class OtherFilter extends javax.swing.JPanel {
     private javax.swing.JCheckBox ckCombineScoreAndDelta;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     public javax.swing.JTextField txtDeltaScore;
     public javax.swing.JTextField txtMinPepCoverage;
+    public javax.swing.JTextField txtMinPepFrags;
     // End of variables declaration//GEN-END:variables
 }

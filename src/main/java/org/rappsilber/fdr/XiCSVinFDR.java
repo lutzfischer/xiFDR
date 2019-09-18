@@ -56,9 +56,6 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     ArrayList<String> searchedFastas = new ArrayList<>();
     HashMap<String,Double> crossLinkerMass = new HashMap<>(1);
 
-    static {
-        DBinFDR.setVersion();
-    }
     private boolean markModifications;
 
 

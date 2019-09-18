@@ -48,6 +48,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
 //    private double subScoreCutOff = 1;
     private boolean boostPepCoverage = true;
     private boolean boostPepDeltaScore = true;
+    private boolean boostMinFragments = false;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -245,6 +246,17 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public void boostDeltaScore(boolean boost){
         this.boostPepDeltaScore = boost;
+    }
+    
+    
+    @Override
+    public boolean boostMinFragments(){
+        return this.boostMinFragments;
+    }
+
+    @Override
+    public void boostMinFragments(boolean boost){
+        this.boostMinFragments = boost;
     }
     
 //    public double getSubScoreCutOff() {

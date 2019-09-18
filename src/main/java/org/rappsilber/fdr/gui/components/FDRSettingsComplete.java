@@ -532,7 +532,16 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     public void combineScoreAndDelta(boolean c) {
         this.otherFilter.combineScoreAndDelta(c);
     }
-    
+
+    @Override
+    public int getMinPeptideFragmentsFilter() {
+        return Integer.parseInt(this.otherFilter.txtMinPepFrags.getText());
+    }
+
+    @Override
+    public void setMinPeptideFragmentsFilter(int frags) {
+        this.otherFilter.txtMinPepFrags.setText(Integer.toString(frags));
+    }    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
