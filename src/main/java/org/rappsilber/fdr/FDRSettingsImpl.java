@@ -61,6 +61,7 @@ public class FDRSettingsImpl implements FDRSettings {
     private boolean combineScoreAndDelta;
     private int minFragments;
     private boolean boostMinFragments = false;
+    private boolean ignoreValidityChecks;
     
     @Override
     public void addCalcListener(ActionListener al) {
@@ -318,6 +319,7 @@ public class FDRSettingsImpl implements FDRSettings {
         to.boostPepCoverage(from.boostPepCoverage());
         to.boostDeltaScore(from.boostDeltaScore());
         to.combineScoreAndDelta(from.combineScoreAndDelta());
+        to.ignoreValidityChecks(from.ignoreValidityChecks());
     }
 
     public boolean combineScoreAndDelta() {
@@ -515,6 +517,16 @@ public class FDRSettingsImpl implements FDRSettings {
     @Override
     public void setMinPeptideFragmentsFilter(int frags) {
         this.minFragments = frags;
+    }
+
+    @Override
+    public boolean ignoreValidityChecks() {
+        return this.ignoreValidityChecks;
+    }
+
+    @Override
+    public void ignoreValidityChecks(boolean ignore) {
+        this.ignoreValidityChecks = ignore;
     }
     
     

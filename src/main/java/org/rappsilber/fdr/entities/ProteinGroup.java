@@ -137,7 +137,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         if (hasInternalSupport) 
             fdrgroup="LinearInternal";
         if (fdrgroup.isEmpty())
-            fdrgroup = "Between";
+            fdrgroup = "Between only";
         if (hasNegativeGrouping()) 
             fdrgroup += " [n" + RArrayUtils.toString(getNegativeGrouping(),", n") +"]";
         if (hasPositiveGrouping()) 

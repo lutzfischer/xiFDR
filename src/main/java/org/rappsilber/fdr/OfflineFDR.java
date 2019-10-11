@@ -52,6 +52,7 @@ import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.entities.AbstractFDRElement;
 import org.rappsilber.fdr.entities.FDRSelfAdd;
 import org.rappsilber.fdr.filter.DeltaScorePercentFilter;
+import org.rappsilber.fdr.gui.FDRGUI;
 import org.rappsilber.fdr.utils.HashedArrayList;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.fdr.utils.MaximizeLevelInfo;
@@ -1025,8 +1026,9 @@ public abstract class OfflineFDR {
         result.maximumProteinAmbiguity = m_maximumProteinAmbiguity;
         result.maximumLinkAmbiguity = m_maximumLinkAmbiguity;
 
-        fdr(settings.getPSMFDR(), settings.getReportFactor(), inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.isPSMDirectional(), settings.isGroupByPSMCount(), settings.getMinTD());
-
+        fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
+        
+        
         if (groupByHasInternal) {
 
             HashSet<ProteinGroup> internal = new HashSet<>();
@@ -1046,10 +1048,16 @@ public abstract class OfflineFDR {
                     pp.setFDRGroup(pp.getFDRGroup() + " int_support");
                 }
             }
-            fdr(settings.getPSMFDR(), settings.getReportFactor(), inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount(), settings.getMinTD());
+            fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
             GroupedFDRs = GroupedFDRsS;
         }
 
+        for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
+            if (rl.didntPassCheck) {
+                result.excludedGroups.add("PSM -> " + rl.fdrGroup);
+            }
+        }
+        
         result.psmFDR = GroupedFDRs;
 
 //        return GroupedFDRs;
@@ -1170,7 +1178,13 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getPeptidePairFDR(), settings.getReportFactor(), psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.peppairLocalFDR(), settings.isGroupByPSMCount(), settings.getMinTD());
+        fdr(settings.getPeptidePairFDR(), settings, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.peppairLocalFDR(), settings.isGroupByPSMCount());
+
+        for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
+            if (rl.didntPassCheck) {
+                result.excludedGroups.add("PeptidePair -> " + rl.fdrGroup);
+            }
+        }
 
         result.peptidePairFDR = GroupedFDRs;
     }
@@ -1246,7 +1260,13 @@ public abstract class OfflineFDR {
             filterListByPeptideSuport(pepProteinGroups, settings.getMinProteinPepCount());
         }
         //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
-        fdr(settings.getProteinGroupFDR(), settings.getReportFactor(), pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, settings.getMinProteinPepCount(), ignoreGroups, setElementFDR, settings.protLocalFDR(), false, settings.getMinTD());
+        fdr(settings.getProteinGroupFDR(), settings, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, settings.getMinProteinPepCount(), ignoreGroups, setElementFDR, settings.protLocalFDR(), false);
+
+        for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
+            if (rl.didntPassCheck) {
+                result.excludedGroups.add("ProteinGroup -> " + rl.fdrGroup);
+            }
+        }
 
         result.proteinGroupFDR = GroupedFDRs;
 //        fdrProteinGroups = fdr(fdr, safetyFactor, pepProteinGroups, nextFdrProteinGroup, protFDRGroupsInput, countFdrProteinGroup, tCountMod, dCountMod, minPepCount, ignoreGroups, setElementFDR);
@@ -1321,7 +1341,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getProteinGroupLinkFDR(), settings.getReportFactor(), pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount(), settings.getMinTD());
+        fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
         if (groupLinksByHasInternal) {
 
             HashSet<ProteinGroup> internal = new HashSet<>();
@@ -1343,10 +1363,16 @@ public abstract class OfflineFDR {
             }
             FDRResultLevel<ProteinGroupLink> GroupedFDRs2 = new FDRResultLevel<ProteinGroupLink>();
             GroupedFDRs2.isDirectional = settings.isLinkDirectional();
-            fdr(settings.getProteinGroupLinkFDR(), settings.getReportFactor(), pepLinks, GroupedFDRs2, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount(), settings.getMinTD());
+            fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs2, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
             GroupedFDRs = GroupedFDRs2;
         }
 
+        for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
+            if (rl.didntPassCheck) {
+                result.excludedGroups.add("ResiduePair -> " + rl.fdrGroup);
+            }
+        }
+        
         result.proteinGroupLinkFDR = GroupedFDRs;
 
 //        fdrProtainGroupLinks = fdr(fdr, safetyFactor, pepLinks, nextFdrLink, linkFDRGroupsInput, countFdrLink, targetPepDBSize, decoyPepDBSize, minPepCount, ignoreGroups, setElementFDR);
@@ -1430,7 +1456,13 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getProteinGroupPairFDR(), settings.getReportFactor(), linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, settings.ppiLocalFDR(), false, settings.getMinTD());
+        fdr(settings.getProteinGroupPairFDR(), settings, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, settings.ppiLocalFDR(), false);
+
+        for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
+            if (rl.didntPassCheck) {
+                result.excludedGroups.add("ProteinGroupPair -> " + rl.fdrGroup);
+            }
+        }
 
         result.proteinGroupPairFDR = GroupedFDRs;
     }
@@ -1555,6 +1587,7 @@ public abstract class OfflineFDR {
         boolean ignoreGroups = this.ignoreGroupsSetting;
         result.reportFactor = settings.getReportFactor();
         reset();
+        result.excludedGroups  =new ArrayList<>();
 
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Input PSM :" + getAllPSMs().size() + "\n calculation psm-fdr");
         calculatePSMFDR(setElementFDR, ignoreGroups, result, settings);
@@ -1586,6 +1619,10 @@ public abstract class OfflineFDR {
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "fdr psms :" + result.psmFDR.getResultCount() + "\n filtering ProteinGroups by peptide pairs");
         filterFDRProteinGroupsByFDRPeptidePairs(result);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "fdr protein groups :" + result.proteinGroupFDR.getResultCount());
+        
+        if (!result.excludedGroups.isEmpty()) {
+            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Some FDR groups where ignored as being unreliable: "+ MyArrayUtils.toString(result.excludedGroups, "; "));
+        }
 
         return result;
 
@@ -2503,11 +2540,13 @@ public abstract class OfflineFDR {
      * it group has at the given score? - is used to speed up the maximation (by
      * not setting these)
      */
-    private <T extends AbstractFDRElement<T>> void fdr(double fdr, double safetyfactor, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups, boolean setElementFDR, Boolean localFDR, boolean groupByProteinPair, int minTDChance) {
+    private <T extends AbstractFDRElement<T>> void fdr(double fdr, FDRSettings settings, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups, boolean setElementFDR, Boolean localFDR, boolean groupByProteinPair) {
         HashMap<String, ArrayList<T>> groupedList = new HashMap<String, ArrayList<T>>(4);
         HashMap<String, UpdateableInteger> gTT = new HashMap<String, UpdateableInteger>(8);
         HashMap<String, UpdateableInteger> gTD = new HashMap<String, UpdateableInteger>(8);
         HashMap<String, UpdateableInteger> gDD = new HashMap<String, UpdateableInteger>(8);
+        double safetyfactor = settings.getReportFactor();
+        int minTDChance = settings.getMinTD();
 
         int resultcount = 0;
 //        HashedArrayList<T> ret = new HashedArrayList<T>(c.size());
@@ -2672,10 +2711,10 @@ public abstract class OfflineFDR {
             info.targteFDR = fdr;
             info.saftyfactor = safetyfactor;
             info.fdrGroup = fdrgroup;
-            if (localFDR == null || localFDR) {
-                subFDRLocal(group, groupResult, info);
-            }
             subFDR(group, groupResult, setElementFDR, info);
+            if (localFDR == null || localFDR) {
+                subFDRLocal(group, info);
+            }
             if (localFDR != null && localFDR) {
                 ArrayList<T> filtered = new ArrayList<>();
                 for (T e : groupResult) {
@@ -2695,7 +2734,7 @@ public abstract class OfflineFDR {
             }
 
 //            if (info.resultTT*fdr<getMinDecoys())  {
-            if (!checkValid(info, groupResult, 0, minTDChance)) {
+            if ((!settings.ignoreValidityChecks()) && !checkValid(info, groupResult, 0, minTDChance)) {
                 Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Discarded group {0}->{1}({2})", new Object[]{group.get(0).getClass(), fdrgroup, group.get(0).getFDRGroup()});
                 //between
                 if (fdrgroup.toLowerCase().contains("between")) {
@@ -2751,7 +2790,7 @@ public abstract class OfflineFDR {
                 collectedToSmall.fdrGroup = "CollectedSmallResults [" + RArrayUtils.toString(collectedToSmallNames, ",") + "]";
                 subFDR(tooSmallGroup, groupResult, setElementFDR, collectedToSmall);
                 if (localFDR == null || localFDR) {
-                    subFDRLocal(tooSmallGroup, groupResult, collectedToSmall);
+                    subFDRLocal(tooSmallGroup, collectedToSmall);
                     if (localFDR != null) {
                         ArrayList<T> filtered = new ArrayList<>();
                         for (T e : groupResult) {
@@ -2770,7 +2809,7 @@ public abstract class OfflineFDR {
                         groupResult = filtered;
                     }
                 }
-                if (checkValid(collectedToSmall, groupResult, 0, minTDChance)) {
+                if (settings.ignoreValidityChecks() || checkValid(collectedToSmall, groupResult, 0, minTDChance)) {
                     groupInfo.addGroup(collectedToSmall.fdrGroup, collectedToSmall);
                     //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
                     //            nextFDR.put(fdrgroup, prevFDR);
@@ -2790,7 +2829,7 @@ public abstract class OfflineFDR {
                 collectedToSmallWithin.fdrGroup = "CollectedSmallResultsWithin  [" + RArrayUtils.toString(collectedToSmallWithinNames, ",") + "]";
                 subFDR(tooSmallGroupWithin, groupResultwithin, setElementFDR, collectedToSmallWithin);
                 if (localFDR == null || localFDR) {
-                    subFDRLocal(tooSmallGroupWithin, groupResultwithin, collectedToSmallWithin);
+                    subFDRLocal(tooSmallGroupWithin, collectedToSmallWithin);
                     if (localFDR != null) {
                         ArrayList<T> filtered = new ArrayList<>();
                         for (T e : groupResultwithin) {
@@ -2809,7 +2848,7 @@ public abstract class OfflineFDR {
                         groupResultwithin = filtered;
                     }
                 }
-                if (checkValid(collectedToSmallWithin, groupResultwithin, 0, minTDChance)) {
+                if (settings.ignoreValidityChecks() || checkValid(collectedToSmallWithin, groupResultwithin, 0, minTDChance)) {
                     groupInfo.addGroup(collectedToSmallWithin.fdrGroup, collectedToSmallWithin);
                     //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
                     //            nextFDR.put(fdrgroup, prevFDR);
@@ -2840,7 +2879,7 @@ public abstract class OfflineFDR {
             ArrayList<T> all = new ArrayList<T>(fdrInput);
             subFDR(all, allResult, setElementFDR, info);
             if (localFDR == null || localFDR) {
-                subFDRLocal(all, allResult, info);
+                subFDRLocal(all, info);
                 if (localFDR != null) {
                     ArrayList<T> filtered = new ArrayList<>();
                     for (T e : allResult) {
@@ -3220,7 +3259,7 @@ public abstract class OfflineFDR {
             // we steped below the target fdr (efdr<= fdr) 
             if (efdr <= fdr) {
                 //did we just pas an fdr-step
-                if ((efdr < prevFDR || prevFDR == 0.0 || prevFDR == Double.POSITIVE_INFINITY) || fdr == Double.POSITIVE_INFINITY) {
+                if ((efdr < prevFDR || prevFDR <= 0.0 || prevFDR == Double.POSITIVE_INFINITY) || fdr == Double.POSITIVE_INFINITY) {
                     // does it fullfill the saftyfactor
                     if ((efdr_p / fdr < info.saftyfactor || info.saftyfactor > 1000 || info.saftyfactor == 0) || fdr == Double.POSITIVE_INFINITY) {
                         //if ((efdr_p / fdr < info.saftyfactor && efdr_n >= 0) || fdr == Double.POSITIVE_INFINITY)  {
@@ -3381,10 +3420,7 @@ public abstract class OfflineFDR {
      * @param setElementFDR
      * @return
      */
-    protected <T extends AbstractFDRElement<T>> void subFDRLocal(ArrayList<T> group, ArrayList<T> results, SubGroupFdrInfo info) {
-        HashedArrayList<T> ret = new HashedArrayList<T>();
-        info.results = ret;
-        info.filteredResult = ret;
+    protected <T extends AbstractFDRElement<T>> void subFDRLocal(ArrayList<T> group, SubGroupFdrInfo info) {
 
         int TT = info.TT;
         int TD = info.TD;

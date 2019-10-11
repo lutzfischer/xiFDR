@@ -86,6 +86,8 @@ public class CSVinFDR extends OfflineFDR {
         {"crosslinker mass","cross linker mass","crossLinkerModMass","cross linker mod mass","crosslinkerModMass"},
         {"peptide coverage1", "peptide1 unique matched non lossy coverage", "unique_peak_primary_coverage_p1"},
         {"peptide coverage2", "peptide2 unique matched non lossy coverage", "unique_peak_primary_coverage_p2"},
+        {"peptide1 fragments", "peptide1 unique matched conservative", "conservative_fragsites_p1"},
+        {"peptide2 fragments", "peptide2 unique matched conservative", "conservative_fragsites_p2"},
         {"minimum peptide coverage", "min coverage pp"},
         {"delta", "delta score", "dscore"},
     };
@@ -102,11 +104,6 @@ public class CSVinFDR extends OfflineFDR {
     @Override
     protected ArrayList<String> getPSMHeader() {
         ArrayList<String> ret = super.getPSMHeader();
-//        String header = "PSMID" + seperator + "run" + seperator + "scan" 
-//                + seperator + "exp charge"  + seperator + "exp m/z" + seperator + "exp mass" + seperator + "exp fractionalmass" 
-//                + seperator + "match charge" + seperator + "match mass" + seperator + "match fractionalmass"   
-//                
-//                + seperator + "Protein1" + seperator + "Description1" + seperator + "Decoy1" + seperator + "Protein2" + seperator + "Description2" + seperator + "Decoy2" + seperator + "Peptide1" + seperator + "Peptide2" + seperator + "PeptidePosition1" + seperator + "PeptidePosition2" + seperator + "PeptideLength1" + seperator + "PeptideLength2" + seperator + "fromSite" + seperator + "ToSite" + seperator + "Charge" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr" + seperator + "" + seperator + "PeptidePairFDR" + seperator + "Protein1FDR" + seperator + "Protein2FDR" + seperator + "LinkFDR" + seperator + "PPIFDR" + seperator + seperator + "peptide pair id" + seperator + "link id" + seperator + "ppi id";
         ret.add(5, "exp charge");
         ret.add(6, "exp m/z");
         ret.add(7, "exp mass");
@@ -126,7 +123,6 @@ public class CSVinFDR extends OfflineFDR {
         double mass = (mz-1.00727646677)*charge;
         double fraction = mass-Math.floor(mass);
         double calcfraction = pp.getCalcMass()-Math.floor(pp.getCalcMass());
-
         
         ret.add(5,""+ charge);
         ret.add(6, d2s(mz));
@@ -135,7 +131,6 @@ public class CSVinFDR extends OfflineFDR {
         ret.add(9,i2s(pp.getCharge()));
         ret.add(10,  d2s(pp.getCalcMass()));
         ret.add(11, d2s(calcfraction));
-        
 
         return ret;
     }    

@@ -25,7 +25,7 @@
                   </Group>
                   <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
                                   <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -59,20 +59,21 @@
                                       </Group>
                                   </Group>
                               </Group>
-                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="spMinPPIPepCount" alignment="0" max="32767" attributes="0"/>
-                                  <Component id="spMinLinkPepCount" alignment="0" max="32767" attributes="0"/>
-                                  <Component id="spMinProteinPepCount" alignment="0" max="32767" attributes="0"/>
-                                  <Component id="jLabel28" alignment="0" pref="0" max="32767" attributes="0"/>
-                                  <Component id="jLabel18" alignment="0" pref="176" max="32767" attributes="0"/>
-                                  <Component id="spMinTDChance" alignment="0" max="32767" attributes="0"/>
-                              </Group>
                           </Group>
-                          <Group type="102" alignment="0" attributes="0">
-                              <Component id="ckMoreOptions" min="-2" max="-2" attributes="0"/>
+                          <Component id="ckMoreOptions" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" attributes="0">
+                              <Component id="ckIgnoreValidity" min="-2" max="-2" attributes="0"/>
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
+                          <Component id="spMinPPIPepCount" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spMinLinkPepCount" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spMinProteinPepCount" alignment="0" max="32767" attributes="0"/>
+                          <Component id="jLabel28" alignment="0" max="32767" attributes="0"/>
+                          <Component id="jLabel18" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spMinTDChance" alignment="0" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
@@ -86,7 +87,7 @@
                                   <Component id="ckUniquePSM" min="-2" max="-2" attributes="0"/>
                                   <Component id="ckFilterConsecutives" alignment="0" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace min="0" pref="56" max="32767" attributes="0"/>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -95,7 +96,7 @@
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="ckMaximize" min="-2" max="-2" attributes="0"/>
                               <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
-                              <Component id="cbBoostWhat" pref="0" max="32767" attributes="0"/>
+                              <Component id="cbBoostWhat" max="32767" attributes="0"/>
                           </Group>
                           <Component id="btnStopBoost" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
@@ -106,7 +107,7 @@
                           <Group type="102" alignment="0" attributes="0">
                               <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
                               <Component id="btnBoostIgnores" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace pref="260" max="32767" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
                               <Component id="btnCalc" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <Group type="102" alignment="0" attributes="0">
@@ -206,6 +207,7 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="ckFilterConsecutives" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="ckMoreOptions" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckIgnoreValidity" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="spOtherFilter" pref="96" max="32767" attributes="0"/>
@@ -312,8 +314,14 @@
       </Properties>
     </Component>
     <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMaxLinkAmbiguity">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="maximum ambiguity for a peptide-pair giving raise to a residue pair"/>
+      </Properties>
     </Component>
     <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMaxProteinAmbiguity">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="maximum number of proteins a peptide could originate from (this ignores if a peptide could come from several places within a protein)"/>
+      </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
@@ -322,6 +330,11 @@
       </Properties>
     </Component>
     <Component class="org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner" name="spMinPeptideLength">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.form.editors.StringEditor">
+          <SerializedValue value="-84,-19,0,5,116,0,65,109,97,116,99,104,101,115,32,116,111,32,105,110,118,111,108,118,105,110,103,-64,-128,32,112,101,112,116,105,100,101,115,32,115,104,111,114,116,101,114,32,116,104,101,110,32,116,104,105,115,32,119,105,108,108,32,98,101,32,105,103,110,111,114,101,100"/>
+        </Property>
+      </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel18">
       <Properties>
@@ -496,6 +509,7 @@
     <Component class="javax.swing.JCheckBox" name="ckMoreOptions">
       <Properties>
         <Property name="text" type="java.lang.String" value="More"/>
+        <Property name="toolTipText" type="java.lang.String" value="some addtional optional prefilter"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckMoreOptionsActionPerformed"/>
@@ -509,5 +523,14 @@
         </Component>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JCheckBox" name="ckIgnoreValidity">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Ignore Validity Checks"/>
+        <Property name="toolTipText" type="java.lang.String" value="Sub-groups with e.g. negative calculated FDR or to few target matches for the requested FDR)"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckIgnoreValidityActionPerformed"/>
+      </Events>
+    </Component>
   </SubComponents>
 </Form>

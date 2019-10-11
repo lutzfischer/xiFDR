@@ -10,7 +10,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine --pepfdr=5.0 --boost=link --csvOutDir=/home/lfischer/temp/test --csvBaseName=test_XiVersion1.7.754.RC1_2 --xiconfig=/home/lfischer/temp/test/test_XiVersion1.7.754.RC1.csv.config --fasta=/Users/salman/xi_data/xi/sequenceDB/pool8_BSCL-17_46_41-12_Sep_2019/DATABASE.fasta /home/lfischer/temp/test/test_XiVersion1.7.754.RC1.csv --gui</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
@@ -25,7 +25,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.rappsilber.fdr.CommandLine --pepfdr=5.0 --boost=link --csvOutDir=/home/lfischer/temp/test --csvBaseName=test_XiVersion1.7.754.RC1_2 --xiconfig=/home/lfischer/temp/test/test_XiVersion1.7.754.RC1.csv.config --fasta=/Users/salman/xi_data/xi/sequenceDB/pool8_BSCL-17_46_41-12_Sep_2019/DATABASE.fasta /home/lfischer/temp/test/test_XiVersion1.7.754.RC1.csv --gui</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
                 <exec.workingdir>/home/lfischer</exec.workingdir>
@@ -41,7 +41,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine --pepfdr=5.0 --boost=link --csvOutDir=/home/lfischer/temp/test --csvBaseName=test_XiVersion1.7.754.RC1_2 --xiconfig=/home/lfischer/temp/test/test_XiVersion1.7.754.RC1.csv.config --fasta=/Users/salman/xi_data/xi/sequenceDB/pool8_BSCL-17_46_41-12_Sep_2019/DATABASE.fasta /home/lfischer/temp/test/test_XiVersion1.7.754.RC1.csv --gui</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>

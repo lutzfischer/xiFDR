@@ -56,6 +56,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private boolean combineScoreAndDelta;
     private int minFragments;
     private boolean boostMinFragments;
+    private boolean ignoreValidityChecks;
 
     @Override
     public boolean getBoostBetween() {
@@ -647,6 +648,16 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         this.minFragments = frags;
     }
 
+    @Override
+    public boolean ignoreValidityChecks() {
+        return this.ignoreValidityChecks;
+    }
+
+    @Override
+    public void ignoreValidityChecks(boolean ignore) {
+        this.ignoreValidityChecks = ignore;
+    }
+    
     
     
 }

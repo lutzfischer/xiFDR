@@ -55,6 +55,7 @@ import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.CSVinFDR;
 import org.rappsilber.fdr.DBinFDR;
+import org.rappsilber.fdr.FDRSettings;
 import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.MZIdentXLFDR;
@@ -1431,6 +1432,51 @@ public class FDRGUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }
 
+    public void setFDRSettings(final FDRSettings settings) {
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                rbFDRComplete.setSelected(true);
+                rbFDRSimple.setSelected(false);
+                rbFDRCompleteActionPerformed(null);
+
+                fdrSettingsSimple.setAll(settings);
+                fdrSettingsComplete.setAll(settings);
+            }
+        });
+    }
+    
+    public void setInput(final String fileName) {
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+            csvSelect.setInputFile(fileName);
+            }
+        });
+    }
+
+    public void setXiConfig(String fileName) {
+        csvSelect.setXiConfig(fileName);
+    }
+
+    public void setFasta(final String fileName) {
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                csvSelect.setFasta(fileName);
+            }
+        });
+    }
+
+    public void setCsvFlagModifications(final boolean flag) {
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                csvSelect.flagModifications(flag);
+                }
+        });
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -2912,6 +2958,13 @@ public class FDRGUI extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        
+        startGUI();
+        
+    }
+    
+    public static FDRGUI startGUI() {
+
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -2935,13 +2988,15 @@ public class FDRGUI extends javax.swing.JFrame {
         }
         //</editor-fold>
         //</editor-fold>
-
+        
+        final FDRGUI gui =  new FDRGUI();
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new FDRGUI().setVisible(true);
+                gui.setVisible(true);
             }
         });
+        return gui;
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup bgFDRSettingType;

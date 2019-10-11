@@ -68,6 +68,10 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
 
     private JoinedThreadedTextOuput m_status = null;
+
+    public void flagModifications(boolean flag) {
+        this.ckCSVMarkModifications.setSelected(flag);
+    }
     
 
     
@@ -458,6 +462,20 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         pAdditional.add(c);
                 
     }
+    
+    public void setInputFile(String path) {
+        fbCsvIn.setFile(path);
+        
+    }
+
+    public void setXiConfig(String path) {
+        fbConfigIn.setFile(path);
+    }
+    
+    public void setFasta(String path) {
+        fbFastaIn.setFile(path);
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -562,7 +580,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 {"delta score",  new Boolean(true), "the delta score of the match", null},
                 {"peptide coverage1",  new Boolean(true), "how well is peptide explained", null},
                 {"peptide coverage2",  new Boolean(true), "how well is peptide 2 explained", null},
-                {"minimum peptide coverage",  new Boolean(true), "how well is the wors explained peptide explained", null}
+                {"minimum peptide coverage",  new Boolean(true), "how well is the wors explained peptide explained", null},
+                {"peptide1 fragments",  new Boolean(true), "How many fragments where assigned to peptide 1", null},
+                {"peptide2 fragments",  new Boolean(true), "How many fragments where assigned to peptide 2", null}
             },
             new String [] {
                 "Column", "Optional", "Description", "Name in CSV"

@@ -427,27 +427,27 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
     @Override
     public Boolean psmLocalFDR() {
-        return this.tsLocalPSMFDR.isSelected();
+        return this.tsLocalPSMFDR.getSelectionState();
     }
 
     @Override
     public Boolean peppairLocalFDR() {
-        return this.tsLocalPepPairFDR.isSelected();
+        return this.tsLocalPepPairFDR.getSelectionState();
     }
 
     @Override
     public Boolean protLocalFDR() {
-        return this.tsLocalProtFDR.isSelected();
+        return this.tsLocalProtFDR.getSelectionState();
     }
 
     @Override
     public Boolean linkLocalFDR() {
-        return this.tsLocalLinkFDR.isSelected();
+        return this.tsLocalLinkFDR.getSelectionState();
     }
 
     @Override
     public Boolean ppiLocalFDR() {
-        return this.tsLocalPPIFDR.isSelected();
+        return this.tsLocalPPIFDR.getSelectionState();
     }
 
     @Override
@@ -542,6 +542,18 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     public void setMinPeptideFragmentsFilter(int frags) {
         this.otherFilter.txtMinPepFrags.setText(Integer.toString(frags));
     }    
+
+    @Override
+    public boolean ignoreValidityChecks() {
+        return this.ckIgnoreValidity.isSelected();
+    }
+
+    @Override
+    public void ignoreValidityChecks(boolean ignore) {
+        ckIgnoreValidity.setSelected(ignore);
+    }
+
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -595,6 +607,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckMoreOptions = new javax.swing.JCheckBox();
         spOtherFilter = new javax.swing.JScrollPane();
         otherFilter = new org.rappsilber.fdr.gui.components.OtherFilter();
+        ckIgnoreValidity = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -628,8 +641,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         jLabel28.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel28.setText("Min supporting peptide-pairs");
 
+        spMaxLinkAmbiguity.setToolTipText("maximum ambiguity for a peptide-pair giving raise to a residue pair");
+
+        spMaxProteinAmbiguity.setToolTipText("maximum number of proteins a peptide could originate from (this ignores if a peptide could come from several places within a protein)");
+
         jLabel1.setText("Local FDR");
         jLabel1.setToolTipText("ticked calculate and filtert by PEP; unticked: do not calculate calculate PEP; square: calculate PEP but do not filter (default)");
+
+        spMinPeptideLength.setToolTipText("matches to involving\u0000 peptides shorter then this will be ignored");
 
         jLabel18.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel18.setText("Min Pep. Length:");
@@ -724,6 +743,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         tsLocalPPIFDR.setToolTipText("calculate (PEP) (square); calculate and filter by PEP (tick); or do not calculate PEP");
 
         ckMoreOptions.setText("More");
+        ckMoreOptions.setToolTipText("some addtional optional prefilter");
         ckMoreOptions.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 ckMoreOptionsActionPerformed(evt);
@@ -731,6 +751,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         });
 
         spOtherFilter.setViewportView(otherFilter);
+
+        ckIgnoreValidity.setText("Ignore Validity Checks");
+        ckIgnoreValidity.setToolTipText("Sub-groups with e.g. negative calculated FDR or to few target matches for the requested FDR)");
+        ckIgnoreValidity.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ckIgnoreValidityActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -772,18 +800,19 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                                             .addComponent(tsLocalLinkFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addComponent(tsLocalPepPairFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addComponent(tsLocalPSMFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(tsLocalProtFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(spMinLinkPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(spMinProteinPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jLabel28, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                                    .addComponent(jLabel18, javax.swing.GroupLayout.DEFAULT_SIZE, 176, Short.MAX_VALUE)
-                                    .addComponent(spMinTDChance, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                            .addComponent(tsLocalProtFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                            .addComponent(ckMoreOptions))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(ckMoreOptions)
-                                .addGap(0, 0, Short.MAX_VALUE)))
+                                .addComponent(ckIgnoreValidity)
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addComponent(spMinPPIPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinLinkPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinProteinPepCount, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel28, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(spMinTDChance, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(spMaxLinkAmbiguity, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -795,13 +824,13 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                                     .addComponent(ckGroupByPSMs)
                                     .addComponent(ckUniquePSM)
                                     .addComponent(ckFilterConsecutives))
-                                .addGap(0, 56, Short.MAX_VALUE))))
+                                .addGap(0, 0, Short.MAX_VALUE))))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(ckMaximize)
                                 .addGap(12, 12, 12)
-                                .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
+                                .addComponent(cbBoostWhat, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addComponent(btnStopBoost))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jLabel23)
@@ -810,7 +839,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addGap(70, 70, 70)
                                 .addComponent(btnBoostIgnores)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 260, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(btnCalc))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(spMaximizeSteps)
@@ -882,7 +911,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(ckFilterConsecutives)
-                    .addComponent(ckMoreOptions))
+                    .addComponent(ckMoreOptions)
+                    .addComponent(ckIgnoreValidity))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(spOtherFilter, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
@@ -936,6 +966,10 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         this.revalidate();
     }//GEN-LAST:event_ckMoreOptionsActionPerformed
 
+    private void ckIgnoreValidityActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckIgnoreValidityActionPerformed
+        spMinTDChance.setEnabled(!ckIgnoreValidity.isSelected());
+    }//GEN-LAST:event_ckIgnoreValidityActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBoostIgnores;
     private javax.swing.JButton btnCalc;
@@ -944,6 +978,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JCheckBox ckBoostBetween;
     private javax.swing.JCheckBox ckFilterConsecutives;
     private javax.swing.JCheckBox ckGroupByPSMs;
+    private javax.swing.JCheckBox ckIgnoreValidity;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JCheckBox ckMoreOptions;
     private javax.swing.JCheckBox ckUniquePSM;
