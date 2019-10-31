@@ -88,6 +88,8 @@ public class CSVinFDR extends OfflineFDR {
         {"peptide coverage2", "peptide2 unique matched non lossy coverage", "unique_peak_primary_coverage_p2"},
         {"peptide1 fragments", "peptide1 unique matched conservative", "conservative_fragsites_p1"},
         {"peptide2 fragments", "peptide2 unique matched conservative", "conservative_fragsites_p2"},
+        {"peptides with stubs", "fragment CCPepFragment"},
+        {"peptides with doublets", "fragment CCPepDoubletFound"},
         {"minimum peptide coverage", "min coverage pp"},
         {"delta", "delta score", "dscore"},
     };
@@ -193,6 +195,8 @@ public class CSVinFDR extends OfflineFDR {
         Integer cDelta = getColumn(csv,"delta",true);
         Integer cPep1Coverage = getColumn(csv,"peptide coverage1",true);
         Integer cPep2Coverage = getColumn(csv,"peptide coverage1",true);
+        Integer cPepStubs = getColumn(csv,"peptides with stubs",true);
+        Integer cPepDoublets = getColumn(csv,"peptides with doublets",true);
         Integer cPepMinCoverage = getColumn(csv,"minimum peptide coverage",true);
         Integer cRank = getColumn(csv,"rank",true);
         
@@ -293,12 +297,12 @@ public class CSVinFDR extends OfflineFDR {
                     peptide2score=score*(1-ratio);
                 }
 
-                String[] accessions1 =saccession1.split(";");
-                String[] accessions2 =saccession2.split(";");
-                String[] descriptions1 =sdescription1.split(";",-1);
-                String[] descriptions2 =sdescription2.split(";",-1);
-                String[] pepPositions1 =spepPosition1.split(";",-1);
-                String[] pepPositions2 =spepPosition2.split(";",-1);
+                String[] accessions1 =saccession1.split("\\s*;\\s*");
+                String[] accessions2 =saccession2.split("\\s*;\\s*");
+                String[] descriptions1 =sdescription1.split("\\s*;\\s*",-1);
+                String[] descriptions2 =sdescription2.split("\\s*;\\s*",-1);
+                String[] pepPositions1 =spepPosition1.split("\\s*;\\s*",-1);
+                String[] pepPositions2 =spepPosition2.split("\\s*;\\s*",-1);
 
                 if (!sdescription1.isEmpty()) {
                     if (descriptions1.length != accessions1.length)
@@ -346,7 +350,7 @@ public class CSVinFDR extends OfflineFDR {
 
                 int[] ipeppos1 = new int[pepPositions1.length];
                 for (int i = 0; i<pepPositions1.length; i++) {
-                    ipeppos1[i] = Integer.parseInt(pepPositions1[i]);
+                    ipeppos1[i] = Integer.parseInt(pepPositions1[i].trim());
                 }
 
                 int[] ipeppos2 = new int[pepPositions2.length];
@@ -420,6 +424,21 @@ public class CSVinFDR extends OfflineFDR {
                 }
                 if (cDelta != null)
                     psm.setDeltaScore(csv.getDouble(cDelta));
+                
+                if (cPepStubs != null) {
+                    double s = csv.getDouble(cPepStubs);
+                    psm.addOtherInfo("PeptidesWithStubs", s);
+                    if (s >0)  {
+                        stubsFound(true);
+                    } 
+                    
+                }
+                if (cPepDoublets != null) {
+                    
+                    psm.addOtherInfo("PeptidesWithDoublets", csv.getDouble(cPepDoublets));
+                    
+                }
+                
                 if (cPepMinCoverage != null) {
                     
                     psm.addOtherInfo("minPepCoverage", csv.getDouble(cPepMinCoverage));

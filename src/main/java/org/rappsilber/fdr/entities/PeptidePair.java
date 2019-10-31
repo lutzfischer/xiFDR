@@ -32,21 +32,34 @@ import org.rappsilber.utils.SelfAddHashSet;
  * by setting the second peptide to the {@link Peptide#NOPEPTIDE} place-holder.
  */
 public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements Comparable<PeptidePair>{
-    /** counts up each instance of PeptidePairs used to assign unique IDs */
+
+    /**
+     * counts up each instance of PeptidePairs used to assign unique IDs
+     */
     public static int PEPTIDEPAIRCOUNT = 0;
-    /** a link represented by this peptide pair that passed the fdr */
+    /**
+     * a link represented by this peptide pair that passed the fdr
+     */
     private ProteinGroupLink m_link;
-    /** unique id for this peptide pair */
+    /**
+     * unique id for this peptide pair
+     */
     protected int peptidePairID = PEPTIDEPAIRCOUNT++;
-    /** sorry is used in the rappsilber group for a search type specific FDR */
+    /**
+     * sorry is used in the rappsilber group for a search type specific FDR
+     */
     public static boolean ISTARGETED = false;
-    /** length groups used for doing a length depended FDR-grouping */
+    /**
+     * length groups used for doing a length depended FDR-grouping
+     */
     protected static int[] lenghtGroup;
 //    /** meaningful names for the FDR-groups */
 //    public static HashMap<Integer, String> fdrGroupNames = new HashMap<Integer, String>();
-    /** is used in the rappsilber group internally for a a specific search type */ 
+    /**
+     * is used in the rappsilber group internally for a a specific search type
+     */
     private static Pattern targetMod = Pattern.compile("X(-?[0-9]+(\\.[0-9]+)?)");
-    
+
     /**
      * id of peptide1
      */
@@ -68,12 +81,12 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * overall score of this pair
      */
     private double score = Double.NaN;
-    
+
     /**
      * overall score of this pair
      */
     private double peptide1score = Double.NaN;
-    
+
     /**
      * overall score of this pair
      */
@@ -110,44 +123,71 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * it could be a protein internal link
      */
     private boolean isInternal = false;
-    /** only one peptide */
+    /**
+     * only one peptide
+     */
     protected boolean isLinear = false;
-    /** single loop-linked peptide */
+    /**
+     * single loop-linked peptide
+     */
     private boolean isLoop = false;
-    /** no decoy */
+    /**
+     * no decoy
+     */
     private boolean isTT = false;
-    /** one decoy */
+    /**
+     * one decoy
+     */
     private boolean isTD = false;
-    /** two decoy */
+    /**
+     * two decoy
+     */
     private boolean isDD = false;
 
-    /** FDR group assigned to this peptide pair */
+    /**
+     * FDR group assigned to this peptide pair
+     */
     private String fdrGroup;
-    /** fdr assigned to the score of this peptidepair */
+    /**
+     * fdr assigned to the score of this peptidepair
+     */
     public double m_fdr = -1;
-    /** the fdr of the link that is supported by this peptide pair*/
+    /**
+     * the fdr of the link that is supported by this peptide pair
+     */
     protected double m_LinkFdr = -1;
-    /** the fdr of the protein pair that is supported by this peptide pair */
+    /**
+     * the fdr of the protein pair that is supported by this peptide pair
+     */
     protected double m_PPIFdr = -1;
-    /** proteingroup supported by this peptidepair that passed the fdr */
+    /**
+     * proteingroup supported by this peptidepair that passed the fdr
+     */
     public ProteinGroup fdrProteinGroup1 = null;
-    /** proteingroup supported by this peptidepair that passed the fdr */
+    /**
+     * proteingroup supported by this peptidepair that passed the fdr
+     */
     public ProteinGroup fdrProteinGroup2 = null;
-    /** are all supporting PSMs special cases? */
+    /**
+     * are all supporting PSMs special cases?
+     */
 //    private HashSet<String> negativeGroups = null;
 
-    /** indicates that the two peptides where in the same spectrum but non-covalently linked */
+    /**
+     * indicates that the two peptides where in the same spectrum but
+     * non-covalently linked
+     */
     private boolean isNonCovalent = false;
 //    private HashSet<String> positiveGroups;
-        /**
+    /**
      * is this a cross-link of consecutive peptides
      */
     private Boolean isConsecutive;
-    
-    
+
     /**
      * constructor
-     * @param psm 
+     *
+     * @param psm
      */
     public PeptidePair(PSM psm) {
         this.peptide1 = psm.getPeptide1();
@@ -172,7 +212,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 //        this.chargeTopScores.set(psm.getCharge(), psm.getScore());
 //        this.chargeTopScoresPSMId.set(psm.getCharge(), psm.getPsmID());
         this.psms.add(psm);
-        this.chargeTopScoresPSM = new PSM[psm.getCharge()+1];
+        this.chargeTopScoresPSM = new PSM[psm.getCharge() + 1];
         this.chargeTopScoresPSM[psm.getCharge()] = psm;
         //this.chargeTopScoresRatios.set(psm.getCharge(), psm.getScoreRatio());
 
@@ -199,19 +239,21 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     @Override
     public boolean equals(Object l) {
         PeptidePair c = (PeptidePair) l;
-        if (isNonCovalent != c.isNonCovalent)
+        if (isNonCovalent != c.isNonCovalent) {
             return false;
-        
-        return  crosslinker == c.crosslinker && 
-                ((c.peptide1.equals(peptide1) && c.peptide2.equals(peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2)
+        }
+
+        return crosslinker == c.crosslinker
+                && ((c.peptide1.equals(peptide1) && c.peptide2.equals(peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2)
                 || (c.peptide2.equals(peptide1) && c.peptide1.equals(peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }
 
-    /** 
-     * adds the information of another peptide pair to this one.
-     * Is used to join the PeptidePairs that are generated from different PSMs 
-     * but are actually the same PeptidePairs.
-     * @param p 
+    /**
+     * adds the information of another peptide pair to this one. Is used to join
+     * the PeptidePairs that are generated from different PSMs but are actually
+     * the same PeptidePairs.
+     *
+     * @param p
      */
     public void add(PeptidePair p) {
         if (p == this) {
@@ -225,60 +267,63 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             chargeTopScoresPSM = new PSM[p.chargeTopScoresPSM.length];
             System.arraycopy(dummy, 0, chargeTopScoresPSM, 0, dummy.length);
         }
-        for (int i = 0 ; i< p.chargeTopScoresPSM.length;i++) {
+        for (int i = 0; i < p.chargeTopScoresPSM.length; i++) {
             PSM ppsm = p.chargeTopScoresPSM[i];
-            if (ppsm == null)
+            if (ppsm == null) {
                 continue;
+            }
 
-            PSM cpsm =null; 
-            if (chargeTopScoresPSM.length>i)
-                cpsm= chargeTopScoresPSM[i];
-            
+            PSM cpsm = null;
+            if (chargeTopScoresPSM.length > i) {
+                cpsm = chargeTopScoresPSM[i];
+            }
+
             if (cpsm == null || ppsm.getScore() > cpsm.getScore()) {
 
-                chargeTopScoresPSM[i]= ppsm;
+                chargeTopScoresPSM[i] = ppsm;
 //                if (invertScoreRatio) {
 //                    chargeTopScoresRatios.set(i, 1 - p.chargeTopScoresRatios.get(i));
 //                } else {
 //                    chargeTopScoresRatios.set(i, p.chargeTopScoresRatios.get(i));
 //                }
-                
+
             }
-            
+
         }
         boolean setFDR = false;
         addFDRGroups(p);
-        
+
         if (p.isInternal && !isInternal) {
             isInternal = true;
             setFDR = true;
-        } 
-        
-        if (setFDR)
+        }
+
+        if (setFDR) {
             setFDRGroup();
-        
+        }
+
     }
 
     /**
-     * calculate the score of this Peptide pair based on the scores of the 
+     * calculate the score of this Peptide pair based on the scores of the
      * supporting PSMs
      */
     public void setScore() {
         score = 0;
-        peptide1score=0;
-        peptide2score=0;
+        peptide1score = 0;
+        peptide2score = 0;
         for (PSM psm : chargeTopScoresPSM) {
-            if (psm!=null) {
+            if (psm != null) {
                 score += psm.getScore() * psm.getScore();
                 if (psm.getPeptide1() == getPeptide1()) {
-                    peptide1score+=psm.getPeptide1Score()*psm.getPeptide1Score();
-                    peptide2score+=psm.getPeptide2Score()*psm.getPeptide2Score();
+                    peptide1score += psm.getPeptide1Score() * psm.getPeptide1Score();
+                    peptide2score += psm.getPeptide2Score() * psm.getPeptide2Score();
                 } else {
-                    peptide1score+=psm.getPeptide2Score()*psm.getPeptide2Score();
-                    peptide2score+=psm.getPeptide1Score()*psm.getPeptide1Score();
+                    peptide1score += psm.getPeptide2Score() * psm.getPeptide2Score();
+                    peptide2score += psm.getPeptide1Score() * psm.getPeptide1Score();
                 }
             }
-                        
+
         }
         score = Math.sqrt(score);
         peptide1score = Math.sqrt(peptide1score);
@@ -286,9 +331,10 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * returns the link that is supported by this peptidepair encapsulated in a 
+     * returns the link that is supported by this peptidepair encapsulated in a
      * ArrayList.
-     * @return 
+     *
+     * @return
      */
     public ArrayList<ProteinGroupLink> getLinks() {
         ArrayList<ProteinGroupLink> links = new ArrayList<ProteinGroupLink>();
@@ -297,20 +343,22 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * returns the link that is supported by this peptidepair 
-     * @return 
+     * returns the link that is supported by this peptidepair
+     *
+     * @return
      */
     public ProteinGroupLink getLink() {
         return new ProteinGroupLink(this);
     }
 
     /**
-     * returns the link supported by this peptidepair but filtered through the 
-     * supplied SelfAddHashSet. This ensures that all peptidepairs that would 
-     * support the same link will actually return references to the same 
+     * returns the link supported by this peptidepair but filtered through the
+     * supplied SelfAddHashSet. This ensures that all peptidepairs that would
+     * support the same link will actually return references to the same
      * instance of the ProteinGroupLink.
+     *
      * @param allLinks
-     * @return 
+     * @return
      */
     public ArrayList<ProteinGroupLink> getLinks(SelfAddHashSet<ProteinGroupLink> allLinks) {
         return allLinks.registerAll(getLinks());
@@ -318,7 +366,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * returns a list of proteins supported by this peptide pair.
-     * @return 
+     *
+     * @return
      */
     public ArrayList<Protein> getProteins() {
         HashSet<Protein> prots = new HashSet<Protein>();
@@ -331,34 +380,36 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * returns the proteins supported by this peptidepair but filtered through the 
-     * supplied SelfAddHashSet. This ensures that all peptidepairs that would 
-     * support the same proteins will actually return references to the same 
-     * instances of the Protein.
-     * @param allProteins 
-     * @return 
+     * returns the proteins supported by this peptidepair but filtered through
+     * the supplied SelfAddHashSet. This ensures that all peptidepairs that
+     * would support the same proteins will actually return references to the
+     * same instances of the Protein.
+     *
+     * @param allProteins
+     * @return
      */
     public ArrayList<Protein> getProteins(SelfAddHashSet<Protein> allProteins) {
         return allProteins.registerAll(getProteins());
     }
 
-
     /**
-     * calculate the score for the given protein based on the score of the 
+     * calculate the score for the given protein based on the score of the
      * current PeptidePair
+     *
      * @param prot
-     * @return 
+     * @return
      */
     public double getProteinScore(Protein prot) {
-        if (Double.isNaN(peptide1score))
+        if (Double.isNaN(peptide1score)) {
             setScore();
+        }
         double score = 0;
         // is the protein among the first site of proteins
         ArrayList<Protein> prot1 = peptide1.getProteins();
         int prot1size = prot1.size();
         for (Protein p : prot1) {
             if (p.equals(prot)) {
-                score += peptide1score * peptide1score/prot1size;
+                score += peptide1score * peptide1score / prot1size;
                 break;
             }
         }
@@ -367,7 +418,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         int prot2size = prot2.size();
         for (Protein p : prot2) {
             if (p.equals(prot)) {
-                score += peptide1score * peptide1score/prot2size;
+                score += peptide1score * peptide1score / prot2size;
                 break;
             }
         }
@@ -376,12 +427,14 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * calculate the score of a Peptide based on the current PeptidePair
+     *
      * @param pep
-     * @return 
+     * @return
      */
     public double getPeptideScore(Peptide pep) {
-        if (Double.isNaN(peptide1score))
+        if (Double.isNaN(peptide1score)) {
             setScore();
+        }
         // is the protein among the first site of proteins
         if (pep.equals(peptide1)) {
             score += peptide1score * peptide1score;
@@ -403,7 +456,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * the second peptide of the pair
-     * @return 
+     *
+     * @return
      */
     public Peptide getPeptide2() {
         return peptide2;
@@ -430,7 +484,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     public int getPeptideLinkSite(int peptide) {
         return peptide == 0 ? pepsite1 : pepsite2;
     }
-    
+
     /**
      * @return the length of peptide 1
      */
@@ -457,7 +511,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * whether the first peptide is decoy
-     * @return 
+     *
+     * @return
      */
     public boolean isDecoy1() {
         return isDecoy1;
@@ -465,7 +520,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * whether the second peptide is decoy
-     * @return 
+     *
+     * @return
      */
     public boolean isDecoy2() {
         return isDecoy2;
@@ -473,8 +529,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * whether this could be an protein internal link.<br/>
-     * Meaning whether there is an overlap between the proteins that the first 
+     * Meaning whether there is an overlap between the proteins that the first
      * and the second peptide could originate from.
+     *
      * @return the isInternal
      */
     @Override
@@ -483,16 +540,19 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * Whether it is definitely not an internal and also not a linear peptide pair
+     * Whether it is definitely not an internal and also not a linear peptide
+     * pair
+     *
      * @return the isInternal
      */
     @Override
     public boolean isBetween() {
         return (!isInternal) && (!isLinear);
     }
-    
+
     /**
      * all peptides are target
+     *
      * @return the isTT
      */
     @Override
@@ -502,6 +562,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * one peptide is decoy
+     *
      * @return the isTD
      */
     @Override
@@ -511,22 +572,23 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * two peptides are decoy
+     *
      * @return the isDD
      */
     @Override
     public boolean isDD() {
         return isDD;
     }
-    
+
     /**
      * the assigned FDR group for this peptide pair
-     * @return 
+     *
+     * @return
      */
     @Override
     public String getFDRGroup() {
         return fdrGroup;
     }
-
 
 //    /**
 //     * translates FDR-group IDs into FDR-group names
@@ -541,10 +603,10 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 //        }
 //        return fdrGroupNames.get(fdrgroup);
 //    }
-
     /**
      * returns all supporting peptide pairs - meaning itself
-     * @return 
+     *
+     * @return
      */
     public Collection<PeptidePair> getPeptidePairs() {
         ArrayList<PeptidePair> ret = new ArrayList<PeptidePair>(1);
@@ -554,7 +616,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * list of the peptides of this peptide pair
-     * @return 
+     *
+     * @return
      */
     public ArrayList<Peptide> getPeptides() {
         ArrayList<Peptide> ret = new ArrayList<Peptide>(2);
@@ -566,30 +629,35 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * returns a list of IDs of the top scoring PSMs for each precursor charge state 
-     * of the PSMs that support this peptide pair.
-     * @return 
+     * returns a list of IDs of the top scoring PSMs for each precursor charge
+     * state of the PSMs that support this peptide pair.
+     *
+     * @return
      */
     public String getTopPSMIDs() {
         return RArrayUtils.toStringNoNull(chargeTopScoresPSM, ";");
     }
-    
+
     /**
-     * returns a list of the top scoring PSMs for each precursor charge state 
-     * of the PSMs that support this peptide pair.
-     * @return 
+     * returns a list of the top scoring PSMs for each precursor charge state of
+     * the PSMs that support this peptide pair.
+     *
+     * @return
      */
     public Collection<PSM> getTopPSMs() {
         ArrayList<PSM> psms = new ArrayList<>();
-        for (PSM p : chargeTopScoresPSM) 
-            if (p!=null)
+        for (PSM p : chargeTopScoresPSM) {
+            if (p != null) {
                 psms.add(p);
+            }
+        }
         return psms;
     }
 
     /**
      * A string representation of this peptide pair
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {
@@ -607,7 +675,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * is any peptide a decoy
-     * @return 
+     *
+     * @return
      */
     public boolean isDecoy() {
         return isDecoy1 || isDecoy2;
@@ -622,7 +691,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * set maximum length groups for fdr
-     * @param aLenghtGroup 
+     *
+     * @param aLenghtGroup
      */
     public static void setLenghtGroup(int[] aLenghtGroup) {
         // make sure every value exists only ones
@@ -649,33 +719,23 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             lenghtGroup[i] = dl[dl.length - 1 - i];
         }
 
-
-//        // give groups a name
-//        String[] groupNames = new String[]{"Linear", "Within", "Between", "Linear Special", "Within Special", "Between Special"};
-//        fdrGroupNames.put(-1, "all combined");
-//        for (int gn = 0; gn < groupNames.length; gn++) {
-//            int g = gn * (lenghtGroup.length);
-//            for (int i = 0; i < lenghtGroup.length; i++) {
-//                fdrGroupNames.put(g + i, groupNames[gn] + "  >" + lenghtGroup[i]);
-//            }
-//        }
-
     }
 
-    /** 
-     * define a fdr-group id based on the  inputs
+    /**
+     * define a fdr-group id based on the inputs
+     *
      * @param pep1
      * @param pep2
      * @param isLinear
      * @param isInternal
      * @param specialCase
-     * @return 
+     * @return
      */
     public static String getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, Collection<String> negativeGroups, Collection<String> positiveGroups, String groupExt) {
-        String group = (isLinear ? "linear" : (isInternal ? "internal" :"between"));
-        groupExt=" " + groupExt;
+        String group = (isLinear ? "linear" : (isInternal ? "internal" : "between"));
+        groupExt = " " + groupExt;
         if (negativeGroups != null && negativeGroups.size() > 0) {
-            ArrayList<String> ng = new ArrayList<>(negativeGroups);            
+            ArrayList<String> ng = new ArrayList<>(negativeGroups);
             java.util.Collections.sort(ng);
             groupExt += " n:" + RArrayUtils.toString(ng, " n:");
         }
@@ -689,61 +749,64 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             // sorry is used rappsilber internally for targeted modification search 
             Matcher m = targetMod.matcher(pep1.getSequence());
             if (m.matches()) {
-                int mass = (int)(Math.round(Double.parseDouble(m.group(1))*10));
+                int mass = (int) (Math.round(Double.parseDouble(m.group(1)) * 10));
 //                fdrGroup +=100 * mass;
-                groupExt = " " + (mass/10.0) + groupExt;
-                
+                groupExt = " " + (mass / 10.0) + groupExt;
+
             } else {
                 m = targetMod.matcher(pep2.getSequence());
                 if (m.matches()) {
-                    int mass = (int)(Math.round(Double.parseDouble(m.group(1))*10));
-                    groupExt = " " + (mass/10.0) + groupExt;
-                }
-            }
-        }  
-        
-        if (isLinear) {
-            // and the next decision is based on minimum peptide length
-            for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                if (pep1.length() > lenghtGroup[lg]) {
-                    group += " > " + lenghtGroup[lg];
-                    break;
-                }
-            }
-
-        } else {
-            int peplength1 = pep1.length();
-            int peplength2 = pep2.length();
-            int pepMinLen;
-            if (peplength1 == 1 && pep1.getSequence().matches("^X-?[0-9\\.,]*")) {
-                pepMinLen = peplength2;
-            } else if (peplength2 == 1 && pep2.getSequence().matches("^X-?[0-9\\.,]*")) {
-                pepMinLen = peplength1;
-            } else {
-                pepMinLen = Math.min(peplength1, peplength2);
-            }
-                
-            // and the next decision is based on minimum peptide length
-            for (int lg = 0; lg < lenghtGroup.length; lg++) {
-                if (pepMinLen > lenghtGroup[lg] ) {
-                    group += " > " +  lenghtGroup[lg];
-                    break;
+                    int mass = (int) (Math.round(Double.parseDouble(m.group(1)) * 10));
+                    groupExt = " " + (mass / 10.0) + groupExt;
                 }
             }
         }
-        
-        String g = FDRGroupNames.get(group+groupExt);
+
+        if (lenghtGroup.length > 0
+                && (lenghtGroup.length > 1 || lenghtGroup[0] > 0)) {
+            if (isLinear) {
+                // and the next decision is based on minimum peptide length
+                for (int lg = 0; lg < lenghtGroup.length; lg++) {
+                    if (pep1.length() > lenghtGroup[lg]) {
+                        group += " > " + lenghtGroup[lg];
+                        break;
+                    }
+                }
+
+            } else {
+                int peplength1 = pep1.length();
+                int peplength2 = pep2.length();
+                int pepMinLen;
+                if (peplength1 == 1 && pep1.getSequence().matches("^X-?[0-9\\.,]*")) {
+                    pepMinLen = peplength2;
+                } else if (peplength2 == 1 && pep2.getSequence().matches("^X-?[0-9\\.,]*")) {
+                    pepMinLen = peplength1;
+                } else {
+                    pepMinLen = Math.min(peplength1, peplength2);
+                }
+
+                // and the next decision is based on minimum peptide length
+                for (int lg = 0; lg < lenghtGroup.length; lg++) {
+                    if (pepMinLen > lenghtGroup[lg]) {
+                        group += " > " + lenghtGroup[lg];
+                        break;
+                    }
+                }
+            }
+        }
+        String g = FDRGroupNames.get(group + groupExt);
         return g;
-        
+
     }
-    
+
     /**
      * define the fdr-group for this match
      */
     public void setFDRGroup() {
         String sc = null;
-        fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, m_negativeGroups, m_positiveGroups, isNonCovalent ? "NonCovalent":"");
+        fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, m_negativeGroups, m_positiveGroups, isNonCovalent ? "NonCovalent" : "");
     }
+
     /**
      * define the fdr-group for this match
      */
@@ -753,6 +816,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * is this actually a single peptide
+     *
      * @return the isLinear
      */
     @Override
@@ -762,6 +826,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * is this actually a single peptide
+     *
      * @param isLinear the isLinear to set
      */
     public void setLinear(boolean isLinear) {
@@ -770,19 +835,23 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * The fdr assigned to the score of this peptide pair
-     * @param fdr 
+     *
+     * @param fdr
      */
     public void setFDR(double fdr) {
         m_fdr = fdr;
         for (PSM psm : chargeTopScoresPSM) {
-            if (psm != null)
+            if (psm != null) {
                 psm.setFdrPeptidePair(this);
+            }
         }
 
     }
+
     /**
      * The fdr assigned to the score of this peptide pair
-     * @return  
+     *
+     * @return
      */
     public double getFDR() {
         return m_fdr;
@@ -790,22 +859,24 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * a link supported by this peptidepair that passed the fdr
+     *
      * @param l
      */
     public void setFdrLink(ProteinGroupLink l) {
         this.m_link = l;
         if (l != null) {
             for (PSM psm : chargeTopScoresPSM) {
-                if (psm != null)
+                if (psm != null) {
                     psm.setFdrPeptidePair(this);
+                }
             }
         }
     }
 
-
     /**
      * a ProteinGroup supported by this peptidepair that passed the fdr
-     * @param pg 
+     *
+     * @param pg
      */
     public void setFdrProteinGroup(ProteinGroup pg) {
 
@@ -813,8 +884,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             this.fdrProteinGroup1 = null;
             this.fdrProteinGroup2 = null;
             for (PSM psm : chargeTopScoresPSM) {
-                if (psm != null)
+                if (psm != null) {
                     psm.setFdrProteinGroup(null);
+                }
             }
         } else {
             if (pg.equals(peptide1.getProteinGroup())) {
@@ -826,16 +898,18 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             }
 
             for (PSM psm : chargeTopScoresPSM) {
-                if (psm != null)
+                if (psm != null) {
                     psm.setFdrProteinGroup(pg);
+                }
             }
         }
-            
+
     }
 
     /**
      * the first ProteinGroup supported by this peptidepair that passed the fdr
-     * @return 
+     *
+     * @return
      */
     public ProteinGroup getFdrProteinGroup1() {
         return this.fdrProteinGroup1;
@@ -843,7 +917,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * the second ProteinGroup supported by this peptidepair that passed the fdr
-     * @return 
+     *
+     * @return
      */
     public ProteinGroup getFdrProteinGroup2() {
         return this.fdrProteinGroup2;
@@ -851,15 +926,16 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * PSM id for the supporting PSM (only top scoring PSM per Charge state)
-     * @return 
+     *
+     * @return
      */
     public String[] getPSMids() {
         //String[] ret = new String[chargeTopScoresPSM.size()];
         ArrayList<String> ret = new ArrayList<>(chargeTopScoresPSM.length);
-        
+
         int c = 0;
         for (PSM psm : chargeTopScoresPSM) {
-            if (psm!=null) {
+            if (psm != null) {
                 ret.add(psm.getPsmID());
             }
         }
@@ -869,6 +945,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * Unique id for this peptidepair
+     *
      * @return the peptidePairID
      */
     public int getPeptidePairID() {
@@ -877,7 +954,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * a link supported by this peptidepair that passed the FDR
-     * @return 
+     *
+     * @return
      */
     public ProteinGroupLink getFdrLink() {
         return this.m_link;
@@ -885,7 +963,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * number of supporting peptides. Meaning 1 (itself)
-     * @return 
+     *
+     * @return
      */
     public int getPeptidePairCount() {
         return 1;
@@ -931,32 +1010,35 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 //    public HashSet<String> getNegativeGrouping() {
 //        return this.negativeGroups;
 //    }
-    
-    
     /**
      * get the peptide at the given site
+     *
      * @param n
-     * @return 
+     * @return
      */
     public Object getSite(int n) {
-        return n==0 ? getPeptide1() : getPeptide2();
+        return n == 0 ? getPeptide1() : getPeptide2();
     }
 
-    /** 
+    /**
      * how many site do we have
-     * <p> <ul><li>2 - cross-linked peptides</li>
+     * <p>
+     * <ul><li>2 - cross-linked peptides</li>
      * <li> 1 - linear peptide </li></ul></p>
-     * @return 
+     *
+     * @return
      */
     public int getSites() {
-        if (isLinear)
+        if (isLinear) {
             return 1;
-        else 
+        } else {
             return 2;
-    }    
+        }
+    }
 
     /**
      * is this a loop linked peptide
+     *
      * @return the isLoop
      */
     public boolean isLoop() {
@@ -965,25 +1047,28 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * is this a loop linked peptide
+     *
      * @param isLoop the isLoop to set
      */
     public void setLoop(boolean isLoop) {
         this.isLoop = isLoop;
     }
-    
+
     @Override
     public Site getLinkSite1() {
-        if (peptide1 == Peptide.NOPEPTIDE)
+        if (peptide1 == Peptide.NOPEPTIDE) {
             return null;
-        return new PeptideSite(peptide1,pepsite1);
+        }
+        return new PeptideSite(peptide1, pepsite1);
     }
 
     @Override
     public Site getLinkSite2() {
-        if (peptide2 == Peptide.NOPEPTIDE)
+        if (peptide2 == Peptide.NOPEPTIDE) {
             return null;
-        return new PeptideSite(peptide2,pepsite2);
-    }    
+        }
+        return new PeptideSite(peptide2, pepsite2);
+    }
 
     /**
      * @return the psms
@@ -1010,7 +1095,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * indicates that the two peptides where in the same spectrum but non-covalently linked
+     * indicates that the two peptides where in the same spectrum but
+     * non-covalently linked
+     *
      * @return the isNonCovalent
      */
     public boolean isNonCovalent() {
@@ -1018,13 +1105,15 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     }
 
     /**
-     * indicates that the two peptides where in the same spectrum but non-covalently linked
+     * indicates that the two peptides where in the same spectrum but
+     * non-covalently linked
+     *
      * @param isNonCovalent the isNonCovalent to set
      */
     public void setNonCovalent(boolean isNonCovalent) {
         this.isNonCovalent = isNonCovalent;
     }
-    
+
 //    @Override
 //    public boolean hasPositiveGrouping() {
 //        return this.positiveGroups != null;
@@ -1044,9 +1133,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 //    public HashSet<String> getPositiveGrouping() {
 //        return this.positiveGroups;
 //    }
-
     /**
      * is this a cross-link of consecutive peptides
+     *
      * @return the isConsecutive
      */
     public boolean isConsecutive() {
@@ -1055,10 +1144,11 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
     /**
      * is this a cross-link of consecutive peptides
+     *
      * @param isConsecutive the isConsecutive to set
      */
     public void setConsecutive(boolean isConsecutive) {
         this.isConsecutive = isConsecutive;
     }
-    
+
 }

@@ -17,11 +17,10 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
-              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" max="-2" attributes="0">
                   <Component id="btnStopBoost" max="32767" attributes="0"/>
                   <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="lblDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="lblBoost" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="lblReportFactor" max="32767" attributes="0"/>
               </Group>
@@ -32,16 +31,13 @@
                           <Component id="spReportFactor" alignment="0" max="32767" attributes="0"/>
                           <Component id="spFDR" max="32767" attributes="0"/>
                           <Group type="102" attributes="0">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="ckDirectional" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="ckMaximize" alignment="0" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace pref="58" max="32767" attributes="0"/>
+                              <Component id="ckMaximize" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace pref="38" max="32767" attributes="0"/>
                               <Component id="ckBoostBetween" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="cbFDRLevel" pref="140" max="32767" attributes="0"/>
+                      <Component id="cbFDRLevel" max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
@@ -61,19 +57,18 @@
                   <Component id="spFDR" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="cbFDRLevel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="ckDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="lblDirectional" alignment="3" min="-2" max="-2" attributes="0"/>
-                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="lblBoost" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
-                  <Component id="ckBoostBetween" alignment="1" min="-2" max="-2" attributes="0"/>
+                  <Group type="102" alignment="1" attributes="0">
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="ckBoostBetween" min="-2" max="-2" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
@@ -113,11 +108,6 @@
         <Property name="text" type="java.lang.String" value="FDR"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JCheckBox" name="ckDirectional">
-      <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Is the Cross-linking considered directional (A links to B is different to B links to A)"/>
-      </Properties>
-    </Component>
     <Component class="javax.swing.JButton" name="btnCalc">
       <Properties>
         <Property name="text" type="java.lang.String" value="Calculate"/>
@@ -133,15 +123,6 @@
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckMaximizeActionPerformed"/>
-      </Events>
-    </Component>
-    <Component class="javax.swing.JLabel" name="lblDirectional">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Is directional"/>
-        <Property name="toolTipText" type="java.lang.String" value="Is the Cross-linking considered directional (A links to B is different to B links to A)"/>
-      </Properties>
-      <Events>
-        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="lblDirectionalMouseClicked"/>
       </Events>
     </Component>
     <Component class="javax.swing.JLabel" name="lblBoost">

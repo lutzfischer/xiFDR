@@ -43,6 +43,19 @@
         </Property>
       </Properties>
     </Component>
+    <Component class="org.rappsilber.fdr.gui.components.FDRSettingsMedium" name="fdrSettingsMedium">
+    </Component>
+    <Component class="javax.swing.JRadioButton" name="rbFDRSimple">
+      <Properties>
+        <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
+          <ComponentRef name="bgFDRSettingType"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Simple FDR"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="changFDRSettingsInterface"/>
+      </Events>
+    </Component>
   </NonVisualComponents>
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="3"/>
@@ -71,7 +84,7 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="jScrollPane6" pref="839" max="32767" attributes="0"/>
+          <Component id="jScrollPane6" pref="902" max="32767" attributes="0"/>
           <Component id="jSplitPane1" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
@@ -113,7 +126,7 @@
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="0" attributes="0">
-                          <Component id="tpInput" pref="824" max="32767" attributes="0"/>
+                          <Component id="tpInput" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -170,7 +183,7 @@
                         </Component>
                       </SubComponents>
                     </Container>
-                    <Container class="javax.swing.JPanel" name="jPanel6">
+                    <Container class="javax.swing.JPanel" name="pCSVInput">
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
                           <JTabbedPaneConstraints tabName="CSV">
@@ -193,7 +206,7 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="csvSelect" max="32767" attributes="0"/>
+                                  <Component id="csvSelect" pref="361" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -210,7 +223,7 @@
                         </Component>
                       </SubComponents>
                     </Container>
-                    <Container class="javax.swing.JPanel" name="jPanel11">
+                    <Container class="javax.swing.JPanel" name="pMZIdentMLInput">
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
                           <JTabbedPaneConstraints tabName="mzIdentML">
@@ -241,7 +254,7 @@
                                                       <Component id="rbMZLowBetter" min="-2" max="-2" attributes="0"/>
                                                       <Component id="rbMZHighBetter" alignment="0" min="-2" max="-2" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace min="88" pref="375" max="32767" attributes="0"/>
+                                                  <EmptySpace min="88" pref="437" max="32767" attributes="0"/>
                                               </Group>
                                               <Component id="cbMZMatchScoreName" alignment="1" max="32767" attributes="0"/>
                                           </Group>
@@ -372,8 +385,8 @@
                                   <Component id="ckDBSize" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                               </Group>
-                              <Group type="102" attributes="0">
-                                  <Component id="rbFDRSimple" min="-2" max="-2" attributes="0"/>
+                              <Group type="102" alignment="0" attributes="0">
+                                  <Component id="rbFDRMedium" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                                   <Component id="rbFDRComplete" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="32767" attributes="0"/>
@@ -394,9 +407,9 @@
                       <Group type="102" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
-                              <Component id="rbFDRSimple" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="rbFDRComplete" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="ckDefineGroups" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="rbFDRMedium" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
@@ -450,7 +463,7 @@
                                   <Component id="spTargetDBProt" min="-2" pref="100" max="-2" attributes="0"/>
                                   <Component id="lblProtein" alignment="0" min="-2" pref="100" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace pref="321" max="32767" attributes="0"/>
+                              <EmptySpace pref="384" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -579,16 +592,16 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckDBSizeActionPerformed"/>
                   </Events>
                 </Component>
-                <Component class="javax.swing.JRadioButton" name="rbFDRSimple">
+                <Component class="javax.swing.JRadioButton" name="rbFDRMedium">
                   <Properties>
                     <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
                       <ComponentRef name="bgFDRSettingType"/>
                     </Property>
                     <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="Simple FDR"/>
+                    <Property name="text" type="java.lang.String" value="Reduced"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="changFDRSettingsInterface"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="rbFDRMediumActionPerformed"/>
                   </Events>
                 </Component>
                 <Component class="javax.swing.JRadioButton" name="rbFDRComplete">
@@ -596,7 +609,7 @@
                     <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
                       <ComponentRef name="bgFDRSettingType"/>
                     </Property>
-                    <Property name="text" type="java.lang.String" value="complete FDR"/>
+                    <Property name="text" type="java.lang.String" value="Complete FDR"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="rbFDRCompleteActionPerformed"/>
@@ -624,6 +637,7 @@
                                   </Group>
                                   <Component id="ckIgnoreGroups1" alignment="0" min="-2" pref="226" max="-2" attributes="0"/>
                                   <Component id="cbGroupPepsBySelf" min="-2" max="-2" attributes="0"/>
+                                  <Component id="ckGroupByCrossLinkerStubs" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace max="32767" attributes="0"/>
                           </Group>
@@ -643,7 +657,9 @@
                               <Component id="cbGroupLinksBySelf" min="-2" max="-2" attributes="0"/>
                               <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Component id="cbGroupPPIBySelf" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace min="-2" pref="35" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
+                              <Component id="ckGroupByCrossLinkerStubs" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="spDistanceGroup" alignment="3" min="-2" pref="27" max="-2" attributes="0"/>
@@ -716,6 +732,12 @@
                     <Component class="javax.swing.JCheckBox" name="cbGroupRun">
                       <Properties>
                         <Property name="text" type="java.lang.String" value="PSMs by Run"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JCheckBox" name="ckGroupByCrossLinkerStubs">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="MS Cleavable XL Grouping"/>
+                        <Property name="toolTipText" type="java.lang.String" value="If the present PSMs will be groupped by presents of peptides with crosslinker stub fragments"/>
                       </Properties>
                     </Component>
                   </SubComponents>
@@ -841,7 +863,7 @@
                                           <Group type="102" alignment="1" attributes="0">
                                               <Group type="103" groupAlignment="1" attributes="0">
                                                   <Component id="jPanel18" alignment="0" max="32767" attributes="0"/>
-                                                  <Component id="jPanel20" alignment="0" pref="635" max="32767" attributes="0"/>
+                                                  <Component id="jPanel20" alignment="0" pref="698" max="32767" attributes="0"/>
                                                   <Component id="jPanel16" alignment="0" max="32767" attributes="0"/>
                                                   <Component id="jPanel15" alignment="0" max="32767" attributes="0"/>
                                               </Group>
@@ -1277,7 +1299,7 @@
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="rbCSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace pref="466" max="32767" attributes="0"/>
+                                          <EmptySpace pref="538" max="32767" attributes="0"/>
                                           <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                       <Component id="lpCsvOutLocal" max="32767" attributes="0"/>
@@ -1440,7 +1462,7 @@
                                                       <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
                                                       <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace type="unrelated" pref="302" max="32767" attributes="0"/>
+                                                  <EmptySpace type="unrelated" pref="350" max="32767" attributes="0"/>
                                                   <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                               </Group>
                                           </Group>
@@ -1591,10 +1613,11 @@
                         <Component class="javax.swing.JComboBox" name="cmbPeakListFormat">
                           <Properties>
                             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                              <StringArray count="3">
-                                <StringItem index="0" value="mzML"/>
-                                <StringItem index="1" value="raw"/>
-                                <StringItem index="2" value="mgf"/>
+                              <StringArray count="4">
+                                <StringItem index="0" value="mgf"/>
+                                <StringItem index="1" value="mzML"/>
+                                <StringItem index="2" value="raw"/>
+                                <StringItem index="3" value=" "/>
                               </StringArray>
                             </Property>
                           </Properties>
@@ -1645,14 +1668,14 @@
                         <DimensionLayout dim="0">
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="1" attributes="0">
-                                  <EmptySpace pref="739" max="32767" attributes="0"/>
+                                  <EmptySpace pref="805" max="32767" attributes="0"/>
                                   <Component id="btnPeakListParse" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                               <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
                                   <Group type="102" alignment="0" attributes="0">
                                       <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="flPeakLists" pref="802" max="32767" attributes="0"/>
+                                      <Component id="flPeakLists" pref="865" max="32767" attributes="0"/>
                                       <EmptySpace max="-2" attributes="0"/>
                                   </Group>
                               </Group>
@@ -1727,7 +1750,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="spLog" alignment="0" max="32767" attributes="0"/>
-                              <Component id="memory2" alignment="0" pref="801" max="32767" attributes="0"/>
+                              <Component id="memory2" alignment="0" pref="870" max="32767" attributes="0"/>
                               <Component id="cbLevel" alignment="0" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -1823,7 +1846,7 @@
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jScrollPane2" pref="789" max="32767" attributes="0"/>
+                                      <Component id="jScrollPane2" pref="865" max="32767" attributes="0"/>
                                       <Group type="102" attributes="0">
                                           <Component id="jLabel29" min="-2" max="-2" attributes="0"/>
                                           <EmptySpace max="-2" attributes="0"/>

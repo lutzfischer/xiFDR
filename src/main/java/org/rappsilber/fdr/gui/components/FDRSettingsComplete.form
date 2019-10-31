@@ -461,7 +461,7 @@
         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
           <SpinnerModel initial="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
         </Property>
-        <Property name="toolTipText" type="java.lang.String" value="The total number of matches times the fdr should be larger then the given number - otherwise the subgroup will not be considered on its own"/>
+        <Property name="toolTipText" type="java.lang.String" value="The total number of matches times the fdr should be larger then the given number - otherwise the subgroup will be considered unreliable"/>
         <Property name="specialValue" type="java.lang.Number" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="0" type="code"/>
         </Property>

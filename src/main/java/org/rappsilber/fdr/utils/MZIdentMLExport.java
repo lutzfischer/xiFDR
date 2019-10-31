@@ -232,7 +232,7 @@ public class MZIdentMLExport {
     XLMOD xlmod;
     
     
-    private mzIdentMLOwner owner = new mzIdentMLOwner("fisrt", "last", "email", "org", "adress");
+    private MZIdentMLOwner owner = new MZIdentMLOwner("fisrt", "last", "email", "org", "address");
 
 
     private PSMToMzIdentScanId mgfScanID = new PSMToMzIdentScanId() {
@@ -291,7 +291,7 @@ public class MZIdentMLExport {
      * @throws Exception
      */
     //CV also available at http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo
-    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, String outputfile, String databaseFileFormatID, String massSpecFileFormatID, mzIdentMLOwner owner) throws Exception {
+    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, String outputfile, String databaseFileFormatID, String massSpecFileFormatID, MZIdentMLOwner owner) throws Exception {
         //XTandemFile xfile = new XTandemFile(inputfile);
         this.owner = owner;
         initializeVariables(fdr, fdrResult, databaseFileFormatID, massSpecFileFormatID);
@@ -329,17 +329,17 @@ public class MZIdentMLExport {
      * @throws Exception
      */
     //CV also available at http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo
-    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, String databaseFileFormatID, String massSpecFileFormatID, mzIdentMLOwner owner) throws Exception {
+    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, String databaseFileFormatID, String massSpecFileFormatID, MZIdentMLOwner owner) throws Exception {
         //XTandemFile xfile = new XTandemFile(inputfile);
         this.owner = owner;
         initializeVariables(fdr, fdrResult, databaseFileFormatID, massSpecFileFormatID);
     }    
     
-    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, String outputfile, mzIdentMLOwner owner) throws Exception {
+    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, String outputfile, MZIdentMLOwner owner) throws Exception {
         this(fdr, fdrResult, outputfile, "MS:1001348", "MS:1001062", owner);
     }
 
-    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, mzIdentMLOwner owner) throws Exception {
+    public MZIdentMLExport(OfflineFDR fdr, FDRResult fdrResult, MZIdentMLOwner owner) throws Exception {
         this(fdr, fdrResult, "MS:1001348", "MS:1001062", owner);
     }
     
@@ -518,7 +518,7 @@ public class MZIdentMLExport {
         int pagID =0;
 
         handleAnalysisSoftware(OfflineFDR.getXiFDRVersion().toString());
-        handleAuditCollection(owner.first, owner.last, owner.email, owner.adress, owner.org);
+        handleAuditCollection(owner.first, owner.last, owner.email, owner.address, owner.org);
         handleProvider();                //Performed after auditcollection, since contact is needed for provider
 
         boolean fragmentIsMono = handleAnalysisProtocolCollection(fdr, result);
@@ -684,7 +684,7 @@ public class MZIdentMLExport {
                 xlModId++;
                 org.rappsilber.fdr.entities.PeptidePair peppair = psm.getPeptidePair();
                 
-                SpectraData specData =  getSpectraData(psm.getSearchID(), psm.getRun());
+                SpectraData specData =  getSpectraData(psm.getSearchID(), psm.getPeakListName());
 
                 double calcMass = psm.getCalcMass();
                 double psmXLMass = psm.getCalcMass();
@@ -1893,7 +1893,7 @@ public class MZIdentMLExport {
 
     
     public SpectrumIdentificationList getSpectrumIdentificationList(DBPSM psm) {
-        return getSpectrumIdentificationList(psm.getSearchID(),psm.getRun());
+        return getSpectrumIdentificationList(psm.getSearchID(),psm.getPeakListName());
     }
     
     public SpectrumIdentificationList getSpectrumIdentificationList(int searchid,String run) {
@@ -1961,18 +1961,25 @@ public class MZIdentMLExport {
         if (sd == null) {
             sd = new SpectraData();
             SpectrumIDFormat sif = new SpectrumIDFormat();
-            if (forceExtension.toLowerCase().contentEquals("mzml")) {
+            if (forceExtension != null && forceExtension.toLowerCase().contentEquals("mzml")) {
                 sif.setCvParam(makeCvParam("MS:1001530",  "mzML unique identifier",psiCV));
             } else {
                 sif.setCvParam(makeCvParam("MS:1000774", "multiple peak list nativeID format", psiCV));
             }
             sd.setSpectrumIDFormat(sif);
             String runOut = run;
+            String extension = "";
+            // get the file extension of the run-name
+            if (runOut.contains(".")) {
+                extension = runOut.substring(runOut.lastIndexOf(".")+1);
+            }
+            
             if (forceExtension != null) {
                 if (runOut.contains("."))
                     runOut = runOut.substring(0,runOut.lastIndexOf("."))+"."+forceExtension;
                 else 
                     runOut = runOut + "." + forceExtension;
+                extension  = forceExtension;
             }
             sd.setLocation(runOut);
             
@@ -1986,12 +1993,15 @@ public class MZIdentMLExport {
             */
             
             FileFormat ff = new FileFormat();
-            if (forceExtension.toLowerCase().contentEquals("mzml")) {
+            if (extension.toLowerCase().contentEquals("mzml")) {
                 ff.setCvParam(makeCvParam("MS:1000584",  "mzML format",psiCV));
-                scanIDTranslation= this.mzMLscanIDTranslation;               
-            } else if (forceExtension.toLowerCase().contentEquals("raw")) {
+                scanIDTranslation= this.mzMLscanIDTranslation;
+            } else if (extension.toLowerCase().contentEquals("raw")) {
                 ff.setCvParam(makeCvParam("MS:1000563","Thermo RAW format", psiCV));
-                scanIDTranslation= this.thermoRawScaNumber;               
+                scanIDTranslation= this.thermoRawScaNumber;
+            } else if (extension.toLowerCase().contentEquals("apl")) {
+                ff.setCvParam(makeCvParam("MS:1002996","Andromeda:apl file format", psiCV));
+                scanIDTranslation= this.thermoRawScaNumber;
             } else {
                 ff.setCvParam(makeCvParam("MS:1001062","Mascot MGF format", psiCV));
                 scanIDTranslation= this.mgfScanID;
@@ -2905,14 +2915,14 @@ public class MZIdentMLExport {
      * @return the ownerAddress
      */
     public String getOwnerAddress() {
-        return owner.adress;
+        return owner.address;
     }
 
     /**
      * @param ownerAddress the ownerAddress to set
      */
     public void setOwnerAddress(String ownerAddress) {
-        this.owner.adress = ownerAddress;
+        this.owner.address = ownerAddress;
     }
 
     /**

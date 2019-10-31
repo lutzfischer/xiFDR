@@ -111,6 +111,12 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
         return m_positiveGroups;
     }
 
+    public void addPositiveGrouping(String av) {
+        if (this.m_positiveGroups == null)
+            this.m_positiveGroups = new HashSet<String>(1);
+        this.m_positiveGroups.add(av);
+    }
+
 
     /** 
      * indicates this passed some form of Negative value that makes this 
