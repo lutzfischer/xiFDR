@@ -56,6 +56,7 @@ import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.CSVinFDR;
 import org.rappsilber.fdr.DBinFDR;
 import org.rappsilber.fdr.FDRSettings;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.result.FDRResultLevel;
 import org.rappsilber.fdr.MZIdentXLFDR;
@@ -72,7 +73,7 @@ import org.rappsilber.fdr.utils.MZIdentMLExport;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.fdr.utils.MaximizingUpdate;
 import org.rappsilber.fdr.utils.MiscUtils;
-import org.rappsilber.fdr.utils.mzIdentMLOwner;
+import org.rappsilber.fdr.utils.MZIdentMLOwner;
 import org.rappsilber.gui.components.AutoAddTableModelListener;
 import org.rappsilber.gui.GenericTextPopUpMenu;
 import org.rappsilber.gui.components.JoinedThreadedTextOuput;
@@ -164,6 +165,7 @@ public class FDRGUI extends javax.swing.JFrame {
         ArrayList<Container> spins = new ArrayList<Container>();
         con.add(this);
         con.add(fdrSettingsComplete);
+        con.add(fdrSettingsMedium);
         con.add(fdrSettingsSimple);
         makeSpinnersSelectTextOnEnter(con, spinSet, spins);
 
@@ -172,9 +174,6 @@ public class FDRGUI extends javax.swing.JFrame {
         // hide the FDR-groups panel
         ckDefineGroupsActionPerformed(null);
 
-        // preset minimum peptide-length
-        fdrSettingsComplete.setMinPeptideLength(6);
-        fdrSettingsSimple.setMinPeptideLength(6);
 
         ActionListener stopMaximizingAl = new ActionListener() {
 
@@ -185,11 +184,16 @@ public class FDRGUI extends javax.swing.JFrame {
         };
 
         fdrSettingsComplete.addStopMaximizingListener(stopMaximizingAl);
+        fdrSettingsMedium.addStopMaximizingListener(stopMaximizingAl);
         fdrSettingsSimple.addStopMaximizingListener(stopMaximizingAl);
 
+        // preset minimum peptide-length
         fdrSettingsComplete.setMinPeptideLength(6);
+        fdrSettingsMedium.setMinPeptideLength(6);
         fdrSettingsSimple.setMinPeptideLength(6);
+        
         fdrSettingsComplete.setReportFactor(100000);
+        fdrSettingsMedium.setReportFactor(100000);
         fdrSettingsSimple.setReportFactor(100000);
 
         ActionListener calcListener = new ActionListener() {
@@ -198,13 +202,14 @@ public class FDRGUI extends javax.swing.JFrame {
                 if (e.getActionCommand().contentEquals("boost")) {
                     fdrSettingsComplete.btnStopBoost.setEnabled(true);
                     fdrSettingsSimple.btnStopBoost.setEnabled(true);
+                    fdrSettingsMedium.btnStopBoost.setEnabled(true);
                 }
                 basicCalc();
             }
         };
 
         fdrSettingsSimple.addCalcListener(calcListener);
-
+        fdrSettingsMedium.addCalcListener(calcListener);
         fdrSettingsComplete.addCalcListener(calcListener);
 
         spDistanceGroup.setSpecialValueText("No distance group");
@@ -484,6 +489,7 @@ public class FDRGUI extends javax.swing.JFrame {
      */
     public void setFdr(OfflineFDR m_fdr) {
         this.m_fdr = m_fdr;
+        ckGroupByCrossLinkerStubs.setEnabled(m_fdr.stubsFound());
     }
 
     /**
@@ -593,7 +599,7 @@ public class FDRGUI extends javax.swing.JFrame {
             if ( getFdr() instanceof MZIdentXLFDR) {
                 writeMZIdentML();
             } else if (getFdr()instanceof XiInFDR) {
-                MZIdentMLExport export =  new MZIdentMLExport(getFdr(), getResult(), new mzIdentMLOwner(getMzIdentMLOwnerFirst(), getMzIdentMLOwnerLast(), getMzIdentMLOwnerEmail(), getMzIdentMLOwnerOrg(), getMzIdentMLOwnerAdress()));
+                MZIdentMLExport export =  new MZIdentMLExport(getFdr(), getResult(), new MZIdentMLOwner(getMzIdentMLOwnerFirst(), getMzIdentMLOwnerLast(), getMzIdentMLOwnerEmail(), getMzIdentMLOwnerOrg(), getMzIdentMLOwnerAdress()));
                 export.setForceExtension(cmbPeakListFormat.getSelectedItem().toString());
                 export.setMZMLTemplate(cmbMzMLScan2ID.getSelectedItem().toString());
                 export.convertFile(f.getAbsolutePath());
@@ -837,8 +843,8 @@ public class FDRGUI extends javax.swing.JFrame {
                     }else {
                         ofdr = new CSVinFDR();
                     }        
-                    setFdr(ofdr);
                     addCSV(ofdr, null, csv,filter);
+                    setFdr(ofdr);
 
                     while (csvs.hasNext()) {
                         csv = csvs.next();
@@ -1181,45 +1187,15 @@ public class FDRGUI extends javax.swing.JFrame {
 
     private void basicCalc() {
         if (getFdr() != null) {
-            fdrSettingsComplete.setPSMDirectional(fdrSettings.isPSMDirectional());
-            fdrSettingsComplete.setPeptidePairDirectional(fdrSettings.isPeptidePairDirectional());
-            fdrSettingsComplete.setLinkDirectional(fdrSettings.isLinkDirectional());
-            fdrSettingsComplete.setPPIDirectional(fdrSettings.isPPIDirectional());
-
-            fdrSettingsComplete.setPSMFDR(fdrSettings.getPSMFDR());
-            fdrSettingsComplete.setPeptidePairFDR(fdrSettings.getPeptidePairFDR());
-            fdrSettingsComplete.setProteinGroupFDR(fdrSettings.getProteinGroupFDR());
-            fdrSettingsComplete.setProteinGroupLinkFDR(fdrSettings.getProteinGroupLinkFDR());
-            fdrSettingsComplete.setProteinGroupPairFDR(fdrSettings.getProteinGroupPairFDR());
-
-            fdrSettingsComplete.setMaxLinkAmbiguity(fdrSettings.getMaxLinkAmbiguity());
-            fdrSettingsComplete.setMaxProteinAmbiguity(fdrSettings.getMaxProteinAmbiguity());
-            fdrSettingsComplete.setMinLinkPepCount(fdrSettings.getMinLinkPepCount());
-            fdrSettingsComplete.setMinPPIPepCount(fdrSettings.getMinPPIPepCount());
-            fdrSettingsComplete.setMinPeptideLength(fdrSettings.getMinPeptideLength());
-            fdrSettingsComplete.setMinProteinPepCount(fdrSettings.getMinProteinPepCount());
-
-            fdrSettingsSimple.setPSMDirectional(fdrSettings.isPSMDirectional());
-            fdrSettingsSimple.setPeptidePairDirectional(fdrSettings.isPeptidePairDirectional());
-            fdrSettingsSimple.setLinkDirectional(fdrSettings.isLinkDirectional());
-            fdrSettingsSimple.setPPIDirectional(fdrSettings.isPPIDirectional());
-
-            fdrSettingsSimple.setPSMFDR(fdrSettings.getPSMFDR());
-            fdrSettingsSimple.setPeptidePairFDR(fdrSettings.getPeptidePairFDR());
-            fdrSettingsSimple.setProteinGroupFDR(fdrSettings.getProteinGroupFDR());
-            fdrSettingsSimple.setProteinGroupLinkFDR(fdrSettings.getProteinGroupLinkFDR());
-            fdrSettingsSimple.setProteinGroupPairFDR(fdrSettings.getProteinGroupPairFDR());
-
-            fdrSettingsSimple.setMaxLinkAmbiguity(fdrSettings.getMaxLinkAmbiguity());
-            fdrSettingsSimple.setMaxProteinAmbiguity(fdrSettings.getMaxProteinAmbiguity());
-            fdrSettingsSimple.setMinLinkPepCount(fdrSettings.getMinLinkPepCount());
-            fdrSettingsSimple.setMinPPIPepCount(fdrSettings.getMinPPIPepCount());
-            fdrSettingsSimple.setMinPeptideLength(fdrSettings.getMinPeptideLength());
-            fdrSettingsSimple.setMinProteinPepCount(fdrSettings.getMinProteinPepCount());
+            FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsComplete);
+            FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsMedium);
+            FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsSimple);
             
             getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
             getFdr().setMinDecoys(fdrSettings.getMinTD());
-
+            
+            fdrSettings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
+                    
             if (fdrSettings.doOptimize() != null) {
                 final OfflineFDR.FDRLevel l = fdrSettings.doOptimize();
                 if (l == OfflineFDR.FDRLevel.PSM)
@@ -1229,6 +1205,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         public void run() {
                             maximise(l, fdrSettings.getBoostBetween());
                             fdrSettingsComplete.btnStopBoost.setEnabled(false);
+                            fdrSettingsMedium.btnStopBoost.setEnabled(false);
                             fdrSettingsSimple.btnStopBoost.setEnabled(false);
                             
                         }
@@ -1236,27 +1213,6 @@ public class FDRGUI extends javax.swing.JFrame {
                     ml.start();
                 }
                             
-                
-//                switch (fdrSettings.doOptimize()) {
-//                    case PROTEINGROUPLINK:
-//                        Thread ml = new Thread() {
-//                            public void run() {
-//                                maximiseLink(fdrSettings.getBoostBetween());
-//                            }
-//                        };
-//                        ml.start();
-//                        return;
-//
-//                    case PROTEINGROUPPAIR:
-//                        Thread mp = new Thread() {
-//                            public void run() {
-//                                maximisePPI(fdrSettings.getBoostBetween());
-//                            }
-//                        };
-//                        mp.start();
-//                        return;
-//                }
-//                JOptionPane.showMessageDialog(this, "Boosting of that Level currently not supported!");
             } else {
                 calculateFDR();
             }
@@ -1303,6 +1259,7 @@ public class FDRGUI extends javax.swing.JFrame {
 //                btnMaxLink.setEnabled(enable);
 //                btnMaxPPI.setEnabled(enable);
                 fdrSettingsComplete.setEnabled(enable);
+                fdrSettingsMedium.setEnabled(enable);
                 fdrSettingsSimple.setEnabled(enable);
             }
         };
@@ -1360,6 +1317,12 @@ public class FDRGUI extends javax.swing.JFrame {
                         fdrSettingsComplete.setProteinGroupFDR(state.showProtFDR);
                         fdrSettingsComplete.setProteinGroupLinkFDR(state.showLinkFDR);
 
+                        fdrSettingsMedium.setPeptidePairFDR(state.showPepFDR);
+                        fdrSettingsMedium.setPSMFDR(state.showPSMFDR);
+                        fdrSettingsMedium.setPeptidePairFDR(state.showPepFDR);
+                        fdrSettingsMedium.setProteinGroupFDR(state.showProtFDR);
+                        fdrSettingsMedium.setProteinGroupLinkFDR(state.showLinkFDR);
+                        
 
                         txtSumPSM.setText(state.showPSMCount);
                         txtSumPepPairs.setText(state.showPepCount);
@@ -1409,7 +1372,6 @@ public class FDRGUI extends javax.swing.JFrame {
     
 
     private void changeFDRSettings(java.awt.event.ActionEvent evt) {
-
         if (rbFDRSimple.isSelected()) {
             if (fdrSettings != null) {
                 fdrSettingsSimple.setAll(fdrSettings);
@@ -1419,6 +1381,15 @@ public class FDRGUI extends javax.swing.JFrame {
             }
             spFDRSettingsWrapper.setViewportView(fdrSettingsSimple);
             fdrSettings = fdrSettingsSimple;
+        } else if (rbFDRMedium.isSelected()) {
+            if (fdrSettings != null) {
+                fdrSettingsMedium.setAll(fdrSettings);
+            }
+            if (spFDRSettingsWrapper.getComponentCount() > 3) {
+                spFDRSettingsWrapper.remove(spFDRSettingsWrapper.getComponent(3));
+            }
+            spFDRSettingsWrapper.setViewportView(fdrSettingsMedium);
+            fdrSettings = fdrSettingsMedium;
         } else if (rbFDRComplete.isSelected()) {
             if (fdrSettings != null) {
                 fdrSettingsComplete.setAll(fdrSettings);
@@ -1436,11 +1407,13 @@ public class FDRGUI extends javax.swing.JFrame {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                rbFDRComplete.setSelected(true);
+                rbFDRMedium.setSelected(true);
+                rbFDRComplete.setSelected(false);
                 rbFDRSimple.setSelected(false);
                 rbFDRCompleteActionPerformed(null);
 
                 fdrSettingsSimple.setAll(settings);
+                fdrSettingsMedium.setAll(settings);
                 fdrSettingsComplete.setAll(settings);
             }
         });
@@ -1450,7 +1423,8 @@ public class FDRGUI extends javax.swing.JFrame {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-            csvSelect.setInputFile(fileName);
+                csvSelect.setInputFile(fileName);
+                tpInput.setSelectedComponent(pCSVInput);
             }
         });
     }
@@ -1477,6 +1451,9 @@ public class FDRGUI extends javax.swing.JFrame {
         });
     }
     
+    public void setCSVOutFile(String path) {
+        fbFolder.setFile(path);
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -1493,15 +1470,17 @@ public class FDRGUI extends javax.swing.JFrame {
         bgFDRSettingType = new javax.swing.ButtonGroup();
         fdrSettingsComplete = new org.rappsilber.fdr.gui.components.FDRSettingsComplete();
         fdrSettingsSimple = new org.rappsilber.fdr.gui.components.FDRSettingsSimple();
+        fdrSettingsMedium = new org.rappsilber.fdr.gui.components.FDRSettingsMedium();
+        rbFDRSimple = new javax.swing.JRadioButton();
         jScrollPane6 = new javax.swing.JScrollPane();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
         tpInput = new javax.swing.JTabbedPane();
         pDatabase = new javax.swing.JPanel();
         getDBFDR = new org.rappsilber.fdr.gui.components.GetDBFDR();
-        jPanel6 = new javax.swing.JPanel();
+        pCSVInput = new javax.swing.JPanel();
         csvSelect = new org.rappsilber.fdr.gui.components.CSVSelection();
-        jPanel11 = new javax.swing.JPanel();
+        pMZIdentMLInput = new javax.swing.JPanel();
         fbMZIdentMLIn = new org.rappsilber.gui.components.FileBrowser();
         jLabel19 = new javax.swing.JLabel();
         btnReadMZIdent = new javax.swing.JButton();
@@ -1523,7 +1502,7 @@ public class FDRGUI extends javax.swing.JFrame {
         spTargetDBLinks = new javax.swing.JSpinner();
         lblLinkDB = new javax.swing.JLabel();
         ckDBSize = new javax.swing.JCheckBox();
-        rbFDRSimple = new javax.swing.JRadioButton();
+        rbFDRMedium = new javax.swing.JRadioButton();
         rbFDRComplete = new javax.swing.JRadioButton();
         spFDRSettingsWrapper = new javax.swing.JScrollPane();
         pFDRGroups = new javax.swing.JPanel();
@@ -1536,6 +1515,7 @@ public class FDRGUI extends javax.swing.JFrame {
         cbGroupLinksBySelf = new javax.swing.JCheckBox();
         cbGroupPPIBySelf = new javax.swing.JCheckBox();
         cbGroupRun = new javax.swing.JCheckBox();
+        ckGroupByCrossLinkerStubs = new javax.swing.JCheckBox();
         ckDefineGroups = new javax.swing.JCheckBox();
         pResult = new javax.swing.JPanel();
         tpResult = new javax.swing.JTabbedPane();
@@ -1641,6 +1621,14 @@ public class FDRGUI extends javax.swing.JFrame {
 
         fdrSettingsSimple.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
+        bgFDRSettingType.add(rbFDRSimple);
+        rbFDRSimple.setText("Simple FDR");
+        rbFDRSimple.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                changFDRSettingsInterface(evt);
+            }
+        });
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Cross-Link FDR");
         addFocusListener(new java.awt.event.FocusAdapter() {
@@ -1681,24 +1669,24 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
-        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
-        jPanel6.setLayout(jPanel6Layout);
-        jPanel6Layout.setHorizontalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel6Layout.createSequentialGroup()
+        javax.swing.GroupLayout pCSVInputLayout = new javax.swing.GroupLayout(pCSVInput);
+        pCSVInput.setLayout(pCSVInputLayout);
+        pCSVInputLayout.setHorizontalGroup(
+            pCSVInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pCSVInputLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(csvSelect, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
-        jPanel6Layout.setVerticalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel6Layout.createSequentialGroup()
+        pCSVInputLayout.setVerticalGroup(
+            pCSVInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pCSVInputLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(csvSelect, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(csvSelect, javax.swing.GroupLayout.DEFAULT_SIZE, 361, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
-        tpInput.addTab("CSV", jPanel6);
+        tpInput.addTab("CSV", pCSVInput);
 
         fbMZIdentMLIn.setDescription("MZIdentML-Files");
         fbMZIdentMLIn.setExtensions(new String[] {"mzid"});
@@ -1739,36 +1727,36 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
-        javax.swing.GroupLayout jPanel11Layout = new javax.swing.GroupLayout(jPanel11);
-        jPanel11.setLayout(jPanel11Layout);
-        jPanel11Layout.setHorizontalGroup(
-            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel11Layout.createSequentialGroup()
+        javax.swing.GroupLayout pMZIdentMLInputLayout = new javax.swing.GroupLayout(pMZIdentMLInput);
+        pMZIdentMLInput.setLayout(pMZIdentMLInputLayout);
+        pMZIdentMLInputLayout.setHorizontalGroup(
+            pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel11Layout.createSequentialGroup()
+                .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
                         .addComponent(jLabel19)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(fbMZIdentMLIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnReadMZIdent))
-                    .addGroup(jPanel11Layout.createSequentialGroup()
+                    .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
                         .addComponent(jLabel22)
                         .addGap(239, 239, 239)
-                        .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel11Layout.createSequentialGroup()
-                                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
+                                .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(rbMZLowBetter)
                                     .addComponent(rbMZHighBetter))
-                                .addGap(88, 375, Short.MAX_VALUE))
+                                .addGap(88, 437, Short.MAX_VALUE))
                             .addComponent(cbMZMatchScoreName, javax.swing.GroupLayout.Alignment.TRAILING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
-        jPanel11Layout.setVerticalGroup(
-            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel11Layout.createSequentialGroup()
+        pMZIdentMLInputLayout.setVerticalGroup(
+            pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel22)
                     .addComponent(cbMZMatchScoreName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(1, 1, 1)
@@ -1776,22 +1764,22 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(rbMZLowBetter)
                 .addGap(18, 18, 18)
-                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(btnReadMZIdent)
                         .addComponent(jLabel19))
                     .addComponent(fbMZIdentMLIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(259, Short.MAX_VALUE))
         );
 
-        tpInput.addTab("mzIdentML", jPanel11);
+        tpInput.addTab("mzIdentML", pMZIdentMLInput);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(tpInput, javax.swing.GroupLayout.PREFERRED_SIZE, 824, Short.MAX_VALUE)
+                .addComponent(tpInput)
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
@@ -1864,7 +1852,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     .addComponent(spDecoyDBProt, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(spTargetDBProt, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblProtein, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(321, Short.MAX_VALUE))
+                .addContainerGap(384, Short.MAX_VALUE))
         );
         pDatabseSizeLayout.setVerticalGroup(
             pDatabseSizeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1899,17 +1887,17 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
-        bgFDRSettingType.add(rbFDRSimple);
-        rbFDRSimple.setSelected(true);
-        rbFDRSimple.setText("Simple FDR");
-        rbFDRSimple.addActionListener(new java.awt.event.ActionListener() {
+        bgFDRSettingType.add(rbFDRMedium);
+        rbFDRMedium.setSelected(true);
+        rbFDRMedium.setText("Reduced");
+        rbFDRMedium.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                changFDRSettingsInterface(evt);
+                rbFDRMediumActionPerformed(evt);
             }
         });
 
         bgFDRSettingType.add(rbFDRComplete);
-        rbFDRComplete.setText("complete FDR");
+        rbFDRComplete.setText("Complete FDR");
         rbFDRComplete.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbFDRCompleteActionPerformed(evt);
@@ -1961,6 +1949,9 @@ public class FDRGUI extends javax.swing.JFrame {
 
         cbGroupRun.setText("PSMs by Run");
 
+        ckGroupByCrossLinkerStubs.setText("MS Cleavable XL Grouping");
+        ckGroupByCrossLinkerStubs.setToolTipText("If the present PSMs will be groupped by presents of peptides with crosslinker stub fragments");
+
         javax.swing.GroupLayout pFDRGroupsLayout = new javax.swing.GroupLayout(pFDRGroups);
         pFDRGroups.setLayout(pFDRGroupsLayout);
         pFDRGroupsLayout.setHorizontalGroup(
@@ -1976,7 +1967,8 @@ public class FDRGUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(spDistanceGroup, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(ckIgnoreGroups1, javax.swing.GroupLayout.PREFERRED_SIZE, 226, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cbGroupPepsBySelf))
+                    .addComponent(cbGroupPepsBySelf)
+                    .addComponent(ckGroupByCrossLinkerStubs))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         pFDRGroupsLayout.setVerticalGroup(
@@ -1993,7 +1985,9 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addComponent(cbGroupLinksBySelf)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(cbGroupPPIBySelf)
-                .addGap(35, 35, 35)
+                .addGap(4, 4, 4)
+                .addComponent(ckGroupByCrossLinkerStubs)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(pFDRGroupsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(spDistanceGroup, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -2019,7 +2013,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         .addComponent(ckDBSize)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(spExtraLongLayout.createSequentialGroup()
-                        .addComponent(rbFDRSimple)
+                        .addComponent(rbFDRMedium)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(rbFDRComplete)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -2035,9 +2029,9 @@ public class FDRGUI extends javax.swing.JFrame {
             .addGroup(spExtraLongLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(spExtraLongLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(rbFDRSimple)
                     .addComponent(rbFDRComplete)
-                    .addComponent(ckDefineGroups))
+                    .addComponent(ckDefineGroups)
+                    .addComponent(rbFDRMedium))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(spExtraLongLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(spFDRSettingsWrapper)
@@ -2238,7 +2232,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
                         .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jPanel18, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel20, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 635, Short.MAX_VALUE)
+                            .addComponent(jPanel20, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 698, Short.MAX_VALUE)
                             .addComponent(jPanel16, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jPanel15, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2369,7 +2363,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel10Layout.createSequentialGroup()
                         .addComponent(rbCSV)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 466, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
                         .addComponent(btnWrite))
                     .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(23, 23, 23))
@@ -2452,7 +2446,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
         lblPeaklistExtension.setText("Peak-list file extension");
 
-        cmbPeakListFormat.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "mzML", "raw", "mgf" }));
+        cmbPeakListFormat.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "mgf", "mzML", "raw", " " }));
 
         cmbMzMLScan2ID.setEditable(true);
         cmbMzMLScan2ID.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "controllerType=0 controllerNumber=1 scan=%s%", "controllerType=0 controllerNumber=1 scan=%s-1%", "scan=%s%", "scan=%s-1%", "%s%" }));
@@ -2491,7 +2485,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                     .addComponent(txtmzIdentOwnerEmail)
                                     .addComponent(txtmzIdentOwnerOrg)
                                     .addComponent(cmbPeakListFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 302, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 350, Short.MAX_VALUE)
                                 .addComponent(btnWriteMzIdentML)))))
                 .addContainerGap())
         );
@@ -2546,13 +2540,13 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookupLayout.setHorizontalGroup(
             pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pPeakListLookupLayout.createSequentialGroup()
-                .addContainerGap(739, Short.MAX_VALUE)
+                .addContainerGap(805, Short.MAX_VALUE)
                 .addComponent(btnPeakListParse)
                 .addContainerGap())
             .addGroup(pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(pPeakListLookupLayout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(flPeakLists, javax.swing.GroupLayout.DEFAULT_SIZE, 802, Short.MAX_VALUE)
+                    .addComponent(flPeakLists, javax.swing.GroupLayout.DEFAULT_SIZE, 865, Short.MAX_VALUE)
                     .addContainerGap()))
         );
         pPeakListLookupLayout.setVerticalGroup(
@@ -2606,7 +2600,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pLogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(spLog)
-                    .addComponent(memory2, javax.swing.GroupLayout.DEFAULT_SIZE, 801, Short.MAX_VALUE)
+                    .addComponent(memory2, javax.swing.GroupLayout.DEFAULT_SIZE, 870, Short.MAX_VALUE)
                     .addComponent(cbLevel, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -2639,7 +2633,7 @@ public class FDRGUI extends javax.swing.JFrame {
             .addGroup(pVersionLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(pVersionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 789, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 865, Short.MAX_VALUE)
                     .addGroup(pVersionLayout.createSequentialGroup()
                         .addComponent(jLabel29)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2707,7 +2701,7 @@ public class FDRGUI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 839, Short.MAX_VALUE)
+            .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 902, Short.MAX_VALUE)
             .addComponent(jSplitPane1)
         );
         layout.setVerticalGroup(
@@ -2948,6 +2942,10 @@ public class FDRGUI extends javax.swing.JFrame {
         peaklistparser.start();
     }//GEN-LAST:event_btnPeakListParseActionPerformed
 
+    private void rbFDRMediumActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbFDRMediumActionPerformed
+        changeFDRSettings(evt);
+    }//GEN-LAST:event_rbFDRMediumActionPerformed
+
 //    private void fdrSpinnerMaximumCheck(JSpinner sp, double max) {                                   
 //        SpinnerModel sm = sp.getModel();
 //        Double fdr = (Double) sm.getValue();
@@ -3021,6 +3019,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JComboBox cbMZMatchScoreName;
     private javax.swing.JCheckBox ckDBSize;
     private javax.swing.JCheckBox ckDefineGroups;
+    private javax.swing.JCheckBox ckGroupByCrossLinkerStubs;
     private javax.swing.JCheckBox ckIgnoreGroups1;
     public javax.swing.JCheckBox ckPrePostAA;
     protected javax.swing.JComboBox<String> cmbMzMLScan2ID;
@@ -3033,6 +3032,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private org.rappsilber.gui.components.FileBrowser fbMZIdentMLIn;
     private org.rappsilber.gui.components.FileBrowser fbMzIdentMLOut;
     private org.rappsilber.fdr.gui.components.FDRSettingsComplete fdrSettingsComplete;
+    private org.rappsilber.fdr.gui.components.FDRSettingsMedium fdrSettingsMedium;
     private org.rappsilber.fdr.gui.components.FDRSettingsSimple fdrSettingsSimple;
     private org.rappsilber.gui.components.FileList flPeakLists;
     private org.rappsilber.fdr.gui.components.GetDBFDR getDBFDR;
@@ -3059,7 +3059,6 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel10;
-    private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel12;
     private javax.swing.JPanel jPanel14;
     private javax.swing.JPanel jPanel15;
@@ -3069,7 +3068,6 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel20;
     private javax.swing.JPanel jPanel21;
     private javax.swing.JPanel jPanel22;
-    private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
@@ -3096,15 +3094,18 @@ public class FDRGUI extends javax.swing.JFrame {
     private org.rappsilber.gui.components.memory.Memory memory2;
     private org.rappsilber.gui.components.memory.Memory memory3;
     private javax.swing.JPanel pAbout;
+    private javax.swing.JPanel pCSVInput;
     private javax.swing.JPanel pDatabase;
     private javax.swing.JPanel pDatabseSize;
     private javax.swing.JPanel pFDRGroups;
     private javax.swing.JPanel pLog;
+    private javax.swing.JPanel pMZIdentMLInput;
     private javax.swing.JPanel pPeakListLookup;
     private javax.swing.JPanel pResult;
     private javax.swing.JPanel pVersion;
     private javax.swing.JRadioButton rbCSV;
     private javax.swing.JRadioButton rbFDRComplete;
+    private javax.swing.JRadioButton rbFDRMedium;
     private javax.swing.JRadioButton rbFDRSimple;
     private javax.swing.JRadioButton rbMZHighBetter;
     private javax.swing.JRadioButton rbMZLowBetter;

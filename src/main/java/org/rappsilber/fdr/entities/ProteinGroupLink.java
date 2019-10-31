@@ -551,12 +551,10 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             isdecoy|= p.isDecoy();
             IntArrayList pos = positions.get(p);
             for (Integer i : pos) {
-                sb.append(";");
-                sb.append(p.getAccession());
+                sb.append(";" );
+                sb.append((p.isDecoy()?"decoy:":"") + p.getAccession());
             }
         }
-        if (isdecoy)
-            return "DECOY:" + sb.substring(1);
         return sb.substring(1);
     }
 
@@ -568,11 +566,9 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
             IntArrayList pos = positions.get(p);
             for (Integer i : pos) {
                 sb.append(";");
-                sb.append(p.getDescription());
+                sb.append(p.isDecoy()?"decoy:":p.getDescription());
             }
         }
-        if (isdecoy)
-            return "DECOY:" + sb.substring(1);
         return sb.substring(1);
     }
     

@@ -380,6 +380,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         if (level == null)
             ckMaximize.setSelected(false);
         else { 
+            ckMaximize.setSelected(true);
             cbBoostWhat.getModel().setSelectedItem(level);
         }
     }
@@ -719,7 +720,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         });
 
         spMinTDChance.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
-        spMinTDChance.setToolTipText("The total number of matches times the fdr should be larger then the given number - otherwise the subgroup will not be considered on its own");
+        spMinTDChance.setToolTipText("The total number of matches times the fdr should be larger then the given number - otherwise the subgroup will be considered unreliable");
         spMinTDChance.setSpecialValue(0);
 
         jLabel7.setText("Min TD Chance");
@@ -967,7 +968,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     }//GEN-LAST:event_ckMoreOptionsActionPerformed
 
     private void ckIgnoreValidityActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ckIgnoreValidityActionPerformed
-        spMinTDChance.setEnabled(!ckIgnoreValidity.isSelected());
+        //spMinTDChance.setEnabled(!ckIgnoreValidity.isSelected());
     }//GEN-LAST:event_ckIgnoreValidityActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

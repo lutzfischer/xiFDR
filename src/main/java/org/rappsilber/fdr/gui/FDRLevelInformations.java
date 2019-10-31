@@ -18,7 +18,6 @@ package org.rappsilber.fdr.gui;
 import java.util.Set;
 import org.rappsilber.data.csv.CSVRandomAccess;
 import org.rappsilber.fdr.result.FDRResultLevel;
-import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.utils.MiscUtils;
 
@@ -65,7 +64,7 @@ public class FDRLevelInformations extends javax.swing.JFrame {
             rowString[7] = "" + sg.filteredResult.size() ;
             rowString[8] = "" + sg.worstAcceptedScore;
 
-            rowString[9] = "" + !sg.didntPassCheck;
+            rowString[9] = (sg.didntPassCheck == null ? "true" :  sg.didntPassCheck);
             
             csv.insertLine(csv.getRowCount(), rowString);
         }
