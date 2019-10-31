@@ -65,9 +65,9 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         this.id = id;
         // at some points we consider decoy and non decoy proteins the same. So 
         // both get the same accession to make my life easier
-        if (accession.startsWith("REV_") || accession.startsWith("RAN_"))
+        if (accession.toUpperCase().startsWith("REV_") || accession.toUpperCase().startsWith("RAN_"))
             this.accession = accession.substring(4);
-        else if (accession.startsWith("DECOY:"))
+        else if (accession.toUpperCase().startsWith("DECOY:"))
             this.accession = accession.substring(6);
         else
             this.accession = accession;

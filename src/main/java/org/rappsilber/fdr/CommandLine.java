@@ -33,7 +33,7 @@ public class CommandLine {
         boolean db = false;
         for (String a : args) {
             gui = false;
-            if (a.startsWith("--xiconfig=")) {
+            if (a.startsWith("--xiconfig=") || a.contentEquals("--gui")) {
                 xicsv=true;
             } else if (a.startsWith("--dbids=")) {
                 db = true;

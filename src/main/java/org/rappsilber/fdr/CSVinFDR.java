@@ -86,6 +86,10 @@ public class CSVinFDR extends OfflineFDR {
         {"crosslinker mass","cross linker mass","crossLinkerModMass","cross linker mod mass","crosslinkerModMass"},
         {"peptide coverage1", "peptide1 unique matched non lossy coverage", "unique_peak_primary_coverage_p1"},
         {"peptide coverage2", "peptide2 unique matched non lossy coverage", "unique_peak_primary_coverage_p2"},
+        {"peptide1 fragments", "peptide1 unique matched conservative", "conservative_fragsites_p1"},
+        {"peptide2 fragments", "peptide2 unique matched conservative", "conservative_fragsites_p2"},
+        {"peptides with stubs", "fragment CCPepFragment"},
+        {"peptides with doublets", "fragment CCPepDoubletFound"},
         {"minimum peptide coverage", "min coverage pp"},
         {"delta", "delta score", "dscore"},
     };
@@ -102,11 +106,6 @@ public class CSVinFDR extends OfflineFDR {
     @Override
     protected ArrayList<String> getPSMHeader() {
         ArrayList<String> ret = super.getPSMHeader();
-//        String header = "PSMID" + seperator + "run" + seperator + "scan" 
-//                + seperator + "exp charge"  + seperator + "exp m/z" + seperator + "exp mass" + seperator + "exp fractionalmass" 
-//                + seperator + "match charge" + seperator + "match mass" + seperator + "match fractionalmass"   
-//                
-//                + seperator + "Protein1" + seperator + "Description1" + seperator + "Decoy1" + seperator + "Protein2" + seperator + "Description2" + seperator + "Decoy2" + seperator + "Peptide1" + seperator + "Peptide2" + seperator + "PeptidePosition1" + seperator + "PeptidePosition2" + seperator + "PeptideLength1" + seperator + "PeptideLength2" + seperator + "fromSite" + seperator + "ToSite" + seperator + "Charge" + seperator + "Score" + seperator + "isDecoy" + seperator + "isTT" + seperator + "isTD" + seperator + "isDD" + seperator + "fdrGroup" + seperator + "fdr" + seperator + "" + seperator + "PeptidePairFDR" + seperator + "Protein1FDR" + seperator + "Protein2FDR" + seperator + "LinkFDR" + seperator + "PPIFDR" + seperator + seperator + "peptide pair id" + seperator + "link id" + seperator + "ppi id";
         ret.add(5, "exp charge");
         ret.add(6, "exp m/z");
         ret.add(7, "exp mass");
@@ -126,7 +125,6 @@ public class CSVinFDR extends OfflineFDR {
         double mass = (mz-1.00727646677)*charge;
         double fraction = mass-Math.floor(mass);
         double calcfraction = pp.getCalcMass()-Math.floor(pp.getCalcMass());
-
         
         ret.add(5,""+ charge);
         ret.add(6, d2s(mz));
@@ -135,7 +133,6 @@ public class CSVinFDR extends OfflineFDR {
         ret.add(9,i2s(pp.getCharge()));
         ret.add(10,  d2s(pp.getCalcMass()));
         ret.add(11, d2s(calcfraction));
-        
 
         return ret;
     }    
@@ -198,6 +195,8 @@ public class CSVinFDR extends OfflineFDR {
         Integer cDelta = getColumn(csv,"delta",true);
         Integer cPep1Coverage = getColumn(csv,"peptide coverage1",true);
         Integer cPep2Coverage = getColumn(csv,"peptide coverage1",true);
+        Integer cPepStubs = getColumn(csv,"peptides with stubs",true);
+        Integer cPepDoublets = getColumn(csv,"peptides with doublets",true);
         Integer cPepMinCoverage = getColumn(csv,"minimum peptide coverage",true);
         Integer cRank = getColumn(csv,"rank",true);
         
@@ -298,12 +297,12 @@ public class CSVinFDR extends OfflineFDR {
                     peptide2score=score*(1-ratio);
                 }
 
-                String[] accessions1 =saccession1.split(";");
-                String[] accessions2 =saccession2.split(";");
-                String[] descriptions1 =sdescription1.split(";",-1);
-                String[] descriptions2 =sdescription2.split(";",-1);
-                String[] pepPositions1 =spepPosition1.split(";",-1);
-                String[] pepPositions2 =spepPosition2.split(";",-1);
+                String[] accessions1 =saccession1.split("\\s*;\\s*");
+                String[] accessions2 =saccession2.split("\\s*;\\s*");
+                String[] descriptions1 =sdescription1.split("\\s*;\\s*",-1);
+                String[] descriptions2 =sdescription2.split("\\s*;\\s*",-1);
+                String[] pepPositions1 =spepPosition1.split("\\s*;\\s*",-1);
+                String[] pepPositions2 =spepPosition2.split("\\s*;\\s*",-1);
 
                 if (!sdescription1.isEmpty()) {
                     if (descriptions1.length != accessions1.length)
@@ -351,7 +350,7 @@ public class CSVinFDR extends OfflineFDR {
 
                 int[] ipeppos1 = new int[pepPositions1.length];
                 for (int i = 0; i<pepPositions1.length; i++) {
-                    ipeppos1[i] = Integer.parseInt(pepPositions1[i]);
+                    ipeppos1[i] = Integer.parseInt(pepPositions1[i].trim());
                 }
 
                 int[] ipeppos2 = new int[pepPositions2.length];
@@ -425,6 +424,21 @@ public class CSVinFDR extends OfflineFDR {
                 }
                 if (cDelta != null)
                     psm.setDeltaScore(csv.getDouble(cDelta));
+                
+                if (cPepStubs != null) {
+                    double s = csv.getDouble(cPepStubs);
+                    psm.addOtherInfo("PeptidesWithStubs", s);
+                    if (s >0)  {
+                        stubsFound(true);
+                    } 
+                    
+                }
+                if (cPepDoublets != null) {
+                    
+                    psm.addOtherInfo("PeptidesWithDoublets", csv.getDouble(cPepDoublets));
+                    
+                }
+                
                 if (cPepMinCoverage != null) {
                     
                     psm.addOtherInfo("minPepCoverage", csv.getDouble(cPepMinCoverage));

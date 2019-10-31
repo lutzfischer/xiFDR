@@ -165,7 +165,11 @@ public interface FDRSettings {
     public void ppiLocalFDR(Boolean local);
     public boolean combineScoreAndDelta();
     public void combineScoreAndDelta(boolean c);
+    public boolean ignoreValidityChecks();
+    public void ignoreValidityChecks(boolean ignore);
 //    public double getSubScoreCutOff();
 //    public void setSubScoreCutOff(double localfdr);
+    public void setGroupByCrosslinkerStubs(boolean group);
+    public boolean getGroupByCrosslinkerStubs();
     
 }

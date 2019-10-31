@@ -55,7 +55,11 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     private double minDeltaScoreFilter;
     private boolean combineScoreAndDelta;
     private int minFragments;
-    private boolean boostMinFragments;
+    private boolean ignoreValidityChecks = true;
+    private boolean psmDirectional;
+    private boolean peptidePairDirectional;
+    private boolean linkDirectional;
+    private boolean ppiDirectional;
 
     @Override
     public boolean getBoostBetween() {
@@ -278,42 +282,42 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     
     @Override
     public boolean isPSMDirectional() {
-        return ckDirectional.isSelected();
+        return this.psmDirectional;
     }
     
     @Override
     public boolean isPeptidePairDirectional() {
-        return ckDirectional.isSelected();
+        return this.peptidePairDirectional;
     }
 
     @Override
     public boolean isLinkDirectional() {
-        return ckDirectional.isSelected();
+        return this.linkDirectional;
     }
 
     @Override
     public boolean isPPIDirectional() {
-        return ckDirectional.isSelected();
+        return this.ppiDirectional;
     }
 
     @Override
     public void setPSMDirectional(boolean directional) {
-        setValueLater(ckDirectional,directional);
+        psmDirectional=directional;
     }
     
     @Override
     public void setPeptidePairDirectional(boolean directional) {
-        setValueLater(ckDirectional,directional);
+        peptidePairDirectional = directional;
     }
 
     @Override
     public void setLinkDirectional(boolean directional) {
-        setValueLater(ckDirectional,directional);
+        linkDirectional = directional;
     }
 
     @Override
     public void setPPIDirectional(boolean directional) {
-        setValueLater(ckDirectional,directional);
+        ppiDirectional = directional;
     }
     
     
@@ -329,6 +333,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         if (level == null)
             ckMaximize.setSelected(false);
         else { 
+            ckMaximize.setSelected(true);
             cbFDRLevel.getModel().setSelectedItem(level);
         }
     }
@@ -378,10 +383,8 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         lblReportFactor = new javax.swing.JLabel();
         spReportFactor = new javax.swing.JSpinner();
         jLabel1 = new javax.swing.JLabel();
-        ckDirectional = new javax.swing.JCheckBox();
         btnCalc = new javax.swing.JButton();
         ckMaximize = new javax.swing.JCheckBox();
-        lblDirectional = new javax.swing.JLabel();
         lblBoost = new javax.swing.JLabel();
         spFDR = new javax.swing.JSpinner();
         cbFDRLevel = new org.rappsilber.fdr.gui.components.FDRLevelComboBox();
@@ -396,8 +399,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 
         jLabel1.setText("FDR");
 
-        ckDirectional.setToolTipText("Is the Cross-linking considered directional (A links to B is different to B links to A)");
-
         btnCalc.setText("Calculate");
         btnCalc.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -410,14 +411,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         ckMaximize.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 ckMaximizeActionPerformed(evt);
-            }
-        });
-
-        lblDirectional.setText("Is directional");
-        lblDirectional.setToolTipText("Is the Cross-linking considered directional (A links to B is different to B links to A)");
-        lblDirectional.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                lblDirectionalMouseClicked(evt);
             }
         });
 
@@ -455,7 +448,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(btnStopBoost, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jLabel1)
-                    .addComponent(lblDirectional)
                     .addComponent(lblBoost)
                     .addComponent(lblReportFactor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -465,13 +457,11 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                             .addComponent(spReportFactor, javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(spFDR)
                             .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(ckDirectional)
-                                    .addComponent(ckMaximize))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 58, Short.MAX_VALUE)
+                                .addComponent(ckMaximize)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 38, Short.MAX_VALUE)
                                 .addComponent(ckBoostBetween)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cbFDRLevel, javax.swing.GroupLayout.DEFAULT_SIZE, 140, Short.MAX_VALUE))
+                        .addComponent(cbFDRLevel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(btnCalc)))
@@ -485,16 +475,15 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                     .addComponent(jLabel1)
                     .addComponent(spFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cbFDRLevel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(ckDirectional)
-                            .addComponent(lblDirectional))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(ckMaximize)
                             .addComponent(lblBoost)))
-                    .addComponent(ckBoostBetween, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(ckBoostBetween)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblReportFactor)
@@ -512,10 +501,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         doCalc();
         
     }//GEN-LAST:event_btnCalcActionPerformed
-
-    private void lblDirectionalMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblDirectionalMouseClicked
-        ckDirectional.setSelected(!ckDirectional.isSelected());
-    }//GEN-LAST:event_lblDirectionalMouseClicked
 
     private void lblBoostMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblBoostMouseClicked
         ckMaximize.setSelected(!ckMaximize.isSelected());
@@ -535,11 +520,9 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     public javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbFDRLevel;
     private javax.swing.JCheckBox ckBoostBetween;
-    private javax.swing.JCheckBox ckDirectional;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel lblBoost;
-    private javax.swing.JLabel lblDirectional;
     public javax.swing.JLabel lblReportFactor;
     private javax.swing.JSpinner spFDR;
     private javax.swing.JSpinner spReportFactor;
@@ -647,6 +630,16 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         this.minFragments = frags;
     }
 
+    @Override
+    public boolean ignoreValidityChecks() {
+        return this.ignoreValidityChecks;
+    }
+
+    @Override
+    public void ignoreValidityChecks(boolean ignore) {
+        this.ignoreValidityChecks = ignore;
+    }
+    
     
     
 }

@@ -15,6 +15,7 @@
  */
 package org.rappsilber.fdr.result;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import org.rappsilber.fdr.entities.PSM;
@@ -40,6 +41,7 @@ public  class FDRResult {
     public int maximumLinkAmbiguity = 0;
     public double reportFactor = 0;
     public boolean uniquePSMs = false;
+    public ArrayList<String> excludedGroups = new ArrayList();
 
     public void clear() {
         if (psmFDR != null)

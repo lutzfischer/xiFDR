@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingUtilities;
 import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
@@ -33,6 +34,11 @@ import org.rappsilber.fdr.entities.DBPSM;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
 import org.rappsilber.fdr.entities.Protein;
+import org.rappsilber.fdr.gui.FDRGUI;
+import org.rappsilber.fdr.gui.components.MZIdentMLOwnerGUI;
+import org.rappsilber.fdr.result.FDRResult;
+import org.rappsilber.fdr.utils.MZIdentMLExport;
+import org.rappsilber.fdr.utils.MZIdentMLOwner;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.UpdatableChar;
 import rappsilber.config.RunConfig;
@@ -233,14 +239,15 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }    
     
     public String argList() {
-        return super.argList() + " --xiconfig=[path to config] --fasta=[path to fasta] --flagModifications";
+        return super.argList() + " --xiconfig=[path to config] --fasta=[path to fasta] --flagModifications --gui";
     }
     
     public String argDescription() {
         return super.argDescription() + "\n"
                 + "--xiconfig=             what xi config to use to turn find modifications\n"
                 + "--fasta=                fasta file searched"
-                + "--flagModifications     should modified peptide make their own sub-group\n";
+                + "--flagModifications     should modified peptide make their own sub-group\n"
+                + "--gui                   forward settings to gui\n";
         
     }
     
@@ -248,12 +255,13 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     public String[] parseArgs(String[] argv, FDRSettings settings) {
         ArrayList<String> unknown = new ArrayList<String>();
         argv = super.parseArgs(argv, settings);
-        
+        String confpath = null;
+        boolean startGUI =  false;
         for (String arg : argv) {
             if (arg.toLowerCase().startsWith("--xiconfig=")) {
                 try {
-                    String confpath=arg.substring("--xiconfig=".length());
-                    m_config = new RunConfigFile(confpath);
+                    confpath=arg.substring("--xiconfig=".length());
+                    setConfig(new RunConfigFile(confpath));
                 } catch (IOException ex) {
                     Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Can't read config file:", ex);
                     System.exit(-1);
@@ -261,10 +269,11 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Error parsing config file:", ex);
                     System.exit(-1);
                 }
-                
+            }else if (arg.toLowerCase().contentEquals("--gui")) {
+                startGUI = true;
             }else if (arg.toLowerCase().startsWith("--fasta=")) {
-                    String confpath=arg.substring("--fasta=".length());
-                    searchedFastas.add(confpath);
+                    String fastapath=arg.substring("--fasta=".length());
+                    searchedFastas.add(fastapath);
                     
             }else if (arg.toLowerCase().startsWith("--flagmodifications")) {
                 setMarkModifications(true);
@@ -273,8 +282,37 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             }
             
         }        
+        if (startGUI) {
+            final FDRGUI fg = FDRGUI.startGUI();
+            if (unknown.size() > 0) {
+                fg.setInput(unknown.get(0));
+            }
+            if (searchedFastas.size()>0) {
+                fg.setFasta(searchedFastas.get(0));
+            }
+            if (confpath != null) {
+                fg.setXiConfig(confpath);
+            }
+            fg.setFDRSettings(settings);
+            
+            String outdir = getCsvOutDirSetting();
+            String basename = getCsvOutBaseSetting();
+            fg.setCSVOutFile(outdir + ((outdir.endsWith("/") || outdir.endsWith("\\")) ? "":File.separator) + basename +".csv");
+//            SwingUtilities.invokeLater(new Runnable() {
+//                @Override
+//                public void run() {
+//                    fg.readAdditionalCSV();
+//                }
+//            });
+//            
+            unknown.clear();
+            unknown.add("--GUI--");
+            
+        }
         String[] ret = new String[unknown.size()];
         ret = unknown.toArray(ret);
+        
+        
         return ret;        
     }
     
@@ -284,7 +322,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         
         FDRSettings settings = new FDRSettingsImpl();
         String[] files = ofdr.parseArgs(argv, settings);
-        
+        if (files.length == 1 && files[0].contentEquals("--GUI--"))
+            return;
         // assume that everything that was not matched to an argument is a file
         
         if (files.length == 0) {
@@ -317,8 +356,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         } else {
             ColumnAlternatives.setupAlternatives(csv,CSVinFDR.DEFAULT_COLUMN_MAPPING);
         }
-        
-        
+                
         // read in all files
         for (String f : files) {
             Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "seeting up csv input");
@@ -358,8 +396,23 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         }
         
         Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
-        ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
+        FDRResult res = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
 
+        Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, ofdr.singleCalculation() + 
+                " " + (ofdr.getConfig() != null) + " " + (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0) + "\n");
+        
+        if (ofdr.singleCalculation() && ofdr.getConfig() != null && (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0)) {
+            // we should be able to write out an mzIdentML
+            String path =ofdr.getCsvOutDirSetting();
+            String baseName = ofdr.getCsvOutBaseSetting();
+            String out = path + (path.endsWith(File.separator)?"":File.separator) + baseName + ".mzid";
+            try {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Writing mzIdentML to " + out);
+                MZIdentMLExport mze = new MZIdentMLExport(ofdr, res, out, MZIdentMLOwnerGUI.getSetOwner(new MZIdentMLOwner()));
+            } catch (Exception ex) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
 
 
         System.exit(0);
@@ -380,8 +433,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     /**
      * @param m_config the m_config to set
      */
-    public void setConfig(RunConfig m_config) {
-        this.m_config = m_config;
+    public void setConfig(RunConfig config) {
+        this.m_config = config;
         crossLinkerMass.clear();
         for (rappsilber.ms.crosslinker.CrossLinker cl : m_config.getCrossLinker()) {
             crossLinkerMass.put(cl.getName(), cl.getCrossLinkedMass());
@@ -467,7 +520,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                         p.setSequence(proteinsToSequence.get(fastaheader));
                     } else {
                         // did not find a decoy protein - so will try the target protein
-                        fastaheader =  parts2Proteins.get(p.getAccession());
+                        fastaheader =  parts2Proteins.get(p.getAccession().toLowerCase());
                         if (fastaheader != null) {
                             // only found target protein - assume same size
                             p.setSize(proteinsToSequence.get(fastaheader).length());
@@ -478,7 +531,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     }
                     
                 } else {
-                    String fastaheader =  parts2Proteins.get(p.getAccession());
+                    String fastaheader =  parts2Proteins.get(p.getAccession().toLowerCase());
                     if (fastaheader != null) {
                             p.setSequence(proteinsToSequence.get(fastaheader));
                     } else {
@@ -517,7 +570,6 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         super.readCSV(csv, filter); //To change body of generated methods, choose Tools | Templates.
         matchFastas();
     }
-    
-    
-    
+
+
 }

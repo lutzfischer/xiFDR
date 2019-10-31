@@ -49,6 +49,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean boostPepCoverage = true;
     private boolean boostPepDeltaScore = true;
     private boolean boostMinFragments = false;
+    private boolean groubByCrosslinkerStubs;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -265,4 +266,15 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
 //    public void setSubScoreCutOff(double localfdr) {
 //        this.subScoreCutOff = localfdr;
 //    }    
+    
+    @Override
+    public void setGroupByCrosslinkerStubs(boolean group) {
+        this.groubByCrosslinkerStubs = group;
+    }
+
+    @Override
+    public boolean getGroupByCrosslinkerStubs() {
+        return this.groubByCrosslinkerStubs;
+    }
+    
 }

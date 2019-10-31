@@ -137,7 +137,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         if (hasInternalSupport) 
             fdrgroup="LinearInternal";
         if (fdrgroup.isEmpty())
-            fdrgroup = "Between";
+            fdrgroup = "Between only";
         if (hasNegativeGrouping()) 
             fdrgroup += " [n" + RArrayUtils.toString(getNegativeGrouping(),", n") +"]";
         if (hasPositiveGrouping()) 
@@ -337,12 +337,8 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     public String accessions() {
         StringBuffer sb = new StringBuffer();
 
-        if (isDecoy()) {
-            sb.append("DECOY:");
-        }
-
         for (Protein p : groupproteins) {
-            sb.append(p.getAccession());
+            sb.append((p.isDecoy()?"decoy:":"")+ p.getAccession());
             sb.append(";");
         }
         return sb.substring(0,sb.length() - 1);
@@ -362,7 +358,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         StringBuffer sb = new StringBuffer();
         for (Protein p : groupproteins) {
             sb.append(";");
-            sb.append(p.getDescription());
+            sb.append(p.isDecoy()?"decoy:":p.getDescription());
         }
         return sb.substring(1);
     }
