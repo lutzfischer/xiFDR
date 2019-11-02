@@ -57,7 +57,7 @@ public class FDRSettingsImpl implements FDRSettings {
     private Boolean ppiLocalFDR;
     private double minPeptideCoverageFilter;
     private double minDeltaScoreFilter;
-    private boolean boostPepDeltaScore =true;
+    private boolean boostPepDeltaScore =false;
     private boolean combineScoreAndDelta;
     private int minFragments;
     private boolean boostMinFragments = false;
