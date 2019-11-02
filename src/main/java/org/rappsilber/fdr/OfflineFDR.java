@@ -5276,7 +5276,8 @@ public abstract class OfflineFDR {
                     psmFDRInfo.boost ? "PSM fdr from  :        " + psmFDRInfo.fromFDR + " to " + psmFDRInfo.toFDR + "\n" : "", 
                     pepFDRInfo.boost ? "Peptide pair fdr from  " + pepFDRInfo.fromFDR + " to " + pepFDRInfo.toFDR + "\n" : "", 
                     protFDRInfo.boost ? "Protein-groupfdr from  " + protFDRInfo.fromFDR + " to " + protFDRInfo.toFDR + "\n" : "", 
-                    linkFDRInfo.boost ? "linkfdr from  " + linkFDRInfo.fromFDR + " to " + linkFDRInfo.toFDR + "\n" : "", psmFDRInfo.steps, psmFDRInfo.stepChange});
+                    linkFDRInfo.boost ? "linkfdr from  " + linkFDRInfo.fromFDR + " to " + linkFDRInfo.toFDR + "\n" : "", 
+                    psmFDRInfo.steps + psmFDRInfo.stepChange, ""});
                 FDRResult result = new FDRResult();
 
                 // initialise subscore filter
