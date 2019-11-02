@@ -5194,6 +5194,7 @@ public abstract class OfflineFDR {
 
         final FDRSettingsImpl settings = new FDRSettingsImpl();
         settings.setAll(fdrSettings);
+        int maxCountDown=4;
 
         try {
             int steps = settings.getBoostingSteps();
@@ -5260,7 +5261,7 @@ public abstract class OfflineFDR {
             int maxCount = 0;
             int maxCountBetween = 0;
 
-            int countDown = 5;
+            int countDown = maxCountDown;
 
             int optimizingRound = 1;
 
@@ -5268,15 +5269,14 @@ public abstract class OfflineFDR {
                 int lastMaxCount = maxCount;
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Round " + optimizingRound++);
 
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                        (deltaScore.boost ? "deltaFilter from  :        " + (1 - deltaScore.fromFDR) + " to " + (1 - deltaScore.toFDR) + "\n" : "")
-                        + (pepCoverage.boost ? "PepCoverage from  :        " + (1 - pepCoverage.fromFDR) + " to " + (1 - pepCoverage.toFDR) + "\n" : "")
-                        + (absPepCover.boost ? "Min Pep Frags from  :        " + (10 - absPepCover.fromFDR) + " to " + (10 - absPepCover.toFDR) + "\n" : "")
-                        + (psmFDRInfo.boost ? "PSM fdr from  :        " + psmFDRInfo.fromFDR + " to " + psmFDRInfo.toFDR + "\n" : "")
-                        + (pepFDRInfo.boost ? "Peptide pair fdr from  " + pepFDRInfo.fromFDR + " to " + pepFDRInfo.toFDR + "\n" : "")
-                        + (protFDRInfo.boost ? "Protein-groupfdr from  " + protFDRInfo.fromFDR + " to " + protFDRInfo.toFDR + "\n" : "")
-                        + (linkFDRInfo.boost ? "linkfdr from  " + linkFDRInfo.fromFDR + " to " + linkFDRInfo.toFDR + "\n" : "")
-                        + "Steps : " + psmFDRInfo.steps);
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "{0}{1}{2}{3}{4}{5}{6}Steps : {7}{8}", new Object[]{
+                    deltaScore.boost ? "deltaFilter from  :        " + (1 - deltaScore.fromFDR) + " to " + (1 - deltaScore.toFDR) + "\n" : "", 
+                    pepCoverage.boost ? "PepCoverage from  :        " + (1 - pepCoverage.fromFDR) + " to " + (1 - pepCoverage.toFDR) + "\n" : "", 
+                    absPepCover.boost ? "Min Pep Frags from  :        " + (10 - absPepCover.fromFDR) + " to " + (10 - absPepCover.toFDR) + "\n" : "", 
+                    psmFDRInfo.boost ? "PSM fdr from  :        " + psmFDRInfo.fromFDR + " to " + psmFDRInfo.toFDR + "\n" : "", 
+                    pepFDRInfo.boost ? "Peptide pair fdr from  " + pepFDRInfo.fromFDR + " to " + pepFDRInfo.toFDR + "\n" : "", 
+                    protFDRInfo.boost ? "Protein-groupfdr from  " + protFDRInfo.fromFDR + " to " + protFDRInfo.toFDR + "\n" : "", 
+                    linkFDRInfo.boost ? "linkfdr from  " + linkFDRInfo.fromFDR + " to " + linkFDRInfo.toFDR + "\n" : "", psmFDRInfo.steps, psmFDRInfo.stepChange});
                 FDRResult result = new FDRResult();
 
                 // initialise subscore filter
@@ -5599,7 +5599,7 @@ public abstract class OfflineFDR {
                 } else {
                     if (maxCount > lastMaxCount) {
                         // yes we improved
-                        countDown = 5;
+                        countDown = maxCountDown;
                     } else {
                         stateUpdate.setStatusText("Max Link Round: " + optimizingRound + " - " + maxCount + " links - count down: " + countDown);
 

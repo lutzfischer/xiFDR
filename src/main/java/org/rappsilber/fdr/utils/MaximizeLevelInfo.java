@@ -29,6 +29,7 @@ public class MaximizeLevelInfo {
     public double fromFDR;
     public double toFDR;
     public double steps;
+    public double stepChange = 0;
     public double stepWidth;
     public double smallestEqualFDR = 0;
     public double largestEqualFDR = 0;
@@ -117,8 +118,9 @@ public class MaximizeLevelInfo {
                 newFrom = Math.min(newFrom, Math.max(minimumFDR,0.001));
             }
             fromFDR = newFrom;
-            steps += stepChange;
-            stepWidth = (toFDR - fromFDR) / steps;
+            //steps += stepChange;
+            this.stepChange = stepChange;
+            stepWidth = (toFDR - fromFDR) / (steps + stepChange);
         }
     }
 
