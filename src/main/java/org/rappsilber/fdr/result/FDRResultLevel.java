@@ -254,6 +254,10 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
     public void addGroup(String id, SubGroupFdrInfo<T> group) {
         groups.put(id, group);
     }    
+
+    public void addGroup(SubGroupFdrInfo<T> group) {
+        groups.put(group.fdrGroup, group);
+    }    
     
     public int size() {
         int ret = 0;

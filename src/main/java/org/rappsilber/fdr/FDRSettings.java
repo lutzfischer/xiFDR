@@ -24,6 +24,13 @@ import java.awt.event.ActionListener;
 public interface FDRSettings {
     public static int DEFAULT_MIN_TD_COUNT=2;
     
+    /**
+     * should the boosting be done in two steps (lower-FDR and non-FDR filters).
+     * @return 
+     */
+    boolean twoStepOptimization();
+    void twoStepOptimization(boolean stepped);
+    
     void addCalcListener(ActionListener al);
 
     OfflineFDR.FDRLevel doOptimize();

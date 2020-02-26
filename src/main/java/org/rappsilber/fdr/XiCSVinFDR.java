@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
@@ -37,8 +38,11 @@ import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.gui.FDRGUI;
 import org.rappsilber.fdr.gui.components.MZIdentMLOwnerGUI;
 import org.rappsilber.fdr.result.FDRResult;
+import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.MZIdentMLExport;
 import org.rappsilber.fdr.utils.MZIdentMLOwner;
+import org.rappsilber.fdr.utils.MaximisingStatus;
+import org.rappsilber.fdr.utils.MaximizingUpdate;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.UpdatableChar;
 import rappsilber.config.RunConfig;
@@ -395,8 +399,38 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             }
         }
         
+        final CalculateWriteUpdate cu = new CalculateWriteUpdate() {
+            @Override
+            public void setStatus(MaximisingStatus state) {
+            }
+
+            @Override
+            public void setStatusText(String text) {
+            }
+
+            @Override
+            public void reportError(String text, Exception ex) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, text, ex);
+            }
+
+            @Override
+            public void setCurrent(double psm, double peptidepair, double protein, double link, double ppi) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "next round: PSM FDR: " +psm + " PepPairFDR:" + peptidepair + " Protein FDR:"+protein + " LinkFDR:" + link + " PPI FDR:" + ppi);
+            }
+
+            @Override
+            public void setComplete() {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate Write Finished");
+            }
+
+            @Override
+            public boolean stopped() {
+                return false;
+            }
+
+        };
         Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
-        FDRResult res = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
+        FDRResult res = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings, cu);
 
         Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, ofdr.singleCalculation() + 
                 " " + (ofdr.getConfig() != null) + " " + (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0) + "\n");
@@ -550,8 +584,22 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             // the last protein needs to be stored
             proteinsToSequence.put(protein, sequnece.toString());
             // split the fasta header in parts
-            String[] parts = protein.split("[\\|\\s\\t\\.]");
-            for (String p : parts) {
+            String[] parts = protein.split("[\\|]");
+            HashSet<String> searched = new HashSet<>();
+            registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
+            parts = protein.split("[\\s\\t]");
+            registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
+            parts = protein.split("[\\.]");
+            registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
+            parts = protein.split("[\\|\\s\\t\\.]");
+            registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
+        }
+    }
+
+    public void registerFastaHeaderParts(String[] parts, HashSet<String> searched, HashMap<String, String> parts2Proteins, String protein) {
+        for (String p : parts) {
+            if (!searched.contains(p)) {
+                searched.add(p);
                 String pa = parts2Proteins.get(p.toLowerCase());
                 if (pa == null) {
                     // we haven't seen that part before so assume it uniquely identifies the protein

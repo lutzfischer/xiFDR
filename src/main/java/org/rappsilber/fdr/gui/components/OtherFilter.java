@@ -53,6 +53,7 @@ public class OtherFilter extends javax.swing.JPanel {
         ckCombineScoreAndDelta = new javax.swing.JCheckBox();
         txtMinPepFrags = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
+        ckTwoStepBoost = new javax.swing.JCheckBox();
 
         txtMinPepCoverage.setText("0");
         txtMinPepCoverage.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -83,6 +84,8 @@ public class OtherFilter extends javax.swing.JPanel {
 
         jLabel3.setText("Min Peptide Fragments");
 
+        ckTwoStepBoost.setText("Boost Separately");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -105,7 +108,10 @@ public class OtherFilter extends javax.swing.JPanel {
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(txtMinPepCoverage)
                                     .addComponent(txtDeltaScore))))
-                        .addGap(28, 28, 28)))
+                        .addGap(28, 28, 28))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(ckTwoStepBoost)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -124,7 +130,9 @@ public class OtherFilter extends javax.swing.JPanel {
                     .addComponent(txtDeltaScore, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(ckCombineScoreAndDelta)
-                .addContainerGap(11, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(ckTwoStepBoost)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -173,9 +181,19 @@ public class OtherFilter extends javax.swing.JPanel {
     public boolean combineScoreAndDelta() {
         return ckCombineScoreAndDelta.isSelected();
     }
+
+    public void twoStepBoost(boolean stepped) {
+        ckTwoStepBoost.setSelected(stepped);
+    }
+
+    public boolean twoStepBoost() {
+        return ckTwoStepBoost.isSelected();
+    }
+
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox ckCombineScoreAndDelta;
+    private javax.swing.JCheckBox ckTwoStepBoost;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

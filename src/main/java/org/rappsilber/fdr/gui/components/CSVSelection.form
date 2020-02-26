@@ -94,7 +94,7 @@
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jLabel28" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="localPicker1" pref="91" max="32767" attributes="0"/>
+                              <Component id="localPicker1" pref="80" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
@@ -516,7 +516,10 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
                               <Component id="ckCSVMarkModifications" max="32767" attributes="0"/>
-                              <EmptySpace min="0" pref="522" max="32767" attributes="0"/>
+                              <EmptySpace pref="289" max="32767" attributes="0"/>
+                              <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="txtForwardColumns" pref="95" max="32767" attributes="0"/>
                           </Group>
                           <Component id="fbFastaIn" max="32767" attributes="0"/>
                           <Component id="fbConfigIn" max="32767" attributes="0"/>
@@ -539,7 +542,11 @@
                           <Component id="jLabel13" alignment="2" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="ckCSVMarkModifications" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="ckCSVMarkModifications" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txtForwardColumns" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
                       <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
@@ -591,6 +598,13 @@
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
               </AuxValues>
+            </Component>
+            <Component class="javax.swing.JTextField" name="txtForwardColumns">
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel1">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Forward Columns"/>
+              </Properties>
             </Component>
           </SubComponents>
         </Container>

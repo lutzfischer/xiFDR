@@ -159,9 +159,6 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         cbCSVHeaders.setModel(new DefaultComboBoxModel(csvColumns));
         cbCSVHeaderOptional.setModel(new DefaultComboBoxModel(csvColumnsOptional));
 
-        TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(3);
-        columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
-        resetColumnMappings();
         //spAdditional.setVisible(false);
         
         tblCSVColumns.setModel(new javax.swing.table.DefaultTableModel(
@@ -226,6 +223,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 return canEdit [columnIndex];
             }
         });        
+        TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(3);
+        columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
+        resetColumnMappings();
+
+        
     }
 
     public void resetColumnMappings() {
@@ -353,6 +355,14 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
     public File[] getFiles() {
         return fbCsvIn.getFiles();
+    }
+    
+    public String getForwardPattern() {
+        if (!txtForwardColumns.getText().trim().isEmpty()) {
+            return txtForwardColumns.getText().trim();
+        } else {
+            return null;
+        }
     }
 
     public void doActionPerformed() {
@@ -574,6 +584,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         jLabel13 = new javax.swing.JLabel();
         fbFastaIn = new org.rappsilber.gui.components.FileBrowser();
         ckCSVMarkModifications = new javax.swing.JCheckBox();
+        txtForwardColumns = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
         ckFilter = new javax.swing.JCheckBox();
         btnFilter = new javax.swing.JButton();
         localPicker1 = new org.rappsilber.gui.components.LocalPicker();
@@ -729,6 +741,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         ckCSVMarkModifications.setText("Flag Modifications");
 
+        jLabel1.setText("Forward Columns");
+
         javax.swing.GroupLayout pXiConfigLayout = new javax.swing.GroupLayout(pXiConfig);
         pXiConfig.setLayout(pXiConfigLayout);
         pXiConfigLayout.setHorizontalGroup(
@@ -742,7 +756,10 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pXiConfigLayout.createSequentialGroup()
                         .addComponent(ckCSVMarkModifications, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 522, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 289, Short.MAX_VALUE)
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtForwardColumns, javax.swing.GroupLayout.DEFAULT_SIZE, 95, Short.MAX_VALUE))
                     .addComponent(fbFastaIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(fbConfigIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
@@ -759,7 +776,10 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                     .addComponent(fbFastaIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel13))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(ckCSVMarkModifications)
+                .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(ckCSVMarkModifications)
+                    .addComponent(txtForwardColumns, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -825,7 +845,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel28)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(localPicker1, javax.swing.GroupLayout.DEFAULT_SIZE, 91, Short.MAX_VALUE)))
+                                .addComponent(localPicker1, javax.swing.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(rbCSVHighBetter)
@@ -1031,6 +1051,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private org.rappsilber.gui.components.FileBrowser fbCsvIn;
     public org.rappsilber.gui.components.FileBrowser fbFastaIn;
     private org.rappsilber.data.csv.gui.filter.ConditionList filter;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
@@ -1045,5 +1066,6 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JRadioButton rbCSVLowBetter;
     public javax.swing.JScrollPane spAdditional;
     public javax.swing.JTable tblCSVColumns;
+    private javax.swing.JTextField txtForwardColumns;
     // End of variables declaration//GEN-END:variables
 }

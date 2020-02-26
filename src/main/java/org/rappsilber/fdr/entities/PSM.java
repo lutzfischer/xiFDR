@@ -1222,6 +1222,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         int column = numericInfoColumn.getInt(name);
         if (column == -1)
             return Double.NaN;
+        if (numericInfo.size() <=column)
+            return Double.NaN;
         return numericInfo.getDouble(column);
     }
     

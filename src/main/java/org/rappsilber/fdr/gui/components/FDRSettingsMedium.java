@@ -24,6 +24,7 @@ import javax.swing.SpinnerModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.OfflineFDR.FDRLevel;
 import static org.rappsilber.fdr.gui.components.FDRSettingsComplete.setSpinnerModel;
@@ -119,6 +120,8 @@ public class FDRSettingsMedium extends FDRSettingsPanel  {
         setSpinnerModel(spPPIFdr, 100);
         cbBoostOther.setVisible(false);
         rbBoostOther.setVisible(false);
+        this.setAll(new FDRSettingsImpl());
+        
     }
     
     private void doCalc() {
