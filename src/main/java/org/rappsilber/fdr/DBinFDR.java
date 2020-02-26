@@ -7,6 +7,7 @@ package org.rappsilber.fdr;
 import java.awt.GraphicsEnvironment;
 import org.rappsilber.fdr.result.FDRResult;
 import java.io.FileNotFoundException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -36,6 +37,9 @@ import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.entities.ProteinGroup;
+import org.rappsilber.fdr.utils.CalculateWriteUpdate;
+import org.rappsilber.fdr.utils.MaximisingStatus;
+import org.rappsilber.fdr.utils.MaximizingUpdate;
 import rappsilber.ms.crosslinker.CrossLinker;
 import rappsilber.ms.lookup.peptides.PeptideTree;
 import rappsilber.ms.sequence.AminoAcid;
@@ -653,6 +657,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             int cPepCoverage1 = -1;
             int cPepCoverage2 = -1;
 
+            ArrayList<Integer> peaks = new ArrayList<>();
             ArrayList<String> scorenames = new ArrayList<>();
             if (xi3db) {
                 // retrive the subscore names
@@ -666,6 +671,15 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     if (sn != null) {
                         for (String s : (String[])sn.getArray()) {
                             additionalInfoNames.add(s);
+
+                            if (s.contentEquals(sPepCoverage1)) {
+                                cPepCoverage1 = scorenames.size();
+                            } else if (s.contentEquals(sPepCoverage2)) {
+                                cPepCoverage2 = scorenames.size();
+                            } if (s.startsWith("peak_")) {
+                                peaks.add(scorenames.size());
+                            }
+
                             scorenames.add(s);
                         }
                     }
@@ -692,35 +706,25 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + "pr2.is_decoy AS isDecoy2, \n"
                     + "sm.precursor_charge AS calc_charge, \n"
                     + "sm.score, \n"
-                    + "pr1.accession_number AS accession1, \n"
-                    + "CASE WHEN pr1.description is not null THEN pr1.description WHEN pr1.name is not null THEN pr1.name ELSE pr1.accession_number END AS  description1, \n"
-                    + "pr2.accession_number AS accession2, \n"
-                    + "CASE WHEN pr2.description is not null THEN pr2.description WHEN pr2.name is not null THEN pr2.name ELSE pr2.accession_number END AS  description2, \n"
-                    + "hp1.peptide_position + 1 AS pepPosition1,  \n"
-                    + "hp2.peptide_position + 1 AS pepPosition2, \n"
+                    + "array_agg(pr1.accession_number) AS accession1, \n"
+                    + "array_agg(pr1.description) AS  description1, \n"
+                    + "array_agg(pr2.accession_number) AS accession2, \n"
+                    + "array_agg(pr2.description) AS  description2, \n"
+                    + "array_agg(hp1.peptide_position + 1) AS pepPosition1,  \n"
+                    + "array_agg(hp2.peptide_position + 1) AS pepPosition2, \n"
                     + "CASE WHEN p2.sequence IS NULL THEN 1 ELSE (4.0/5.0+(p1.peptide_length/(p1.peptide_length+p2.peptide_length)))/2 END AS score_ratio \n"
                     + " , s.precursor_charge as exp_charge \n"
-                    + " , hp1.display_site as display_site1\n"
-                    + " , hp2.display_site as display_site2\n"
-                    + " , pr1.id as protein1id\n"
-                    + " , pr2.id as protein2id\n"
+                    + " , array_agg(pr1.id) as protein1id\n"
+                    + " , array_agg(pr2.id) as protein2id\n"
                     + " , p1.id as peptide1id\n"
                     + " , p2.id as peptide2id\n"
                     + " , v.run_name, v.scan_number \n"
-                    + " , pr1.sequence AS protein1sequence \n"
-                    + " , pr2.sequence AS protein2sequence\n"
-                    + (xi3db  || (filter != null && filter.toLowerCase().contains("scorep1coverage"))
-                        ? (xi3db ? ", scorepeptide1matchedconservative" : " , coverage1 ") + " AS scoreP1Coverage \n"
-                        : " , 0 AS scoreP1Coverage \n")
-                    + (xi3db  || (filter != null && filter.toLowerCase().contains("scorep2coverage"))
-                        ? (xi3db ? ", scorepeptide2matchedconservative" : " , coverage2 ") + " AS scoreP2Coverage \n"
-                        : " , 0 AS scoreP2Coverage \n")
-                    + (xi3db  || (filter != null && filter.toLowerCase().replace("linksitedelta", "").contains("delta"))
-                        ? (xi3db ? ", scoredelta " : " , delta ") + " AS deltaScore\n"
-                        : " , 0  AS deltaScore \n")
-                    + (xi3db  || (filter != null && filter.toLowerCase().contains("linksitedelta"))
-                        ? (xi3db ? ", scorelinksitedelta " : " , LinkSiteDelta ") + " AS LinkSiteDelta\n"
-                    : " , 0  AS LinkSiteDelta \n")
+                    + " , array_agg(pr1.sequence) AS protein1sequence \n"
+                    + " , array_agg(pr2.sequence) AS protein2sequence\n"
+                    + " , scorepeptide1matchedconservative AS scoreP1Coverage \n"
+                    + " , scorepeptide2matchedconservative AS scoreP2Coverage \n"
+                    + " , scoredelta AS deltaScore\n"
+                    + " , scorelinksitedelta AS LinkSiteDelta\n"
                     + " , s.precursor_mz AS exp_mz\n"
                     + " , sm.calc_mass\n"
                     + " , sm.precursor_charge as match_charge\n"
@@ -728,33 +732,30 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , p2.mass as pep2mass\n"
                     + " , sm.search_id\n"
                     + " , sm.spectrum_id\n"
-                    + " , pr1.name as protein1name\n"
-                    + " , pr2.name as protein2name\n"
+                    + " , array_agg(pr1.name) as protein1name\n"
+                    + " , array_agg(pr2.name) as protein2name\n"
                     + " , s.precursor_charge\n"
                     + " , autovalidated\n"
-                    + " " + (xi3db ? ", cl.name " : " , v.crosslinker ") + " AS crosslinker \n"
-                    + " " + (xi3db ? ", cl.mass " : " , null ") + " AS clmass \n"
+                    + " , cl.name  AS crosslinker \n"
+                    + " , cl.mass  AS clmass \n"
                     + " , sm.rank \n"
                     + " , s.scan_index\n"
-                    + (xi3db ? " , plf.name as peaklistfile\n":"")
-                    + " , " + (xi3db ? " scoremgxrank AS mgxrank\n" : " 0 AS mgxrank\n")
-                    + " , " + (xi3db ? " scorecleavclpep1fragmatched AS cleavclpep1fragmatched\n" : " 0 AS cleavclpep1fragmatched\n")
-                    + " , " + (xi3db ? " scorecleavclpep2fragmatched AS cleavclpep2fragmatched\n" : " 0 AS cleavclpep2fragmatched\n")
-                    + " , " + (xi3db ? " scores AS subscores\n" : " null AS subscores\n")
-                    + " , " + (xi3db ? " scoredelta AS delta\n" : " score AS delta\n")
+                    + " , plf.name as peaklistfile\n"
+                    + " , scoremgxrank AS mgxrank\n"
+                    + " , scorecleavclpep1fragmatched AS cleavclpep1fragmatched\n"
+                    + " , scorecleavclpep2fragmatched AS cleavclpep2fragmatched\n"
+                    + " , scores AS subscores\n"
+                    + " , scoredelta AS delta\n"
                     + " , s.precursor_intensity\n"
                     + " , s.elution_time_start as retentiontime\n"
                     + " \n"
                     + "FROM \n"
                     + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm \n"
                     + "  INNER JOIN (\n"
-                    + (xi3db ? "SELECT ss.name as run_name, s.scan_number, sm.id as spectrum_match_id FROM (select * from spectrum_match where Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm inner join spectrum s on sm.spectrum_id = s.id INNER JOIN spectrum_source ss on s.source_id = ss.id\n"
-                            : "SELECT run_name, scan_number, spectrum_match_id, crosslinker FROM v_export_materialized WHERE Search_id = " + searchId +  (topOnly ? " AND dynamic_rank = 't'":"")+ " \n")
+                    + "SELECT ss.name as run_name, s.scan_number, sm.id as spectrum_match_id FROM (select * from spectrum_match where Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm inner join spectrum s on sm.spectrum_id = s.id INNER JOIN spectrum_source ss on s.source_id = ss.id\n"                            
                     + ") v \n"
                     + "    ON v.spectrum_match_id = sm.id\n"
                     + "    inner join \n"
-                    //                    + "   (SELECT * from matched_peptide where search_id  = "+ searchId +" AND match_type =1) mp1 on sm.id = mp1.match_id   LEFT OUTER JOIN \n"
-                    //                    + "   (SELECT * from matched_peptide where search_id  = "+ searchId +" AND match_type =2) mp2 on sm.id = mp2.match_id   INNER JOIN \n"
                     + "   matched_peptide mp1 on sm.id = mp1.match_id and mp1.match_type =1  LEFT OUTER JOIN \n"
                     + "   matched_peptide mp2 on sm.id = mp2.match_id AND mp2.match_type = 2  INNER JOIN \n"
                     + "   peptide p1 on mp1.peptide_id = p1.id LEFT OUTER JOIN  \n"
@@ -765,30 +766,53 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + "   protein pr2 ON hp2.protein_id = pr2.id\n"
                     + "   INNER JOIN  \n"
                     + "   spectrum s ON sm.spectrum_id = s.id \n"
-                    + ((!xi3db) && filter != null && filter.toLowerCase().contains("scorep1coverage")
-                    ? "   LEFT OUTER JOIN (SELECT spectrum_match_id, score AS coverage1 FROM spectrum_match_score WHERE  score_id = (select id from score where name ='peptide1 unique matched conservative')) p1c on sm.id = p1c.spectrum_match_id \n"
-                    : "")
-                    + ((!xi3db) && filter != null && filter.toLowerCase().contains("scorep2coverage")
-                    ? "   LEFT OUTER JOIN (SELECT spectrum_match_id, score AS coverage2 FROM spectrum_match_score WHERE  score_id = (select id from score where name ='peptide2 unique matched conservative')) p2c on sm.id = p2c.spectrum_match_id \n"
-                    : "")
-                    + ((!xi3db) && filter != null && filter.toLowerCase().replace("linksitedelta", "").contains("delta")
-                    ? "   LEFT OUTER JOIN (SELECT spectrum_match_id, score AS delta FROM spectrum_match_score WHERE  score_id = (select id from score where name ='delta')) deltascore on sm.id = deltascore.spectrum_match_id \n"
-                    : "")
-                    + ((!xi3db) && filter != null && filter.toLowerCase().contains("linksitedelta")
-                    ? "   LEFT OUTER JOIN (SELECT spectrum_match_id, score AS LinkSiteDelta FROM spectrum_match_score WHERE  score_id = (select id from score where name ='LinkSiteDelta')) LinkSiteDelta on sm.id = LinkSiteDelta.spectrum_match_id \n"
-                    : "")
-                    + (xi3db ? " LEFT OUTER JOIN peaklistfile plf on s.peaklist_id = plf.id\n":"")
-                    + (xi3db ? " LEFT OUTER JOIN crosslinker cl on mp1.crosslinker_id = cl.id \n" : "")
-                    //                    + "   LEFT OUTER JOIN spectrum_match_score p2c on sm.id = p2c.spectrum_match_id AND p2c.score_id = (select id from score where name ='peptide1 unique matched conservative') \n"
-                    //                    + "   LEFT OUTER JOIN spectrum_match_score sd on sm.id = sd.spectrum_match_id AND sd.score_id = (select id from score where name ='delta') \n"
+                    + " LEFT OUTER JOIN peaklistfile plf on s.peaklist_id = plf.id\n"
+                    + " LEFT OUTER JOIN crosslinker cl on mp1.crosslinker_id = cl.id \n"
                     + " WHERE  \n"
-                    //  + " (sd.score>0) AND \n"
                     + " (s.precursor_charge = sm.precursor_charge OR sm.precursor_charge < 6) \n"
+                    + " GROUP BY  sm.id, \n"
+                    + "p1.sequence, \n"
+                    + "p2.sequence, \n"
+                    + "p1.peptide_length, \n"
+                    + "p2.peptide_length, \n"
+                    + "mp1.link_position + 1, \n"
+                    + "mp2.link_position + 1, \n"
+                    + "pr1.is_decoy, \n"
+                    + "pr2.is_decoy, \n"
+                    + "sm.precursor_charge, \n"
+                    + "sm.score, \n"
+                    + "CASE WHEN p2.sequence IS NULL THEN 1 ELSE (4.0/5.0+(p1.peptide_length/(p1.peptide_length+p2.peptide_length)))/2 END\n"
+                    + " , s.precursor_charge \n"
+                    + " , p1.id "
+                    + " , p2.id "
+                    + " , v.run_name, v.scan_number \n"
+                    + " , scorepeptide1matchedconservative \n"
+                    + " , scorepeptide2matchedconservative \n"
+                    + " , scoredelta "
+                    + " , scorelinksitedelta "
+                    + " , s.precursor_mz "
+                    + " , sm.calc_mass\n"
+                    + " , sm.precursor_charge "
+                    + " , p1.mass "
+                    + " , p2.mass "
+                    + " , sm.search_id\n"
+                    + " , sm.spectrum_id\n"
+                    + " , s.precursor_charge\n"
+                    + " , autovalidated\n"
+                    + " , cl.name \n"
+                    + " , cl.mass \n"
+                    + " , sm.rank \n"
+                    + " , s.scan_index\n"
+                    + " , plf.name "
+                    + " , scoremgxrank "
+                    + " , scorecleavclpep1fragmatched "
+                    + " , scorecleavclpep2fragmatched "
+                    + " , scores "
+                    + " , scoredelta "
+                    + " , s.precursor_intensity\n"
+                    + " , s.elution_time_start \n"
                     + " ORDER BY sm.score DESC)  i \n"
                     + (filter == null || filter.isEmpty() ? "" : " WHERE ( " + filter + " )");
-            //                + " --INNER JOIN  \n"
-            //                + " --  spectrum_match_score sms1 on sm.id = sms1.spectrum_match_id AND sms1.score_id = 5 LEFT OUTER JOIN \n"
-            //                + " --  spectrum_match_score sms2 on sm.id = sms2.spectrum_match_id AND sms2.score_id = 6 ;"; 
 
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from db");
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
@@ -819,8 +843,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             int pepPosition2Column = rs.findColumn("pepPosition2");
             int score_ratioColumn = rs.findColumn("score_ratio");
             int exp_chargeColumn = rs.findColumn("exp_charge");
-            int display_site1Column = rs.findColumn("display_site1");
-            int display_site2Column = rs.findColumn("display_site2");
             int protein1idColumn = rs.findColumn("protein1id");
             int protein2idColumn = rs.findColumn("protein2id");
             int peptide1idColumn = rs.findColumn("peptide1id");
@@ -852,9 +874,13 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             int retentiontimeColumn = rs.findColumn("retentiontime");
             int clMassColumn = rs.findColumn("clmass");
             int clDeltaColumn = rs.findColumn("delta");
+            int prot1nameColumn = rs.findColumn("protein1name");
+            int prot2nameColumn = rs.findColumn("protein2name");
             Pattern modDetect = Pattern.compile(".*[^A-Z].*");
             HashSet<Double> tmmodcount = new HashSet<>();
             HashMap<Double,Double> xlmodmasses = new HashMap<Double,Double>(1);
+            
+
 
             int total = 0;
             try {
@@ -877,25 +903,27 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     boolean isDecoy2 = rs.getBoolean(isDecoy2Column);
                     int charge = rs.getInt(calc_chargeColumn);
                     double score = rs.getDouble(scoreColumn);
-                    String accession1 = rs.getString(accession1Column);
-                    String description1 = rs.getString(description1Column);
-                    String accession2 = rs.getString(accession2Column);
-                    String description2 = rs.getString(description2Column);
-                    int pepPosition1 = rs.getInt(pepPosition1Column);
-                    int pepPosition2 = pepSeq2 == null ? -1 : rs.getInt(pepPosition2Column);
+                    String[] accession1 = (String[])rs.getArray(accession1Column).getArray();
+                    String[] name1 = (String[])rs.getArray(prot1nameColumn).getArray();
+                    String[] description1 = (String[])rs.getArray(description1Column).getArray();
+                    String[] accession2 = pepSeq2 == null ? new String[]{""} : (String[])rs.getArray(accession2Column).getArray();
+                    String[] name2 = pepSeq2 == null ? new String[]{""} : (String[])rs.getArray(prot2nameColumn).getArray();
+                    String[] description2 = pepSeq2 == null ? new String[]{""} : (String[])rs.getArray(description2Column).getArray();
+                    Integer[] pepPosition1 = (Integer[])rs.getArray(pepPosition1Column).getArray();
+                    Integer[] pepPosition2 = pepSeq2 == null ? new Integer[]{-1} : (Integer[])rs.getArray(pepPosition2Column).getArray();
                     //            double coverage1  = rs.getDouble(18);
                     //            double coverage2  = rs.getDouble(19);
                     //            double scoreRatio = coverage1/(coverage1+coverage2);
                     double scoreRatio = rs.getDouble(score_ratioColumn);
                     int spectrum_charge = rs.getInt(exp_chargeColumn);
-                    long protein1ID = rs.getLong(protein1idColumn);
-                    long protein2ID = rs.getLong(protein2idColumn);
+                    Long[] protein1ID = (Long[])rs.getArray(protein1idColumn).getArray();
+                    Long[] protein2ID = pepSeq2 == null ? new Long[]{0l} : (Long[])rs.getArray(protein2idColumn).getArray();
                     long pep1ID = rs.getLong(peptide1idColumn);
                     long pep2ID = rs.getLong(peptide2idColumn);
                     String run = rs.getString(run_nameColumn);
                     String scan = rs.getString(scan_numberColumn);
-                    String sequence1 = rs.getString(protein1sequenceColumn);
-                    String sequence2 = rs.getString(protein2sequenceColumn);
+                    String[] sequence1 = (String[]) rs.getArray(protein1sequenceColumn).getArray();
+                    String[] sequence2 = (String[]) rs.getArray(protein2sequenceColumn).getArray();
                     boolean autovalidated = rs.getBoolean(avColumn);
                     int rank = rs.getInt(rankColumn);
 
@@ -907,19 +935,21 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         accession2 = description2;
                     }
 
-                    if (sequence1 != null) {
-                        sequence1 = sequence1.replaceAll("[^A-Z]", "");
-                    }
+                    for (int s = 0 ; s < sequence1.length; s++)
+                        if (sequence1[s] != null) {
+                            sequence1[s] = sequence1[s].replaceAll("[^A-Z]", "");
+                        }
 
-                    if (sequence2 != null) {
-                        sequence2 = sequence2.replaceAll("[^A-Z]", "");
-                    }
+                    for (int s = 0 ; s < sequence2.length; s++)
+                        if (sequence2[s] != null) {
+                            sequence2[s] = sequence2[s].replaceAll("[^A-Z]", "");
+                        }
 
                     double p1c = rs.getDouble(scoreP1CoverageColumn);
                     double p2c = rs.getDouble(scoreP2CoverageColumn);
                     double pminc = p1c;
                     
-                    if (sequence2 != null && !sequence2.isEmpty()) {
+                    if (pepSeq2 != null && !pepSeq2.isEmpty()) {
                         pminc = Math.min(p1c,p2c);
                     }
                     
@@ -961,25 +991,71 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     boolean cleavclpep2fragmatched = rs.getBoolean(cleavclpep2fragmatchedColumn);
                     java.sql.Array subscores = rs.getArray(subscoresColumn);
 
+                    DBPSM psm = null;
+                    if (pepSeq2 != null && !pepSeq2.isEmpty()){
+                        for (int p = 0; p< accession1.length; p++) {
+                            String a1=accession1[p];
+                            String n1 = name1[p];
+                            String d1 = description1[p];
+                            if (d1==null || d1.isEmpty()) {
+                                if (n1 == null || n1.isEmpty())
+                                    d1 = a1;
+                                else
+                                    d1 = n1;
+                            }
+                            String a2 = accession2[p];
+                            String n2 = name2[p];
+                            String d2 = description2[p];
+                            int p2 = pepPosition2[p];
+                            long p2id = protein2ID[p];
+                            String s2 = sequence2[p];
+                            if (d2==null || d2.isEmpty()) {
+                                if (n2 == null || n2.isEmpty())
+                                    d2 = a2;
+                                else
+                                    d2 = n2;
+                            }
+                            String s1 = sequence1[p];
+                            int p1 = pepPosition1[p];
+                            long p1id = protein1ID[p];
+                            psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
+                        }
+                    } else {
+                        String a2 = "";
+                        String n2 = "";
+                        String d2 = "";
+                        int p2 = -1;
+                        long p2id = 0;
+                        String s2 = sequence2[0];
+                        for (int p = 0; p< accession1.length; p++) {
+                            String a1=accession1[p];
+                            String n1 = name1[p];
+                            String d1 = description1[p];
+                            if (d2==null || d2.isEmpty()) {
+                                if (n2 == null || n2.isEmpty())
+                                    d2 = a2;
+                                else
+                                    d2 = n2;
+                            }
+                            String s1 = sequence1[p];
+                            int p1 = pepPosition1[p];
+                            long p1id = protein1ID[p];
+                            psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
+                        }
+                        
+                    }
                     
-                    
-                    DBPSM psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protein1ID, accession1, description1, protein2ID, accession2, description2, pepPosition1, pepPosition2, sequence1, sequence2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
                     psm.setRank(rank);
-//                    if (subscores != null) {
-//                        Float[] scoresf = (Float[])subscores.getArray();
-//                        for (int i =0; i<scorenames.size(); i++) {
-//                            psm.addOtherInfo(scorenames.get(i),scoresf[i]);
-//                        }
-//                    }
+                    
+                    Float[] scorevalues = (Float[])subscores.getArray();
                     if (cPepCoverage1 > 0) {
-                        Float[] scoresf = (Float[])subscores.getArray();
-                        if (cPepCoverage2 <0 || Double.isNaN(scoresf[cPepCoverage2]))
+                        if (cPepCoverage2 <0 || Double.isNaN(scorevalues[cPepCoverage2]))
                             psm.addOtherInfo("minPepCoverage",
-                                scoresf[cPepCoverage1]);
+                                scorevalues[cPepCoverage1]);
                         else
                             psm.addOtherInfo("minPepCoverage",
-                                Math.min(scoresf[cPepCoverage1], 
-                                        scoresf[cPepCoverage2])
+                                Math.min(scorevalues[cPepCoverage1], 
+                                        scorevalues[cPepCoverage2])
                         );
                     }
 
@@ -1003,6 +1079,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     psm.addOtherInfo("mgxrank",rs.getDouble(mgxrankColumn));
                     psm.addOtherInfo("PrecursorIntensity",rs.getDouble(precIntensityColumn));
                     psm.addOtherInfo("RetentionTime",rs.getDouble(retentiontimeColumn));
+                    
+                    for (Integer p : peaks) {
+                        psm.addOtherInfo(scorenames.get(p), scorevalues[p]);
+                    }
                     Double xlModmassPre = rs.getDouble(clMassColumn);
                     Double xlModmass = xlmodmasses.get(xlModmassPre);
                     if (xlModmass == null) {
@@ -2307,8 +2387,37 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, "Read datafrom db");
         ofdr.readDB();
 
+        final CalculateWriteUpdate cu = new CalculateWriteUpdate() {
+            @Override
+            public void setStatus(MaximisingStatus state) {
+            }
+
+            @Override
+            public void setStatusText(String text) {
+            }
+
+            @Override
+            public void reportError(String text, Exception ex) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, text, ex);
+            }
+
+            @Override
+            public void setCurrent(double psm, double peptidepair, double protein, double link, double ppi) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "next round: PSM FDR: " +psm + " PepPairFDR:" + peptidepair + " Protein FDR:"+protein + " LinkFDR:" + link + " PPI FDR:" + ppi);
+            }
+
+            @Override
+            public void setComplete() {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate Write Finished");
+            }
+
+            @Override
+            public boolean stopped() {
+                return false;
+            }
+        };
         Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
-        FDRResult result = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
+        FDRResult result = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings, cu);
 
 //        Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, "Result-summary:" + ofdr.summaryString());
 //        

@@ -32,6 +32,10 @@ import java.util.RandomAccess;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.rappsilber.data.csv.CSVRandomAccess;
+import org.rappsilber.fdr.calculation.CheckValid;
+import org.rappsilber.fdr.calculation.FDR;
+import org.rappsilber.fdr.calculation.FDRImplement;
+import org.rappsilber.fdr.calculation.ValidityCheckImplement;
 import org.rappsilber.fdr.entities.DirectionalPeptidePair;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
@@ -51,6 +55,7 @@ import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.entities.AbstractFDRElement;
 import org.rappsilber.fdr.entities.FDRSelfAdd;
 import org.rappsilber.fdr.filter.DeltaScorePercentFilter;
+import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.HashedArrayList;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.fdr.utils.MaximizeLevelInfo;
@@ -83,7 +88,7 @@ public abstract class OfflineFDR {
     /**
      * psms that passed some form of prefilter
      */
-    protected ArrayList<PSM> prefilteredPSMs = null;
+    private ArrayList<PSM> prefilteredPSMs = null;
 
     /**
      * store all peptide pairs
@@ -117,6 +122,9 @@ public abstract class OfflineFDR {
     private boolean ppi_directional = false;
     protected int m_maximum_summed_peplength = Integer.MAX_VALUE;
     protected FDRLevel maximizeWhat = null;
+    
+    private CheckValid check = new ValidityCheckImplement(0, 2);
+    private FDR calc = new FDRImplement(check);
 
     /**
      * is a higher score better than a lower score?
@@ -815,11 +823,11 @@ public abstract class OfflineFDR {
     }
     
     
-    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, FDRSettings settings) throws FileNotFoundException {
-        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits, settings);
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, FDRSettings settings, CalculateWriteUpdate update) throws FileNotFoundException {
+        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits, settings, update);
     }
 
-    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits, FDRSettings settings) throws FileNotFoundException {
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits, FDRSettings settings, final CalculateWriteUpdate update) throws FileNotFoundException {
         FDRResult result = null;
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "BaseName: " + baseName);
@@ -839,13 +847,16 @@ public abstract class OfflineFDR {
                 for (double pgfdr = Math.round(getProteinGroupFDRSetting()[0] * 1000000); pgfdr <= Math.round(getProteinGroupFDRSetting()[1] * 1000000); pgfdr += Math.round(getProteinGroupFDRSetting()[2] * 1000000)) {
                     for (double pglfdr = Math.round(getLinkFDRSetting()[0] * 1000000); pglfdr <= Math.round(getLinkFDRSetting()[1] * 1000000); pglfdr += Math.round(getLinkFDRSetting()[2] * 1000000)) {
                         for (double pgpfdr = Math.round(getPpiFDRSetting()[0] * 1000000); pgpfdr <= Math.round(getPpiFDRSetting()[1] * 1000000); pgpfdr += Math.round(getPpiFDRSetting()[2] * 1000000)) {
-
+                            if (update.stopped()) {
+                                return result;
+                            }
+                            update.setCurrent(psmfdr/1000000, pepfdr/1000000, pgfdr/1000000, pglfdr/1000000, pgpfdr/1000000);
                             String fdr_basename;
                             if (getPsmFDRSetting()[0] == getPsmFDRSetting()[1]
                                     && getPeptidePairFDRSetting()[0] == getPeptidePairFDRSetting()[1]
                                     && getProteinGroupFDRSetting()[0] == getProteinGroupFDRSetting()[1]
                                     && getLinkFDRSetting()[0] == getLinkFDRSetting()[1]
-                                    && getPpiFDRSetting()[0] == getPpiFDRSetting()[0]) {
+                                    && getPpiFDRSetting()[0] == getPpiFDRSetting()[1]) {
                                 fdr_basename = baseName;
 
                             } else {
@@ -879,25 +890,27 @@ public abstract class OfflineFDR {
                                 s.ProteinGroupFDR = pgfdr / 1000000;
                                 s.ProteinGroupLinkFDR = pglfdr / 1000000;
                                 s.ProteinGroupPairFDR = pgpfdr / 1000000;
-                                if (maximizeWhat == null) {
+                                if (settings.doOptimize() == null) {
                                     result = this.calculateFDR(s, true);
                                 } else {
 
-                                    MaximisingStatus m = this.maximise(s, maximizeWhat, uniquePSMs, new MaximizingUpdate() {
+                                    MaximisingStatus m = this.maximise(s, settings.doOptimize(), uniquePSMs, new MaximizingUpdate() {
                                         @Override
                                         public void setStatus(MaximisingStatus state) {
-
+                                            update.setStatus(state);
                                         }
 
                                         @Override
                                         public void setStatusText(String text) {
+                                            update.setStatusText(text);
                                             System.err.println(text);
                                         }
 
                                         @Override
                                         public void reportError(String text, Exception ex) {
                                             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, text, ex);
-                                            System.exit(-1);
+                                            update.reportError(text, ex);
+                                            return;
                                         }
                                     });
                                     result = m.result;
@@ -924,6 +937,7 @@ public abstract class OfflineFDR {
             }
 
         }
+        update.setComplete();
         return result;
     }
 
@@ -941,10 +955,10 @@ public abstract class OfflineFDR {
         protpairToSize = new HashMap<>();
         Collection<PSM> inputPSM;
         ArrayList<PSM> allPSM = null;
-        if (prefilteredPSMs == null) {
+        if (getPrefilteredPSMs() == null) {
             allPSM = new ArrayList<>(getAllPSMs());
         } else {
-            allPSM = new ArrayList<>(prefilteredPSMs);
+            allPSM = new ArrayList<>(getPrefilteredPSMs());
         }
 
         if (settings.getMinPeptideFragmentsFilter() > 0) {
@@ -1063,7 +1077,7 @@ public abstract class OfflineFDR {
             }
         }
         
-        fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
+        this.calc.fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
         
         
         if (groupByHasInternal) {
@@ -1085,7 +1099,7 @@ public abstract class OfflineFDR {
                     pp.setFDRGroup(pp.getFDRGroup() + " int_support");
                 }
             }
-            fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
+            calc.fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
             GroupedFDRs = GroupedFDRsS;
         }
         
@@ -1216,7 +1230,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getPeptidePairFDR(), settings, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.peppairLocalFDR(), settings.isGroupByPSMCount());
+        this.calc.fdr(settings.getPeptidePairFDR(), settings, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.peppairLocalFDR(), settings.isGroupByPSMCount());
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
@@ -1298,7 +1312,7 @@ public abstract class OfflineFDR {
             filterListByPeptideSuport(pepProteinGroups, settings.getMinProteinPepCount());
         }
         //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
-        fdr(settings.getProteinGroupFDR(), settings, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, settings.getMinProteinPepCount(), ignoreGroups, setElementFDR, settings.protLocalFDR(), false);
+        this.calc.fdr(settings.getProteinGroupFDR(), settings, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, settings.getMinProteinPepCount(), ignoreGroups, setElementFDR, settings.protLocalFDR(), false);
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
@@ -1312,6 +1326,7 @@ public abstract class OfflineFDR {
     }
 
     public void calculateLinkFDR(boolean ignoreGroups, boolean setElementFDR, FDRSettings settings, FDRResult result) {
+        int topN=0;
 
         if (result.proteinGroupLinkFDR != null) {
             for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
@@ -1379,7 +1394,14 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
+        if (topN > 0) {
+            for (ProteinGroupLink l : pepLinks) {
+                l.setScore(l.getScore(topN));
+            }
+        }
+
+        
+        this.calc.fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
         if (groupLinksByHasInternal) {
 
             HashSet<ProteinGroup> internal = new HashSet<>();
@@ -1401,7 +1423,7 @@ public abstract class OfflineFDR {
             }
             FDRResultLevel<ProteinGroupLink> GroupedFDRs2 = new FDRResultLevel<ProteinGroupLink>();
             GroupedFDRs2.isDirectional = settings.isLinkDirectional();
-            fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs2, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
+            this.calc.fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs2, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
             GroupedFDRs = GroupedFDRs2;
         }
 
@@ -1432,6 +1454,7 @@ public abstract class OfflineFDR {
         boolean directional = settings.isPPIDirectional();
         int maxAmbiguity = settings.getMaxProteinAmbiguity();
         int minPepCount = settings.getMinPPIPepCount();
+        int topN=0;
 
         FDRResultLevel<ProteinGroupPair> GroupedFDRs = new FDRResultLevel<ProteinGroupPair>();
         GroupedFDRs.isDirectional = directional;
@@ -1494,7 +1517,13 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getProteinGroupPairFDR(), settings, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, settings.ppiLocalFDR(), false);
+        if (topN > 0) {
+            for (ProteinGroupPair ppi : linkPPIs) {
+                ppi.setScore(ppi.getScore(topN));
+            }
+        }
+        
+        this.calc.fdr(settings.getProteinGroupPairFDR(), settings, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, settings.ppiLocalFDR(), false);
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
@@ -2567,1016 +2596,6 @@ public abstract class OfflineFDR {
 
     }
 
-//    private <T extends FDRSelfAdd<T>> HashedArrayList<T> fdr(double fdr, double safetyfactor, Collection<T> c, HashMap<Integer, SubGroupFdrInfo<T>> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR) {
-    /**
-     * Splits up data into groups and forward each group to
-     * {@link #subFDR(java.util.ArrayList, java.util.ArrayList, boolean, rappsilber.fdr.result.SubGroupFdrInfo) subFDR}.
-     * results will then be collected
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param fdr the target FDR that is supossed to be returned
-     * @param safetyfactor don't report anything if the next higher calculatable
-     * @param fdrInput the input data that should be filtered by FDR
-     * @param groupInfo will hold all the information for the currently
-     * calculated FDRs
-     * @param tCount number of entries in the target database. This is used to
-     * normalise the FDR calculation for imbalenced databases
-     * @param dCount number of entries in the decoy database. This is used to
-     * normalise the FDR calculation for imbalenced databases
-     * @param minPepCount if an entry has less then these number of peptides
-     * supporting it - it will not be considered for the FDR-calculation
-     * @param ignoreGroups should we ignore groups cmpletely and just calculate
-     * a joined FDR?
-     * @param setElementFDR should each element be flaged up with the FDR that
-     * it group has at the given score? - is used to speed up the maximation (by
-     * not setting these)
-     */
-    private <T extends AbstractFDRElement<T>> void fdr(double fdr, FDRSettings settings, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups, boolean setElementFDR, Boolean localFDR, boolean groupByProteinPair) {
-        HashMap<String, ArrayList<T>> groupedList = new HashMap<String, ArrayList<T>>(4);
-        HashMap<String, UpdateableInteger> gTT = new HashMap<String, UpdateableInteger>(8);
-        HashMap<String, UpdateableInteger> gTD = new HashMap<String, UpdateableInteger>(8);
-        HashMap<String, UpdateableInteger> gDD = new HashMap<String, UpdateableInteger>(8);
-        double safetyfactor = settings.getReportFactor();
-        int minTDChance = settings.getMinTD();
-
-        int resultcount = 0;
-//        HashedArrayList<T> ret = new HashedArrayList<T>(c.size());
-        T firstinput = null;
-        boolean countmatches = false;
-        if (!fdrInput.isEmpty()) {
-            firstinput = fdrInput.iterator().next();
-            if (firstinput instanceof PSM) {
-                countmatches = true;
-            }
-        }
-
-        if (fdrInput.isEmpty()) {
-            return;
-        }
-
-        if (fdr == 1) {
-            fdr = 1000;
-            safetyfactor = 1000;
-        }
-        //HashMap<String,Integer> protpairToID = new HashMap<>();
-        int maxID = 2;
-
-        // split the data up into fdr-groups
-        for (T e : fdrInput) {
-            if (e.getPeptidePairCount() >= minPepCount) {
-                String fdrgroup = null;
-                if (ignoreGroups) { // don't do any grouping
-                    fdrgroup = "ALL";
-                } else {
-                    if (groupByProteinPair) {
-                        // do group by protein pairs to begin with
-                        ProteinGroup pg1 = e.getProteinGroup1();
-                        ProteinGroup pg2 = e.getProteinGroup2();
-                        // make sure we always get the same key
-                        String pgs1 = pg1.accessionsNoDecoy();
-                        String pgs2 = pg2.accessionsNoDecoy();
-
-                        String k1 = pgs1 + "_xl_" + pgs2;
-                        String k2 = pgs2 + "_xl_" + pgs1;
-                        Integer id = protpairToID.get(k1);
-                        if (id == null) // not found with key 1 -> try reversed key
-                        {
-                            id = protpairToID.get(k2);
-                        }
-                        // new protein pair
-                        if (id == null) {
-                            // assign id
-                            id = maxID++;
-//                            if (pgs1.contentEquals(pgs2)) {
-//                                id=-id;
-//                            }
-                            protpairToID.put(k1, id);
-                            protpairToID.put(k2, id);
-                            protpairToSize.put(id, new UpdateableInteger(1));
-                        } else if (countmatches) {
-                            protpairToSize.get(id).value++;
-                        }
-                        // set the id as fdr group
-                        fdrgroup = "" + id;
-                        // and write it to the 
-                        e.setFDRGroup("" + id);
-                    } else {
-                        fdrgroup = e.getFDRGroup();
-                    }
-                }
-                // get the right list of matches
-                ArrayList<T> gl = groupedList.get(fdrgroup);
-                if (gl == null) {
-                    // does not exist yet - so make a new one
-                    gl = new ArrayList<T>();
-                    groupedList.put(fdrgroup, gl);
-                    // start counting the types
-                    if (e.isTT()) {
-                        gTT.put(fdrgroup, new UpdateableInteger(1));
-                        gTD.put(fdrgroup, new UpdateableInteger(0));
-                        gDD.put(fdrgroup, new UpdateableInteger(0));
-                    } else if (e.isTD()) {
-                        gTT.put(fdrgroup, new UpdateableInteger(0));
-                        gTD.put(fdrgroup, new UpdateableInteger(1));
-                        gDD.put(fdrgroup, new UpdateableInteger(0));
-                    } else {
-                        gTT.put(fdrgroup, new UpdateableInteger(0));
-                        gTD.put(fdrgroup, new UpdateableInteger(0));
-                        gDD.put(fdrgroup, new UpdateableInteger(1));
-                    }
-                } else {
-                    if (e.isTT()) {
-                        gTT.get(fdrgroup).value++;
-                    } else if (e.isTD()) {
-                        gTD.get(fdrgroup).value++;
-                    } else {
-                        gDD.get(fdrgroup).value++;
-                    }
-                }
-                gl.add(e);
-            }
-        }
-
-        // join groups with similare number of PSMs
-        if (groupByProteinPair) {
-            UpdateableInteger max = RArrayUtils.max(protpairToSize.values());
-            HashMap<String, ArrayList<T>> groupedListNew = new HashMap<String, ArrayList<T>>(4);
-            HashMap<String, UpdateableInteger> gTTNew = new HashMap<String, UpdateableInteger>(8);
-            HashMap<String, UpdateableInteger> gTDNew = new HashMap<String, UpdateableInteger>(8);
-            HashMap<String, UpdateableInteger> gDDNew = new HashMap<String, UpdateableInteger>(8);
-            for (Map.Entry<String, ArrayList<T>> glOldE : groupedList.entrySet()) {
-                ArrayList<T> glOld = glOldE.getValue();
-                String oldgroup = glOldE.getKey();
-                UpdateableInteger protpairsize = protpairToSize.get(oldgroup);
-                String sizekey = "" + (glOld.size() + 100);
-                if (protpairsize != null) {
-                    sizekey = "" + protpairsize.value;
-                }
-                int oldTT = gTT.get(oldgroup).value;
-                int oldTD = gTD.get(oldgroup).value;
-                int oldDD = gDD.get(oldgroup).value;
-                ArrayList<T> glNew = groupedListNew.get(sizekey);
-                if (glNew == null) {
-                    groupedListNew.put("" + sizekey, glOld);
-
-                    gTTNew.put(sizekey, new UpdateableInteger(oldTT));
-                    gTDNew.put(sizekey, new UpdateableInteger(oldTD));
-                    gDDNew.put(sizekey, new UpdateableInteger(oldDD));
-                } else {
-                    glNew.addAll(glOld);
-                    gTTNew.get(sizekey).value += gTT.get(oldgroup).value;
-                    gTDNew.get(sizekey).value += gTD.get(oldgroup).value;
-                    gDDNew.get(sizekey).value += gDD.get(oldgroup).value;
-                }
-            }
-            groupedList = groupedListNew;
-            gTT = gTTNew;
-            gTD = gTDNew;
-            gDD = gDDNew;
-        }
-
-        // collect all subgroups that have to small number of results
-        ArrayList<String> toosmall = new ArrayList<>();
-        ArrayList<String> toosmallWithin = new ArrayList<>();
-        int toosmallsum = 0;
-        int toosmallsumWithin = 0;
-        HashSet<String> collectedToSmallNames = new HashSet<String>();
-        HashSet<String> collectedToSmallWithinNames = new HashSet<String>();
-        SubGroupFdrInfo<T> collectedToSmall = new SubGroupFdrInfo<T>();
-        SubGroupFdrInfo<T> collectedToSmallWithin = new SubGroupFdrInfo<T>();
-        ArrayList<T> tooSmallGroup = new ArrayList<>();
-        ArrayList<T> tooSmallGroupWithin = new ArrayList<>();
-
-        for (String fdrgroup : groupedList.keySet()) {
-            SubGroupFdrInfo<T> info = new SubGroupFdrInfo<T>();
-            info.TT = gTT.get(fdrgroup).value;
-            info.TD = gTD.get(fdrgroup).value;
-            info.DD = gDD.get(fdrgroup).value;
-            ArrayList<T> group = groupedList.get(fdrgroup);
-
-            info.DCount = dCount;
-            info.TCount = tCount;
-
-            ArrayList<T> groupResult = new ArrayList<T>();
-            info.inputCount = group.size();
-            info.targteFDR = fdr;
-            info.saftyfactor = safetyfactor;
-            info.fdrGroup = fdrgroup;
-            subFDR(group, groupResult, setElementFDR, info);
-            if (localFDR == null || localFDR) {
-                subFDRLocal(group, info);
-            }
-            if (localFDR != null && localFDR) {
-                ArrayList<T> filtered = new ArrayList<>();
-                for (T e : groupResult) {
-                    if (e.getPEP() <= fdr) {
-                        filtered.add(e);
-                    } else {
-                        if (e.isTT()) {
-                            info.resultTT--;
-                        } else if (e.isTD()) {
-                            info.resultTD--;
-                        } else {
-                            info.resultDD--;
-                        }
-                    }
-                }
-                groupResult = filtered;
-            }
-            String valid = checkValid(info, 0, minTDChance);
-//            if (info.resultTT*fdr<getMinDecoys())  {
-            if (valid != null) {
-                if ((!settings.ignoreValidityChecks())) {
-                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Discarded group {0}->{1}({2})", new Object[]{group.get(0).getClass(), fdrgroup, group.get(0).getFDRGroup()});
-                    //between
-                    if (fdrgroup.toLowerCase().contains("between")) {
-                        toosmallsum += groupResult.size();
-                        toosmall.add(fdrgroup);
-                        collectedToSmallNames.add(fdrgroup);
-                        collectedToSmall.TT += info.TT;
-                        collectedToSmall.TD += info.TD;
-                        collectedToSmall.DD += info.DD;
-                        collectedToSmall.DCount += info.DCount;
-                        collectedToSmall.TCount += info.TCount;
-                        collectedToSmall.inputCount += info.inputCount;
-                        tooSmallGroup.addAll(group);
-                        groupResult.clear();
-                    } else {
-                        // within group
-                        collectedToSmallWithinNames.add(fdrgroup);
-                        toosmallsumWithin += groupResult.size();
-                        toosmallWithin.add(fdrgroup);
-                        collectedToSmallWithin.TT += info.TT;
-                        collectedToSmallWithin.TD += info.TD;
-                        collectedToSmallWithin.DD += info.DD;
-                        collectedToSmallWithin.DCount += info.DCount;
-                        collectedToSmallWithin.TCount += info.TCount;
-                        collectedToSmallWithin.inputCount += info.inputCount;
-                        tooSmallGroupWithin.addAll(group);
-                        groupResult.clear();
-
-                    }
-                    info.filteredResult = new HashedArrayList<>();
-                } else {
-                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "FDR-Group {0}->{1}({2}) deemed unreliable - be carefull", new Object[]{group.get(0).getClass(), fdrgroup, group.get(0).getFDRGroup()});
-                }
-                info.didntPassCheck = valid;
-            } //else {
-            groupInfo.addGroup(fdrgroup, info);
-            //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
-            //            nextFDR.put(fdrgroup, prevFDR);
-            //            ret.addAll(groupResult);
-            resultcount += groupResult.size();
-            groupInfo.setLinear(groupInfo.getLinear() + info.linear);
-            groupInfo.setWithin(groupInfo.getWithin() + info.within);
-            groupInfo.setBetween(groupInfo.getBetween() + info.between);
-            //            resultCounts.put(fdrgroup, groupResult.size());
-            //}
-
-        }
-
-        // did we collect some subgroups with to small numbers?
-        if (toosmallsum + toosmallsumWithin > getMinDecoys() / fdr) {
-            Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Join up discarded groups to try and get some more results");
-            if (tooSmallGroup.size() > 0) {
-                ArrayList<T> groupResult = new ArrayList<T>();
-                collectedToSmall.targteFDR = fdr;
-                collectedToSmall.saftyfactor = safetyfactor;
-                collectedToSmall.fdrGroup = "CollectedSmallResults [" + RArrayUtils.toString(collectedToSmallNames, ",") + "]";
-                subFDR(tooSmallGroup, groupResult, setElementFDR, collectedToSmall);
-                if (localFDR == null || localFDR) {
-                    subFDRLocal(tooSmallGroup, collectedToSmall);
-                    if (localFDR != null) {
-                        ArrayList<T> filtered = new ArrayList<>();
-                        for (T e : groupResult) {
-                            if (e.getPEP() <= fdr) {
-                                filtered.add(e);
-                            } else {
-                                if (e.isTT()) {
-                                    collectedToSmall.resultTT--;
-                                } else if (e.isTD()) {
-                                    collectedToSmall.resultTD--;
-                                } else {
-                                    collectedToSmall.resultDD--;
-                                }
-                            }
-                        }
-                        groupResult = filtered;
-                    }
-                }
-                if (settings.ignoreValidityChecks() || checkValid(collectedToSmall, 0, minTDChance) == null) {
-                    groupInfo.addGroup(collectedToSmall.fdrGroup, collectedToSmall);
-                    //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
-                    //            nextFDR.put(fdrgroup, prevFDR);
-                    //            ret.addAll(groupResult);
-                    resultcount += groupResult.size();
-                    groupInfo.setLinear(groupInfo.getLinear() + collectedToSmall.linear);
-                    groupInfo.setWithin(groupInfo.getWithin() + collectedToSmall.within);
-                    groupInfo.setBetween(groupInfo.getBetween() + collectedToSmall.between);
-                }
-            }
-
-            if (tooSmallGroupWithin.size() > 0) {
-                ArrayList<T> groupResultwithin = new ArrayList<T>();
-
-                collectedToSmallWithin.targteFDR = fdr;
-                collectedToSmallWithin.saftyfactor = safetyfactor;
-                collectedToSmallWithin.fdrGroup = "CollectedSmallResultsWithin  [" + RArrayUtils.toString(collectedToSmallWithinNames, ",") + "]";
-                subFDR(tooSmallGroupWithin, groupResultwithin, setElementFDR, collectedToSmallWithin);
-                if (localFDR == null || localFDR) {
-                    subFDRLocal(tooSmallGroupWithin, collectedToSmallWithin);
-                    if (localFDR != null) {
-                        ArrayList<T> filtered = new ArrayList<>();
-                        for (T e : groupResultwithin) {
-                            if (e.getPEP() <= fdr) {
-                                filtered.add(e);
-                            } else {
-                                if (e.isTT()) {
-                                    collectedToSmallWithin.resultTT--;
-                                } else if (e.isTD()) {
-                                    collectedToSmallWithin.resultTD--;
-                                } else {
-                                    collectedToSmallWithin.resultDD--;
-                                }
-                            }
-                        }
-                        groupResultwithin = filtered;
-                    }
-                }
-                if (settings.ignoreValidityChecks() || checkValid(collectedToSmallWithin, 0, minTDChance) == null) {
-                    groupInfo.addGroup(collectedToSmallWithin.fdrGroup, collectedToSmallWithin);
-                    //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
-                    //            nextFDR.put(fdrgroup, prevFDR);
-                    //            ret.addAll(groupResult);
-                    resultcount += groupResultwithin.size();
-                    groupInfo.setLinear(groupInfo.getLinear() + collectedToSmallWithin.linear);
-                    groupInfo.setWithin(groupInfo.getWithin() + collectedToSmallWithin.within);
-                    groupInfo.setBetween(groupInfo.getBetween() + collectedToSmallWithin.between);
-                }
-            }
-        }
-
-        if (resultcount == 0 && fdrInput.size() > 100) {
-            // we didn't get any results through. try a non grouped
-            SubGroupFdrInfo info = new SubGroupFdrInfo();
-            info.fdrGroup = "NoSubResults";
-            for (String fdrgroup : groupedList.keySet()) {
-                info.TT += gTT.get(fdrgroup).value;
-                info.TD += gTD.get(fdrgroup).value;
-                info.DD += gDD.get(fdrgroup).value;
-            }
-
-            info.inputCount = fdrInput.size();
-
-            ArrayList<T> allResult = new ArrayList<T>();
-
-            ArrayList<T> all = new ArrayList<T>(fdrInput);
-            subFDR(all, allResult, setElementFDR, info);
-            if (localFDR == null || localFDR) {
-                subFDRLocal(all, info);
-                if (localFDR != null) {
-                    ArrayList<T> filtered = new ArrayList<>();
-                    for (T e : allResult) {
-                        if (e.getPEP() <= fdr) {
-                            filtered.add(e);
-                        } else {
-
-                            if (e.isTT()) {
-                                info.resultTT--;
-                            } else if (e.isTD()) {
-                                info.resultTD--;
-                            } else {
-                                info.resultDD--;
-                            }
-                        }
-                    }
-                    allResult = filtered;
-                }
-            }
-            if (settings.ignoreValidityChecks() || checkValid(info, 0, minTDChance) == null) {
-                groupInfo.addGroup(info.fdrGroup, info);
-                groupInfo.setLinear(groupInfo.getLinear() + info.linear);
-                groupInfo.setWithin(groupInfo.getWithin() + info.within);
-                groupInfo.setBetween(groupInfo.getBetween() + info.between);
-            } else {
-                allResult.clear();
-            } 
-        }
-
-//        return ret;
-    }
-
-//    /**
-//     * takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-//     * @param <T>       What type of Information is the FDR to be applied
-//     * @param TD
-//     * @param DD
-//     * @param TT
-//     * @param group     All entri
-//     * @param fdr       the target FDR that is supossed to be returned
-//     * @param safetyfactor  don't report anything if the next higher calculatable
-//     * @param results
-//     * @param TCount
-//     * @param DCount
-//     * @param setElementFDR
-//     * @return
-//     */
-//    protected <T extends FDRSelfAdd<T>> double subFDR(int TD, int DD, int TT, ArrayList<T> group, double fdr, double saftyfactor, ArrayList<T> results, double TCount, double DCount,boolean setElementFDR) {
-//        
-//        ArrayList<T> ret = new ArrayList<T>();
-//        double TTfactor = 1;
-//        double DDfactor = (TCount*TCount+TCount)/(DCount*DCount+DCount);
-//        double TDfactor = TCount / DCount;
-//        double normTT = TT *TTfactor;
-//        double normTD = TD * TDfactor;
-//        double normDD = DD * DDfactor;
-//
-//        // total fdr rate
-//        double prevFDR = 0;
-//        if (normTD!=0)
-//            prevFDR = ((normTD+1) + normDD*(1-2*normTD/((normTD)+Math.sqrt(normTD))))/normTT;
-//        
-//        if (fdr >= 1) {
-//            fdr = Double.POSITIVE_INFINITY;
-//        }
-//
-//        // check whether the fdr to reach the fdr in this dataset we would need at least the minimum number of decoys
-//        // if not we assume the fdr-calculation does not make sense
-//        if ((TT + TD + DD) * fdr < MINIMUM_POSSIBLE_DECOY && fdr < 1) {
-//            return prevFDR;
-//        }
-//
-//        // all the elements within this group
-//        int groupSize = group.size();
-//
-//        // sort them by score
-//        Collections.sort(group);
-//
-////        if (!isPSMScoreHighBetter())
-////            Collections.reverse(group);
-//
-//        int fdrSwitch = groupSize - 1;
-//        double highFDR = prevFDR;
-//        // now we can just go through and find the cut-off
-//        for (int i = groupSize - 1; i >= 0; i--) {
-//            //double efdr = (TD / TDfactor - DD / DDfactor) * TTfactor / (double) TT;
-//            normTT = TT *TTfactor;
-//            normTD = TD * TDfactor;
-//            normDD = DD * DDfactor;
-//            
-//            double efdr = 0;
-//            
-//            if (normTD>0)
-//                efdr=(normTD + normDD*(1-2*normTD/((normTD)+Math.sqrt(normTD))))/normTT;
-//            
-//            if (efdr <= fdr && efdr<prevFDR &&  prevFDR / fdr < saftyfactor) {
-//                
-//                // as a safty meassure only accept things, if we don't have a to big a jump in fdr
-////                if (prevFDR / fdr < saftyfactor) {
-//                    double lastFDR = prevFDR;
-//                    double setFDR = efdr;
-//                    if (setElementFDR) {
-//                        for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            e.setFDR(setFDR);
-//                            ret.add(e);
-//                            if (e.isTT()) {
-//                                TT--;
-//                            } else if (e.isTD()) {
-//                                TD--;
-//                            } else if (e.isDD()) {
-//                                DD--;
-//                            }
-//
-//                            normTT = TT * TTfactor;
-//                            normTD = TD * TDfactor;
-//                            normDD = DD * DDfactor;
-//            
-//                            
-//                            if (TD > 0) {
-//                                setFDR = Math.min(setFDR, (normTD + normDD*(1-2*normTD/((normTD)+Math.sqrt(normTD))))/normTT);
-//                            } else
-//                                setFDR = 0;
-//                        }
-//                    } else {
-//                         for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            ret.add(e);                             
-//                         }
-//                    }
-////                }
-//                if (fdr >=1 || ret.size() >=MINIMUM_POSSIBLE_RESULT)
-//                    results.addAll(ret);
-//                return prevFDR;
-//            }
-//            prevFDR = Math.min(efdr, prevFDR);
-//
-//            T e = group.get(i);
-//            if (e.isTT()) {
-//                TT--;
-//            } else if (e.isTD()) {
-//                TD--;
-//            } else if (e.isDD()) {
-//                DD--;
-//            } else {
-//                Logger l = Logger.getLogger(FDRCalculation.class.getName());
-//                l.log(Level.SEVERE, "Something is wrong here!", new Exception(""));
-//                System.exit(-1);
-//            }
-//
-//        }
-//        return prevFDR;
-//    }
-    /**
-     * Takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-     * <p>
-     * The assumption is that we have a symmetric cross-linker. <br/>Therefore:
-     * <p>
-     * {@code FP(TT)=TD+DD*(1-TDdb/DDdb)}</p>
-     * </p><p>
-     * If TCount and DCount are of different size then the false positive
-     * estimation gets scaled accordingly.</p
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param TD total number of TD matches
-     * @param DD total number of DD matches
-     * @param TT total number of TT matches
-     * @param group All entries for which the target FDR should be calculated
-     * @param fdr the target FDR that is supposed to be returned
-     * @param safetyfactor don't report anything if the next higher calculable
-     * exceeds the target-FDR by the given factor
-     * @param results the passing results will be added to this ArrayList
-     * @param TCount Size of the target database
-     * @param DCount size of the decoy database
-     * @param isSymmetric do we calculate an FDR for a symmetric or an
-     * asymmetric experiment
-     * @param setElementFDR
-     * @return
-     */
-//    protected <T extends FDRSelfAdd<T>> double subFDR(int TD, int DD, int TT, ArrayList<T> group, double fdr, double safetyfactor, ArrayList<T> results, double TCount, double DCount,boolean setElementFDR, boolean isSymmetric) {
-//        
-//        ArrayList<T> ret = new ArrayList<T>();
-//        
-//        double TTSize;
-//        double TDSize;
-//        double DDSize;
-//        double k;
-//        
-//        if (isSymmetric) {
-//            TDSize = TCount*DCount;
-//            DDSize = (DCount*DCount+DCount)/2;
-//            k=TDSize/DDSize;
-//            TTSize = (TCount*TCount+TCount)/2;
-//        } else {
-//            TDSize = 2*TCount*DCount;
-//            DDSize = DCount*DCount;
-//            TTSize = TCount*TCount;
-//            k=TDSize/DDSize;
-//        }
-//        double TTfactor = 1;
-//        double DDfactor = TTSize/DDSize;
-//        double TDfactor = k*TTSize/TDSize;
-//
-//        double normTT = TT * TTfactor;
-//        double normTD = TD * TDfactor;
-//        double normDD = DD * DDfactor;
-//        
-//
-//        // total fdr rate
-//        double prevFDR = 0;
-//        if (normTD!=0)
-//            prevFDR = (normTD + normDD*(1-k))/normTT;
-//        
-//        if (fdr >= 1) {
-//            fdr = Double.POSITIVE_INFINITY;
-//        }
-//
-//        // check whether the fdr to reach the fdr in this dataset we would need at least the minimum number of decoys
-//        // if not we assume the fdr-calculation does not make sense
-//        if ((TT + TD + DD) * fdr < MINIMUM_POSSIBLE_DECOY && fdr < 1) {
-//            return prevFDR;
-//        }
-//
-//        // all the elements within this group
-//        int groupSize = group.size();
-//
-//        // sort them by score
-//        Collections.sort(group);
-//
-////        if (!isPSMScoreHighBetter())
-////            Collections.reverse(group);
-//
-//        int fdrSwitch = groupSize - 1;
-//        double highFDR = prevFDR;
-//        // now we can just go through and find the cut-off
-//        for (int i = groupSize - 1; i >= 0; i--) {
-//            //double efdr = (TD / TDfactor - DD / DDfactor) * TTfactor / (double) TT;
-//            normTT = TT *TTfactor;
-//            normTD = TD * TDfactor;
-//            normDD = DD * DDfactor;
-//            
-//            double efdr = 0;
-//            
-//            if (normTD>0)
-//                efdr=(normTD + normDD*(1-k))/normTT;
-//            
-//            if (efdr <= fdr && efdr<prevFDR &&  prevFDR / fdr < safetyfactor) {
-//                
-//                // as a safty meassure only accept things, if we don't have a to big a jump in fdr
-////                if (prevFDR / fdr < safetyfactor) {
-//                    double lastFDR = prevFDR;
-//                    double setFDR = efdr;
-//                    if (setElementFDR) {
-//                        for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            e.setFDR(setFDR);
-//                            ret.add(e);
-//                            if (e.isTT()) {
-//                                TT--;
-//                            } else if (e.isTD()) {
-//                                TD--;
-//                            } else if (e.isDD()) {
-//                                DD--;
-//                            }
-//
-//                            normTT = TT * TTfactor;
-//                            normTD = TD * TDfactor;
-//                            normDD = DD * DDfactor;
-//            
-//                            
-//                            if (TD > 0) {
-//                                setFDR = Math.min(setFDR, (normTD + normDD*(1-k))/normTT);
-//                            } else
-//                                setFDR = 0;
-//                        }
-//                    } else {
-//                         for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            ret.add(e);                             
-//                         }
-//                    }
-////                }
-//                if (fdr >=1 || ret.size() >=MINIMUM_POSSIBLE_RESULT)
-//                    results.addAll(ret);
-//                return prevFDR;
-//            }
-//            prevFDR = Math.min(efdr, prevFDR);
-//
-//            T e = group.get(i);
-//            if (e.isTT()) {
-//                TT--;
-//            } else if (e.isTD()) {
-//                TD--;
-//            } else if (e.isDD()) {
-//                DD--;
-//            } else {
-//                Logger l = Logger.getLogger(FDRCalculation.class.getName());
-//                l.log(Level.SEVERE, "Something is wrong here!", new Exception(""));
-//                System.exit(-1);
-//            }
-//
-//        }
-//        return prevFDR;
-//    }
-    /**
-     * Takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-     * <p>
-     * The assumption is that we have a symmetric cross-linker. <br/>Therefore:
-     * <p>
-     * {@code FP(TT)=TD+DD*(1-TDdb/DDdb)}</p>
-     * </p><p>
-     * If TCount and DCount are of different size then the false positive
-     * estimation gets scaled accordingly.</p
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param group All entries for which the target FDR should be calculated
-     * @param fdr the target FDR that is supposed to be returned
-     * @param safetyfactor don't report anything if the next higher calculable
-     * exceeds the target-FDR by the given factor
-     * @param results the passing results will be added to this ArrayList
-     * @param TCount Size of the target database
-     * @param DCount size of the decoy database
-     * @param info all informations needed for this sub group
-     * @param isSymmetric do we calculate an FDR for a symmetric or an
-     * asymmetric experiment
-     * @param setElementFDR
-     * @return
-     */
-    protected <T extends AbstractFDRElement<T>> double subFDR(ArrayList<T> group, ArrayList<T> results, boolean setElementFDR, SubGroupFdrInfo info) {
-
-        HashedArrayList<T> ret = new HashedArrayList<T>();
-        info.results = ret;
-        info.filteredResult = ret;
-
-        double TT = info.TT;
-        int TD = info.TD;
-        int DD = info.DD;
-
-        double fdr = info.targteFDR;
-
-        if (fdr >= 1) {
-            fdr = Double.POSITIVE_INFINITY;
-        }
-
-        // all the elements within this group
-        int groupSize = group.size();
-
-        // sort them by score
-        Collections.sort(group, new Comparator<T>() {
-
-            public int compare(T o1, T o2) {
-                return Double.compare(o2.getScore() * o2.getLinkedSupport(), o1.getScore() * o1.getLinkedSupport());
-            }
-        });
-
-        // total fdr rate
-        double prevFDR = (TD - DD) / TT;
-        int prevTDIndex = groupSize - 1;
-
-//        if (!isPSMScoreHighBetter())
-//            Collections.reverse(group);
-        int fdrSwitch = groupSize - 1;
-        double highFDR = prevFDR;
-        // now we can just go through and find the cut-off
-        for (int i = groupSize - 1; i >= 0; i--) {
-
-            double efdr = (TD - DD) / TT;
-            double efdr_n = ((TD - 1) - DD) / TT;
-            double efdr_p = ((TD + 1) - DD) / TT;
-            if (efdr_n < 0 && DD == 0) {
-                efdr_n = 0;
-            }
-
-            T e = group.get(i);
-            double score = e.getScore();
-
-            // we steped below the target fdr (efdr<= fdr) 
-            if (efdr <= fdr) {
-                //did we just pas an fdr-step
-                if ((efdr < prevFDR || prevFDR <= 0.0 || prevFDR == Double.POSITIVE_INFINITY) || fdr == Double.POSITIVE_INFINITY) {
-                    // does it fullfill the saftyfactor
-                    if ((efdr_p / fdr < info.saftyfactor || info.saftyfactor > 1000 || info.saftyfactor == 0) || fdr == Double.POSITIVE_INFINITY) {
-                        //if ((efdr_p / fdr < info.saftyfactor && efdr_n >= 0) || fdr == Double.POSITIVE_INFINITY)  {
-                        if (info.firstPassingFDR == 0) {
-                            info.firstPassingFDR = prevFDR;
-                        }
-
-                        info.higherFDR = prevFDR;
-                        info.worstAcceptedScore
-                                = info.lowerFDR = efdr;
-                        info.resultCount = i;
-                        int lastFDRIndex = i;
-
-                        double lastFDR = prevFDR;
-                        int lastTDIndex = prevTDIndex;
-                        T lastTDElement = group.get(lastTDIndex);
-                        double setFDR = efdr;
-                        info.resultTT = (int) TT;
-                        info.resultTD = TD;
-                        info.resultDD = DD;
-                        if (setElementFDR) {
-                            for (; i >= 0; i--) {
-
-                                e = group.get(i);
-                                e.setFDR(setFDR);
-                                e.setHigherFDR(lastFDR);
-                                e.setHigherTD(lastTDElement);
-                                ret.add(e);
-
-                                if (e.isTT()) {
-                                    TT--;
-                                    if (e.isLinear()) {
-                                        info.linear++;
-                                    }
-
-                                    if (e.isInternal()) {
-                                        info.within++;
-                                    } else if (e.isBetween()) {
-                                        info.between++;
-                                    }
-
-                                } else if (e.isTD()) {
-                                    TD--;
-                                    info.resultTD++;
-                                    for (int l = i + 1; l <= lastTDIndex; l++) {
-                                        group.get(l).setLowerTD(e);
-                                    }
-                                    lastTDIndex = i;
-                                    lastTDElement = e;
-                                } else if (e.isDD()) {
-                                    DD--;
-                                    info.resultDD++;
-                                }
-
-                                double currfdr = 0;
-                                if (TD > 0) {
-                                    currfdr = (TD - DD) / TT;
-                                }
-
-                                if (currfdr < setFDR) {
-                                    lastFDR = setFDR;
-                                    // we reached a new lower fdr
-                                    setFDR = currfdr;
-
-                                    // set the lower fdr values for the previous data
-                                    for (int li = lastFDRIndex; li <= i; li++) {
-                                        group.get(li).setLowerFDR(currfdr);
-                                    }
-                                    lastFDRIndex = i - 1;
-                                }
-
-                            }
-                            for (int li = lastFDRIndex; li <= i && li >= 0; li++) {
-                                group.get(li).setLowerFDR(0);
-                            }
-
-                            T best = group.get(0);
-                            for (int l = 0; l <= lastTDIndex; l++) {
-                                group.get(l).setLowerTD(best);
-                            }
-
-                        } else {
-                            for (; i >= 0; i--) {
-                                e = group.get(i);
-                                if (e.isTT()) {
-                                    if (e.isLinear()) {
-                                        info.linear++;
-                                    }
-
-                                    if (e.isInternal()) {
-                                        info.within++;
-                                    } else if (e.isBetween()) {
-                                        info.between++;
-                                    }
-                                }
-                                ret.add(e);
-                            }
-                        }
-                        //                }
-
-                        //  info.results = ret;
-                        //  info.filteredResult = ret;
-                        //                if (fdr >=1 || ret.size() >=MINIMUM_POSSIBLE_RESULT)
-                        results.addAll(ret);
-                        info.results = ret;
-                        info.filteredResult = ret;
-                        info.worstAcceptedScore = score;
-
-                        return prevFDR;
-                    } else {
-                        info.firstPassingFDR = prevFDR;
-                    }
-                }
-            }
-
-            if (efdr < prevFDR) {
-                prevFDR = efdr;
-            }
-
-            if (e.isTT()) {
-                TT--;
-            } else if (e.isTD()) {
-                TD--;
-                prevTDIndex = i;
-            } else if (e.isDD()) {
-                DD--;
-            } else {
-                Logger l = Logger.getLogger(this.getClass().getName());
-                l.log(Level.SEVERE, "Something is wrong here!", new Exception(""));
-                System.exit(-1);
-            }
-
-        }
-        return prevFDR;
-    }
-
-    /**
-     * Takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-     * <p>
-     * The assumption is that we have a symmetric cross-linker. <br/>Therefore:
-     * <p>
-     * {@code FP(TT)=TD+DD*(1-TDdb/DDdb)}</p>
-     * </p><p>
-     * If TCount and DCount are of different size then the false positive
-     * estimation gets scaled accordingly.</p
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param group All entries for which the target FDR should be calculated
-     * @param fdr the target FDR that is supposed to be returned
-     * @param safetyfactor don't report anything if the next higher calculable
-     * exceeds the target-FDR by the given factor
-     * @param results the passing results will be added to this ArrayList
-     * @param TCount Size of the target database
-     * @param DCount size of the decoy database
-     * @param info all informations needed for this sub group
-     * @param isSymmetric do we calculate an FDR for a symmetric or an
-     * asymmetric experiment
-     * @param setElementFDR
-     * @return
-     */
-    protected <T extends AbstractFDRElement<T>> void subFDRLocal(ArrayList<T> group, SubGroupFdrInfo info) {
-
-        int TT = info.TT;
-        int TD = info.TD;
-        int DD = info.DD;
-
-        double TTSize;
-        double TDSize;
-        double DDSize;
-        double k;
-
-        // all the elements within this group
-        int groupSize = group.size();
-
-        // sort them by score
-        Collections.sort(group, new Comparator<T>() {
-
-            public int compare(T o1, T o2) {
-                return Double.compare(o1.getScore(), o2.getScore());
-            }
-        });
-
-        int prevTDIndex = groupSize - 1;
-
-        int minTD = 2;
-        double minWindow = Math.abs(group.get(0).getScore() - group.get(prevTDIndex).getScore()) / 10.0;
-
-        int lastMin = 0;
-        T lastMinE = group.get(0);
-        double lastMinScore = lastMinE.getScore();
-        int lastMax = 0;
-        T lastMaxE = lastMinE;
-        double lastMaxScore = lastMinScore;
-
-        // count within the window
-        int wTT = lastMinE.isTT() ? 1 : 0;
-        int wTD = lastMinE.isTD() ? 1 : 0;
-        int wDD = lastMinE.isDD() ? 1 : 0;
-        for (T e : group) {
-
-            double centerscore = e.getScore();
-            double minscore = centerscore - minWindow;
-            double maxscore = centerscore + minWindow;
-
-            // find the highest to be included eleemnt
-            while (lastMax < groupSize - 1 && maxscore > group.get(lastMax + 1).getScore()) {
-                lastMax++;
-                lastMaxE = group.get(lastMax);
-                lastMaxScore = lastMaxE.getScore();
-                if (lastMaxE.isTT()) {
-                    wTT++;
-                } else if (lastMaxE.isTD()) {
-                    wTD++;
-                } else {
-                    wDD++;
-                }
-            }
-
-            // shift to the lowest to be included eleemnt
-            while (minscore > lastMinScore
-                    && wTD >= minTD
-                    && // expand the window until we have more then the required TD
-                    wDD * 1.1 < wTD
-                    && // also we want some more TD the DD
-                    wDD * 1.1 < wTT) {  // and more TT then DD
-                lastMin++;
-                if (lastMinE.isTT()) {
-                    wTT--;
-                } else if (lastMinE.isTD()) {
-                    wTD--;
-                } else {
-                    wDD--;
-                }
-                lastMinE = group.get(lastMin);
-                lastMinScore = lastMinE.getScore();
-            }
-            // do we need to readjust the highest score?
-            if (minscore > lastMinScore) {
-                double targetMaxScore = lastMinScore - minscore + maxscore;
-                while (lastMax < groupSize - 1) {
-                    T nextMaxE = group.get(lastMax + 1);
-                    double nextScore = nextMaxE.getScore();
-                    if (nextScore < targetMaxScore) {
-                        lastMax++;
-                        lastMaxE = nextMaxE;
-                        lastMaxScore = nextScore;
-                        if (lastMaxE.isTT()) {
-                            wTT++;
-                        } else if (lastMaxE.isTD()) {
-                            wTD++;
-                        } else {
-                            wDD++;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-            e.setPEP((wTD - wDD) / (double) wTT);
-
-        }
-    }
-
     /**
      * is a higher score better than a lower score?
      *
@@ -3751,7 +2770,9 @@ public abstract class OfflineFDR {
                 + "--singleSummary "
                 + "--uniquePSMs= "
                 + "--outputlocale= "
-                + "--boost= ";
+                + "--boost= "
+                + "--single-step-boost"
+                + "--boostbetween ";
 
     }
 
@@ -3805,7 +2826,8 @@ public abstract class OfflineFDR {
                 + "                         options are true,false,1,0\n"
                 + "--outputlocale=          numbers in csv-files are writen \n"
                 + "                         according to this locale\n"
-                + "--boost=(pep|link|prot)  boost results on the given level\n";
+                + "--boost=(pep|link|prot)  boost results on the given level\n"
+                + "--boost-between          when boosting try to maximize betweens\n";
 
     }
 
@@ -4053,7 +3075,12 @@ public abstract class OfflineFDR {
                         || what.contentEquals("ppi")) {
                     this.maximizeWhat = FDRLevel.PROTEINGROUPPAIR;
                 }
-
+                
+            }else if (arg.toLowerCase().equals("--boost-between")) {
+                settings.setBoostBetween(true);
+                
+            }else if (arg.toLowerCase().equals("--single-step-boost")) {
+                settings.twoStepOptimization(false);
             } else if (arg.startsWith("--reportfactor=")) {
 
             } else if (arg.startsWith("--psmfdr=")) {
@@ -5187,10 +4214,48 @@ public abstract class OfflineFDR {
      * @param minDecoys the minDecoys to set
      */
     public void setMinDecoys(Integer minDecoys) {
+        check = new ValidityCheckImplement(0, minDecoys);
+        calc.setValidityCheck(check);
         this.minTDChance = minDecoys;
     }
 
+
     public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate) {
+        return maximise(fdrSettings, level, between, stateUpdate, true);
+    }
+
+    public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate, boolean twoStep) {
+        if (twoStep && 
+                (fdrSettings.boostDeltaScore() || fdrSettings.boostMinFragments()|| fdrSettings.boostPepCoverage()) &&
+                (fdrSettings.boostPSMs() || fdrSettings.boostPeptidePairs() || fdrSettings.boostProteins() || fdrSettings.boostLinks())) {
+            FDRSettingsImpl step = new FDRSettingsImpl();
+            step.setAll(fdrSettings);
+            step.boostDeltaScore(false);
+            step.boostMinFragments(false);
+            step.boostPepCoverage(false);
+            
+            MaximisingStatus res = maximiseInner(step, level, between, stateUpdate);
+            step.setPSMFDR(res.showPSMFDR);
+            step.boostPSMs(false);
+            step.setPeptidePairFDR(res.showPepFDR);
+            step.boostPeptidePairs(false);
+            step.setProteinGroupFDR(res.showProtFDR);
+            step.boostProteins(false);
+            step.setProteinGroupLinkFDR(res.showLinkFDR);
+            step.boostLinks(false);
+            step.boostDeltaScore(fdrSettings.boostDeltaScore());
+            step.boostMinFragments(fdrSettings.boostMinFragments());
+            step.boostPepCoverage(fdrSettings.boostPepCoverage());
+            
+            return maximiseInner(step, level, between, stateUpdate);
+        
+        } else {
+            return maximiseInner(fdrSettings, level, between, stateUpdate);
+        }
+    }
+    
+    
+    public MaximisingStatus maximiseInner(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate) {
 
         final FDRSettingsImpl settings = new FDRSettingsImpl();
         settings.setAll(fdrSettings);
@@ -5222,7 +4287,7 @@ public abstract class OfflineFDR {
                 }
             }
 
-            final MaximizeLevelInfo absPepCover = new MaximizeLevelInfoInteger(10, true, steps);
+            final MaximizeLevelInfo absPepCover = new MaximizeLevelInfoInteger(10, settings.boostMinFragments(), steps);
             final MaximizeLevelInfo deltaScore = new MaximizeLevelInfo(1 - settings.getMinDeltaScoreFilter(), 1 - maxDelta, settings.boostDeltaScore(), steps);
             final MaximizeLevelInfo pepCoverage = new MaximizeLevelInfo(1 - settings.getMinPeptideCoverageFilter(), 1 - maxPeptideCoverage, settings.boostPepCoverage(), steps);
             final MaximizeLevelInfo psmFDRInfo = new MaximizeLevelInfo(settings.getPSMFDR(), settings.boostPSMs(), steps);
@@ -5583,12 +4648,12 @@ public abstract class OfflineFDR {
 
                     if (pepCoverage.maximumFDR < 1) {
                         PSMFilter f = new SingleSubScoreFilter("minPepCoverage", 1 - pepCoverage.maximumFDR, true);
-                        prefilteredPSMs = f.filter(getAllPSMs());
-                        if (prefilteredPSMs.size() < 50) {
+                        setPrefilteredPSMs(f.filter(getAllPSMs()));
+                        if (getPrefilteredPSMs().size() < 50) {
                             break;
                         }
                     } else {
-                        prefilteredPSMs = null;
+                        setPrefilteredPSMs(null);
                     }
 
                     stopMaximizing = false;
@@ -5945,12 +5010,12 @@ public abstract class OfflineFDR {
 
                             if (pepCoverage.maximumFDR < 1) {
                                 PSMFilter f = new SingleSubScoreFilter("minPepCoverage", 1 - pepCoverage.maximumFDR, true);
-                                prefilteredPSMs = f.filter(getAllPSMs());
-                                if (prefilteredPSMs.size() < 50) {
+                                setPrefilteredPSMs(f.filter(getAllPSMs()));
+                                if (getPrefilteredPSMs().size() < 50) {
                                     break;
                                 }
                             } else {
-                                prefilteredPSMs = null;
+                                setPrefilteredPSMs(null);
                             }
 
                             stateUpdate.setStatus(res);
@@ -6123,6 +5188,22 @@ public abstract class OfflineFDR {
      */
     public void stubsFound(boolean stubsFound) {
         this.stubsFound = stubsFound;
+    }
+
+    /**
+     * psms that passed some form of prefilter
+     * @return the prefilteredPSMs
+     */
+    public ArrayList<PSM> getPrefilteredPSMs() {
+        return prefilteredPSMs;
+    }
+
+    /**
+     * psms that passed some form of prefilter
+     * @param prefilteredPSMs the prefilteredPSMs to set
+     */
+    public void setPrefilteredPSMs(ArrayList<PSM> prefilteredPSMs) {
+        this.prefilteredPSMs = prefilteredPSMs;
     }
 
 }

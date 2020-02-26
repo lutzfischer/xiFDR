@@ -21,6 +21,7 @@ import javax.swing.SpinnerModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 
 /**
@@ -114,7 +115,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         spFDR.getModel().addChangeListener(max100Listener);
         spReportFactor.setVisible(false);
         lblReportFactor.setVisible(false);
-                
+        this.setAll(new FDRSettingsImpl());
     }
     
     private void doCalc() {

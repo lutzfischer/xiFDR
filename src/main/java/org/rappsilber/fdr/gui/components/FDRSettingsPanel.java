@@ -50,6 +50,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean boostPepDeltaScore = true;
     private boolean boostMinFragments = false;
     private boolean groubByCrosslinkerStubs;
+    private boolean twoStepBoost;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -275,6 +276,16 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public boolean getGroupByCrosslinkerStubs() {
         return this.groubByCrosslinkerStubs;
+    }
+
+    @Override
+    public boolean twoStepOptimization() {
+        return this.twoStepBoost;
+    }
+
+    @Override
+    public void twoStepOptimization(boolean stepped) {
+        this.twoStepBoost = stepped;
     }
     
 }

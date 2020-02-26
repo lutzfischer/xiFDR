@@ -24,7 +24,9 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
+import org.rappsilber.fdr.gui.CalculateRanges;
 
 /**
  *
@@ -144,6 +146,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         lblReportFactor.setVisible(false);
         setMinTD(DEFAULT_MIN_TD_COUNT);
         spOtherFilter.setVisible(ckMoreOptions.isSelected());
+        
+        this.setAll(new FDRSettingsImpl());
     }
 
     public static void setSpinnerModel(JSpinner sp, double intialValue) {
@@ -192,7 +196,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         
     
     private void doCalc() {
+
         btnStopBoost.setEnabled(ckMaximize.isSelected());        
+
+        if (!ckMoreOptions.isSelected()) {
+            setMinPeptideFragmentsFilter(0);
+            setMinDeltaScoreFilter(0d);
+            setMinPeptideCoverageFilter(0d);
+        }
         raiseStartCalc(ckMaximize.isSelected());
         
 //        if (ckMaximize.isSelected()) {
@@ -554,6 +565,15 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckIgnoreValidity.setSelected(ignore);
     }
 
+    @Override
+    public boolean twoStepOptimization() {
+        return this.otherFilter.twoStepBoost();
+    }
+
+    @Override
+    public void twoStepOptimization(boolean stepped) {
+        this.otherFilter.twoStepBoost(stepped);
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -915,7 +935,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                     .addComponent(ckMoreOptions)
                     .addComponent(ckIgnoreValidity))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(spOtherFilter, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE)
+                .addComponent(spOtherFilter, javax.swing.GroupLayout.DEFAULT_SIZE, 127, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(ckMaximize)

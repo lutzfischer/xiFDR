@@ -163,7 +163,7 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="getDBFDR" max="32767" attributes="0"/>
+                                  <Component id="getDBFDR" pref="853" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -254,7 +254,7 @@
                                                       <Component id="rbMZLowBetter" min="-2" max="-2" attributes="0"/>
                                                       <Component id="rbMZHighBetter" alignment="0" min="-2" max="-2" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace min="88" pref="437" max="32767" attributes="0"/>
+                                                  <EmptySpace min="88" pref="433" max="32767" attributes="0"/>
                                               </Group>
                                               <Component id="cbMZMatchScoreName" alignment="1" max="32767" attributes="0"/>
                                           </Group>
@@ -980,6 +980,9 @@
                                   <Events>
                                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txtSumPSMActionPerformed"/>
                                   </Events>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumPSMXL">
                                   <Properties>
@@ -996,6 +999,9 @@
                                   <Events>
                                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txtSumPSMXLActionPerformed"/>
                                   </Events>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumPSMLinear">
                                   <Properties>
@@ -1012,6 +1018,9 @@
                                   <Events>
                                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txtSumPSMLinearActionPerformed"/>
                                   </Events>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                               </SubComponents>
                             </Container>
@@ -1040,6 +1049,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumPepPairsXL">
                                   <Properties>
@@ -1053,6 +1065,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumPepPairsLinear">
                                   <Properties>
@@ -1066,6 +1081,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                               </SubComponents>
                             </Container>
@@ -1102,6 +1120,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JLabel" name="jLabel30">
                                 </Component>
@@ -1167,6 +1188,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumLinksBetween">
                                   <Properties>
@@ -1180,6 +1204,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumLinksInternal">
                                   <Properties>
@@ -1193,6 +1220,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                               </SubComponents>
                             </Container>
@@ -1229,6 +1259,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumProtGroupPairsBetween">
                                   <Properties>
@@ -1242,6 +1275,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumProtGroupPairsInternal">
                                   <Properties>
@@ -1255,6 +1291,9 @@
                                       <Dimension value="null"/>
                                     </Property>
                                   </Properties>
+                                  <AuxValues>
+                                    <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+                                  </AuxValues>
                                 </Component>
                               </SubComponents>
                             </Container>
@@ -1299,10 +1338,12 @@
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="rbCSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace pref="538" max="32767" attributes="0"/>
+                                          <EmptySpace max="32767" attributes="0"/>
+                                          <Component id="btnCalcRanges" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace type="separate" max="-2" attributes="0"/>
                                           <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
                                       </Group>
-                                      <Component id="lpCsvOutLocal" max="32767" attributes="0"/>
+                                      <Component id="lpCsvOutLocal" pref="757" max="32767" attributes="0"/>
                                   </Group>
                                   <EmptySpace min="-2" pref="23" max="-2" attributes="0"/>
                               </Group>
@@ -1330,6 +1371,7 @@
                                   <Group type="103" groupAlignment="3" attributes="0">
                                       <Component id="rbCSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="btnWrite" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="btnCalcRanges" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
                                   <EmptySpace pref="243" max="32767" attributes="0"/>
                               </Group>
@@ -1416,6 +1458,15 @@
                           <Properties>
                             <Property name="text" type="java.lang.String" value="Language"/>
                           </Properties>
+                        </Component>
+                        <Component class="javax.swing.JButton" name="btnCalcRanges">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Calculate Ranges"/>
+                            <Property name="enabled" type="boolean" value="false"/>
+                          </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCalcRangesActionPerformed"/>
+                          </Events>
                         </Component>
                       </SubComponents>
                     </Container>

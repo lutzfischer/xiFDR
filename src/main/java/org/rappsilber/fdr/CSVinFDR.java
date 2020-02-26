@@ -20,8 +20,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +33,11 @@ import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.PSM;
+import org.rappsilber.fdr.utils.CalculateWriteUpdate;
+import org.rappsilber.fdr.utils.MaximisingStatus;
+import org.rappsilber.fdr.utils.MaximizingUpdate;
 import org.rappsilber.utils.AutoIncrementValueMap;
 import org.rappsilber.utils.RArrayUtils;
-import static org.rappsilber.utils.StringUtils.sixDigits;
 import org.rappsilber.utils.UpdatableChar;
 
 /**
@@ -51,6 +51,7 @@ public class CSVinFDR extends OfflineFDR {
     private Character delimiter;
     private Locale numberlocale;// = Locale.getDefault();
     private Character quote;
+    private String forwardPattern = null;
     public static String[][] DEFAULT_COLUMN_MAPPING=new String[][]{
         {"matchid", "spectrummatchid", "match id", "spectrum match id", "psmid"},
         {"isdecoy", "is decoy", "reverse", "decoy"},
@@ -199,6 +200,25 @@ public class CSVinFDR extends OfflineFDR {
         Integer cPepDoublets = getColumn(csv,"peptides with doublets",true);
         Integer cPepMinCoverage = getColumn(csv,"minimum peptide coverage",true);
         Integer cRank = getColumn(csv,"rank",true);
+        
+        ArrayList<Integer> peaks = new ArrayList<>();
+        String[] header = csv.getHeader();
+        for (int c =0; c< header.length; c++) {
+            if (header[c].startsWith("peak_")) {
+                peaks.add(c);
+            }
+        }
+        
+        ArrayList<Integer> forwardCols = new ArrayList<>();
+        if (forwardPattern != null) {
+            Pattern p = Pattern.compile(forwardPattern);
+            for (int c =0; c< header.length; c++) {
+                if (p.matcher(header[c]).matches()) {
+                    forwardCols.add(c);
+                }
+            }
+            
+        }
         
         int noID = 0;
         AutoIncrementValueMap<String> PSMIDs = new AutoIncrementValueMap<String>();
@@ -457,6 +477,14 @@ public class CSVinFDR extends OfflineFDR {
                     
                 }
                 
+                for (int c : peaks) {
+                    psm.addOtherInfo(header[c], csv.getDouble(c));
+                }
+
+                for (int c : forwardCols) {
+                    psm.addOtherInfo(header[c], csv.getValue(c));
+                }
+                
             }
             
         } catch (Exception ex) {
@@ -584,6 +612,7 @@ public class CSVinFDR extends OfflineFDR {
                 + "--inputlocale            local to use to interpret numbers\n"
                 + "                         default: en\n "
                 + "--delimiter              what separates fields in the file\n "
+                + "--forward=X              additional collumns to be forwarded\n "
                 + "--quote                  how are text fields qoted\n"
                 + "                         e.g. each field that contains the\n"
                 + "                         delimiter needs to be in quotes\n ";
@@ -608,6 +637,8 @@ public class CSVinFDR extends OfflineFDR {
                 for (String mp : mappairs){ 
                     commandLineColumnMapping.add(mp.split(":"));
                 }
+            } else if(arg.toLowerCase().startsWith("--forward=")) {
+                forwardPattern=arg.substring("--forward=".length());
             } else if(arg.toLowerCase().startsWith("--quote=")) {
                 String quotechar=arg.substring("--quote=".length());
                 Character q;
@@ -780,10 +811,41 @@ public class CSVinFDR extends OfflineFDR {
         }
         
         Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
+        final CalculateWriteUpdate cu = new CalculateWriteUpdate() {
+            @Override
+            public void setStatus(MaximisingStatus state) {
+            }
+
+            @Override
+            public void setStatusText(String text) {
+            }
+
+            @Override
+            public void reportError(String text, Exception ex) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, text, ex);
+            }
+
+            @Override
+            public void setCurrent(double psm, double peptidepair, double protein, double link, double ppi) {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "next round: PSM FDR: " +psm + " PepPairFDR:" + peptidepair + " Protein FDR:"+protein + " LinkFDR:" + link + " PPI FDR:" + ppi);
+            }
+
+            @Override
+            public void setComplete() {
+                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate Write Finished");
+            }
+
+            @Override
+            public boolean stopped() {
+                return false;
+            }
+            
+            
+        };
         if (((DecimalFormat)ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator() == ',') {
-            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";", settings);
+            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";", settings, cu);
         } else 
-            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings);
+            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings, cu);
 
         System.exit(0);
 
@@ -838,6 +900,20 @@ public class CSVinFDR extends OfflineFDR {
 
     public Collection<CsvCondition> getFilters() {
         return m_filter;
+    }
+
+    /**
+     * @return the forwardPattern
+     */
+    public String getForwardPattern() {
+        return forwardPattern;
+    }
+
+    /**
+     * @param forwardPattern the forwardPattern to set
+     */
+    public void setForwardPattern(String forwardPattern) {
+        this.forwardPattern = forwardPattern;
     }
     
 }

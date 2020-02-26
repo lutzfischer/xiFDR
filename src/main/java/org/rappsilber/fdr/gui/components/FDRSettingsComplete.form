@@ -210,7 +210,7 @@
                   <Component id="ckIgnoreValidity" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Component id="spOtherFilter" pref="96" max="32767" attributes="0"/>
+              <Component id="spOtherFilter" pref="127" max="32767" attributes="0"/>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="ckMaximize" alignment="3" min="-2" max="-2" attributes="0"/>

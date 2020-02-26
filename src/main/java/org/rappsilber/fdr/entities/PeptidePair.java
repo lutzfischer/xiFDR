@@ -52,7 +52,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     /**
      * length groups used for doing a length depended FDR-grouping
      */
-    protected static int[] lenghtGroup;
+    protected static int[] lenghtGroup = new int[]{0};
 //    /** meaningful names for the FDR-groups */
 //    public static HashMap<Integer, String> fdrGroupNames = new HashMap<Integer, String>();
     /**
