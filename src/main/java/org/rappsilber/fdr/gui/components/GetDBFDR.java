@@ -26,6 +26,8 @@ import org.rappsilber.utils.RArrayUtils;
 public class GetDBFDR extends javax.swing.JPanel {
     javax.swing.JButton btnReadFilter = new javax.swing.JButton();
     javax.swing.JButton btnSelectIDS = new javax.swing.JButton();
+    javax.swing.JLabel lblSubScorePattern = new javax.swing.JLabel("Forward SubScores");
+    javax.swing.JTextField txtSubScorePattern = new javax.swing.JTextField("");
     public javax.swing.JButton btnRead = new javax.swing.JButton();
     public javax.swing.JCheckBox ckAdd = new javax.swing.JCheckBox();
     public javax.swing.JCheckBox ckNormalize = new javax.swing.JCheckBox();
@@ -121,6 +123,8 @@ public class GetDBFDR extends javax.swing.JPanel {
                 getSearch.setSelectedSearchIds(iids);
             }
         });
+        
+        txtSubScorePattern.setToolTipText("A RegEx that defines what subscores should be forwarded into the PSM-file");
 
         ckToprankingOnly.setEnabled(true);        
         ckToprankingOnly.setSelected(true);        
@@ -143,6 +147,10 @@ public class GetDBFDR extends javax.swing.JPanel {
                         .addComponent(btnReadFilter)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnSelectIDS)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblSubScorePattern)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtSubScorePattern)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(ckNormalize)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -176,7 +184,9 @@ public class GetDBFDR extends javax.swing.JPanel {
                     .addComponent(ckNormalize)
                     .addComponent(btnGetDBSize)
                     .addComponent(btnReadFilter)
-                    .addComponent(btnSelectIDS))
+                    .addComponent(btnSelectIDS)
+                    .addComponent(lblSubScorePattern)
+                    .addComponent(txtSubScorePattern, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
         
@@ -212,6 +222,9 @@ public class GetDBFDR extends javax.swing.JPanel {
             // Establish network connection to database
             Connection connection = getSearch.getConnection();
             final DBinFDR ofdr = new DBinFDR();
+            if (!txtSubScorePattern.getText().trim().isEmpty()) {
+                ofdr.setSubScoresToForward(txtSubScorePattern.getText());
+            }
             ofdr.setDatabaseProvider(getSearch);
             m_fdr = ofdr;
             btnGetDBSize.setEnabled(true);

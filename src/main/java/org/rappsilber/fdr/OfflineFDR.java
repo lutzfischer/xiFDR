@@ -116,10 +116,10 @@ public abstract class OfflineFDR {
      */
     HashMap<String, Integer> protpairToID = new HashMap<>();
 
-    private boolean psm_directional = false;
-    private boolean peptides_directional = false;
-    private boolean links_directional = false;
-    private boolean ppi_directional = false;
+//    private boolean psm_directional = false;
+//    private boolean peptides_directional = false;
+//    private boolean links_directional = false;
+//    private boolean ppi_directional = false;
     protected int m_maximum_summed_peplength = Integer.MAX_VALUE;
     protected FDRLevel maximizeWhat = null;
     
@@ -167,7 +167,6 @@ public abstract class OfflineFDR {
     public int m_minPepLength = 0;
 
     public int commandlineFDRDigits = 2;
-    private boolean uniquePSMs = true;
     
     /**
      * do we have PSMs with crosslinker-stubs. 
@@ -187,31 +186,6 @@ public abstract class OfflineFDR {
     private boolean isNormalized = false;
 
     Boolean isNormalizedByDecoy = null;
-    /**
-     * what is the combinatorial limit of ambiguity, that is accepted for a
-     * link.
-     * <br/>0 indicates no limit
-     */
-    protected int m_maximumLinkAmbiguity = 0;
-    /**
-     * If a ProteinGroup contains more then the given number of proteins, then
-     * this group is ignored.
-     * <br/>0 indicates that there is no limit.
-     * <br/>0 indicates no limit
-     */
-    protected int m_maximumProteinAmbiguity = 0;
-    /**
-     * If a ProteinGroupPair spans more then the given number of proteins the
-     * pair is ignored
-     * <br/>0 indicates that there is no limit.
-     * <br/>0 indicates no limit
-     */
-    protected int m_maximumProteinPairAmbiguity = 0;
-
-    /**
-     * group matches by protein pairs
-     */
-    private boolean groupByProteinPair = false;
 
     /**
      * how many decoys does a fdr group need to have to be reported as result
@@ -234,9 +208,6 @@ public abstract class OfflineFDR {
     ArrayList<String> runs = new ArrayList<>();
     private Locale outputlocale = Locale.getDefault();
     private NumberFormat numberFormat = NumberFormat.getNumberInstance(outputlocale);
-//    private String localNumberGroupingSeperator;
-//    private String localNumberDecimalSeparator;
-//    private String quoteDoubles;
     private boolean stopMaximizing = false;
 
     private ArrayList<String> extraColumns = new ArrayList<>();
@@ -264,14 +235,14 @@ public abstract class OfflineFDR {
      * @return the uniquePSMs
      */
     public boolean filterUniquePSMs() {
-        return uniquePSMs;
+        return settings.filterToUniquePSM();
     }
 
     /**
      * @param uniquePSMs the uniquePSMs to set
      */
     public void setFilterUniquePSMs(boolean uniquePSMs) {
-        this.uniquePSMs = uniquePSMs;
+        this.settings.setFilterToUniquePSM(uniquePSMs);
     }
 
 //    protected HashMap<FDRLevel,HashMap<Integer,SubGroupFdrInfo>> GroupedFDRs = new HashMap<FDRLevel, HashMap<Integer, SubGroupFdrInfo>>();
@@ -605,56 +576,56 @@ public abstract class OfflineFDR {
      * @return the peptides_directional
      */
     public boolean isPeptides_directional() {
-        return peptides_directional;
+        return settings.isPeptidePairDirectional();
     }
 
     /**
      * @param peptides_directional the peptides_directional to set
      */
     public void setPeptides_directional(boolean peptides_directional) {
-        this.peptides_directional = peptides_directional;
+        settings.setPeptidePairDirectional(peptides_directional);
     }
 
     /**
      * @return the links_directional
      */
     public boolean isLinks_directional() {
-        return links_directional;
+        return settings.isLinkDirectional();
     }
 
     /**
      * @param links_directional the links_directional to set
      */
     public void setLinks_directional(boolean links_directional) {
-        this.links_directional = links_directional;
+        settings.setLinkDirectional(links_directional);
     }
 
     /**
      * @return the ppi_directional
      */
     public boolean isPpi_directional() {
-        return ppi_directional;
+        return settings.isPPIDirectional();
     }
 
     /**
      * @param ppi_directional the ppi_directional to set
      */
     public void setPpi_directional(boolean ppi_directional) {
-        this.ppi_directional = ppi_directional;
+        settings.setPPIDirectional(ppi_directional);
     }
 
     /**
      * @return the psm_directional
      */
     public boolean isPsm_directional() {
-        return psm_directional;
+        return settings.isPSMDirectional();
     }
 
     /**
      * @param psm_directional the psm_directional to set
      */
     public void setPsm_directional(boolean psm_directional) {
-        this.psm_directional = psm_directional;
+        this.settings.setPSMDirectional(psm_directional);
     }
 
     public static String getLongVersionString() {
@@ -829,6 +800,7 @@ public abstract class OfflineFDR {
 
     public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits, FDRSettings settings, final CalculateWriteUpdate update) throws FileNotFoundException {
         FDRResult result = null;
+        setSettings(settings);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "BaseName: " + baseName);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Seperator: " + seperator);
@@ -894,7 +866,7 @@ public abstract class OfflineFDR {
                                     result = this.calculateFDR(s, true);
                                 } else {
 
-                                    MaximisingStatus m = this.maximise(s, settings.doOptimize(), uniquePSMs, new MaximizingUpdate() {
+                                    MaximisingStatus m = this.maximise(s, settings.doOptimize(), settings.filterToUniquePSM(), new MaximizingUpdate() {
                                         @Override
                                         public void setStatus(MaximisingStatus state) {
                                             update.setStatus(state);
@@ -982,36 +954,36 @@ public abstract class OfflineFDR {
             }
         }
 
-        if (m_maximumProteinAmbiguity > 0 && m_minPepLength == 0) {
+        if (settings.getMaxProteinAmbiguity() > 0 && settings.getMinPeptideLength() == 0) {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
-                if (p.getScore() > 0 && p.getPeptide1().getProteins().size() <= m_maximumProteinAmbiguity
-                        && p.getPeptide2().getProteins().size() <= m_maximumProteinAmbiguity) {
+                if (p.getScore() > 0 && p.getPeptide1().getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && p.getPeptide2().getProteins().size() <= settings.getMaxProteinAmbiguity()) {
                     inputPSM.add(p);
                 }
             }
-        } else if (m_maximumProteinAmbiguity > 0 && m_minPepLength > 0) {
+        } else if (settings.getMaxProteinAmbiguity() > 0 && settings.getMinPeptideLength() > 0) {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
                 Peptide pep1 = p.getPeptide1();
                 Peptide pep2 = p.getPeptide2();
 
-                if (p.getScore() > 0 && pep1.getProteins().size() <= m_maximumProteinAmbiguity
-                        && pep2.getProteins().size() <= m_maximumProteinAmbiguity
-                        && (pep1 == Peptide.NOPEPTIDE || pep1.length() >= m_minPepLength || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
-                        && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= m_minPepLength || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
+                if (p.getScore() > 0 && pep1.getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && pep2.getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && (pep1 == Peptide.NOPEPTIDE || pep1.length() >= settings.getMinPeptideLength() || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
+                        && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= settings.getMinPeptideLength() || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
                     inputPSM.add(p);
                 }
             }
-        } else if (m_minPepLength > 0) {
+        } else if (settings.getMinPeptideLength() > 0) {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
                 if (p.getScore() > 0) {
                     Peptide pep1 = p.getPeptide1();
                     Peptide pep2 = p.getPeptide2();
 
-                    if ((pep1 == Peptide.NOPEPTIDE || pep1.length() >= m_minPepLength || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
-                            && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= m_minPepLength || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
+                    if ((pep1 == Peptide.NOPEPTIDE || pep1.length() >= settings.getMinPeptideLength() || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
+                            && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= settings.getMinPeptideLength() || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
                         inputPSM.add(p);
                     }
                 }
@@ -1051,9 +1023,9 @@ public abstract class OfflineFDR {
 //            pp.setFDRGroup(pp.getFDRGroup()+" z"+pp.getCharge());
 //        }
         result.input = inputPSM;
-        result.minPeptideLength = m_minPepLength;
-        result.maximumProteinAmbiguity = m_maximumProteinAmbiguity;
-        result.maximumLinkAmbiguity = m_maximumLinkAmbiguity;
+        result.minPeptideLength = settings.getMinPeptideLength();
+        result.maximumProteinAmbiguity = settings.getMaxProteinAmbiguity();
+        result.maximumLinkAmbiguity = settings.getMaxLinkAmbiguity();
 
         if (settings.getGroupByCrosslinkerStubs()) {
             for (PSM p : inputPSM) {
@@ -1648,6 +1620,11 @@ public abstract class OfflineFDR {
         result.psmFDR.retainAll(keep);
     }
 
+    public void setSettings(FDRSettings settings) {
+        this.settings = new FDRSettingsImpl(settings);
+    }
+    
+    
     public FDRResult calculateFDR(FDRSettings settings, boolean setElementFDR) {
         FDRResult result = new FDRResult();
         this.settings = settings;
@@ -2129,6 +2106,7 @@ public abstract class OfflineFDR {
             summaryOut.println("\"unique PSMs\"");
         }
 
+
         if (settings.getMinPeptideCoverageFilter() > 0) {
             summaryOut.println("\"minimum peptide coverage\"" + seperator + settings.getMinPeptideCoverageFilter());
         } else {
@@ -2140,10 +2118,10 @@ public abstract class OfflineFDR {
         } else {
             summaryOut.println();
         }
-
+        
         summaryOut.println("\n\"Accepted ambiguity:\"");
-        summaryOut.println("\"Links for one peptide pair\"" + seperator + "" + (m_maximumLinkAmbiguity == 0 ? "unlimited" : m_maximumLinkAmbiguity));
-        summaryOut.println("\"Protein pairs for one peptide pair\"" + seperator + "" + (m_maximumProteinAmbiguity == 0 ? "unlimited" : m_maximumProteinAmbiguity));
+        summaryOut.println("\"Links for one peptide pair\"" + seperator + "" + (settings.getMaxLinkAmbiguity() == 0 ? "unlimited" : settings.getMaxLinkAmbiguity()));
+        summaryOut.println("\"Protein pairs for one peptide pair\"" + seperator + "" + (settings.getMaxProteinAmbiguity() == 0 ? "unlimited" : settings.getMaxProteinAmbiguity()));
         summaryOut.println();
 
         if (ignoreGroupsSetting) {
@@ -2151,6 +2129,21 @@ public abstract class OfflineFDR {
         } else {
             summaryOut.println("\"Length-Group:\",\"" + RArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator) + "\"");
         }
+        summaryOut.println();
+        if (settings.doOptimize() != null) {
+            summaryOut.println("\"Boost\",\"" + settings.doOptimize().m_shortname +"\"," +  (settings.getBoostBetween() ? "Between" :"")+ ", steps:,"+settings.getBoostingSteps());
+            summaryOut.println("\"Boost Include\",\"" + 
+                    (settings.boostDeltaScore() ? "delta score;":"")+
+                    (settings.boostMinFragments()? "Min Fragments;":"")+
+                    (settings.boostPepCoverage() ? "min Coverage;":"")+
+                    (settings.boostPSMs()? "PSMs;":"")+
+                    (settings.boostPeptidePairs() ? "Peptide Pairs;":"")+
+                    (settings.boostProteins()? "Protein Groups;":"")+
+                    (settings.boostLinks() ? "Residue Pairs;":"") +
+                    "\""
+                    );
+            
+        } 
         summaryOut.println();
 
 //        summaryOut.println("Input PSMs" +seperator + "fdr PSM" +seperator + "fdr peptide pairs" +seperator + "fdr links" +seperator + "fdr ppi");
@@ -2222,7 +2215,7 @@ public abstract class OfflineFDR {
 
     protected void peptidePairsToProteinGroups(ArrayList<PeptidePair> forwardPeps, SelfAddHashSet<ProteinGroup> pepProteinGroups) {
         // do we care about ambiguity
-        if (m_maximumProteinAmbiguity > 0) {
+        if (settings.getMaxProteinAmbiguity() > 0) {
             // yes we do
             // PeptidePairs to Protein groups
             peploop:
@@ -2231,7 +2224,7 @@ public abstract class OfflineFDR {
                 for (Peptide p : pp.getPeptides()) {
                     ProteinGroup pg = p.getProteinGroup();
 
-                    if (pg.proteinCount() > m_maximumProteinAmbiguity) {
+                    if (pg.proteinCount() > settings.getMaxProteinAmbiguity()) {
                         continue peploop;
                     }
 
@@ -2332,14 +2325,14 @@ public abstract class OfflineFDR {
      * @return the m_maximumLinkAmbiguity
      */
     public int getMaximumLinkAmbiguity() {
-        return m_maximumLinkAmbiguity;
+        return settings.getMaxLinkAmbiguity();
     }
 
     /**
      * @param m_maximumLinkAmbiguity the m_maximumLinkAmbiguity to set
      */
     public void setMaximumLinkAmbiguity(int m_maximumLinkAmbiguity) {
-        this.m_maximumLinkAmbiguity = m_maximumLinkAmbiguity;
+        settings.setMaxLinkAmbiguity(m_maximumLinkAmbiguity);
     }
 
     /**
@@ -2360,18 +2353,15 @@ public abstract class OfflineFDR {
      * @return the m_maximumProteinAmbiguity
      */
     public int getMaximumProteinAmbiguity() {
-        return m_maximumProteinAmbiguity;
+        return settings.getMaxProteinAmbiguity();
     }
 
-    public int getMaximumProteinPairAmbiguity() {
-        return m_maximumProteinPairAmbiguity;
-    }
 
     /**
      * @param m_maximumProteinAmbiguity the m_maximumProteinAmbiguity to set
      */
     public void setMaximumProteinAmbiguity(int m_maximumProteinAmbiguity) {
-        this.m_maximumProteinAmbiguity = m_maximumProteinAmbiguity;
+        this.settings.setMaxProteinAmbiguity(m_maximumProteinAmbiguity);
     }
 
 //    private <T extends FDRSelfAdd<T>> HashedArrayList<T> fdr(double fdr, double safetyfactor, Collection<T> c, HashMap<Integer, Double> nextFDR, HashMap<Integer, Integer> inputCounts, HashMap<Integer, Integer> resultCounts, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR) {
@@ -4182,24 +4172,6 @@ public abstract class OfflineFDR {
     }
 
     /**
-     * group matches by protein pairs
-     *
-     * @return the groupByProteinPair
-     */
-    public boolean isGroupByProteinPair() {
-        return groupByProteinPair;
-    }
-
-    /**
-     * group matches by protein pairs
-     *
-     * @param groupByProteinPair the groupByProteinPair to set
-     */
-    public void setGroupByProteinPair(boolean groupByProteinPair) {
-        this.groupByProteinPair = groupByProteinPair;
-    }
-
-    /**
      * how many decoys does a fdr group need to have to be reported as result
      *
      * @return the minDecoys
@@ -4221,7 +4193,7 @@ public abstract class OfflineFDR {
 
 
     public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate) {
-        return maximise(fdrSettings, level, between, stateUpdate, true);
+        return maximise(fdrSettings, level, between, stateUpdate, fdrSettings.twoStepOptimization());
     }
 
     public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate, boolean twoStep) {

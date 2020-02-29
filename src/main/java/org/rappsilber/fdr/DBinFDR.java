@@ -101,6 +101,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     private HashSet<String> additionalInfoNames = new HashSet<>();
     
     private String command_line_auto_validate = null;
+    
+    private Pattern subScoresToForward;
 
 
     private Sequence loadSequence(long id) throws SQLException {
@@ -588,7 +590,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     public void readDB(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries) throws SQLException {
 
         class psminfo {
-
             ArrayList<Integer> protein1IDs = new ArrayList<>();
             ArrayList<Integer> protein2IDs = new ArrayList<>();
             ArrayList<Integer> protein1Positions = new ArrayList<>();
@@ -659,6 +660,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
             ArrayList<Integer> peaks = new ArrayList<>();
             ArrayList<String> scorenames = new ArrayList<>();
+            ArrayList<Integer> scoresForwarded = new ArrayList<>();
+            
             if (xi3db) {
                 // retrive the subscore names
                 String scoreNameQuerry = 
@@ -678,6 +681,9 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                                 cPepCoverage2 = scorenames.size();
                             } if (s.startsWith("peak_")) {
                                 peaks.add(scorenames.size());
+                            }
+                            if (subScoresToForward != null && subScoresToForward.matcher(s).matches()) {
+                                scoresForwarded.add(scorenames.size());
                             }
 
                             scorenames.add(s);
@@ -1083,6 +1089,11 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     for (Integer p : peaks) {
                         psm.addOtherInfo(scorenames.get(p), scorevalues[p]);
                     }
+                    
+                    for (Integer p : scoresForwarded) {
+                        psm.addOtherInfo(scorenames.get(p), scorevalues[p]);
+                    }
+                    
                     Double xlModmassPre = rs.getDouble(clMassColumn);
                     Double xlModmass = xlmodmasses.get(xlModmassPre);
                     if (xlModmass == null) {
@@ -2744,7 +2755,27 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         super.cleanup(); //To change body of generated methods, choose Tools | Templates.
         m_db_autoclosetimer.cancel();
     }
+
+    /**
+     * @return the subScoresToForward
+     */
+    public Pattern getSubScoresToForward() {
+        return subScoresToForward;
+    }
+
+    /**
+     * @param subScoresToForward the subScoresToForward to set
+     */
+    public void setSubScoresToForward(Pattern subScoresToForward) {
+        this.subScoresToForward = subScoresToForward;
+    }
     
+    /**
+     * @param subScoresToForward the subScoresToForward to set
+     */
+    public void setSubScoresToForward(String subScoresToForward) {
+        this.subScoresToForward = Pattern.compile(subScoresToForward);
+    }
     
             
     

@@ -437,7 +437,6 @@ public class FDRGUI extends javax.swing.JFrame {
         getFdr().setMinPepPerProteinGroupPair(fdrSettings.getMinPPIPepCount());
 
         getFdr().setMinDecoys(fdrSettings.getMinTD());
-        getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
 
         int lengthSteps = tblPepLength.getRowCount();
         int[] pepLength = new int[lengthSteps];
@@ -1002,7 +1001,7 @@ public class FDRGUI extends javax.swing.JFrame {
         setEnableWrite(false);
         setEnableRead(false);
         final Double saftyfactor = (Double) fdrSettings.getReportFactor();
-
+        ofdr.setSettings(fdrSettings);
         prepareFDRCalculation();
 
         Runnable runnable = new Runnable() {
@@ -1189,7 +1188,6 @@ public class FDRGUI extends javax.swing.JFrame {
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsMedium);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsSimple);
             
-            getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
             getFdr().setMinDecoys(fdrSettings.getMinTD());
             
             fdrSettings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
@@ -3213,4 +3211,12 @@ public class FDRGUI extends javax.swing.JFrame {
     public org.rappsilber.fdr.gui.components.FDRSettingsComplete getFdrSettingsComplete() {
         return fdrSettingsComplete;
     }
+
+    /**
+     * @return the fdrSettingsComplete
+     */
+    public org.rappsilber.fdr.gui.components.FDRSettingsMedium getFdrSettingsMedium() {
+        return fdrSettingsMedium;
+    }
+
 }

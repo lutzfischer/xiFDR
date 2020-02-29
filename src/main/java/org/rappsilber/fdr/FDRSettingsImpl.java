@@ -64,6 +64,15 @@ public class FDRSettingsImpl implements FDRSettings {
     private boolean ignoreValidityChecks = true;
     private boolean groubByCrosslinkerStubs = false;
     private boolean twoStepBoost = true;
+
+    public FDRSettingsImpl() {
+    }
+    
+    
+    public FDRSettingsImpl(FDRSettings settings) {
+        transferSettings(settings, this);
+    }
+    
     
     @Override
     public void addCalcListener(ActionListener al) {

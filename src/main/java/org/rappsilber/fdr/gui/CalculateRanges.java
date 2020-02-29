@@ -280,6 +280,11 @@ public class CalculateRanges extends javax.swing.JFrame {
                         fdrgui.getFdrSettingsComplete().setProteinGroupFDR(state.showProtFDR);
                         fdrgui.getFdrSettingsComplete().setProteinGroupLinkFDR(state.showLinkFDR);
 
+                        fdrgui.getFdrSettingsMedium().setPeptidePairFDR(state.showPepFDR);
+                        fdrgui.getFdrSettingsMedium().setPSMFDR(state.showPSMFDR);
+                        fdrgui.getFdrSettingsMedium().setPeptidePairFDR(state.showPepFDR);
+                        fdrgui.getFdrSettingsMedium().setProteinGroupFDR(state.showProtFDR);
+                        fdrgui.getFdrSettingsMedium().setProteinGroupLinkFDR(state.showLinkFDR);
                         
 
                         fdrgui.txtSumPSM.setText(state.showPSMCount);
@@ -332,21 +337,7 @@ public class CalculateRanges extends javax.swing.JFrame {
         };
 
         
-        btnRun.setEnabled(false);
-        fdrgui.setEnableRead(false);
-        fdrgui.setEnableWrite(false);
-        fdrgui.setEnableCalc(false);
-        for (Component c : this.getContentPane().getComponents()) {
-            if (c instanceof JSpinner) {
-                c.setEnabled(false);
-            }
-        }
-        
-        lblCurrent.setVisible(true);
-        txtCurrentPSM.setVisible(true);
-        txtCurrentPep.setVisible(true);
-        txtCurrentRes.setVisible(true);
-        txtCurrentPPI.setVisible(true);
+        setRunning(true);
         
         Runnable rangeCalc = new Runnable() {
             public void run() {
@@ -364,6 +355,8 @@ public class CalculateRanges extends javax.swing.JFrame {
                         fdrgui.setCSVOutFile();
                         FDRSettingsImpl settings = new FDRSettingsImpl();
                         settings.setAll(fdrgui.getFdrSettings());
+                        fdrgui.getFdr().setSettings(settings);
+                        fdrgui.prepareFDRCalculation();
                         fdrgui.getFdr().calculateWriteFDR(fdrgui.getCsvOut().folder,
                                 fdrgui.getCsvOut().basename, fdrgui.getSeparator(fdrgui.getFdr()), settings, mu);
                     } catch (FileNotFoundException ex) {
@@ -373,20 +366,8 @@ public class CalculateRanges extends javax.swing.JFrame {
                     EventQueue.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            btnRun.setEnabled(true);
-                            fdrgui.setEnableRead(true);
-                            fdrgui.setEnableCalc(true);
-                            lblCurrent.setVisible(false);
-                            txtCurrentPSM.setVisible(false);
-                            txtCurrentPep.setVisible(false);
-                            txtCurrentRes.setVisible(false);
-                            txtCurrentPPI.setVisible(false);
+                            setRunning(false);
                             fdrgui.setStatus("");
-                            for (Component c : CalculateRanges.this.getContentPane().getComponents()) {
-                                if (c instanceof JSpinner) {
-                                    c.setEnabled(true);
-                                }
-                            }
                         }
                     });
                 }
@@ -396,6 +377,24 @@ public class CalculateRanges extends javax.swing.JFrame {
         t.start();
         
     }//GEN-LAST:event_btnRunActionPerformed
+
+    protected void setRunning(boolean running) {
+        btnRun.setEnabled(!running);
+        fdrgui.setEnableRead(!running);
+        fdrgui.setEnableWrite(!running);
+        fdrgui.setEnableCalc(!running);
+        for (Component c : this.getContentPane().getComponents()) {
+            if (c instanceof JSpinner) {
+                c.setEnabled(!running);
+            }
+        }
+        
+        lblCurrent.setVisible(running);
+        txtCurrentPSM.setVisible(running);
+        txtCurrentPep.setVisible(running);
+        txtCurrentRes.setVisible(running);
+        txtCurrentPPI.setVisible(running);
+    }
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         

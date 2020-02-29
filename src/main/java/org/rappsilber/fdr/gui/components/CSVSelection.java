@@ -741,6 +741,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         ckCSVMarkModifications.setText("Flag Modifications");
 
+        txtForwardColumns.setToolTipText("A Regular Expression defining what addtional columns should be forwarded to the PSM-file");
+
         jLabel1.setText("Forward Columns");
 
         javax.swing.GroupLayout pXiConfigLayout = new javax.swing.GroupLayout(pXiConfig);
