@@ -530,7 +530,7 @@ public class FDRImplement implements FDR {
         });
 
         // total fdr rate
-        double prevFDR = (TD - DD) / TT;
+        double prevFDR = ((TD+1) - DD) / TT;
         int prevTDIndex = groupSize - 1;
 
 //        if (!isPSMScoreHighBetter())
@@ -580,7 +580,7 @@ public class FDRImplement implements FDR {
                                 e = group.get(i);
                                 e.setFDR(setFDR);
                                 e.setHigherFDR(lastFDR);
-                                e.setHigherTD(lastTDElement);
+                                e.setHigherFDRTD(lastTDElement);
                                 ret.add(e);
 
                                 if (e.isTT()) {
@@ -599,7 +599,7 @@ public class FDRImplement implements FDR {
                                     TD--;
                                     info.resultTD++;
                                     for (int l = i + 1; l <= lastTDIndex; l++) {
-                                        group.get(l).setLowerTD(e);
+                                        group.get(l).setLowerFDRTD(e);
                                     }
                                     lastTDIndex = i;
                                     lastTDElement = e;
@@ -632,7 +632,7 @@ public class FDRImplement implements FDR {
 
                             T best = group.get(0);
                             for (int l = 0; l <= lastTDIndex; l++) {
-                                group.get(l).setLowerTD(best);
+                                group.get(l).setLowerFDRTD(best);
                             }
 
                         } else {
