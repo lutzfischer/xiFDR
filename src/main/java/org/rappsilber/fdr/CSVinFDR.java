@@ -87,12 +87,14 @@ public class CSVinFDR extends OfflineFDR {
         {"crosslinker mass","cross linker mass","crossLinkerModMass","cross linker mod mass","crosslinkerModMass"},
         {"peptide coverage1", "peptide1 unique matched non lossy coverage", "unique_peak_primary_coverage_p1"},
         {"peptide coverage2", "peptide2 unique matched non lossy coverage", "unique_peak_primary_coverage_p2"},
-        {"peptide1 fragments", "peptide1 unique matched conservative", "conservative_fragsites_p1"},
-        {"peptide2 fragments", "peptide2 unique matched conservative", "conservative_fragsites_p2"},
+        {"peptide1 fragments", "peptide1 unique matched conservative", "conservative_fragsites_p1", "p1fragments"},
+        {"peptide2 fragments", "peptide2 unique matched conservative", "conservative_fragsites_p2", "p2fragments"},
         {"peptides with stubs", "fragment CCPepFragment"},
         {"peptides with doublets", "fragment CCPepDoubletFound"},
-        {"minimum peptide coverage", "min coverage pp"},
+        {"minimum peptide coverage", "min coverage pp","minpepcoverage"},
         {"delta", "delta score", "dscore"},
+        {"experimental mz", "experimental m/z", "exp mz", "exp m/z"},
+        {"calculated mass", "calc mass"}
     };
     
     public CSVinFDR() {
