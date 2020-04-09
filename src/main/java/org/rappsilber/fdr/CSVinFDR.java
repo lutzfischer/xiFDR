@@ -35,7 +35,6 @@ import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.MaximisingStatus;
-import org.rappsilber.fdr.utils.MaximizingUpdate;
 import org.rappsilber.utils.AutoIncrementValueMap;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.UpdatableChar;
@@ -444,6 +443,7 @@ public class CSVinFDR extends OfflineFDR {
 
                     }
                 }
+                psm.reTestInternal();
                 if (cDelta != null)
                     psm.setDeltaScore(csv.getDouble(cDelta));
                 

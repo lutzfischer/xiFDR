@@ -7,7 +7,6 @@ package org.rappsilber.fdr;
 import java.awt.GraphicsEnvironment;
 import org.rappsilber.fdr.result.FDRResult;
 import java.io.FileNotFoundException;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -25,7 +24,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -39,7 +37,6 @@ import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.entities.ProteinGroup;
 import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.MaximisingStatus;
-import org.rappsilber.fdr.utils.MaximizingUpdate;
 import rappsilber.ms.crosslinker.CrossLinker;
 import rappsilber.ms.lookup.peptides.PeptideTree;
 import rappsilber.ms.sequence.AminoAcid;
@@ -49,7 +46,7 @@ import rappsilber.ms.sequence.digest.Digestion;
 import rappsilber.utils.CountOccurence;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
-import org.rappsilber.utils.Version;
+import org.rappsilber.utils.SelfAddHashSet;
 import rappsilber.config.DBConnectionConfig;
 import rappsilber.gui.components.db.GetSearch;
 import rappsilber.ms.sequence.AminoModification;
@@ -168,7 +165,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 pepLink = pp.getPeptideLinkSite2() - 1;
             }
             ProteinGroup pg = pep.getProteinGroup();
-            HashMap<Protein, IntArrayList> positions = pep.getPositions();
+            HashMap<Protein, HashSet<Integer>> positions = pep.getPositions();
 
             Sequence pepSeq;
             if (pep.getSequence().matches("X[0-9]+(\\.[0-9]+)?")) {
@@ -202,7 +199,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             for (Protein p : pg) {
                 Sequence seq = getSequence(p);
 
-                IntArrayList sites = positions.get(p);
+                HashSet<Integer> sites = positions.get(p);
                 for (int protPepFrom : sites) {
                     protPepFrom--;
                     int protPepTo = protPepFrom + pepLen;
@@ -584,17 +581,617 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     public void readDB(int[] searchIds, String filter, boolean topOnly) throws SQLException {
-        this.readDB(searchIds, filter, topOnly, new ArrayList<Long>(), 0);
+        this.readDBSteps(searchIds, filter, topOnly, new ArrayList<Long>(), 0);
+    }
+
+    public void readDBSteps(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries) throws SQLException {
+
+        if (!ensureConnection()) {
+            return;
+        }
+
+        setConfig(new DBRunConfig(getDBConnection()));
+        getConfig().readConfig(searchIds);
+        boolean isTargted = false;
+
+        for (CrossLinker xl : getConfig().getCrossLinker()) {
+            if (xl.getName().toLowerCase().contains("targetmodification")) {
+                isTargted = true;
+            }
+        }
+
+        String dbNameQuerry = "Select id,name from search_sequencedb ss inner join sequence_file sf ON ss.search_id in (" + RArrayUtils.toString(searchIds, ",") + ") and ss.seqdb_id = sf.id";
+
+        Statement dbnSt = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        ResultSet rsDBn = dbnSt.executeQuery(dbNameQuerry);
+        StringBuilder sb = new StringBuilder();
+        sequenceDBs = new ArrayList<String>(1);
+        HashSet<Integer> dbIds = new HashSet<Integer>();
+
+        while (rsDBn.next()) {
+            int id = rsDBn.getInt(1);
+            if (!dbIds.contains(id)) {
+                sequenceDBs.add(rsDBn.getString(2));
+                dbIds.add(id);
+            }
+        }
+
+        PeptidePair.ISTARGETED = isTargted;
+        boolean xi3db = false;
+        try {
+            Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stm.setFetchSize(100);
+            ResultSet rs = stm.executeQuery("SELECT * FROM spectrum_source limit 0;");
+            rs.close();
+            xi3db = true;
+        } catch (SQLException ex) {
+            xi3db = false;
+        }
+
+        if (!m_search_ids.isEmpty()) {
+            if ((filter == null && !filterSetting.isEmpty()) || (!filter.contentEquals(filterSetting))) {
+                filterSetting = filterSetting + "\n Search IDS:" + RArrayUtils.toString(searchIds, ",") +":" + filter;
+            }
+        } else if (filter != null && !filter.isEmpty()) {
+            filterSetting = filter;
+        }
+        boolean shownMinPepWarning =false;
+
+        for (int currentsearch = 0 ; currentsearch<searchIds.length;currentsearch++){
+            int searchId = searchIds[currentsearch];
+            // wee read that one already
+            if (m_search_ids.contains(searchId)) {
+                continue;
+            }
+            String sPepCoverage1 = "peptide1 unique matched non lossy coverage";
+            String sPepCoverage2 = "peptide2 unique matched non lossy coverage";
+            int cPepCoverage1 = -1;
+            int cPepCoverage2 = -1;
+
+            ArrayList<Integer> peaks = new ArrayList<>();
+            ArrayList<String> scorenames = new ArrayList<>();
+            ArrayList<Integer> scoresForwarded = new ArrayList<>();
+            
+            if (xi3db) {
+                // retrive the subscore names
+                String scoreNameQuerry = 
+                        "SELECT scorenames FROM search WHERE id = " + searchId +";";
+                Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                stm.setFetchSize(500);
+                ResultSet rs = stm.executeQuery(scoreNameQuerry);
+                if (rs.next()) {
+                    java.sql.Array sn = rs.getArray(1);
+                    if (sn != null) {
+                        for (String s : (String[])sn.getArray()) {
+                            additionalInfoNames.add(s);
+
+                            if (s.contentEquals(sPepCoverage1)) {
+                                cPepCoverage1 = scorenames.size();
+                            } else if (s.contentEquals(sPepCoverage2)) {
+                                cPepCoverage2 = scorenames.size();
+                            } if (s.startsWith("peak_")) {
+                                peaks.add(scorenames.size());
+                            }
+                            if (subScoresToForward != null && subScoresToForward.matcher(s).matches()) {
+                                scoresForwarded.add(scorenames.size());
+                            }
+
+                            scorenames.add(s);
+                        }
+                    }
+                }
+                cPepCoverage1 = scorenames.indexOf(sPepCoverage1);
+                cPepCoverage2 = scorenames.indexOf(sPepCoverage2);
+            }
+
+            if (cPepCoverage2 <0 && !shownMinPepWarning) {
+                shownMinPepWarning = true;
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Warning - no relative peptide coverage for peptide 2 - bossting on minimum peptide coverage likely not helpfull");
+            }
+            HashSet<Long> proteinIds = new HashSet<>();
+            
+            String matchQuerry;
+            matchQuerry
+                    = "SELECT * FROM (SELECT sm.id AS psmID, \n"
+                    + "p1.sequence AS pepSeq1, \n"
+                    + "p2.sequence AS pepSeq2, \n"
+                    + "p1.peptide_length as peplen1, \n"
+                    + "p2.peptide_length as peplen2, \n"
+                    + "mp1.link_position + 1 as site1, \n"
+                    + "mp2.link_position + 1 as site2, \n"
+                    + "pr1.is_decoy AS isDecoy1, \n"
+                    + "pr2.is_decoy AS isDecoy2, \n"
+                    + "sm.precursor_charge AS calc_charge, \n"
+                    + "sm.score, \n"
+                    + "array_agg(hp1.peptide_position + 1) AS pepPosition1,  \n"
+                    + "array_agg(hp2.peptide_position + 1) AS pepPosition2, \n"
+                    + "CASE WHEN p2.sequence IS NULL THEN 1 ELSE (4.0/5.0+(p1.peptide_length/(p1.peptide_length+p2.peptide_length)))/2 END AS score_ratio \n"
+                    + " , s.precursor_charge as exp_charge \n"
+                    + " , array_agg(pr1.id) as protein1id\n"
+                    + " , array_agg(pr2.id) as protein2id\n"
+                    + " , p1.id as peptide1id\n"
+                    + " , p2.id as peptide2id\n"
+                    + " , v.run_name, v.scan_number \n"
+                    + " , scorepeptide1matchedconservative AS scoreP1Coverage \n"
+                    + " , scorepeptide2matchedconservative AS scoreP2Coverage \n"
+                    + " , scoredelta AS deltaScore\n"
+                    + " , scorelinksitedelta AS LinkSiteDelta\n"
+                    + " , s.precursor_mz AS exp_mz\n"
+                    + " , sm.calc_mass\n"
+                    + " , sm.precursor_charge as match_charge\n"
+                    + " , p1.mass as pep1mass\n"
+                    + " , p2.mass as pep2mass\n"
+                    + " , sm.search_id\n"
+                    + " , sm.spectrum_id\n"
+                    + " , s.precursor_charge\n"
+                    + " , autovalidated\n"
+                    + " , cl.name  AS crosslinker \n"
+                    + " , cl.mass  AS clmass \n"
+                    + " , sm.rank \n"
+                    + " , s.scan_index\n"
+                    + " , plf.name as peaklistfile\n"
+                    + " , scoremgxrank AS mgxrank\n"
+                    + " , scorecleavclpep1fragmatched AS cleavclpep1fragmatched\n"
+                    + " , scorecleavclpep2fragmatched AS cleavclpep2fragmatched\n"
+                    + " , scores AS subscores\n"
+                    + " , scoredelta AS delta\n"
+                    + " , s.precursor_intensity\n"
+                    + " , s.elution_time_start as retentiontime\n"
+                    + " \n"
+                    + "FROM \n"
+                    + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm \n"
+                    + "  INNER JOIN (\n"
+                    + "SELECT ss.name as run_name, s.scan_number, sm.id as spectrum_match_id FROM (select * from spectrum_match where Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm inner join spectrum s on sm.spectrum_id = s.id INNER JOIN spectrum_source ss on s.source_id = ss.id\n"                            
+                    + ") v \n"
+                    + "    ON v.spectrum_match_id = sm.id\n"
+                    + "    inner join \n"
+                    + "   matched_peptide mp1 on sm.id = mp1.match_id and mp1.match_type =1  LEFT OUTER JOIN \n"
+                    + "   matched_peptide mp2 on sm.id = mp2.match_id AND mp2.match_type = 2  INNER JOIN \n"
+                    + "   peptide p1 on mp1.peptide_id = p1.id LEFT OUTER JOIN  \n"
+                    + "   peptide p2 on mp2.peptide_id = p2.id INNER JOIN \n"
+                    + "   has_protein hp1 ON mp1.peptide_id = hp1.peptide_id LEFT OUTER JOIN  \n"
+                    + "   has_protein hp2 ON mp2.peptide_id = hp2.peptide_id INNER JOIN \n"
+                    + "   protein pr1 ON hp1.protein_id = pr1.id LEFT OUTER JOIN \n"
+                    + "   protein pr2 ON hp2.protein_id = pr2.id\n"
+                    + "   INNER JOIN  \n"
+                    + "   spectrum s ON sm.spectrum_id = s.id \n"
+                    + " LEFT OUTER JOIN peaklistfile plf on s.peaklist_id = plf.id\n"
+                    + " LEFT OUTER JOIN crosslinker cl on mp1.crosslinker_id = cl.id \n"
+                    + " WHERE  \n"
+                    + " (s.precursor_charge = sm.precursor_charge OR sm.precursor_charge < 6) \n"
+                    + " GROUP BY  sm.id, \n"
+                    + "p1.sequence, \n"
+                    + "p2.sequence, \n"
+                    + "p1.peptide_length, \n"
+                    + "p2.peptide_length, \n"
+                    + "mp1.link_position + 1, \n"
+                    + "mp2.link_position + 1, \n"
+                    + "pr1.is_decoy, \n"
+                    + "pr2.is_decoy, \n"
+                    + "sm.precursor_charge, \n"
+                    + "sm.score, \n"
+                    + "CASE WHEN p2.sequence IS NULL THEN 1 ELSE (4.0/5.0+(p1.peptide_length/(p1.peptide_length+p2.peptide_length)))/2 END\n"
+                    + " , s.precursor_charge \n"
+                    + " , p1.id "
+                    + " , p2.id "
+                    + " , v.run_name, v.scan_number \n"
+                    + " , scorepeptide1matchedconservative \n"
+                    + " , scorepeptide2matchedconservative \n"
+                    + " , scoredelta "
+                    + " , scorelinksitedelta "
+                    + " , s.precursor_mz "
+                    + " , sm.calc_mass\n"
+                    + " , sm.precursor_charge "
+                    + " , p1.mass "
+                    + " , p2.mass "
+                    + " , sm.search_id\n"
+                    + " , sm.spectrum_id\n"
+                    + " , s.precursor_charge\n"
+                    + " , autovalidated\n"
+                    + " , cl.name \n"
+                    + " , cl.mass \n"
+                    + " , sm.rank \n"
+                    + " , s.scan_index\n"
+                    + " , plf.name "
+                    + " , scoremgxrank "
+                    + " , scorecleavclpep1fragmatched "
+                    + " , scorecleavclpep2fragmatched "
+                    + " , scores "
+                    + " , scoredelta "
+                    + " , s.precursor_intensity\n"
+                    + " , s.elution_time_start \n"
+                    + " ORDER BY sm.score DESC)  i \n"
+                    + (filter == null || filter.isEmpty() ? "" : " WHERE ( " + filter + " )");
+
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from db");
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
+            if (searchIds.length >1)
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Search {0} of {1}", new Object[]{currentsearch+1, searchIds.length});
+            getDBConnection().setAutoCommit(false);
+            Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stm.setFetchSize(100);
+            ResultSet rs = stm.executeQuery(matchQuerry);
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
+
+            int psmIDColumn = rs.findColumn("psmID");
+            int pepSeq1Column = rs.findColumn("pepSeq1");
+            int pepSeq2Column = rs.findColumn("pepSeq2");
+            int peplen1Column = rs.findColumn("peplen1");
+            int peplen2Column = rs.findColumn("peplen2");
+            int site1Column = rs.findColumn("site1");
+            int site2Column = rs.findColumn("site2");
+            int isDecoy1Column = rs.findColumn("isDecoy1");
+            int isDecoy2Column = rs.findColumn("isDecoy2");
+            int calc_chargeColumn = rs.findColumn("calc_charge");
+            int scoreColumn = rs.findColumn("score");
+            int pepPosition1Column = rs.findColumn("pepPosition1");
+            int pepPosition2Column = rs.findColumn("pepPosition2");
+            int score_ratioColumn = rs.findColumn("score_ratio");
+            int exp_chargeColumn = rs.findColumn("exp_charge");
+            int protein1idColumn = rs.findColumn("protein1id");
+            int protein2idColumn = rs.findColumn("protein2id");
+            int peptide1idColumn = rs.findColumn("peptide1id");
+            int peptide2idColumn = rs.findColumn("peptide2id");
+            int run_nameColumn = rs.findColumn("run_name");
+            int scan_numberColumn = rs.findColumn("scan_number");
+            int scoreP1CoverageColumn = rs.findColumn("scoreP1Coverage");
+            int scoreP2CoverageColumn = rs.findColumn("scoreP2Coverage");
+            int deltaScoreColumn = rs.findColumn("deltaScore");
+            int LinkSiteDeltaColumn = rs.findColumn("LinkSiteDelta");
+            int exp_mzColumn = rs.findColumn("exp_mz");
+            int calc_massColumn = rs.findColumn("calc_mass");
+            int pep1massColumn = rs.findColumn("pep1mass");
+            int pep2massColumn = rs.findColumn("pep2mass");
+            int search_idColumn = rs.findColumn("search_id");
+            int spectrum_idColumn = rs.findColumn("spectrum_id");
+            int xlColumn = rs.findColumn("crosslinker");
+            int avColumn = rs.findColumn("autovalidated");
+            int rankColumn = rs.findColumn("rank");
+            int scanIndexColumn = rs.findColumn("scan_index");
+            int peaklistfileColumn = rs.findColumn("peaklistfile");
+            int mgxrankColumn = rs.findColumn("mgxrank");
+            int cleavclpep1fragmatchedColumn = rs.findColumn("cleavclpep1fragmatched");
+            int cleavclpep2fragmatchedColumn = rs.findColumn("cleavclpep2fragmatched");
+            int subscoresColumn = rs.findColumn("subscores");
+            int precIntensityColumn = rs.findColumn("precursor_intensity");
+            int retentiontimeColumn = rs.findColumn("retentiontime");
+            int clMassColumn = rs.findColumn("clmass");
+            int clDeltaColumn = rs.findColumn("delta");
+            Pattern modDetect = Pattern.compile(".*[^A-Z].*");
+            HashSet<Double> tmmodcount = new HashSet<>();
+            HashMap<Double,Double> xlmodmasses = new HashMap<Double,Double>(1);
+            
+
+
+            int total = 0;
+            try {
+                while (rs.next()) {
+                    total++;
+
+                    long ipsmID = rs.getLong(psmIDColumn);
+                    if (skip.contains(ipsmID)) {
+                        continue;
+                    }
+
+                    String psmID = Long.toString(ipsmID);
+                    String pepSeq1 = rs.getString(pepSeq1Column);
+                    String pepSeq2 = rs.getString(pepSeq2Column);
+                    int peplen1 = rs.getInt(peplen1Column);
+                    int peplen2 = rs.getInt(peplen2Column);
+                    int site1 = rs.getInt(site1Column);
+                    int site2 = pepSeq2 == null ? -1 : rs.getInt(site2Column);
+                    boolean isDecoy1 = rs.getBoolean(isDecoy1Column);
+                    boolean isDecoy2 = rs.getBoolean(isDecoy2Column);
+                    int charge = rs.getInt(calc_chargeColumn);
+                    double score = rs.getDouble(scoreColumn);
+                    Integer[] pepPosition1 = (Integer[])rs.getArray(pepPosition1Column).getArray();
+                    Integer[] pepPosition2 = pepSeq2 == null ? new Integer[]{-1} : (Integer[])rs.getArray(pepPosition2Column).getArray();
+                    //            double coverage1  = rs.getDouble(18);
+                    //            double coverage2  = rs.getDouble(19);
+                    //            double scoreRatio = coverage1/(coverage1+coverage2);
+                    double scoreRatio = rs.getDouble(score_ratioColumn);
+                    int spectrum_charge = rs.getInt(exp_chargeColumn);
+                    Long[] protein1ID = (Long[])rs.getArray(protein1idColumn).getArray();
+                    Long[] protein2ID = pepSeq2 == null ? new Long[]{0l} : (Long[])rs.getArray(protein2idColumn).getArray();
+                    long pep1ID = rs.getLong(peptide1idColumn);
+                    long pep2ID = rs.getLong(peptide2idColumn);
+                    String run = rs.getString(run_nameColumn);
+                    String scan = rs.getString(scan_numberColumn);
+                    boolean autovalidated = rs.getBoolean(avColumn);
+                    int rank = rs.getInt(rankColumn);
+
+
+
+                    double p1c = rs.getDouble(scoreP1CoverageColumn);
+                    double p2c = rs.getDouble(scoreP2CoverageColumn);
+                    double pminc = p1c;
+                    
+                    if (pepSeq2 != null && !pepSeq2.isEmpty()) {
+                        pminc = Math.min(p1c,p2c);
+                    }
+                    
+                    double pmz = rs.getDouble(exp_mzColumn);
+                    double f = 1;
+                    if (pepSeq2 != null && !pepSeq2.isEmpty() && p1c + p2c > 0) {
+                        ////                    double max = Math.max(p1c,p2c);
+                        ////                    double min = Math.min(p1c,p2c);
+                        ////                    f = min/(p1c+p2c);
+                        ////                    score = score * f;
+                        scoreRatio = (p1c) / (p1c + p2c + 1);
+                        //                    if (p1c <3 || p2c <3) 
+                        //                        continue;
+                    }
+                    
+                    double peptide1score = score*scoreRatio;
+                    double peptide2score = score*(1-scoreRatio);
+                    
+
+                    String xl = rs.getString(xlColumn);
+                    if (xl == null) {
+                        xl = "";
+                    }
+                    double calc_mass = rs.getDouble(calc_massColumn);
+                    double pep1mass = rs.getDouble(pep1massColumn);
+                    double pep2mass = rs.getDouble(pep2massColumn);
+                    int search_id = rs.getInt(search_idColumn);
+                    int scan_id = rs.getInt(spectrum_idColumn);
+                    if (pepSeq2 != null && pepSeq2.matches("^X-?[0-9\\.]*$")) {
+                        double mass = Double.parseDouble(pepSeq2.substring(1));
+                        AminoModification am = new AminoModification(pepSeq2, AminoAcid.A, mass-18.0105647);
+                        m_conf.addKnownModification(am);
+                        getConfig(searchId).addKnownModification(am);
+                        tmmodcount.add(((int)mass*10)/10.0);
+                    }
+
+                    int mgxrank = rs.getInt(mgxrankColumn);
+                    boolean cleavclpep1fragmatched = rs.getBoolean(cleavclpep1fragmatchedColumn);
+                    boolean cleavclpep2fragmatched = rs.getBoolean(cleavclpep2fragmatchedColumn);
+                    java.sql.Array subscores = rs.getArray(subscoresColumn);
+
+                    DBPSM psm = null;
+                    if (pepSeq2 != null && !pepSeq2.isEmpty()){
+                        for (int p = 0; p< protein1ID.length; p++) {
+                            int p1 = pepPosition1[p];
+                            long p1id = protein1ID[p];
+                            proteinIds.add(p1id);
+                            
+                            String a1 = Long.toString(p1id);
+                            String n1 = Long.toString(p1id);
+                            String d1 = Long.toString(p1id);
+                            String s1 = Long.toString(p1id);
+
+                            int p2 = pepPosition2[p];
+                            long p2id = protein2ID[p];
+                            proteinIds.add(p2id);
+                            String a2 = Long.toString(p2id);
+                            String n2 = Long.toString(p2id);
+                            String d2 = Long.toString(p2id);
+                            String s2 = Long.toString(p2id);
+
+                            psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
+                            
+
+                        }
+                    } else {
+                        String a2 = "";
+                        String n2 = "";
+                        String d2 = "";
+                        int p2 = -1;
+                        long p2id = 0;
+                        String s2 = null;
+                        for (int p = 0; p< protein1ID.length; p++) {
+                            int p1 = pepPosition1[p];
+                            long p1id = protein1ID[p];
+                            String s1 = Long.toString(p1id);
+                            String a1 = Long.toString(p1id);
+                            String n1 = Long.toString(p1id);
+                            String d1 = Long.toString(p1id);
+                            if (d2==null || d2.isEmpty()) {
+                                if (n2 == null || n2.isEmpty())
+                                    d2 = a2;
+                                else
+                                    d2 = n2;
+                            }
+                            psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
+                        }
+                        
+                    }
+                    
+                    psm.setRank(rank);
+                    
+                    Float[] scorevalues = (Float[])subscores.getArray();
+                    if (cPepCoverage1 > 0) {
+                        if (cPepCoverage2 <0 || Double.isNaN(scorevalues[cPepCoverage2]))
+                            psm.addOtherInfo("minPepCoverage",
+                                scorevalues[cPepCoverage1]);
+                        else
+                            psm.addOtherInfo("minPepCoverage",
+                                Math.min(scorevalues[cPepCoverage1], 
+                                        scorevalues[cPepCoverage2])
+                        );
+                    }
+
+                    
+                    psm.addOtherInfo("P1Fragments",p1c);
+                    psm.addOtherInfo("P2Fragments",p2c);
+                    psm.addOtherInfo("MinFragments",pminc);
+                    if (pep2mass>0) {
+                        psm.addOtherInfo("minPepCoverageAbsolute",
+                            Math.min(p1c, p2c));
+                    } else {
+                        psm.addOtherInfo("minPepCoverageAbsolute", p1c);
+                    }
+                    
+                    psm.addOtherInfo("cleavclpep1fragmatched",cleavclpep1fragmatched ? 1:0);
+                    psm.addOtherInfo("cleavclpep2fragmatched",cleavclpep2fragmatched ? 1:0);
+                    psm.addOtherInfo("cleavclpepfragmatched",(cleavclpep2fragmatched ? 1:0) + (cleavclpep1fragmatched ? 1:0));
+                    psm.addOtherInfo("deltaScore",rs.getDouble(deltaScoreColumn));
+                    psm.addOtherInfo("ScoreDivDelta",rs.getDouble(scoreColumn)/rs.getDouble(deltaScoreColumn));
+                    psm.addOtherInfo("linkSiteDelta",rs.getDouble(LinkSiteDeltaColumn));
+                    psm.addOtherInfo("mgxrank",rs.getDouble(mgxrankColumn));
+                    psm.addOtherInfo("PrecursorIntensity",rs.getDouble(precIntensityColumn));
+                    psm.addOtherInfo("RetentionTime",rs.getDouble(retentiontimeColumn));
+                    
+                    for (Integer p : peaks) {
+                        psm.addOtherInfo(scorenames.get(p), scorevalues[p]);
+                    }
+                    
+                    for (Integer p : scoresForwarded) {
+                        psm.addOtherInfo(scorenames.get(p), scorevalues[p]);
+                    }
+                    
+                    Double xlModmassPre = rs.getDouble(clMassColumn);
+                    Double xlModmass = xlmodmasses.get(xlModmassPre);
+                    if (xlModmass == null) {
+                        xlmodmasses.put(xlModmassPre,xlModmassPre);
+                        xlModmass = xlModmassPre;
+                    }
+                    psm.setCrosslinkerModMass(rs.getDouble(clMassColumn));
+                    psm.setDeltaScore(rs.getDouble(deltaScoreColumn));
+
+                    if  (autovalidated) {
+                        psm.setAutoValidated(autovalidated);
+                        if (flagAutoValidated) {
+                            psm.setPositiveGrouping("AutoValidated");
+                        }
+                    }
+
+                    String modLoockup = pepSeq1;
+                    if (pepSeq2 != null)
+                        modLoockup+=pepSeq2;
+                    DBRunConfig psmconfig  =getConfig(psm.getSearchID());
+                    Sequence m = new Sequence(modLoockup, psmconfig);
+                    for (AminoAcid aa : m) {
+                        if (aa instanceof AminoModification) {
+                            if (psmconfig.getVariableModifications().contains(aa)) {
+                                psm.setHasVarMods(true);
+                            }
+                            if (psmconfig.getFixedModifications().contains(aa)) {
+                                psm.setHasFixedMods(true);
+                            }
+                        }
+                    }
+                    if (psm.hasVarMods()) {
+                        if (markModifications())
+                            psm.addNegativeGrouping("Modified");
+                    }
+
+                    if (markRun())
+                        psm.getAdditionalFDRGroups().add(psm.getRun());
+
+                    if (markSearchID())
+                        psm.getAdditionalFDRGroups().add(""+psm.getSearchID());
+                    
+                    if (psm.hasVarMods()) {
+                        if (markModifications())
+                            psm.addNegativeGrouping("Modified");
+                    }
+                    
+
+                    int scanIndex = rs.getInt(scanIndexColumn);
+                    if (!rs.wasNull()) {
+                        psm.setFileScanIndex(scanIndex);
+                    }
+                    String peaklistfile = rs.getString(peaklistfileColumn);
+                    if (!rs.wasNull()) {
+                        psm.setPeakListName(peaklistfile);
+                    }
+                    
+//                    if (isMultpleSearches) {
+//                        psm.addPositiveGrouping("" + searchId);
+//                    }
+                    if (total % 10000 == 0) {
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, 
+                                "go through the results ({0}) Search {1} of {2}", 
+                                new Object[]{allPSMs.size(), currentsearch+1, searchIds.length});
+                    }
+
+                }
+                rs.close();
+                stm.close();
+
+
+                HashMap<Long,Protein> id2Protein = new HashMap<>();
+                for (Protein p : allProteins) {
+                    id2Protein.put(p.getId(), p);
+                }
+
+                String proteinQuerry = "SELECT id, accession_number, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
+                
+                stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                stm.setFetchSize(100);
+                rs = stm.executeQuery(proteinQuerry);
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
+                
+                int idColumn = rs.findColumn("id");
+                int accessionColumn = rs.findColumn("accession_number");
+                int descriptionColumn = rs.findColumn("description");
+                int proteinSequenceColumn = rs.findColumn("sequence");
+                int proteinNameColumn = rs.findColumn("name");
+                while (rs.next()) {
+                    long id = rs.getLong(idColumn);
+                    String sequence =  rs.getString(proteinSequenceColumn).replaceAll("[^A-Z]", "");
+                    String accession = rs.getString(accessionColumn);
+                    String name = rs.getString(proteinNameColumn);
+                    String description = rs.getString(descriptionColumn);
+
+                    if (accession == null && description !=null) {
+                        accession = description;
+                    }
+
+                    if (description==null || description.isEmpty()) {
+                        if (name == null || name.isEmpty())
+                            description = accession;
+                        else
+                            description = name;
+                    }
+                    
+                    Protein p = id2Protein.get(id);
+                    p.setSequence(sequence);
+                    p.setAccession(accession);
+                    p.setDescription(description);
+          
+                }
+                
+                rs.close();
+                stm.close();
+                        
+                m_search_ids.add(searchId);
+
+            } catch (SQLException sex) {
+                if (tries < 5) {
+                    readDBSteps(searchIds, filter, topOnly, skip, tries + 1);
+                } else {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
+                }
+                return;
+            }
+
+            // make sure the hashmap/sets are actually using the correct hashes
+            SelfAddHashSet<Protein> newProteins = new SelfAddHashSet<Protein>();
+            for (Protein p : allProteins) {
+                newProteins.add(p);
+            }
+            allProteins = newProteins;
+            // also the psms use hashes for the proteins
+            for (PSM psm : allPSMs) {
+                for (org.rappsilber.fdr.entities.Peptide p : psm.getPeptides()) {
+                    p.renewPositions();
+                }
+                psm.reTestInternal();
+            }
+
+            
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Count results : " + total);
+            
+            if (tmmodcount.size()>10) {
+                PeptidePair.ISTARGETED = false;
+            }
+        }
+
     }
 
     public void readDB(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries) throws SQLException {
-
-        class psminfo {
-            ArrayList<Integer> protein1IDs = new ArrayList<>();
-            ArrayList<Integer> protein2IDs = new ArrayList<>();
-            ArrayList<Integer> protein1Positions = new ArrayList<>();
-            ArrayList<Integer> protein2Positions = new ArrayList<>();
-        };
 
         if (!ensureConnection()) {
             return;
@@ -1175,333 +1772,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             if (tmmodcount.size()>10) {
                 PeptidePair.ISTARGETED = false;
             }
-        }
-
-    }
-
-    public void readDBSteps(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries) throws SQLException {
-
-        class psminfo {
-
-            ArrayList<Integer> peptide1Positions = new ArrayList<>();
-            ArrayList<Integer> peptide2Positions = new ArrayList<>();
-            ArrayList<Integer> protein1IDs = new ArrayList<>();
-            ArrayList<Integer> protein2IDs = new ArrayList<>();
-            int search_id;
-            int spectrum_id;
-            int psm_id;
-            int peptide1_id;
-            int peptide2_id;
-            String run;
-            String scan;
-            int exp_charge;
-            int match_charge;
-            double score;
-            double exp_mz;
-            double calc_mass;
-            boolean autvalidated;
-            int crosslinker_id;
-            double scoreRatio;
-            int linkSite1;
-            int linkSite2;
-            HashMap<String, Double> filterables = new HashMap<>();
-        };
-
-        class pepinfo {
-
-            String sequence;
-            double mass;
-            short length;
-
-        }
-
-        class protinfo {
-
-            String sequence;
-            String name;
-            String accession;
-            String description;
-            boolean isDecoy;
-            int length;
-
-            public protinfo(String sequence, String name, String accession, String description, boolean isDecoy, int length) {
-                this.sequence = sequence;
-                this.name = name;
-                this.accession = accession;
-                this.description = description;
-                this.isDecoy = isDecoy;
-                this.length = length;
-            }
-        }
-
-        HashMap<Integer, protinfo> proteinIDs = new HashMap<>();
-        HashMap<Integer, pepinfo> peptideIDs = new HashMap<>();
-        HashMap<Integer, String> crosslinker = new HashMap<>();
-        ArrayList<psminfo> psms = new ArrayList<>();
-
-        if (!ensureConnection()) {
-            return;
-        }
-
-        setConfig(new DBRunConfig(getDBConnection()));
-        getConfig().readConfig(searchIds);
-        boolean isTargted = false;
-
-        for (CrossLinker xl : getConfig().getCrossLinker()) {
-            if (xl.getName().toLowerCase().contains("targetmodification")) {
-                isTargted = true;
-            }
-        }
-
-        String dbNameQuerry = "Select id,name from search_sequencedb ss inner join sequence_file sf ON ss.search_id in (" + RArrayUtils.toString(searchIds, ",") + ") and ss.seqdb_id = sf.id";
-
-        Statement dbnSt = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        ResultSet rsDBn = dbnSt.executeQuery(dbNameQuerry);
-        StringBuilder sb = new StringBuilder();
-        sequenceDBs = new ArrayList<String>(1);
-        HashSet<Integer> dbIds = new HashSet<Integer>();
-
-        while (rsDBn.next()) {
-            int id = rsDBn.getInt(1);
-            if (!dbIds.contains(id)) {
-                sequenceDBs.add(rsDBn.getString(2));
-                dbIds.add(id);
-            }
-        }
-
-        PeptidePair.ISTARGETED = isTargted;
-        boolean xi3db = false;
-        try {
-            Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            stm.setFetchSize(100);
-            ResultSet rs = stm.executeQuery("SELECT * FROM spectrum_source limit 0;");
-            rs.close();
-            xi3db = true;
-        } catch (SQLException ex) {
-            xi3db = false;
-        }
-
-        if (!m_search_ids.isEmpty()) {
-            if ((filter == null && !filterSetting.isEmpty()) || (!filter.contentEquals(filterSetting))) {
-                filterSetting = "--- Mixed Filter --- ";
-            }
-        } else if (filter != null && !filter.isEmpty()) {
-            filterSetting = filter;
-        }
-
-        boolean multipleSearches = searchIds.length >1;
-        for (int searchId : searchIds) {
-            // wee read that one already
-            if (m_search_ids.contains(searchId)) {
-                continue;
-            }
-
-            String matchQuerry;
-            matchQuerry
-                    = "SELECT * FROM (SELECT "
-                    + "sm.id AS psmID \n"
-                    + " , sm.precursor_charge AS calc_charge \n"
-                    + " , sm.score \n"
-                    + " , hp.peptide_position + 1 AS pepPosition  \n"
-                    + " , s.precursor_charge as exp_charge \n"
-                    + " , hp.display_site as display_site\n"
-                    + " , hp.protein_id as proteinid\n"
-                    + " , mp.peptide_id as peptideid\n"
-                    + " , mp.link_position\n"
-                    + " , ss.name as run_name, scan_number \n"
-                    + " , scorepeptide1matchedconservative AS scoreP1Coverage \n"
-                    + " , scorepeptide2matchedconservative AS scoreP2Coverage \n"
-                    + " , scoredelta  AS deltaScore\n"
-                    + " , scorelinksitedelta AS LinkSiteDelta\n"
-                    + " , s.precursor_mz AS exp_mz\n"
-                    + " , sm.calc_mass\n"
-                    + " , sm.precursor_charge as match_charge\n"
-                    + " , sm.search_id\n"
-                    + " , sm.spectrum_id\n"
-                    + " , s.precursor_charge\n"
-                    + " , autovalidated\n"
-                    + " , mp.crosslinker_id \n"
-                    + " , mp.match_type \n"
-                    + " \n"
-                    + "FROM \n"
-                    + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId +  (topOnly ? " AND dynamic_rank = 't'":"")+ "  AND score>0) sm \n"
-                    + "     INNER JOIN \n"
-                    + "   matched_peptide mp on sm.id = mp.match_id \n"
-                    + "     INNER JOIN \n"
-                    + "   has_protein hp ON mp.peptide_id = hp.peptide_id \n"
-                    + "     INNER JOIN  \n"
-                    + "   spectrum s ON sm.spectrum_id = s.id \n"
-                    + "     INNER JOIN  \n"
-                    + "   spectrum_source ss ON s.source_id = ss.id \n"
-                    + " WHERE  \n"
-                    + " (s.precursor_charge = sm.precursor_charge OR sm.precursor_charge < 6) \n"
-                    + " ORDER BY sm.id,match_type DESC)  i \n"
-                    + (filter == null || filter.isEmpty() ? "" : " WHERE ( " + filter + " )");
-
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read base psm from db");
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
-            getDBConnection().setAutoCommit(false);
-            Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            stm.setFetchSize(100);
-            ResultSet rs = stm.executeQuery(matchQuerry);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
-
-            int psmIDColumn = rs.findColumn("psmID");
-            int siteColumn = rs.findColumn("link_position");
-            int calc_chargeColumn = rs.findColumn("calc_charge");
-            int scoreColumn = rs.findColumn("score");
-            int pepPositionColumn = rs.findColumn("pepPosition");
-//            int score_ratioColumn = rs.findColumn("score_ratio");
-            int exp_chargeColumn = rs.findColumn("exp_charge");
-            //int display_siteColumn = rs.findColumn("display_site");
-            int proteinidColumn = rs.findColumn("proteinid");
-            int peptideidColumn = rs.findColumn("peptideid");
-            int run_nameColumn = rs.findColumn("run_name");
-            int scan_numberColumn = rs.findColumn("scan_number");
-            int scoreP1CoverageColumn = rs.findColumn("scoreP1Coverage");
-            int scoreP2CoverageColumn = rs.findColumn("scoreP2Coverage");
-            int deltaScoreColumn = rs.findColumn("deltaScore");
-            int LinkSiteDeltaColumn = rs.findColumn("LinkSiteDelta");
-            int exp_mzColumn = rs.findColumn("exp_mz");
-            int calc_massColumn = rs.findColumn("calc_mass");
-            int search_idColumn = rs.findColumn("search_id");
-            int spectrum_idColumn = rs.findColumn("spectrum_id");
-            int xlColumn = rs.findColumn("crosslinker_id");
-            int matchTypeColumn = rs.findColumn("match_type");
-
-            int total = 0;
-            psminfo psm = null;
-            try {
-                int lastPSMID = -1;
-                while (rs.next()) {
-                    total++;
-                    if (total % 5000 == 0)
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results (" + total +")");
-
-                    long ipsmID = rs.getLong(psmIDColumn);
-                    if (skip.contains(ipsmID)) {
-                        continue;
-                    }
-
-                    if (ipsmID != lastPSMID) {
-                        psm = new psminfo();
-                        psms.add(psm);
-                        psm.match_charge = rs.getInt(calc_chargeColumn);
-                        psm.search_id = rs.getInt(search_idColumn);
-                        psm.spectrum_id = rs.getInt(spectrum_idColumn);
-                        psm.calc_mass = rs.getInt(calc_massColumn);
-                        psm.score = rs.getDouble(scoreColumn);
-                        psm.exp_charge = rs.getInt(exp_chargeColumn);
-                        psm.run = rs.getString(run_nameColumn);
-                        psm.scan = rs.getString(scan_numberColumn);
-                        psm.exp_mz = rs.getDouble(exp_mzColumn);
-                        psm.filterables.put("delta", rs.getDouble(deltaScoreColumn));
-                        psm.filterables.put("LinkSiteDelta", rs.getDouble(LinkSiteDeltaColumn));
-                        psm.filterables.put("Peptide1Fragments", rs.getDouble(scoreP1CoverageColumn));
-                        psm.filterables.put("Peptide1Fragments", rs.getDouble(scoreP2CoverageColumn));
-                        psm.crosslinker_id = rs.getInt(xlColumn);
-                        crosslinker.put(psm.crosslinker_id, "");
-                    }
-                    int match_type = rs.getInt(matchTypeColumn);
-                    int peptide = match_type - 1;
-                    int proteinID = rs.getInt(proteinidColumn);
-                    int peptideID = rs.getInt(peptideidColumn);
-                    int pepPos = rs.getInt(pepPositionColumn);
-
-                    if (match_type == 1) {
-                        psm.linkSite1 = rs.getInt(siteColumn);
-                        if (psm.peptide1_id == 0) {
-                            psm.peptide1_id = peptideID;
-                            peptideIDs.put(peptideID, null);
-                        }
-                        psm.peptide1Positions.add(pepPos);
-                        psm.protein1IDs.add(proteinID);
-                        proteinIDs.put(proteinID,null);
-                    } else if (match_type == 2) {
-                        psm.linkSite2 = rs.getInt(siteColumn);
-                        if (psm.peptide2_id == 0) {
-                            psm.peptide2_id = peptideID;
-                            peptideIDs.put(peptideID, null);
-                        }
-                        psm.peptide2Positions.add(pepPos);
-                        psm.protein2IDs.add(proteinID);
-                        proteinIDs.put(proteinID,null);
-                    }
-                }
-                rs.close();
-
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read proteins from db");
-                String proteinQuerry = "SELECT id,name, accession_number, description, sequence, is_decoy, header FROM protein WHERE id in (" + RArrayUtils.toString(proteinIDs.keySet(), ",") + ");";
-                rs = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).
-                        executeQuery(proteinQuerry);
-
-                while (rs.next()) {
-                    String description = rs.getString(4);
-                    if (description == null) {
-                        description = rs.getString(7);
-                    }
-                    if (description == null) {
-                        description = rs.getString(2);
-                    }
-                    if (description == null) {
-                        description = rs.getString(3);
-                    }
-                    String sequence = rs.getString(5).replace("[^A-Z]", "");
-                    int length = sequence.length();
-
-                    proteinIDs.put(rs.getInt(1), new protinfo(sequence, rs.getString(2), rs.getString(3), rs.getString(4), rs.getBoolean(6), length));
-                }
-                rs.close();
-
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read peptides from db");
-                String peptideQuerry = "SELECT id, sequence, mass, peptide_length FROM peptide WHERE id in (" + RArrayUtils.toString(peptideIDs.keySet(), ",") + ");";
-                rs = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).
-                        executeQuery(peptideQuerry);
-
-                while (rs.next()) {
-                    pepinfo pi = new pepinfo();
-                    int id = rs.getInt(1);
-                    pi.sequence = rs.getString(2);
-                    pi.mass = rs.getDouble(3);
-                    pi.length = rs.getShort(4);
-
-                    peptideIDs.put(id, pi);
-                }
-                rs.close();
-
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read crosslinker from db");
-                String crosslinkerQuerry = "SELECT id, name FROM crosslinker WHERE id in (" + RArrayUtils.toString(crosslinker.keySet(), ",") + ");";
-                rs = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).
-                        executeQuery(proteinQuerry);
-
-                while (rs.next()) {
-                    crosslinker.put(rs.getInt(1), rs.getString(2));
-                }
-                rs.close();
-
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "assemble info");
-
-                for (psminfo p : psms) {
-                    if (p.protein2IDs.size() > 0) {
-                        for (int prot1id = 0; prot1id < p.protein1IDs.size(); prot1id++) {
-                            for (int prot2id = 0; prot2id < p.protein2IDs.size(); prot2id++) {
-                            }
-                        }
-                    }
-                }
-                //setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protein1ID, accession1, description1, protein2ID, accession2, description2, pepPosition1, pepPosition2, sequence1, sequence2, scoreRatio, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
-
-                m_search_ids.add(searchId);
-
-            } catch (SQLException sex) {
-                if (tries < 5) {
-                    readDB(searchIds, filter, topOnly, skip, tries + 1);
-                }
-                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
-                return;
-            }
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Count results : " + total);
-
         }
 
     }
@@ -2601,7 +2871,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         }
 
         ProteinGroup pg = p.getProteinGroup();
-        HashMap<org.rappsilber.fdr.entities.Protein, IntArrayList> positions = p.getPositions();
+        HashMap<org.rappsilber.fdr.entities.Protein, HashSet<Integer>> positions = p.getPositions();
         int len = p.length();
         HashSet<String> N = new HashSet<String>(positions.size());
         HashSet<String> C = new HashSet<String>(positions.size());

@@ -405,8 +405,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
     public void prepareFDRCalculation() throws NumberFormatException {
         ProteinGroupLink.MIN_DISTANCE_FOR_LONG = ((Number) spDistanceGroup.getValue()).intValue();
-        getFdr().setMaximumLinkAmbiguity(fdrSettings.getMaxLinkAmbiguity());
-        getFdr().setMaximumProteinAmbiguity(fdrSettings.getMaxProteinAmbiguity());
+        getFdr().setSettings(fdrSettings);
         getFdr().setMinimumPeptideLength(fdrSettings.getMinPeptideLength());
         getFdr().setGroupPPIByHasInternal(cbGroupPPIBySelf.isSelected());
         getFdr().setGroupLinksByHasInternal(cbGroupLinksBySelf.isSelected());
@@ -806,6 +805,46 @@ public class FDRGUI extends javax.swing.JFrame {
 //        }
 //
 //    }
+    
+    protected CSVinFDR innerBatchReadCSV(File config, File fasta,CsvCondition filter,OfflineFDR.Normalisation normalisation) throws IOException, ParseException {
+        Iterator<CsvParser> csvs = csvSelect.iterator();
+        CsvParser csv = csvs.next();
+
+        CSVinFDR ofdr = null;
+        if (config != null && fasta != null) {
+            ofdr = new XiCSVinFDR();
+            ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+            ArrayList<String> fastas = new ArrayList<>(1);
+            fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
+            ((XiCSVinFDR)ofdr).setFastas(fastas);
+        }else {
+            ofdr = new CSVinFDR();
+        }
+        addCSV(ofdr, null, csv,filter);
+
+        while (csvs.hasNext()) {
+            csv = csvs.next();
+            CSVinFDR nextfdr = null;
+
+            if (config != null && fasta != null) {
+                nextfdr = new XiCSVinFDR();
+                ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+                ArrayList<String> fastas = new ArrayList<>(1);
+                fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
+                ((XiCSVinFDR)nextfdr).setFastas(fastas);
+            }else {
+                nextfdr = new CSVinFDR();
+            }
+
+
+            addCSV(nextfdr, ofdr, csv,filter);
+        }
+        if (normalisation != OfflineFDR.Normalisation.None) {
+            ofdr.normalizePSMs(normalisation);
+        }
+        return ofdr;
+    }
+    
     public void readAllCSV() {
 
 
@@ -816,6 +855,7 @@ public class FDRGUI extends javax.swing.JFrame {
         final CsvCondition filter = csvSelect.getFilter();
         final File config=csvSelect.fbConfigIn.getFile();
         final File fasta=csvSelect.fbFastaIn.getFile();
+        final OfflineFDR.Normalisation normalisation = csvSelect.doNormalize();
         setEnableRead(false);
         setEnableCalc(false);
         setEnableWrite(false);
@@ -825,39 +865,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 try {
 
                     setStatus("Start");
-                    Iterator<CsvParser> csvs = csvSelect.iterator();
-                    CsvParser csv = csvs.next();
-
-                    CSVinFDR ofdr = null;
-                    if (config != null && fasta != null) {
-                        ofdr = new XiCSVinFDR();
-                        ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
-                        ArrayList<String> fastas = new ArrayList<>(1);
-                        fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
-                        ((XiCSVinFDR)ofdr).setFastas(fastas);
-                    }else {
-                        ofdr = new CSVinFDR();
-                    }        
-                    addCSV(ofdr, null, csv,filter);
-                    setFdr(ofdr);
-
-                    while (csvs.hasNext()) {
-                        csv = csvs.next();
-                        CSVinFDR nextfdr = null;
-                        
-                        if (config != null && fasta != null) {
-                            nextfdr = new XiCSVinFDR();
-                            ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
-                            ArrayList<String> fastas = new ArrayList<>(1);
-                            fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
-                            ((XiCSVinFDR)nextfdr).setFastas(fastas);
-                        }else {
-                            nextfdr = new CSVinFDR();
-                        }        
-
-
-                        addCSV(nextfdr, ofdr, csv,filter);
-                    }
+                    setFdr(innerBatchReadCSV(config, fasta, filter, normalisation));
                     setEnableCalc(true);
                     setStatus("finished reading");
                 } catch (Exception ex) {
@@ -887,6 +895,7 @@ public class FDRGUI extends javax.swing.JFrame {
         final CsvCondition filter = csvSelect.getFilter();
         final File config=csvSelect.fbConfigIn.getFile();
         final File fasta=csvSelect.fbFastaIn.getFile();
+        final OfflineFDR.Normalisation normalisation = csvSelect.doNormalize();
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -894,21 +903,10 @@ public class FDRGUI extends javax.swing.JFrame {
 
                     setStatus("Start");
 
-                    for (CsvParser csv : csvSelect) {
-                        CSVinFDR nextfdr = null;
-                        if (config != null && fasta != null) {
-                            nextfdr = new XiCSVinFDR();
-                            ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(config));
-                            ArrayList<String> fastas = new ArrayList<>(1);
-                            fastas.add(fasta.getAbsolutePath());
-                            ((XiCSVinFDR)nextfdr).setFastas(fastas);
-                        }else {
-                            nextfdr = new CSVinFDR();
-                        }        
-                        
-                        nextfdr.setForwardPattern(csvSelect.getForwardPattern());
-                        addCSV(nextfdr, (CSVinFDR) getFdr(), csv,filter);
-                    }
+                    CSVinFDR nextfdr = innerBatchReadCSV(config, fasta, filter, normalisation);
+                    
+                    getFdr().normaliseAndAddPsmList(nextfdr, normalisation);
+                    
                     setEnableCalc(true);
                     setStatus("finished reading");
 
@@ -934,9 +932,12 @@ public class FDRGUI extends javax.swing.JFrame {
 
         setStatus("Read from " + csv.getInputFile().getName());
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + csv.getInputFile().getAbsolutePath());
+        if (addto == null) {
+            PSM.resetAdditionalColumnNames();
+        }
         ofdr.readCSV(csv, filter);
         if (addto != null) {
-            addto.normaliseAndAddPsmList(ofdr);
+            addto.add(ofdr);
             addto.addSource(ofdr.getSources(), ofdr.getFilter());
         }
     }

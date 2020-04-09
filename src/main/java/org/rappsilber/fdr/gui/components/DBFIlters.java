@@ -22,17 +22,18 @@ public class DBFIlters extends javax.swing.JFrame {
 
     public Semaphore finishedsp = new Semaphore(0);
     private ArrayList<String> runHistory = new ArrayList<String>();
+
+
+    private String withinBetweenBaseFilter ="(select p1.id from unnest(protein1id) p1(id) inner join protein pr1 on p1.id = pr1.id, "
+                    +                           "unnest(protein2id) p2(id) inner join protein pr2 on p2.id = pr2.id "
+                    +              "WHERE pr1.accession_number ilike '%_'||pr2.accession_number OR pr2.accession_number ilike '%_'||pr1.accession_number )";
     
-    private String withinFilter = "(pepSeq2 is null OR ("
-                    + "(accession1 = accession2) "
-                    + "OR (lower(accession1) = 'rev_' || lower(accession2) OR lower(accession2) = 'rev_' || lower(accession1) )"
-                    + "OR (lower(accession1) = 'ran_' || lower(accession2) OR lower(accession2) = 'ran_' || lower(accession1) )"
-                    + "))";
-    private String betweenFilter = "(pepSeq2 is null OR NOT ("
-                    + "(accession1 = accession2) "
-                    + "OR (lower(accession1) = 'rev_' || lower(accession2) OR lower(accession2) = 'rev_' || lower(accession1) )"
-                    + "OR (lower(accession1) = 'ran_' || lower(accession2) OR lower(accession2) = 'ran_' || lower(accession1) )"
-                    + "))";
+
+    private String withinFilter = "(pepSeq2 is null OR ( protein1id && protein2id OR "
+                    + " EXISTS ("+withinBetweenBaseFilter+")))";
+    
+    private String betweenFilter = "(pepSeq2 is null OR ( NOT (protein1id && protein2id) AND "
+                    + " NOT EXISTS ("+withinBetweenBaseFilter+")))";
     
     /**
      * Creates new form DBFIlters
@@ -54,7 +55,7 @@ public class DBFIlters extends javax.swing.JFrame {
             }
         }
         cbRun.setSelectedIndex(-1);
-        this.pWithinBetween.setVisible(false);
+        this.pWithinBetween.setVisible(true);
     }
 
     /**
@@ -759,7 +760,12 @@ public class DBFIlters extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     protected String protinfilter(int Protein,String text) {
-        String filter = "(accession"+ Protein + " like '%" + text + "%' OR protein"+ Protein + "name like '%" + text + "%' OR description"+ Protein + " like '%" + text + "%')";
+        //String filter = "(accession"+ Protein + " like '%" + text + "%' OR protein"+ Protein + "name like '%" + text + "%' OR description"+ Protein + " like '%" + text + "%')";
+        String filter = 
+                  "(EXISTS (SELECT a.id from unnest (protein"+Protein+"id) a(id) inner join protein p ON a.id = p.id "
+                + "where p.accession_number ilike '%" + text + "%' OR "
+                + "p.name ilike '%" + text + "%' OR "
+                + "p.description ilike '%" + text + "%'))";
         return filter;
     }
 }

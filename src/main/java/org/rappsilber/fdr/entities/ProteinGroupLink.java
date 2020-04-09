@@ -77,7 +77,8 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         isNonCovalent = pp.isNonCovalent();
         position1=new HashMap<Protein, IntArrayList>(peptide1.getPositions().size());
         for (Protein p : peptide1.getPositions().keySet()) {
-            IntArrayList peppos = peptide1.getPositions().get(p).clone();
+            Collection<Integer> cpos = (Collection<Integer>) peptide1.getPositions().get(p).clone();
+            IntArrayList peppos = new IntArrayList(cpos);
             peppos.addToAll(pepSite1-1);
             position1.put(p, peppos);
         }
@@ -94,7 +95,8 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         } else {
             position2=new HashMap<Protein, IntArrayList>(peptide2.getPositions().size());
             for (Protein p : peptide2.getPositions().keySet()) {
-                IntArrayList peppos = peptide2.getPositions().get(p).clone();
+                Collection<Integer> cpos = (Collection<Integer>) peptide2.getPositions().get(p).clone();
+                IntArrayList peppos = new IntArrayList(cpos);
                 peppos.addToAll(pepSite2-1);
                 position2.put(p, peppos);
             }
@@ -278,7 +280,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     public String getFDRGroup() {
         if (fdrGroup == null) {
             if (isInternal) {
-                fdrGroup = "Internal";
+                fdrGroup = "Self";
             } else {
                 fdrGroup = "Between";
             }

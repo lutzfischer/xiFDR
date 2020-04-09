@@ -507,24 +507,28 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="jLabel12" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel13" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
                               <Component id="ckCSVMarkModifications" max="32767" attributes="0"/>
-                              <EmptySpace pref="289" max="32767" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="cbNormalize" pref="186" max="32767" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
                               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
                               <Component id="txtForwardColumns" pref="95" max="32767" attributes="0"/>
                           </Group>
                           <Component id="fbFastaIn" max="32767" attributes="0"/>
                           <Component id="fbConfigIn" max="32767" attributes="0"/>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -546,6 +550,8 @@
                           <Component id="ckCSVMarkModifications" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="txtForwardColumns" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="cbNormalize" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace max="32767" attributes="0"/>
                   </Group>
@@ -608,6 +614,22 @@
               <Properties>
                 <Property name="text" type="java.lang.String" value="Forward Columns"/>
               </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel2">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Normalize"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JComboBox" name="cbNormalize">
+              <Properties>
+                <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection code="new DefaultComboBoxModel&lt;OfflineFDR.Normalisation&gt;(OfflineFDR.Normalisation.values())" type="code"/>
+                </Property>
+                <Property name="toolTipText" type="java.lang.String" value="How to normalize the input data"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;OfflineFDR.Normalisation&gt;"/>
+              </AuxValues>
             </Component>
           </SubComponents>
         </Container>

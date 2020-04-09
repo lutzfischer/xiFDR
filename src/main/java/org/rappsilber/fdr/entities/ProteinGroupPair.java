@@ -96,7 +96,7 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
 
     public void setFDRGroup() {
         if (protein1 == protein2 || protein1.hasOverlap(protein2))
-            fdrGroup = "Internal";
+            fdrGroup = "Self";
         else 
             fdrGroup = "Between";
 

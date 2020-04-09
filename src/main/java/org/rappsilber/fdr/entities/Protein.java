@@ -63,14 +63,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      */
     public Protein(long id, String accession, String description, boolean isDecoy, boolean linear, boolean internal, boolean between) {
         this.id = id;
-        // at some points we consider decoy and non decoy proteins the same. So 
-        // both get the same accession to make my life easier
-        if (accession.toUpperCase().startsWith("REV_") || accession.toUpperCase().startsWith("RAN_"))
-            this.accession = accession.substring(4);
-        else if (accession.toUpperCase().startsWith("DECOY:"))
-            this.accession = accession.substring(6);
-        else
-            this.accession = accession;
+        setAccession(accession);
         
         this.description = description;
         this.isDecoy = isDecoy;
@@ -206,6 +199,26 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      */
     public String getDescription() {
         return description;
+    }
+
+    /**
+     * @return the accession
+     */
+    public void setAccession(String a) {
+        accession = a;
+        // at some points we consider decoy and non decoy proteins the same. So 
+        // both get the same accession to make my life easier
+        if (accession.toUpperCase().startsWith("REV_") || accession.toUpperCase().startsWith("RAN_"))
+            this.accession = accession.substring(4);
+        else if (accession.toUpperCase().startsWith("DECOY:"))
+            this.accession = accession.substring(6);
+    }
+
+    /**
+     * @return the description
+     */
+    public void setDescription(String d) {
+        description = d;
     }
 
     /**

@@ -179,8 +179,8 @@ public class PSM extends AbstractFDRElement<PSM> {
     private static boolean peakListNameFound = false;
     
     private DoubleArrayList numericInfo = new DoubleArrayList();
-    private static Object2IntOpenHashMap<String> numericInfoColumn = new Object2IntOpenHashMap<String>();
-    private static Object2IntOpenHashMap<String> allInfoColumn = new Object2IntOpenHashMap<String>();
+    public static Object2IntOpenHashMap<String> numericInfoColumn = new Object2IntOpenHashMap<String>();
+    public static Object2IntOpenHashMap<String> allInfoColumn = new Object2IntOpenHashMap<String>();
     /**
      * store arbitrary information
      */
@@ -229,8 +229,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.run = run;
         this.scan = scan;
     }
-    
-    
+
+
     /**
      * creates a new instance of a PSM.
      * @param psmID a unique ID for the PSM (e.g. used when a CSV-file contains 
@@ -327,9 +327,9 @@ public class PSM extends AbstractFDRElement<PSM> {
             return false;
         
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
-        return ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
+        return ((((Double.compare(c.peptide1Score, this.peptide1Score) == 0 && Double.compare(c.peptide2Score, this.peptide2Score) == 0)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
-                ((c.peptide1Score == this.peptide2Score &&c.peptide2Score == this.peptide1Score) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
+                ((Double.compare(c.peptide1Score, this.peptide2Score) == 0 && Double.compare(c.peptide2Score, this.peptide1Score) == 0) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }
 
     /**
@@ -744,6 +744,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         represents.add(this);
         this.m_fdr = -1;
         this.setPEP(Double.NaN);
+        reTestInternal();
     }
     
     /**
@@ -1133,13 +1134,13 @@ public class PSM extends AbstractFDRElement<PSM> {
             if (!isInternal()) {
                 isConsecutive = false;
             } else {
-                HashMap<Protein,IntArrayList> pep1pos =  this.peptide1.getPositions();
+                HashMap<Protein,HashSet<Integer>> pep1pos =  this.peptide1.getPositions();
                 int peplen1 = this.peptide1.length;
-                HashMap<Protein,IntArrayList> pep2pos =  this.peptide2.getPositions();
+                HashMap<Protein,HashSet<Integer>> pep2pos =  this.peptide2.getPositions();
                 int peplen2 = this.peptide2.length;
                 
-                for (Map.Entry<Protein,IntArrayList> e : pep1pos.entrySet()) {
-                    IntArrayList pos2 = pep2pos.get(e.getKey());
+                for (Map.Entry<Protein,HashSet<Integer>> e : pep1pos.entrySet()) {
+                    HashSet<Integer> pos2 = pep2pos.get(e.getKey());
                     if (pos2 != null) {
                         for (int p2 : pos2) {
                             for (int p1 : e.getValue()) {
@@ -1236,6 +1237,9 @@ public class PSM extends AbstractFDRElement<PSM> {
                 numericInfoColumn.put(name, column);
                 allInfoColumn.put(name, column+1000);
             }
+            while (column >= numericInfo.size()-1) {
+                numericInfo.add(Double.NaN);
+            }
             numericInfo.add(column, d);
         } else {
         
@@ -1262,6 +1266,15 @@ public class PSM extends AbstractFDRElement<PSM> {
             return Double.class;
         }
         return otherInfoType.get(col);
+    }
+
+    public static void resetAdditionalColumnNames() {
+        numericInfoColumn.clear();
+        allInfoColumn.clear();
+    }
+
+    public void reTestInternal() {
+        this.isInternal = peptide1.sameProtein(peptide2);
     }
     
 }

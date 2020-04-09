@@ -732,7 +732,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * @return
      */
     public static String getFDRGroup(Peptide pep1, Peptide pep2, boolean isLinear, boolean isInternal, Collection<String> negativeGroups, Collection<String> positiveGroups, String groupExt) {
-        String group = (isLinear ? "linear" : (isInternal ? "internal" : "between"));
+        String group = (isLinear ? "linear" : (isInternal ? "Self" : "Between"));
         groupExt = " " + groupExt;
         if (negativeGroups != null && negativeGroups.size() > 0) {
             ArrayList<String> ng = new ArrayList<>(negativeGroups);

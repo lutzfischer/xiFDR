@@ -50,6 +50,7 @@ import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.data.csv.gui.filter.ConditionList;
 import org.rappsilber.fdr.CSVinFDR;
+import org.rappsilber.fdr.OfflineFDR;
 
 /**
  *
@@ -133,7 +134,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         }
     }
     
-    
+    public OfflineFDR.Normalisation doNormalize() {
+        return cbNormalize.getItemAt(cbNormalize.getSelectedIndex());
+    }
     /**
      * Creates new form CSVSelection
      */
@@ -586,6 +589,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         ckCSVMarkModifications = new javax.swing.JCheckBox();
         txtForwardColumns = new javax.swing.JTextField();
         jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        cbNormalize = new javax.swing.JComboBox<>();
         ckFilter = new javax.swing.JCheckBox();
         btnFilter = new javax.swing.JButton();
         localPicker1 = new org.rappsilber.gui.components.LocalPicker();
@@ -745,6 +750,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         jLabel1.setText("Forward Columns");
 
+        jLabel2.setText("Normalize");
+
+        cbNormalize.setModel(new DefaultComboBoxModel<OfflineFDR.Normalisation>(OfflineFDR.Normalisation.values()));
+        cbNormalize.setToolTipText("How to normalize the input data");
+
         javax.swing.GroupLayout pXiConfigLayout = new javax.swing.GroupLayout(pXiConfig);
         pXiConfig.setLayout(pXiConfigLayout);
         pXiConfigLayout.setHorizontalGroup(
@@ -758,7 +768,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pXiConfigLayout.createSequentialGroup()
                         .addComponent(ckCSVMarkModifications, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 289, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(cbNormalize, 0, 186, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(txtForwardColumns, javax.swing.GroupLayout.DEFAULT_SIZE, 95, Short.MAX_VALUE))
@@ -781,7 +795,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(ckCSVMarkModifications)
                     .addComponent(txtForwardColumns, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1))
+                    .addComponent(jLabel1)
+                    .addComponent(cbNormalize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -1045,6 +1061,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JComboBox cbCSVHeaderOptional;
     private javax.swing.JComboBox cbCSVHeaders;
     private javax.swing.JComboBox cbCSVQuote;
+    private javax.swing.JComboBox<OfflineFDR.Normalisation> cbNormalize;
     private javax.swing.JCheckBox ckCSVHasHeader;
     public javax.swing.JCheckBox ckCSVMarkModifications;
     private javax.swing.JCheckBox ckFilter;
@@ -1057,6 +1074,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
     private javax.swing.JLabel jLabel28;

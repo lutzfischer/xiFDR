@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rappsilberlab</groupId>
     <artifactId>xiFDR</artifactId>
-    <version>1.4.2.1</version>
+    <version>1.4.4</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -106,7 +106,7 @@
         <dependency>
             <groupId>rappsilber</groupId>
             <artifactId>xiSEARCH</artifactId>
-            <version>1.7.2</version>
+            <version>1.7.3</version>
         </dependency>
     </dependencies>
     <build>
@@ -150,5 +150,5 @@
     </properties>
     <description>Application for FDR estimation cross-linking massspectrometry data
 </description>
-    <name>xiFDR-1.4.2.1</name>
+    <name>xiFDR-1.4.4</name>
 </project>

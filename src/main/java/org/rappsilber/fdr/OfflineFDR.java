@@ -80,6 +80,9 @@ import rappsilber.utils.MyArrayUtils;
  */
 public abstract class OfflineFDR {
 
+    public static enum Normalisation {
+        None, FDR_Based, Auto_Score, Decoy_Scores, All_Scores
+    }
     /**
      * store all psm
      */
@@ -97,7 +100,7 @@ public abstract class OfflineFDR {
     /**
      * store all Proteins
      */
-    SelfAddHashSet<Protein> allProteins = new SelfAddHashSet<Protein>();
+    protected SelfAddHashSet<Protein> allProteins = new SelfAddHashSet<Protein>();
     /**
      * turn peptide-sequences into unique integer ids
      */
@@ -183,9 +186,7 @@ public abstract class OfflineFDR {
     /**
      * indicates, whether the psms went through a score normalisation
      */
-    private boolean isNormalized = false;
-
-    Boolean isNormalizedByDecoy = null;
+    private Normalisation isNormalized = Normalisation.None;
 
     /**
      * how many decoys does a fdr group need to have to be reported as result
@@ -275,27 +276,81 @@ public abstract class OfflineFDR {
         PeptidePair.setLenghtGroup(peptideLengthGroups);
     }
 
-    public void normalizePSMs() {
-        int count = allPSMs.size();
+    
+    public void normalizePSMs(Normalisation how) {
+        switch (how) {
+            case FDR_Based: 
+                normalizePSMsToFDR();
+                break;
+            case Auto_Score: 
+                normalizePSMs();
+                break;
+            case All_Scores:
+                normalisePSMsAll();
+                break;
+            case Decoy_Scores:
+                normalisePSMsByDecoy();
+                break;            
+        }
+    }
+    
+    public boolean canDecoyNormlise() {
         int decoy = 0;
+        int count = allPSMs.size();
         for (PSM p : allPSMs) {
             if (p.isDecoy()) {
                 decoy++;
             }
-            if (decoy > count / 5) {
-                normalizePSMsByDecoy();
-                return;
+            if (decoy > count / 5 && decoy > 1000) {
+                return true;
             }
         }
-        normalizePSMsAll();
+        return false;
+        
+    }
+    
+    public void normalizePSMs() {
+        if (canDecoyNormlise()) {
+            normalisePSMsByDecoy();
+            this.setNormalised(Normalisation.Decoy_Scores);
+            return;
+        }
+        this.setNormalised(Normalisation.All_Scores);
+        normalisePSMsAll();
     }
 
-    public void coNormalizePSMs(OfflineFDR newData) {
-        if (!this.isNormalized()) {
-            this.normalizePSMsToFDR();
+    public void coNormalizePSMs(OfflineFDR newData, Normalisation how) {
+        if (how == Normalisation.Auto_Score) {
+            if (canDecoyNormlise() && newData.canDecoyNormlise()) {
+                how = Normalisation.Decoy_Scores;
+            } else {
+                how = Normalisation.All_Scores;
+            }
         }
+        if (this.isNormalized() != how) {
+            this.normalizePSMs(how);
+        }        
 
-        newData.normalizePSMsToFDR();
+        if (newData.isNormalized() != how) {
+            newData.normalizePSMs(how);
+        }
+        
+        // if we shift by score we need to adapt the offset
+        if (how == Normalisation.Decoy_Scores || how == Normalisation.All_Scores) {
+            double shift = 0;
+            OfflineFDR toShift = this;
+            if (newData.psmNormOffset < psmNormOffset) {
+                toShift = newData;
+                shift = psmNormOffset - newData.psmNormOffset;
+                newData.psmNormOffset = psmNormOffset;
+            } else {
+                shift = newData.psmNormOffset - psmNormOffset;
+                psmNormOffset = newData.psmNormOffset;
+            }
+            for (PSM psm : toShift.getAllPSMs()) {
+                psm.setScore(psm.getScore()+shift);
+            }
+        }
 
     }
 
@@ -335,81 +390,116 @@ public abstract class OfflineFDR {
         return sse.dumpCSV();
     }
 
+    /**
+     * normalizes scores by FDR.
+     * For that we do a linear interpolation between the FDRs of TD-matches.
+     */
     public void normalizePSMsToFDR() {
         // get all psms
         ArrayList<PSM> scorePSMs = new ArrayList<>(allPSMs);
         scorePSMs.sort(new Comparator<PSM>() {
             @Override
             public int compare(PSM o1, PSM o2) {
-                return Double.compare(o1.getScore(), o2.getScore());
+                return Double.compare(o2.getScore(), o1.getScore());
             }
         });
         int size = scorePSMs.size();
-
+        ArrayList<Double> fdrs = new ArrayList<>();
+        ArrayList<Integer> positions = new ArrayList<>();
+        // only accept unique PSMs
         HashSet<String> keys = new HashSet<>(scorePSMs.size() / 2);
-
-        boolean[] consider = new boolean[size];
-        int tt = 0;
-        int td = 0;
-        int dd = 0;
-        PSM lastTD = scorePSMs.get(size - 1);
-        // do some counts and link the better PSM
-        for (int p = size - 1; p >= 0; p--) {
-            PSM e = scorePSMs.get(p);
-            e.setLowerTD(lastTD);
-            if (!keys.contains(e.getNonDirectionalUnifyingKey())) {
-                keys.add(e.getNonDirectionalUnifyingKey());
-                if (e.isTT()) {
+        
+        double FDR = 0;
+        fdrs.add(0d);
+        positions.add(0);
+        PSM psm = scorePSMs.get(0);
+        
+        double tt = (psm.isTT() ? 1 : 0);
+        double td = (psm.isTD() ? 1 : 0);
+        double dd = (psm.isDD() ? 1 : 0);
+        
+        int lastPos =  0;
+        for (int p = 1; p < size; p++) { 
+            psm = scorePSMs.get(p);
+            // only considere the first encounter of a peptide-pair linksite and charge state combination
+            if (!keys.contains(psm.getNonDirectionalUnifyingKey())) {
+                keys.add(psm.getNonDirectionalUnifyingKey());
+                if (psm.isTT()) {
                     tt++;
-                } else if (e.isTD()) {
+                } if (psm.isTD()) {
                     td++;
-                    lastTD = e;
-                } else {
+                    // we found a td
+                    if (td<dd)
+                        FDR = 0;
+                    else 
+                        FDR = (td-dd) / tt;
+                    // is it lower then a previous FDRs
+                    while (FDR <fdrs.get(fdrs.size()-1)) {
+                        positions.remove(fdrs.size()-1);
+                        fdrs.remove(fdrs.size()-1);
+                    }
+                    psm.setFDR(FDR);
+                    positions.add(p);
+                    fdrs.add(FDR);
+                    lastPos = p;
+                } if (psm.isDD()) {
                     dd++;
                 }
-                consider[p] = true;
-            } else {
-                consider[p] = false;
             }
         }
-
-        double fdr = (td - dd) / (double) tt;
-        lastTD = scorePSMs.get(0);
-        lastTD.setFDR(fdr);
-        // calculate FDR and link the higher
-        for (int p = 0; p < size; p++) {
-            PSM e = scorePSMs.get(p);
-            e.setHigherTD(lastTD);
-
-            // turn the FDR into a score
-            //e.setScore(10*(1-e.getEstimatedFDR()));
-            if (consider[p]) {
-                keys.add(e.getNonDirectionalUnifyingKey());
-                if (e.isTT()) {
-                    tt--;
-                } else if (e.isTD()) {
-                    e.setFDR(fdr);
-                    td--;
-                    lastTD = e;
-                } else {
-                    dd--;
+        if (lastPos<scorePSMs.size()-1) {
+            if (td<dd)
+                FDR = 0;
+            else 
+                FDR = (td-dd) / tt;
+            while (FDR <fdrs.get(fdrs.size()-1)) {
+                positions.remove(fdrs.size()-1);
+                fdrs.remove(fdrs.size()-1);
+            }
+            positions.add(scorePSMs.size()-1);
+            fdrs.add(FDR);
+        }
+        
+        int lowerFDRentry = 0;
+        int higherFDRentry = 1;
+        int lowerFDRpos = positions.get(0);
+        int higherFDRpos = positions.get(1);
+        
+        PSM l = scorePSMs.get(0);
+        l.setFDR(0);
+        PSM h = scorePSMs.get(higherFDRpos);
+                
+        for (int p = 0; p<scorePSMs.size();p++) {
+            
+            if (p == higherFDRpos) {
+                lowerFDRpos = higherFDRpos;
+                if (p< scorePSMs.size()-1) {
+                    higherFDRentry++;
+                    higherFDRpos = positions.get(higherFDRentry);
+                    l = h;
+                    h = scorePSMs.get(higherFDRpos);
                 }
             }
-            double newfdr = (td - dd) / (double) tt;
-            if (newfdr < fdr) {
-                fdr = newfdr;
-            }
+            
+            PSM e = scorePSMs.get(p);
+            
+            e.setLowerFDRTD(l);
+            e.setHigherFDRTD(h);
         }
+        double[] newScores = new double[scorePSMs.size()];
         for (int p = 0; p < size; p++) {
             PSM e = scorePSMs.get(p);
             // turn the FDR into a score
-            e.setScore(10 * (1 - e.getEstimatedFDR()));
+            newScores[p]=10 * (1 - e.getEstimatedFDR());
+        }
+        for (int p = 0; p < size; p++) {
+            scorePSMs.get(p).setScore(newScores[p]);
         }
 
-        setOveralNormalized();
+        setNormalised(Normalisation.FDR_Based);
     }
 
-    public void normalizePSMsByDecoy() {
+    public void normalisePSMsByDecoy() {
         if (allPSMs.size() == 0) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Supposedly no PSMs here");
         }
@@ -437,10 +527,10 @@ public abstract class OfflineFDR {
             p.setScore((p.getScore() - mode) / mad + offset);
         }
 
-        setDecoyNormalized();
+        setNormalised(Normalisation.Decoy_Scores);
     }
 
-    public void normalizePSMsAll() {
+    public void normalisePSMsAll() {
         if (allPSMs.size() == 0) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Supposedly no PSMs here");
         }
@@ -462,7 +552,7 @@ public abstract class OfflineFDR {
             p.setScore((p.getScore() - mode) / mad + offset);
         }
 
-        setOveralNormalized();
+        setNormalised(Normalisation.All_Scores);
     }
 
     /**
@@ -506,11 +596,15 @@ public abstract class OfflineFDR {
      * @param psms list of psms
      * @param offset the offset applied to this list
      */
-    public void normaliseAndAddPsmList(OfflineFDR other) {
-        coNormalizePSMs(this);
+    public void normaliseAndAddPsmList(OfflineFDR other, Normalisation how) {
+        coNormalizePSMs(other, how);
         allPSMs.addAll(other.allPSMs);
     }
 
+    public void add(OfflineFDR other) {
+        allPSMs.addAll(other.allPSMs);        
+    }
+    
     protected void levelSummary(PrintWriter summaryOut, String pepheader, FDRResultLevel level, String seperator) {
 
         double target_fdr = level.getTargetFDR();
@@ -1725,10 +1819,10 @@ public abstract class OfflineFDR {
 
         String outNameLinear = path + "/" + baseName + "_Linear_PSM" + extension;
         PrintWriter psmLinearOut = null;
-        String outName = path + "/" + baseName + "_PSM" + extension;
+        String outName = path + "/" + baseName + "_CSM" + extension;
         PrintWriter psmOut = null;
         if (!csvSummaryOnly) {
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write PSM-results to " + outName);
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write CSM-results to " + outName);
             psmOut = new PrintWriter(outName);
             String header = csvFormater.valuesToString(getPSMHeader());
             psmOut.println(header);
@@ -2147,14 +2241,14 @@ public abstract class OfflineFDR {
         summaryOut.println();
 
 //        summaryOut.println("Input PSMs" +seperator + "fdr PSM" +seperator + "fdr peptide pairs" +seperator + "fdr links" +seperator + "fdr ppi");
-        summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Internal TT\""
-                + seperator + "\"Internal TD\"" + seperator + "\"Internal DD\""
+        summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Self TT\""
+                + seperator + "\"Self TD\"" + seperator + "\"Self DD\""
                 + seperator + "\"Between TT\"" + seperator + "\"Between TD\"" + seperator + "\"Between DD\""
                 + seperator + "\"Linear T\"" + seperator + "\"Linear D\"");
 
         summaryOut.println("\"Input PSMs\"" + seperator + "" + getAllPSMs().size());
 
-        summaryOut.println("\"fdr PSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
+        summaryOut.println("\"fdr CSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
                 + seperator + psmBetweenTT + seperator + psmBetweenTD + seperator + psmBetweenDD
                 + seperator + psmLinearT + seperator + psmLinearD);
 
@@ -3290,9 +3384,7 @@ public abstract class OfflineFDR {
         setCsvOutBaseSetting(csvBase);
         setCsvOutDirSetting(csvdir);
 
-        setMaximumLinkAmbiguity(maxLinkAmbiguity);
         settings.setMaxLinkAmbiguity(maxLinkAmbiguity);
-        setMaximumProteinAmbiguity(maxProteinGroupAmbiguity);
         settings.setMaxProteinAmbiguity(maxProteinGroupAmbiguity);
         setMinPepPerProteinGroup(minPepPerProtein);
         settings.setMinProteinPepCount(minPepPerProtein);
@@ -3437,6 +3529,9 @@ public abstract class OfflineFDR {
                 ret.add(v.toString());
             }
         }
+        if (isNormalized() != Normalisation.None) {
+            ret.add(d2s(pp.getOriginalScore()));
+        }
         ret.add(d2s(pp.getScore()));
         ret.add(Boolean.toString(pp.isDecoy()));
         ret.add(Boolean.toString(pp.isTT()));
@@ -3460,7 +3555,7 @@ public abstract class OfflineFDR {
         return ret;
     }
 
-    protected void peptidePositionsToPSMOutString(HashMap<Protein, IntArrayList> positions, StringBuilder sbaccessions, StringBuilder sbdescriptions, StringBuilder sbPositions, StringBuilder sbProtLink, int peplink) {
+    protected void peptidePositionsToPSMOutString(HashMap<Protein, HashSet<Integer>> positions, StringBuilder sbaccessions, StringBuilder sbdescriptions, StringBuilder sbPositions, StringBuilder sbProtLink, int peplink) {
         for (Protein p : positions.keySet()) {
             for (int i : positions.get(p)) {
                 sbaccessions.append(";").append((p.isDecoy()?"decoy:":"")+ p.getAccession());
@@ -3497,6 +3592,10 @@ public abstract class OfflineFDR {
             ret.addAll(extraColumns);
         } else {
             extraColumns = new ArrayList<>(0);
+        }
+        
+        if (isNormalized() != Normalisation.None) {
+            ret.add("Orignal Score");
         }
 
         ret.addAll(RArrayUtils.toCollection(new String[]{"Score",
@@ -4042,7 +4141,6 @@ public abstract class OfflineFDR {
     }
 
     public PSM addMatch(String psmID, Long pepid1, Long pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Long protid1, String accession1, String description1, Long protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double peptide1score, double peptide2score, String isSpecialCase, String crosslinker, String run, String Scan) {
-//    public PSM addMatch(String pepSeq2, String pepSeq1, String accession1, String accession2, int protid1, String description2, boolean isDecoy1, int pepid1, int pepPosition1, int peplen1, int protid2, boolean isDecoy2, int pepid2, int pepPosition2, int peplen2, String psmID, int site1, int site2, int charge, double score, double scoreRatio, boolean isSpecialCase) {
         boolean linear = pepSeq2 == null || pepSeq2.isEmpty() || pepSeq1 == null || pepSeq1.isEmpty();
         boolean internal = (!linear) && (accession1.contentEquals(accession2) || ("REV_" + accession1).contentEquals(accession2) || accession1.contentEquals("REV_" + accession2));
         boolean between = !(linear || internal);
@@ -4093,7 +4191,7 @@ public abstract class OfflineFDR {
      *
      * @return the isNormalized
      */
-    public boolean isNormalized() {
+    public Normalisation isNormalized() {
         return isNormalized;
     }
 
@@ -4102,29 +4200,7 @@ public abstract class OfflineFDR {
      *
      * @param isNormalized the isNormalized to set
      */
-    public void setNormalized(boolean isNormalized) {
-        this.isNormalized = isNormalized;
-    }
-
-    /**
-     * indicates, whether the psms went through a score normalisation
-     *
-     * @param isNormalized the isNormalized to set
-     */
-    public void setDecoyNormalized() {
-        setNormalized(true);
-        this.isNormalizedByDecoy = true;
-        this.isNormalized = isNormalized;
-    }
-
-    /**
-     * indicates, whether the psms went through a score normalisation
-     *
-     * @param isNormalized the isNormalized to set
-     */
-    public void setOveralNormalized() {
-        setNormalized(true);
-        this.isNormalizedByDecoy = false;
+    public void setNormalised(Normalisation isNormalized) {
         this.isNormalized = isNormalized;
     }
 
