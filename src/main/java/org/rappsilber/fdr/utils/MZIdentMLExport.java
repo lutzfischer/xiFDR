@@ -2076,7 +2076,7 @@ public class MZIdentMLExport {
             Enzyme enzyme = new Enzyme();
             enzyme.setId(e[1]+"_"+enzymes.size());
             enzyme.setCTermGain("OH");
-            enzyme.setNTermGain("H");
+            enzyme.setNTermGain("H");   
             enzyme.setMissedCleavages(missedCleavage);
             enzyme.setSemiSpecific(false);
             ParamList paramList = enzyme.getEnzymeName();
@@ -2212,6 +2212,16 @@ public class MZIdentMLExport {
                 searchModList.addAll(searchMod);
             }
             for (AminoModification am : conf.getVariableModifications()) {
+                String residue = am.BaseAminoAcid.SequenceID;
+                if (residue.contains("X"))
+                    continue;
+                ArrayList<String> cResidues = new ArrayList<String>(1);
+                cResidues.add(residue);
+
+                SearchModification searchMod = translateToSearchModification(am, cResidues, fragmentIsMono, false,((XiInFDR)fdr).getConfig());
+                searchModList.add(searchMod);
+            }
+            for (AminoModification am : conf.getKnownModifications()) {
                 String residue = am.BaseAminoAcid.SequenceID;
                 if (residue.contains("X"))
                     continue;
