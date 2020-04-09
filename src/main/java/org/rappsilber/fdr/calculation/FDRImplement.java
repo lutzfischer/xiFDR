@@ -741,6 +741,7 @@ public class FDRImplement implements FDR {
         int prevTDIndex = groupSize - 1;
 
         int minTD = 2;
+        int minTotal = 20;
         int id5 = (int)(groupSize*0.5);
         int id90 = (int)(groupSize*0.90);
         double minWindow = Math.abs(group.get(id5).getScore() - group.get(id90).getScore()) / 10.0;
@@ -784,7 +785,8 @@ public class FDRImplement implements FDR {
                     && // expand the window until we have more then the required TD
                     wDD * 1.1 < wTD
                     && // also we want some more TD the DD
-                    wDD * 1.1 < wTT) {  // and more TT then DD
+                    wDD * 1.1 < wTT &&
+                    wTT+wTD+wDD >=minTotal) {  // and more TT then DD
                 lastMin++;
                 if (lastMinE.isTT()) {
                     wTT--;
