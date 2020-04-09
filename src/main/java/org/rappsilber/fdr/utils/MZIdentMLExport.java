@@ -868,7 +868,7 @@ public class MZIdentMLExport {
                     pdhList = pag.getProteinDetectionHypothesis();                        
                     
                    //Parse protein details into DBSequence objects:
-                    HashMap<org.rappsilber.fdr.entities.Protein, org.rappsilber.utils.IntArrayList> protPositions = pep.getPositions();
+                    HashMap<org.rappsilber.fdr.entities.Protein, HashSet<Integer>> protPositions = pep.getPositions();
                     for (org.rappsilber.fdr.entities.Protein prot : protPositions.keySet())  {
                         String protKey = prot.getAccession() + "_" + (prot.isDecoy() ? "decoy" : "target");
                         String dbSeqId = "dbseq_" + protKey;
@@ -1364,32 +1364,14 @@ public class MZIdentMLExport {
 
         for (int a = 0; a < aaseq.length; a++) {
             if (aaseq[a] instanceof rappsilber.ms.sequence.AminoModification) {
-                rappsilber.ms.sequence.AminoModification am = (rappsilber.ms.sequence.AminoModification) aaseq[a];
-                uk.ac.ebi.jmzidml.model.mzidml.Modification mzidMod = translateToMzidModification(am, a, seq, fragmentIsMono);
-                mzidPep.getModification().add(mzidMod);
+                if (!aaseq[a].SequenceID.contains("X")) {
+                    rappsilber.ms.sequence.AminoModification am = (rappsilber.ms.sequence.AminoModification) aaseq[a];
+                    uk.ac.ebi.jmzidml.model.mzidml.Modification mzidMod = translateToMzidModification(am, a, seq, fragmentIsMono);
+                    mzidPep.getModification().add(mzidMod);
+                }
             }
         }
 
-
-//        for (de.proteinms.xtandemparser.interfaces.Modification reportedMod : fixModList) {
-//
-//            if (!reportedMod.isSubstitution()) {
-//            } else {
-//                SubstitutionModification mzidSubs = translateToMzidSubstitution(reportedMod, domain, fragmentIsMono);
-//                mzidPep.getSubstitutionModification().add(mzidSubs);
-//            }
-//        }
-//
-//        for (de.proteinms.xtandemparser.interfaces.Modification reportedMod : varModList) {
-//
-//            if (!reportedMod.isSubstitution()) {
-//                uk.ac.ebi.jmzidml.model.mzidml.Modification mzidMod = translateToMzidModification(reportedMod, domain, fragmentIsMono);
-//                mzidPep.getModification().add(mzidMod);
-//            } else {
-//                SubstitutionModification mzidSubs = translateToMzidSubstitution(reportedMod, domain, fragmentIsMono);
-//                mzidPep.getSubstitutionModification().add(mzidSubs);
-//            }
-//        }
 
     }
 
@@ -2092,7 +2074,7 @@ public class MZIdentMLExport {
             }
         } else {
             Enzyme enzyme = new Enzyme();
-            enzyme.setId("Enz"+enzymes.size());
+            enzyme.setId(e[1]+"_"+enzymes.size());
             enzyme.setCTermGain("OH");
             enzyme.setNTermGain("H");
             enzyme.setMissedCleavages(missedCleavage);
@@ -2226,11 +2208,13 @@ public class MZIdentMLExport {
             ArrayList<AminoModification> fixedmods = conf.getFixedModifications();
 
             for (rappsilber.ms.crosslinker.CrossLinker xl : conf.getCrossLinker()) {
-                List<SearchModification> searchMod = translateToSearchModification(xl, fragmentIsMono, false,((XiInFDR)fdr).getConfig());
+                List<SearchModification> searchMod = translateToSearchModification(xl, ((XiInFDR)fdr).getConfig());
                 searchModList.addAll(searchMod);
             }
             for (AminoModification am : conf.getVariableModifications()) {
                 String residue = am.BaseAminoAcid.SequenceID;
+                if (residue.contains("X"))
+                    continue;
                 ArrayList<String> cResidues = new ArrayList<String>(1);
                 cResidues.add(residue);
 
@@ -2239,6 +2223,8 @@ public class MZIdentMLExport {
             }
             for (AminoModification am : conf.getFixedModifications()) {
                 String residue = am.BaseAminoAcid.SequenceID;
+                if (residue.contains("X"))
+                    continue;
                 ArrayList<String> cResidues = new ArrayList<String>(1);
                 cResidues.add(residue);
                 SearchModification searchMod = translateToSearchModification(am, cResidues, fragmentIsMono, true,((XiInFDR)fdr).getConfig());
@@ -2368,7 +2354,6 @@ public class MZIdentMLExport {
      */
     private SearchModification translateToSearchModification(AminoModification reportedMod, Collection<String> modResidues, boolean fragmentIsMono, boolean isFixedMod, rappsilber.config.RunConfig conf) {
         Vector<String> residues = new Vector<String>();
-        //String[] temp = reportedMod.split("@");
         double monoMass = reportedMod.weightDiff;
 
         residues.addAll(modResidues);
@@ -2377,11 +2362,11 @@ public class MZIdentMLExport {
         SearchModification searchMod = new SearchModification();
         searchMod.setFixedMod(isFixedMod);
 
-        if (unimod == null) {
+        if (unimod == null && reportedMod.BaseAminoAcid != AminoAcid.X) {
             String modname = reportedMod.SequenceID.replaceAll("[A-Z]", "");
             boolean[] term =new boolean[]{false};
             XLModEntry e = xlmod.guessModificationCached(new XLModQuery(monoMass, modname, new String[]{reportedMod.BaseAminoAcid.SequenceID}, term, term, term, term));
-
+            
             if (e==null) {
                 // could be a cross-linker specific modification
                 for (rappsilber.ms.crosslinker.CrossLinker cl :conf.getCrossLinker()) {
@@ -2429,7 +2414,7 @@ public class MZIdentMLExport {
      * @param isFixedMod
      * @return
      */
-    private List<SearchModification> translateToSearchModification(rappsilber.ms.crosslinker.CrossLinker crosslinker,  boolean fragmentIsMono, boolean isFixedMod, rappsilber.config.RunConfig conf) {
+    private List<SearchModification> translateToSearchModification(rappsilber.ms.crosslinker.CrossLinker crosslinker, rappsilber.config.RunConfig conf) {
         ArrayList<SearchModification> ret = new ArrayList<SearchModification>();
         Vector<String> residues = new Vector<String>();
         //String[] temp = reportedMod.split("@");
@@ -2437,10 +2422,15 @@ public class MZIdentMLExport {
 
 
         SearchModification searchMod = new SearchModification();
-        searchMod.setFixedMod(isFixedMod);
+        searchMod.setFixedMod(false);
         searchMod.setMassDelta((float) monoMass);
+        searchMod.getCvParam().add(makeCvParam(crosslinkedDonorModAcc, crosslinkedDonorModName, psiCV, ""+countCrossLinker));
 
-        String modname = crosslinker.getName();
+        SearchModification searchModAcceptor = new SearchModification();
+        searchModAcceptor.setFixedMod(true);
+        searchModAcceptor.setMassDelta(0f);
+        searchModAcceptor.getCvParam().add(makeCvParam(getCrosslinkedAcceptorModAcc(), crosslinkedReceptorModName, psiCV, ""+countCrossLinker));
+        
         boolean[] term =new boolean[]{false,false};
 
         XLModEntry e = null;
@@ -2470,35 +2460,47 @@ public class MZIdentMLExport {
         searchMod.getCvParam().add(modParam);
         
         if (crosslinker instanceof rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker) {
+            HashSet<String> modsRes = new HashSet<>();
             boolean all = false;
-            if (((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0).size() == 0) {
+            if (((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0).isEmpty()) {
                 allAminoAcidsToModificationResidues(conf, searchMod);
+                allAminoAcidsToModificationResidues(conf, searchModAcceptor);
                 all = true;
             }else {
-                for (AminoAcid aa : ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0)) {
-                    searchMod.getResidues().add(aa.SequenceID.substring(0,1));
-                }
+                for (AminoAcid aa: ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0))
+                    if (!aa.SequenceID.contains("X"))
+                        modsRes.add(aa.SequenceID.substring(0,1));
             }
             
-            if (((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0).size() == 0) {
+            if ((!all) && ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(1).isEmpty()) {
                 if (!all) {
                     allAminoAcidsToModificationResidues(conf, searchMod);
+                    allAminoAcidsToModificationResidues(conf, searchModAcceptor);
                     all = true;
                 }
-            }else {
-                for (AminoAcid aa : ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(1)) {
-                    searchMod.getResidues().add(aa.SequenceID.substring(0,1));
+            }else if (!all){
+                for (AminoAcid aa: ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(1))
+                    if (!aa.SequenceID.contains("X"))
+                        modsRes.add(aa.SequenceID.substring(0,1));
+            }
+            
+            HashSet<String> existing = new HashSet<>(searchMod.getResidues());
+            for (String aa : modsRes) {
+                if (!existing.contains(aa)) {
+                    searchMod.getResidues().add(aa);
+                    searchModAcceptor.getResidues().add(aa);
                 }
             }
         } else {
             allAminoAcidsToModificationResidues(conf, searchMod);
+            allAminoAcidsToModificationResidues(conf, searchModAcceptor);
         }
-        searchMod.getCvParam().add(makeCvParam(crosslinkedDonorModAcc, crosslinkedDonorModName, psiCV, ""+countCrossLinker));
         
         ret.add(searchMod);
+        ret.add(searchModAcceptor);
         if (crosslinker.linksCTerminal(0)) {
             SearchModification searchModCTerm = new SearchModification();
-            searchModCTerm.setFixedMod(isFixedMod);
+            searchModCTerm.setFixedMod(true);
             searchModCTerm.setMassDelta((float) monoMass);
             searchModCTerm.getCvParam().add(modParam);
             searchModCTerm.getResidues().add(".");
@@ -2507,11 +2509,19 @@ public class MZIdentMLExport {
             searchModCTerm.getSpecificityRules().add(sr);
             searchModCTerm.getCvParam().add(makeCvParam(crosslinkedDonorModAcc, crosslinkedDonorModName, psiCV, ""+countCrossLinker));
             ret.add(searchModCTerm);
+            SearchModification searchModCTermAcceptor = new SearchModification();
+            searchModCTermAcceptor.setFixedMod(true);
+            searchModCTermAcceptor.setMassDelta((float) monoMass);
+            searchModCTermAcceptor.getCvParam().add(modParam);
+            searchModCTermAcceptor.getResidues().add(".");
+            searchModCTermAcceptor.getSpecificityRules().add(sr);
+            searchModCTermAcceptor.getCvParam().add(makeCvParam(getCrosslinkedAcceptorModAcc(), crosslinkedReceptorModName, psiCV, ""+countCrossLinker));
+            ret.add(searchModCTermAcceptor);
         }
 
         if (crosslinker.linksNTerminal(0)) {
             SearchModification searchModNTerm = new SearchModification();
-            searchModNTerm.setFixedMod(isFixedMod);
+            searchModNTerm.setFixedMod(true);
             searchModNTerm.setMassDelta((float) monoMass);
             searchModNTerm.getCvParam().add(modParam);
             searchModNTerm.getResidues().add(".");
@@ -2520,76 +2530,27 @@ public class MZIdentMLExport {
             searchModNTerm.getSpecificityRules().add(sr);
             searchModNTerm.getCvParam().add(makeCvParam(crosslinkedDonorModAcc, crosslinkedDonorModName, psiCV, ""+countCrossLinker));
             ret.add(searchModNTerm);
+            SearchModification searchModNTermAcceptor = new SearchModification();
+            searchModNTermAcceptor.setFixedMod(true);
+            searchModNTermAcceptor.setMassDelta((float) monoMass);
+            searchModNTermAcceptor.getCvParam().add(modParam);
+            searchModNTermAcceptor.getResidues().add(".");
+            searchModNTermAcceptor.getSpecificityRules().add(sr);
+            searchModNTermAcceptor.getCvParam().add(makeCvParam(getCrosslinkedAcceptorModAcc(), crosslinkedReceptorModName, psiCV, ""+countCrossLinker));
+            ret.add(searchModNTermAcceptor);
         }
         
-        // register the corresponding acceptors
-        SearchModification searchModAcceptor = new SearchModification();
-        searchModAcceptor.setFixedMod(isFixedMod);
-        searchModAcceptor.setMassDelta(0f);
-//        searchModAcceptor.getCvParam().add(modParam);
-        searchModAcceptor.getCvParam().add(makeCvParam(getCrosslinkedAcceptorModAcc(), crosslinkedReceptorModName, psiCV, ""+countCrossLinker));
-        
-        if (crosslinker instanceof rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker) {
-            boolean all = false;
-            if (((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0).size() == 0) {
-                allAminoAcidsToModificationResidues(conf, searchMod);
-                all = true;
-            }else {
-                for (AminoAcid aa : ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(0)) {
-                    searchModAcceptor.getResidues().add(aa.SequenceID.substring(0,1));
-                }
-            }
-            
-            if (((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(1).size() == 0) {
-                if (!all)
-                    allAminoAcidsToModificationResidues(conf, searchMod);
-                all = true;
-            }else {
-                for (AminoAcid aa : ((rappsilber.ms.crosslinker.AminoAcidRestrictedCrossLinker)crosslinker).getAASpecificity(1)) {
-                    searchModAcceptor.getResidues().add(aa.SequenceID.substring(0,1));
-                }
-            }
-        } else {
-            allAminoAcidsToModificationResidues(conf, searchModAcceptor);
-        }
-        ret.add(searchModAcceptor);
-
-        if (crosslinker.linksCTerminal(1)) {
-            SearchModification searchModAcceptorCTerm = new SearchModification();
-            searchModAcceptorCTerm.setFixedMod(isFixedMod);
-            searchModAcceptorCTerm.setMassDelta(0f);
-    //        searchModAcceptorCTerm.getCvParam().add(modParam);
-            searchModAcceptorCTerm.getResidues().add(".");
-            SpecificityRules sr = new SpecificityRules();
-            sr.getCvParam().add(makeCvParam("MS:1002058", "modification specificity protein C-term", psiCV));
-            searchModAcceptorCTerm.getSpecificityRules().add(sr);
-            searchModAcceptorCTerm.getCvParam().add(makeCvParam(getCrosslinkedAcceptorModAcc(), crosslinkedReceptorModName, psiCV, ""+countCrossLinker));
-
-            ret.add(searchModAcceptorCTerm);            
-        }
-
-        if (crosslinker.linksNTerminal(1)) {
-            SearchModification searchModAcceptorCTerm = new SearchModification();
-            searchModAcceptorCTerm.setFixedMod(isFixedMod);
-            searchModAcceptorCTerm.setMassDelta(0f);
-    //        searchModAcceptorCTerm.getCvParam().add(modParam);
-            searchModAcceptorCTerm.getResidues().add(".");
-            SpecificityRules sr = new SpecificityRules();
-            sr.getCvParam().add(makeCvParam("MS:1002057", "modification specificity protein N-term", psiCV));
-            searchModAcceptorCTerm.getSpecificityRules().add(sr);
-            searchModAcceptorCTerm.getCvParam().add(makeCvParam(getCrosslinkedAcceptorModAcc(), crosslinkedReceptorModName, psiCV, ""+countCrossLinker));
-
-            ret.add(searchModAcceptorCTerm);            
-        }        
-            
         countCrossLinker ++;
         return ret;
     }
 
     protected void allAminoAcidsToModificationResidues(RunConfig conf, SearchModification searchMod) {
         HashSet<String> aas = new HashSet<>();
+        HashSet<String> existing = new HashSet<>(searchMod.getResidues());
         for (AminoAcid aa : conf.getAllAminoAcids()) {
-            aas.add(aa.SequenceID.substring(0,1));
+            String res = aa.SequenceID.substring(0,1);
+            if (!(existing.contains(res) || res.contains("X")))
+                aas.add(res);
         }
         for (String aa : aas) {
             searchMod.getResidues().add(aa);
