@@ -22,12 +22,10 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.RandomAccess;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,7 +63,6 @@ import org.rappsilber.fdr.utils.MiscUtils;
 import org.rappsilber.utils.AutoIncrementValueMap;
 import org.rappsilber.utils.CountOccurence;
 import org.rappsilber.utils.DoubleArrayList;
-import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.NullOutputStream;
 import org.rappsilber.utils.SelfAddHashSet;
@@ -3357,7 +3354,6 @@ public abstract class OfflineFDR {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
                 boolean filter = bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$");
                 settings.setFilterToUniquePSM(filter);
-                setFilterUniquePSMs(filter);
             } else {
                 unknown.add(arg);
             }

@@ -982,6 +982,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         for (int p = 0; p< protein1ID.length; p++) {
                             int p1 = pepPosition1[p];
                             long p1id = protein1ID[p];
+                            proteinIds.add(p1id);
                             String s1 = Long.toString(p1id);
                             String a1 = Long.toString(p1id);
                             String n1 = Long.toString(p1id);
@@ -1117,7 +1118,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 }
 
                 String proteinQuerry = "SELECT id, accession_number, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
-                
+                Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Geting protein information: \n" + proteinQuerry);
                 stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
                 stm.setFetchSize(100);
                 rs = stm.executeQuery(proteinQuerry);
