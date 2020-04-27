@@ -121,7 +121,6 @@ public abstract class OfflineFDR {
 //    private boolean links_directional = false;
 //    private boolean ppi_directional = false;
     protected int m_maximum_summed_peplength = Integer.MAX_VALUE;
-    protected FDRLevel maximizeWhat = null;
     
     private CheckValid check = new ValidityCheckImplement(0, 2);
     private FDR calc = new FDRImplement(check);
@@ -3126,6 +3125,8 @@ public abstract class OfflineFDR {
         String csvdir = null;
         String csvBase = null;
         int fdrDigits = commandlineFDRDigits;
+        FDRLevel maximizeWhat = null;
+        settings.doOptimize(null);
 
         for (String arg : argv) {
 
@@ -3146,22 +3147,22 @@ public abstract class OfflineFDR {
                 if (what.contentEquals("pep")
                         || what.contentEquals("peptidepair")
                         || what.contentEquals("peppair")) {
-                    this.maximizeWhat = FDRLevel.PEPTIDE_PAIR;
+                    maximizeWhat = FDRLevel.PEPTIDE_PAIR;
                 } else if (what.contentEquals("link")
                         || what.contentEquals("residuepair")) {
-                    this.maximizeWhat = FDRLevel.PROTEINGROUPLINK;
+                    maximizeWhat = FDRLevel.PROTEINGROUPLINK;
                 } else if (what.contentEquals("prot")
                         || what.contentEquals("protein")
                         || what.contentEquals("proteinpair")
                         || what.contentEquals("ppi")) {
-                    this.maximizeWhat = FDRLevel.PROTEINGROUPPAIR;
+                    maximizeWhat = FDRLevel.PROTEINGROUPPAIR;
                 }
-                
+                settings.doOptimize(maximizeWhat);
             }else if (arg.toLowerCase().equals("--boost-between")) {
                 settings.setBoostBetween(true);
-                
             }else if (arg.toLowerCase().equals("--single-step-boost")) {
                 settings.twoStepOptimization(false);
+                
             } else if (arg.startsWith("--reportfactor=")) {
 
             } else if (arg.startsWith("--psmfdr=")) {
