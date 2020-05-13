@@ -820,29 +820,33 @@ public class FDRGUI extends javax.swing.JFrame {
         }else {
             ofdr = new CSVinFDR();
         }
-        addCSV(ofdr, null, csv,filter);
+        if (addCSV(ofdr, null, csv,filter)) {
 
-        while (csvs.hasNext()) {
-            csv = csvs.next();
-            CSVinFDR nextfdr = null;
+            while (csvs.hasNext()) {
+                csv = csvs.next();
+                CSVinFDR nextfdr = null;
 
-            if (config != null && fasta != null) {
-                nextfdr = new XiCSVinFDR();
-                ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
-                ArrayList<String> fastas = new ArrayList<>(1);
-                fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
-                ((XiCSVinFDR)nextfdr).setFastas(fastas);
-            }else {
-                nextfdr = new CSVinFDR();
+                if (config != null && fasta != null) {
+                    nextfdr = new XiCSVinFDR();
+                    ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+                    ArrayList<String> fastas = new ArrayList<>(1);
+                    fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
+                    ((XiCSVinFDR)nextfdr).setFastas(fastas);
+                }else {
+                    nextfdr = new CSVinFDR();
+                }
+
+
+                if (!addCSV(nextfdr, ofdr, csv,filter)) {
+                    return null;
+                }
             }
-
-
-            addCSV(nextfdr, ofdr, csv,filter);
+            if (normalisation != OfflineFDR.Normalisation.None) {
+                ofdr.normalizePSMs(normalisation);
+            }
+            return ofdr;
         }
-        if (normalisation != OfflineFDR.Normalisation.None) {
-            ofdr.normalizePSMs(normalisation);
-        }
-        return ofdr;
+        return null;
     }
     
     public void readAllCSV() {
@@ -927,7 +931,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
     }
 
-    protected void addCSV(final CSVinFDR ofdr, final CSVinFDR addto, final CsvParser csv, CsvCondition filter) throws IOException, ParseException {
+    protected boolean addCSV(final CSVinFDR ofdr, final CSVinFDR addto, final CsvParser csv, CsvCondition filter) throws IOException, ParseException {
         ofdr.setPSMScoreHighBetter(csvSelect.higherIsBetter());
 
         setStatus("Read from " + csv.getInputFile().getName());
@@ -935,11 +939,16 @@ public class FDRGUI extends javax.swing.JFrame {
         if (addto == null) {
             PSM.resetAdditionalColumnNames();
         }
-        ofdr.readCSV(csv, filter);
+        if (!ofdr.readCSV(csv, filter)) {
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Could not read from " + csv.getInputFile().getAbsolutePath());
+            setStatus("Error reading from " + csv.getInputFile().getName());            
+            return false;
+        }
         if (addto != null) {
             addto.add(ofdr);
             addto.addSource(ofdr.getSources(), ofdr.getFilter());
         }
+        return true;
     }
 
     public void readMZIdentML() {
@@ -1113,6 +1122,8 @@ public class FDRGUI extends javax.swing.JFrame {
 
         int sumLinksBetweenDecoy = 0;
         int sumLinksInternalDecoy = 0;
+        int sumLinksBetweenDD = 0;
+        int sumLinksInternalDD = 0;
         int sumLinksInternalTarget = 0;
         int sumLinksBetweenTarget = 0;
         int sumLinks = getResult().proteinGroupLinkFDR.getResultCount();
@@ -1120,8 +1131,14 @@ public class FDRGUI extends javax.swing.JFrame {
             if (l.isDecoy()) {
                 if (l.isInternal) {
                     sumLinksInternalDecoy++;
+                    if (l.isDD()) {
+                        sumLinksInternalDD++;
+                    }
                 } else {
                     sumLinksBetweenDecoy++;
+                    if (l.isDD()) {
+                        sumLinksBetweenDD++;
+                    }
                 }
             } else if (l.isInternal) {
                 sumLinksInternalTarget++;
@@ -1134,14 +1151,20 @@ public class FDRGUI extends javax.swing.JFrame {
         int sumProteinGroupPairs = getResult().proteinGroupPairFDR.getResultCount();
         int sumProteinGroupPairsBetweenDecoy = 0;
         int sumProteinGroupPairsInternalDecoy = 0;
+        int sumProteinGroupPairsBetweenDD = 0;
+        int sumProteinGroupPairsInternalDD = 0;
         int sumProteinGroupPairsInternalTarget = 0;
         int sumProteinGroupPairsBetweenTarget = 0;
         for (ProteinGroupPair pgl : getResult().proteinGroupPairFDR) {
             if (pgl.isDecoy()) {
                 if (pgl.isInternal()) {
                     sumProteinGroupPairsInternalDecoy++;
+                    if (pgl.isDD())
+                        sumProteinGroupPairsInternalDD++;
                 } else {
                     sumProteinGroupPairsBetweenDecoy++;
+                    if (pgl.isDD())
+                        sumProteinGroupPairsBetweenDD++;
                 }
             } else if (pgl.isInternal()) {
                 sumProteinGroupPairsInternalTarget++;
@@ -1167,8 +1190,10 @@ public class FDRGUI extends javax.swing.JFrame {
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupLinkFDR.getHigherFDR() * 100, result.proteinGroupLinkFDR.getLowerFDR() * 100}, 1);
         txtSumLinks.setText(sumLinks + " [" + nice[0] + "%," + nice[1] + "%]");
         txtSumLinks.setToolTipText(fdrLevelSummary(result.proteinGroupLinkFDR));
-        txtSumLinksBetween.setText((sumLinksBetweenTarget + sumLinksBetweenDecoy) + " (" + sumLinksBetweenTarget + " Target)");
-        txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + ")");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksBetweenDecoy-2*sumLinksBetweenDD)/(double)sumLinksBetweenTarget * 100, (sumLinksBetweenDecoy-2*sumLinksBetweenDD+1)/(double)sumLinksBetweenTarget * 100}, 1);
+        txtSumLinksBetween.setText((sumLinksBetweenTarget + sumLinksBetweenDecoy) + " (" + sumLinksBetweenTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksInternalDecoy-2*sumLinksInternalDD)/(double)sumLinksInternalTarget * 100, (sumLinksInternalDecoy-2*sumLinksInternalDD+1)/(double)sumLinksInternalTarget * 100}, 1);
+        txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + " TT)  [" + nice[0] + "%," + nice[1] + "%]");
 
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupFDR.getHigherFDR() * 100, result.proteinGroupFDR.getLowerFDR() * 100}, 1);
         txtSumProtGroups.setText(Integer.toString(getResult().proteinGroupFDR.getResultCount()) + " [" + nice[0] + "%," + nice[1] + "%]");
@@ -1177,8 +1202,10 @@ public class FDRGUI extends javax.swing.JFrame {
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupPairFDR.getHigherFDR() * 100, result.proteinGroupPairFDR.getLowerFDR() * 100}, 1);
         txtSumProtGroupPairs.setText(sumProteinGroupPairs + " [" + nice[0] + "%," + nice[1] + "%]");
         txtSumProtGroupPairs.setToolTipText(fdrLevelSummary(result.proteinGroupPairFDR));
-        txtSumProtGroupPairsBetween.setText((sumProteinGroupPairsBetweenTarget + sumProteinGroupPairsBetweenDecoy) + " (" + sumProteinGroupPairsBetweenTarget + " Target)");
-        txtSumProtGroupPairsInternal.setText((sumProteinGroupPairsInternalDecoy + sumProteinGroupPairsInternalTarget) + " (" + sumProteinGroupPairsInternalTarget + " Target)");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumProteinGroupPairsBetweenDecoy-2*sumProteinGroupPairsBetweenDD)/(double)sumProteinGroupPairsBetweenTarget * 100, (sumProteinGroupPairsBetweenDecoy-2*sumProteinGroupPairsBetweenDD+1)/(double)sumProteinGroupPairsBetweenTarget * 100}, 1);
+        txtSumProtGroupPairsBetween.setText((sumProteinGroupPairsBetweenTarget + sumProteinGroupPairsBetweenDecoy) + " (" + sumProteinGroupPairsBetweenTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumProteinGroupPairsInternalDecoy-2*sumProteinGroupPairsInternalDD)/(double)sumProteinGroupPairsInternalTarget * 100, (sumProteinGroupPairsInternalDecoy-2*sumProteinGroupPairsInternalDD+1)/(double)sumProteinGroupPairsInternalTarget * 100}, 1);
+        txtSumProtGroupPairsInternal.setText((sumProteinGroupPairsInternalDecoy + sumProteinGroupPairsInternalTarget) + " (" + sumProteinGroupPairsInternalTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
 
 // Logger.getLogger(this.getClass().getName()).log(Level.INFO, "finished writing");
     }
@@ -1307,6 +1334,8 @@ public class FDRGUI extends javax.swing.JFrame {
             public void setStatus(final MaximisingStatus state) {
                 javax.swing.SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
+                        getFdrSettingsComplete().setMinPeptideStubFilter(state.showMinStubs);
+                        getFdrSettingsComplete().setMinPeptideDoubletFilter(state.showMinDoublets);
                         getFdrSettingsComplete().setMinPeptideFragmentsFilter(state.showMinFrags);
                         getFdrSettingsComplete().setMinDeltaScoreFilter(state.showDelta);
                         getFdrSettingsComplete().setMinPeptideCoverageFilter(state.showPepCoverage);
@@ -2168,7 +2197,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
         jPanel21.setLayout(new java.awt.GridLayout(1, 0, 10, 0));
 
-        jLabel16.setText("Links");
+        jLabel16.setText("Residue Pairs");
         jPanel21.add(jLabel16);
 
         txtSumLinks.setMaximumSize(null);

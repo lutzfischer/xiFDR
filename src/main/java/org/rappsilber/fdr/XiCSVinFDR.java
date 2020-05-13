@@ -389,7 +389,10 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             
             Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Read datafrom CSV");
             try {
-                ofdr.readCSV(csv,(CsvCondition)null);
+                if (!ofdr.readCSV(csv,(CsvCondition)null)) {
+                    Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Error while reading file: " + f);
+                    System.exit(-1);
+                }
             } catch (IOException ex) {
                 Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Error while reading file: " + f, ex);
                 System.exit(-1);
@@ -614,9 +617,11 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }
 
     @Override
-    public void readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException {
-        super.readCSV(csv, filter); //To change body of generated methods, choose Tools | Templates.
-        matchFastas();
+    public boolean readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException {
+        boolean ret = super.readCSV(csv, filter); //To change body of generated methods, choose Tools | Templates.
+        if (ret)
+            matchFastas();
+        return ret;
     }
 
 

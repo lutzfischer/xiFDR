@@ -1173,7 +1173,7 @@
                               <SubComponents>
                                 <Component class="javax.swing.JLabel" name="jLabel16">
                                   <Properties>
-                                    <Property name="text" type="java.lang.String" value="Links"/>
+                                    <Property name="text" type="java.lang.String" value="Residue Pairs"/>
                                   </Properties>
                                 </Component>
                                 <Component class="javax.swing.JTextField" name="txtSumLinks">

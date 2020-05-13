@@ -645,8 +645,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             }
             String sPepCoverage1 = "peptide1 unique matched non lossy coverage";
             String sPepCoverage2 = "peptide2 unique matched non lossy coverage";
+            String sPepStubs = "fragment CCPepFragment";
+            String sPepDoublets = "fragment CCPepDoubletFound";
             int cPepCoverage1 = -1;
             int cPepCoverage2 = -1;
+            Integer cPepStubs = -1;
+            Integer cPepDoublets = -1;
 
             ArrayList<Integer> peaks = new ArrayList<>();
             ArrayList<String> scorenames = new ArrayList<>();
@@ -682,6 +686,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 }
                 cPepCoverage1 = scorenames.indexOf(sPepCoverage1);
                 cPepCoverage2 = scorenames.indexOf(sPepCoverage2);
+                cPepStubs = scorenames.indexOf(sPepStubs);
+                cPepDoublets = scorenames.indexOf(sPepDoublets);
             }
 
             if (cPepCoverage2 <0 && !shownMinPepWarning) {
@@ -1001,7 +1007,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     psm.setRank(rank);
                     
                     Float[] scorevalues = (Float[])subscores.getArray();
-                    if (cPepCoverage1 > 0) {
+                    if (cPepCoverage1 >= 0) {
                         if (cPepCoverage2 <0 || Double.isNaN(scorevalues[cPepCoverage2]))
                             psm.addOtherInfo("minPepCoverage",
                                 scorevalues[cPepCoverage1]);
@@ -1012,6 +1018,20 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         );
                     }
 
+                    if (cPepStubs >= 0) {
+                        double s = scorevalues[cPepStubs];
+                        psm.addOtherInfo("PeptidesWithStubs", s);
+                        if (s >0)  {
+                            stubsFound(true);
+                        } 
+
+                    }
+                    if (cPepDoublets >= 0) {
+
+                        psm.addOtherInfo("PeptidesWithDoublets", scorevalues[cPepDoublets]);
+
+                    }
+                    
                     
                     psm.addOtherInfo("P1Fragments",p1c);
                     psm.addOtherInfo("P2Fragments",p2c);

@@ -199,9 +199,12 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
         btnStopBoost.setEnabled(ckMaximize.isSelected());        
 
-        if (!ckMoreOptions.isSelected()) {
+        if (!ckMoreOptions.isSelected() && ckMaximize.isSelected()) {
             setMinPeptideFragmentsFilter(0);
             setMinDeltaScoreFilter(0d);
+            setMinPeptideCoverageFilter(0d);
+            setMinPeptideDoubletFilter(0);
+            setMinPeptideStubFilter(0);
             setMinPeptideCoverageFilter(0d);
         }
         raiseStartCalc(ckMaximize.isSelected());
