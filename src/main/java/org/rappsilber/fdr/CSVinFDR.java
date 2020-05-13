@@ -57,8 +57,8 @@ public class CSVinFDR extends OfflineFDR {
         {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy", "decoy p1"},
         {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy", "decoy p2"},
         {"score", "match score", "match score", "pep score"},
-        {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score"},
-        {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score"},
+        {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score", "p1 score"},
+        {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score", "p2 score"},
         {"run", "run name", "raw file", "filename/id"},
         {"scan", "scan number", "ms/ms scan number", "spectrum number"},
         {"pep1 position", "peptide position1", "start1", "peptide position 1", "PepPos1", "start_pos_p1"},
@@ -88,12 +88,13 @@ public class CSVinFDR extends OfflineFDR {
         {"peptide coverage2", "peptide2 unique matched non lossy coverage", "unique_peak_primary_coverage_p2"},
         {"peptide1 fragments", "peptide1 unique matched conservative", "conservative_fragsites_p1", "p1fragments"},
         {"peptide2 fragments", "peptide2 unique matched conservative", "conservative_fragsites_p2", "p2fragments"},
-        {"peptides with stubs", "fragment CCPepFragment"},
-        {"peptides with doublets", "fragment CCPepDoubletFound"},
+        {"peptides with stubs", "fragment CCPepFragment", "cc_pep_frag_pp"},
+        {"peptides with doublets", "fragment CCPepDoubletFound", "cc_pep_doublet_pp"},
         {"minimum peptide coverage", "min coverage pp","minpepcoverage"},
         {"delta", "delta score", "dscore"},
         {"experimental mz", "experimental m/z", "exp mz", "exp m/z"},
-        {"calculated mass", "calc mass"}
+        {"calculated mass", "calc mass"},
+        {"retention time", "elution time", "elution time start", "rt"}
     };
     
     public CSVinFDR() {
@@ -147,11 +148,11 @@ public class CSVinFDR extends OfflineFDR {
         return c;
     }
     
-    public void readCSV(File f) throws FileNotFoundException, IOException, ParseException  {
-        readCSV(CsvParser.guessCsv(f, 50), null);
+    public boolean readCSV(File f) throws FileNotFoundException, IOException, ParseException  {
+        return readCSV(CsvParser.guessCsv(f, 50), null);
     }
 
-    public void readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException  {
+    public boolean readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException  {
         OfflineFDR.getXiFDRVersion();
         if (numberlocale != null)
             csv.setLocale(numberlocale);
@@ -161,6 +162,7 @@ public class CSVinFDR extends OfflineFDR {
             m_source.add(null);
         }
         m_filter.add(filter);
+        CsvParser accessionParser = new CsvParser(';', '"');
             
 
         Integer crun = getColumn(csv,"run",true);
@@ -196,10 +198,11 @@ public class CSVinFDR extends OfflineFDR {
         Integer cPeakFileName = getColumn(csv,"peak list file",true);
         Integer cDelta = getColumn(csv,"delta",true);
         Integer cPep1Coverage = getColumn(csv,"peptide coverage1",true);
-        Integer cPep2Coverage = getColumn(csv,"peptide coverage1",true);
+        Integer cPep2Coverage = getColumn(csv,"peptide coverage2",true);
         Integer cPepStubs = getColumn(csv,"peptides with stubs",true);
         Integer cPepDoublets = getColumn(csv,"peptides with doublets",true);
         Integer cPepMinCoverage = getColumn(csv,"minimum peptide coverage",true);
+        Integer cRetentionTime = getColumn(csv,"retention_time", true);
         Integer cRank = getColumn(csv,"rank",true);
         
         ArrayList<Integer> peaks = new ArrayList<>();
@@ -303,9 +306,17 @@ public class CSVinFDR extends OfflineFDR {
                 String sdescription2 = csv.getValue(cdescription2);
                 String spepPosition1 = csv.getValue(cpeptide_position1);
                 String spepPosition2= csv.getValue(cpeptide_position2);
-                if (spepPosition2 == null || spepPosition2.trim().isEmpty()) 
+                if (spepPosition2 == null || spepPosition2.trim().isEmpty())  {
                     spepPosition2 = "-1";
+                }
 
+                if (saccession2 == null || saccession2.trim().isEmpty())  {
+                    saccession2 = " ";
+                }
+                if (sdescription2 == null || sdescription2.trim().isEmpty())  {
+                    sdescription2 = " ";
+                }
+                
 
                 // how to split up the score
                 double scoreRatio = csv.getDouble(cscoreratio);
@@ -317,13 +328,13 @@ public class CSVinFDR extends OfflineFDR {
                     peptide1score=score*ratio;
                     peptide2score=score*(1-ratio);
                 }
-
-                String[] accessions1 =saccession1.split("\\s*;\\s*");
-                String[] accessions2 =saccession2.split("\\s*;\\s*");
-                String[] descriptions1 =sdescription1.split("\\s*;\\s*",-1);
-                String[] descriptions2 =sdescription2.split("\\s*;\\s*",-1);
-                String[] pepPositions1 =spepPosition1.split("\\s*;\\s*",-1);
-                String[] pepPositions2 =spepPosition2.split("\\s*;\\s*",-1);
+                // split field by semicolon - but look out for quoted ";"
+                String[] accessions1 = accessionParser.splitLine(saccession1).toArray(new String[0]);
+                String[] accessions2 = accessionParser.splitLine(saccession2).toArray(new String[0]);
+                String[] descriptions1 = accessionParser.splitLine(sdescription1).toArray(new String[0]);
+                String[] descriptions2 = accessionParser.splitLine(sdescription2).toArray(new String[0]);
+                String[] pepPositions1 = accessionParser.splitLine(spepPosition1).toArray(new String[0]);
+                String[] pepPositions2 = accessionParser.splitLine(spepPosition2).toArray(new String[0]);
 
                 if (!sdescription1.isEmpty()) {
                     if (descriptions1.length != accessions1.length)
@@ -444,6 +455,10 @@ public class CSVinFDR extends OfflineFDR {
                     }
                 }
                 psm.reTestInternal();
+                if (cRetentionTime != null) {
+                    double s = csv.getDouble(cRetentionTime);
+                    psm.addOtherInfo("RetentionTime", s);
+                }
                 if (cDelta != null)
                     psm.setDeltaScore(csv.getDouble(cDelta));
                 
@@ -488,9 +503,10 @@ public class CSVinFDR extends OfflineFDR {
                 }
                 
             }
-            
+            return true;
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE,"Unexecpted exception while parsing line " + lineNumber, ex);
+            return false;
         }
     }
 
@@ -791,6 +807,8 @@ public class CSVinFDR extends OfflineFDR {
                     Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "error while quessing csv-definitions", ex);
                 }
             }
+            csv.setDelimiter(delimChar.value);
+            csv.setQuote(quoteChar.value);
             Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "setting up csv input");
             try {
                 
@@ -802,7 +820,10 @@ public class CSVinFDR extends OfflineFDR {
             
             Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Read datafrom CSV");
             try {
-                ofdr.readCSV(csv,null);
+                if (!ofdr.readCSV(csv,null)) {
+                    Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "Could not read file: " + f);
+                    System.exit(-1);
+                }
             } catch (IOException ex) {
                 Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "Error while reading file: " + f, ex);
                 System.exit(-1);

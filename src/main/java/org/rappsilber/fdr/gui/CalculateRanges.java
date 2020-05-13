@@ -271,6 +271,8 @@ public class CalculateRanges extends javax.swing.JFrame {
             public void setStatus(final MaximisingStatus state) {
                 javax.swing.SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
+                        fdrgui.getFdrSettingsComplete().setMinPeptideStubFilter(state.showMinStubs);
+                        fdrgui.getFdrSettingsComplete().setMinPeptideDoubletFilter(state.showMinDoublets);
                         fdrgui.getFdrSettingsComplete().setMinPeptideFragmentsFilter(state.showMinFrags);
                         fdrgui.getFdrSettingsComplete().setMinDeltaScoreFilter(state.showDelta);
                         fdrgui.getFdrSettingsComplete().setMinPeptideCoverageFilter(state.showPepCoverage);

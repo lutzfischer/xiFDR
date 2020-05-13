@@ -57,6 +57,8 @@ public class FDRSettingsImpl implements FDRSettings {
     private Boolean ppiLocalFDR = null;
     private double minPeptideCoverageFilter = 0;
     private double minDeltaScoreFilter = 0;
+    private double minPeptideStubs = 0;
+    private double minDoublets = 0;
     private boolean boostPepDeltaScore =true;
     private boolean combineScoreAndDelta = false;
     private int minFragments =  0;
@@ -64,6 +66,10 @@ public class FDRSettingsImpl implements FDRSettings {
     private boolean ignoreValidityChecks = true;
     private boolean groubByCrosslinkerStubs = false;
     private boolean twoStepBoost = true;
+    private boolean boostPeptideStubs;
+    private boolean boostPeptideDoublets;
+    private double minMinPeptideDoubpletFilter;
+    private double minPeptideStubFilter;
 
     public FDRSettingsImpl() {
     }
@@ -327,8 +333,12 @@ public class FDRSettingsImpl implements FDRSettings {
         to.setMinDeltaScoreFilter(from.getMinDeltaScoreFilter());    
         to.setMinPeptideFragmentsFilter(from.getMinPeptideFragmentsFilter()); 
         to.setMinPeptideCoverageFilter(from.getMinPeptideCoverageFilter()); 
+        to.setMinPeptideStubFilter(from.getMinPeptideStubFilter());    
+        to.setMinPeptideDoubletFilter(from.getMinPeptideDoubletFilter());    
         to.boostPepCoverage(from.boostPepCoverage());
         to.boostDeltaScore(from.boostDeltaScore());
+        to.boostPeptideStubs(from.boostPeptideStubs());
+        to.boostPeptideDoublets(from.boostPeptideDoublets());
         to.combineScoreAndDelta(from.combineScoreAndDelta());
         to.ignoreValidityChecks(from.ignoreValidityChecks());
         to.setGroupByCrosslinkerStubs(from.getGroupByCrosslinkerStubs());
@@ -435,6 +445,26 @@ public class FDRSettingsImpl implements FDRSettings {
     }
     
     @Override
+    public boolean boostPeptideStubs(){
+        return this.boostPeptideStubs;
+    }
+
+    @Override
+    public void boostPeptideStubs(boolean boost){
+        this.boostPeptideStubs = boost;
+    }
+    
+    @Override
+    public boolean boostPeptideDoublets(){
+        return this.boostPeptideDoublets;
+    }
+
+    @Override
+    public void boostPeptideDoublets(boolean boost){
+        this.boostPeptideDoublets = boost;
+    }
+
+    @Override
     public boolean boostPepCoverage(){
         return this.boostPepCoverage;
     }
@@ -519,6 +549,23 @@ public class FDRSettingsImpl implements FDRSettings {
         this.minDeltaScoreFilter = d;
     }
 
+    public double getMinPeptideStubFilter() {
+        return this.minPeptideStubFilter;
+    }
+    
+    public void setMinPeptideStubFilter(double d) {
+        this.minPeptideStubFilter = d;
+    }
+    
+    public double getMinPeptideDoubletFilter() {
+        return this.minMinPeptideDoubpletFilter;
+    }
+    
+    public void setMinPeptideDoubletFilter(double d) {
+        this.minMinPeptideDoubpletFilter = d;
+    }
+    
+    
     void setMinAbsolutePepCoverFilter(double d) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

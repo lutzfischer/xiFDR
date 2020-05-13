@@ -606,6 +606,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     public double getMinPeptideCoverageFilter() {
         return this.minPeptideCoverageFilter;
     }
+
     @Override
     public void setMinPeptideCoverageFilter(double d) {
         this.minPeptideCoverageFilter = d;

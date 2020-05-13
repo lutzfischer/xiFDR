@@ -41,6 +41,11 @@ public class MaximizeLevelInfoInteger extends MaximizeLevelInfo{
         correctStepWidth();
     }
 
+    
+    public boolean doThisStep() {
+        return super.doThisStep();
+    }
+
     @Override
     public double getCurrentFDR() {
         return Math.round(super.getCurrentFDR()); //To change body of generated methods, choose Tools | Templates.
@@ -50,6 +55,10 @@ public class MaximizeLevelInfoInteger extends MaximizeLevelInfo{
         maximumFDR = getCurrentFDR();
         smallestEqualFDR = maximumFDR;
         largestEqualFDR = maximumFDR;
+    }
+    
+    public void nextStep() {
+        super.nextStep();
     }
     
 

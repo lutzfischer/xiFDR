@@ -28,6 +28,8 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="ckToprankingOnly" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnClearValidation" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="jButton1" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="0" attributes="0">
@@ -37,7 +39,7 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="lblSubScorePattern" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="txtSubScorePattern" pref="104" max="32767" attributes="0"/>
+                      <Component id="txtSubScorePattern" pref="125" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
@@ -62,6 +64,7 @@
                   <Component id="txtReadFilter" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jButton1" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="ckToprankingOnly" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnClearValidation" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
@@ -93,7 +96,7 @@
     </Component>
     <Component class="javax.swing.JButton" name="jButton1">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Additional Groups"/>
+        <Property name="text" type="java.lang.String" value="Groups"/>
         <Property name="toolTipText" type="java.lang.String" value="define some additional grouping for PSMs"/>
       </Properties>
       <Events>
@@ -117,7 +120,7 @@
     </Component>
     <Component class="javax.swing.JButton" name="btnSelectIDS">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Select By IDs"/>
+        <Property name="text" type="java.lang.String" value="Select IDs"/>
         <Property name="toolTipText" type="java.lang.String" value="Seelct searches by ID"/>
       </Properties>
       <Events>
@@ -168,6 +171,14 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="Normalize"/>
       </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnClearValidation">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Clear Validation"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnClearValidationActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>

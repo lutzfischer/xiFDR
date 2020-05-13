@@ -17,6 +17,8 @@ package org.rappsilber.fdr.gui.components;
 
 import java.awt.EventQueue;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
@@ -319,11 +321,12 @@ public class GetDBFDR extends javax.swing.JPanel {
         btnAdd = new javax.swing.JButton();
         cbNormalize = new javax.swing.JComboBox<>();
         jLabel2 = new javax.swing.JLabel();
+        btnClearValidation = new javax.swing.JButton();
 
         txtReadFilter.setText("(site1 > 0 OR pepSeq2 isnull)");
         txtReadFilter.setToolTipText("Texttual representation of the filter");
 
-        jButton1.setText("Additional Groups");
+        jButton1.setText("Groups");
         jButton1.setToolTipText("define some additional grouping for PSMs");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -342,7 +345,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             }
         });
 
-        btnSelectIDS.setText("Select By IDs");
+        btnSelectIDS.setText("Select IDs");
         btnSelectIDS.setToolTipText("Seelct searches by ID");
         btnSelectIDS.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -376,6 +379,13 @@ public class GetDBFDR extends javax.swing.JPanel {
 
         jLabel2.setText("Normalize");
 
+        btnClearValidation.setText("Clear Validation");
+        btnClearValidation.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnClearValidationActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -388,6 +398,8 @@ public class GetDBFDR extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(ckToprankingOnly)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnClearValidation)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton1))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnReadFilter)
@@ -396,7 +408,7 @@ public class GetDBFDR extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblSubScorePattern)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtSubScorePattern, javax.swing.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
+                        .addComponent(txtSubScorePattern, javax.swing.GroupLayout.DEFAULT_SIZE, 125, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -416,7 +428,8 @@ public class GetDBFDR extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtReadFilter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton1)
-                    .addComponent(ckToprankingOnly))
+                    .addComponent(ckToprankingOnly)
+                    .addComponent(btnClearValidation))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnReadFilter)
@@ -464,10 +477,39 @@ public class GetDBFDR extends javax.swing.JPanel {
         additionalFDRGroups.showWindow();
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void btnClearValidationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearValidationActionPerformed
+        try {
+            int[] ids = getSearch.getSelectedSearchIds();
+            if (JOptionPane.showConfirmDialog(this, "Clear validation on searches " + RArrayUtils.toString(ids, ",") + "?", "Clear Validation?", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+                String query = "UPDATE spectrum_match set validated=null where search_id in (" + RArrayUtils.toString(ids, ",") + ") and validated is not null";
+                Connection c = getSearch.getConnection();
+                c.setAutoCommit(false);
+                Statement s =  c.createStatement();
+                int ret = s.executeUpdate(query);
+                if (ret >0) {
+                    if (JOptionPane.showConfirmDialog(this, "This will clear the validation state on " + ret + " matches ?", "Confirm?", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+                        c.commit();
+                    } else {
+                        c.rollback();
+                    }
+                }  else {
+                    JOptionPane.showMessageDialog(this, "Search had nothing validated", "Nothing changed?", JOptionPane.INFORMATION_MESSAGE);
+                }
+
+                s.close();
+                c.close();
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+        }
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnClearValidationActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private org.rappsilber.fdr.gui.components.AdditionalFDRGroups additionalFDRGroups;
     private javax.swing.JButton btnAdd;
+    private javax.swing.JButton btnClearValidation;
     private javax.swing.JButton btnRead;
     private javax.swing.JButton btnReadFilter;
     private javax.swing.JButton btnSelectIDS;

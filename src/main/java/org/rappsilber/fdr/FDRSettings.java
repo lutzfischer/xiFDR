@@ -135,6 +135,13 @@ public interface FDRSettings {
     public boolean boostDeltaScore();
     public void boostDeltaScore(boolean boost);
 
+    public boolean boostPeptideStubs();
+    public void boostPeptideStubs(boolean boost);
+
+    public boolean boostPeptideDoublets();
+    public void boostPeptideDoublets(boolean boost);
+    
+    
     public boolean boostPSMs();
     public void boostPSMs(boolean boost);
 //    public boolean boostSubScores();
@@ -155,6 +162,13 @@ public interface FDRSettings {
 
     public double getMinDeltaScoreFilter();
     public void setMinDeltaScoreFilter(double d);
+    
+    public double getMinPeptideStubFilter();    
+    public void setMinPeptideStubFilter(double d);
+    
+    public double getMinPeptideDoubletFilter();
+    public void setMinPeptideDoubletFilter(double d);
+    
     
     public void setMinTD(Integer c) ;
 

@@ -51,6 +51,10 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean boostMinFragments = false;
     private boolean groubByCrosslinkerStubs;
     private boolean twoStepBoost;
+    private boolean boostPeptideDoublets;
+    private boolean boostPeptideStubs;
+    private double minMinPeptideDoubpletFilter;
+    private double minPeptideStubFilter;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -286,6 +290,47 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public void twoStepOptimization(boolean stepped) {
         this.twoStepBoost = stepped;
+    }
+
+    @Override
+    public boolean boostPeptideStubs(){
+        return this.boostPeptideStubs;
+    }
+
+    @Override
+    public void boostPeptideStubs(boolean boost){
+        this.boostPeptideStubs = boost;
+    }
+    
+    @Override
+    public boolean boostPeptideDoublets(){
+        return this.boostPeptideDoublets;
+    }
+
+    @Override
+    public void boostPeptideDoublets(boolean boost){
+        this.boostPeptideDoublets = boost;
+    }
+
+
+    @Override
+    public double getMinPeptideStubFilter() {
+        return this.minPeptideStubFilter;
+    }
+    
+    @Override
+    public void setMinPeptideStubFilter(double d) {
+        this.minPeptideStubFilter = d;
+    }
+    
+    @Override
+    public double getMinPeptideDoubletFilter() {
+        return this.minMinPeptideDoubpletFilter;
+    }
+    
+    @Override
+    public void setMinPeptideDoubletFilter(double d) {
+        this.minMinPeptideDoubpletFilter = d;
     }
     
 }
