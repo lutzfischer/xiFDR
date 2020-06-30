@@ -450,19 +450,11 @@ public abstract class OfflineFDR {
                 FDR = 0;
             } else {
                 FDR = (td - dd) / tt;
-<<<<<<< HEAD
             }
             while (FDR < fdrs.get(fdrs.size() - 1)) {
                 positions.remove(fdrs.size() - 1);
                 fdrs.remove(fdrs.size() - 1);
             }
-=======
-            }
-            while (FDR < fdrs.get(fdrs.size() - 1)) {
-                positions.remove(fdrs.size() - 1);
-                fdrs.remove(fdrs.size() - 1);
-            }
->>>>>>> 4d26073ab68234dda543435efe401fb3841361e2
             positions.add(scorePSMs.size() - 1);
             fdrs.add(FDR);
         }
