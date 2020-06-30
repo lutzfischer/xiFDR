@@ -10,7 +10,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine --linkfdr=5.0 --boost=link --csvOutDir=/home/lfischer/temp/test/FDR_rpfdr5.0 --csvBaseName=4pm_dsso_Xi1.7.0.RC1_grouped --xiconfig=/home/lfischer/temp/test/4pm_dsso_Xi1.7.0.RC1.csv.config --fasta=/Users/salman/xi_data/xi/sequenceDB/4_protein_mix-17_59_11-19_Jan_2018/4ProtMix.fasta /home/lfischer/temp/test/4pm_dsso_Xi1.7.0.RC1.csv --gui</exec.args>
+                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
@@ -25,7 +25,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.rappsilber.fdr.CommandLine --linkfdr=5.0 --boost=link --csvOutDir=/home/lfischer/temp/test/FDR_rpfdr5.0 --csvBaseName=4pm_dsso_Xi1.7.0.RC1_grouped --xiconfig=/home/lfischer/temp/test/4pm_dsso_Xi1.7.0.RC1.csv.config --fasta=/Users/salman/xi_data/xi/sequenceDB/4_protein_mix-17_59_11-19_Jan_2018/4ProtMix.fasta /home/lfischer/temp/test/4pm_dsso_Xi1.7.0.RC1.csv --gui</exec.args>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
                 <exec.workingdir>/home/lfischer</exec.workingdir>
@@ -41,7 +41,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine --linkfdr=5.0 --boost=link --csvOutDir=/home/lfischer/temp/test/FDR_rpfdr5.0 --csvBaseName=4pm_dsso_Xi1.7.0.RC1_grouped --xiconfig=/home/lfischer/temp/test/4pm_dsso_Xi1.7.0.RC1.csv.config --fasta=/Users/salman/xi_data/xi/sequenceDB/4_protein_mix-17_59_11-19_Jan_2018/4ProtMix.fasta /home/lfischer/temp/test/4pm_dsso_Xi1.7.0.RC1.csv --gui</exec.args>
+                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
