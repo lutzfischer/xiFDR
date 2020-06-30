@@ -148,7 +148,6 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
-    <description>Application for FDR estimation cross-linking massspectrometry data
-</description>
+    <description>Application for FDR estimation cross-linking massspectrometry data </description>
     <name>xiFDR-2.1</name>
 </project>
