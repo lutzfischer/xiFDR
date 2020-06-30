@@ -1634,11 +1634,12 @@ public abstract class OfflineFDR {
             keep.addAll(l.getPeptidePairs());
         }
         for (PeptidePair pp : result.peptidePairFDR) {
-            if (pp.isLinear()) {
+            if (pp.isLinear() || pp.isNonCovalent()) {
                 keep.add(pp);
             }
         }
 
+        
         result.peptidePairFDR.retainAll(keep);
     }
 
@@ -1823,6 +1824,8 @@ public abstract class OfflineFDR {
 
         CountOccurence<String> fdrPSMGroupCounts = new CountOccurence<String>();
 
+        String outNameNAPS = path + "/" + baseName + "_NAPS_PSM" + extension;
+        PrintWriter psmNAPSOut = null;
         String outNameLinear = path + "/" + baseName + "_Linear_PSM" + extension;
         PrintWriter psmLinearOut = null;
         String outName = path + "/" + baseName + "_CSM" + extension;
@@ -1834,8 +1837,12 @@ public abstract class OfflineFDR {
             psmOut.println(header);
             psmLinearOut = new PrintWriter(outNameLinear);
             psmLinearOut.println(header);
+            psmNAPSOut = new PrintWriter(outNameNAPS);
+            psmNAPSOut.println(header);
         } else {
             psmOut = NullOutputStream.NULLPRINTWRITER;
+            psmLinearOut = NullOutputStream.NULLPRINTWRITER;
+            psmNAPSOut = NullOutputStream.NULLPRINTWRITER;
         }
 
         ArrayList<PSM> psms = new ArrayList<PSM>(result.psmFDR.getResultCount());
@@ -1852,6 +1859,9 @@ public abstract class OfflineFDR {
 //        if (!isPSMScoreHighBetter())
 //            java.util.Collections.reverse(fdrPSM);
         int psmCount = 0;
+        int psmNonCovTT = 0;
+        int psmNonCovTD = 0;
+        int psmNonCovDD = 0;
         int psmInternalTT = 0;
         int psmInternalTD = 0;
         int psmInternalDD = 0;
@@ -1868,16 +1878,26 @@ public abstract class OfflineFDR {
             if (!csvSummaryOnly) {
                 if (pp.isLinear()) {
                     psmLinearOut.println(line);
+                } else if (pp.isNonCovalent()) {
+                    psmNAPSOut.println(line);
                 } else {
                     psmOut.println(line);
                 }
             }
 
-            if (pp.getPeptide1() == Peptide.NOPEPTIDE || pp.getPeptide2() == Peptide.NOPEPTIDE) {
+            if (pp.isLinear()) {
                 if (pp.isTT()) {
                     psmLinearT++;
                 } else if (pp.isTD()) {
                     psmLinearD++;
+                }
+            } else if (pp.isNonCovalent()) {
+                if (pp.isTT()) {
+                    psmNonCovTT++;
+                } else if (pp.isTD()) {
+                    psmNonCovTD++;
+                } else {
+                    psmNonCovDD++;
                 }
             } else if (pp.isInternal()) {
                 if (pp.isTT()) {
@@ -1903,6 +1923,16 @@ public abstract class OfflineFDR {
             psmOut.close();
             psmLinearOut.flush();
             psmLinearOut.close();
+            psmNAPSOut.flush();
+            psmNAPSOut.close();
+            // if we had no linears we just delete the linear file again
+            if (psmLinearT+psmLinearD == 0) {
+                new File(outNameLinear).delete();
+            }
+            // same for NAPS
+            if (psmNonCovTT+psmNonCovTD+psmNonCovDD == 0) {
+                new File(outNameNAPS).delete();
+            }
         }
 
         ArrayList<PeptidePair> peps = new ArrayList<PeptidePair>(result.peptidePairFDR.getResultCount());
@@ -1922,6 +1952,9 @@ public abstract class OfflineFDR {
         int pepInternalTT = 0;
         int pepInternalTD = 0;
         int pepInternalDD = 0;
+        int pepNonCovTT = 0;
+        int pepNonCovTD = 0;
+        int pepNonCovDD = 0;
         int pepBetweenTT = 0;
         int pepBetweenTD = 0;
         int pepBetweenDD = 0;
@@ -1932,18 +1965,27 @@ public abstract class OfflineFDR {
 
         PrintWriter pepsOut = null;
         PrintWriter pepsLinearOut = null;
+        PrintWriter pepsNonCovOut = null;
         if (!csvSummaryOnly) {
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write PeptidePairs-results to " + path + "/" + baseName + "_PSM" + extension);
             outName = path + "/" + baseName + "_PeptidePairs" + extension;
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write linear PeptidePairs-results to " + outName);
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write peptide pairs results to " + outName);
             pepsOut = new PrintWriter(outName);
             String xlPepsHeader = csvFormater.valuesToString(getXLPepsHeader());
             pepsOut.println(xlPepsHeader);
 
-            pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + extension);
-            String linearPepsHeader = csvFormater.valuesToString(getLinearPepsHeader());
-            pepsLinearOut.println(linearPepsHeader);
-
+            if (psmLinearT+psmLinearD > 0 ) {
+                pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + extension);
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write linear peptide results to " + pepsLinearOut);
+                String linearPepsHeader = csvFormater.valuesToString(getLinearPepsHeader());
+                pepsLinearOut.println(linearPepsHeader);
+            }
+                
+            if (psmNonCovTT+psmNonCovTD+psmNonCovDD > 0 ) {
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write non covalent peptide pair results to " + outName);
+                pepsNonCovOut = new PrintWriter(outName);
+                pepsOut.println(xlPepsHeader);
+            }
+            
         } else {
             pepsOut = NullOutputStream.NULLPRINTWRITER;
             pepsLinearOut = pepsOut;
@@ -1967,12 +2009,21 @@ public abstract class OfflineFDR {
             } else {
                 if (!csvSummaryOnly) {
                     String line = csvFormater.valuesToString(getXlPepeptideOutputLine(pp));
-                    pepsOut.println(line);
-//                    } catch (NullPointerException npe) {
-//                        throw new Error();
-//                    }
+                    if (pp.isNonCovalent()) {
+                        pepsNonCovOut.println(line);
+                    } else {
+                        pepsOut.println(line);
+                    }
                 }
-                if (pp.isInternal()) {
+                if (pp.isNonCovalent()) {
+                    if (pp.isTT()) {
+                        pepNonCovTT++;
+                    } else if (pp.isTD()) {
+                        pepNonCovTD++;
+                    } else {
+                        pepNonCovDD++;
+                    }
+                } else if (pp.isInternal()) {
                     if (pp.isTT()) {
                         pepInternalTT++;
                     } else if (pp.isTD()) {
@@ -1996,8 +2047,14 @@ public abstract class OfflineFDR {
         if (!csvSummaryOnly) {
             pepsOut.flush();
             pepsOut.close();
-            pepsLinearOut.flush();
-            pepsLinearOut.close();
+            if (pepsLinearOut != null) {
+                pepsLinearOut.flush();
+                pepsLinearOut.close();
+            }
+            if (pepsNonCovOut != null) {
+                pepsNonCovOut.flush();
+                pepsNonCovOut.close();
+            }
         }
 
         CountOccurence<String> fdrLinkGroupCounts = new CountOccurence<String>();
@@ -2249,16 +2306,19 @@ public abstract class OfflineFDR {
         summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Self TT\""
                 + seperator + "\"Self TD\"" + seperator + "\"Self DD\""
                 + seperator + "\"Between TT\"" + seperator + "\"Between TD\"" + seperator + "\"Between DD\""
+                + seperator + "\"Non-Covalent TT\"" + seperator + "\"Non-Covalent TD\"" + seperator + "\"Non-Covalent DD\""
                 + seperator + "\"Linear T\"" + seperator + "\"Linear D\"");
 
         summaryOut.println("\"Input PSMs\"" + seperator + "" + getAllPSMs().size());
 
         summaryOut.println("\"fdr CSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
                 + seperator + psmBetweenTT + seperator + psmBetweenTD + seperator + psmBetweenDD
+                + seperator + psmNonCovTT + seperator + psmNonCovTD + seperator + psmNonCovDD
                 + seperator + psmLinearT + seperator + psmLinearD);
 
         summaryOut.println("\"fdr Peptide Pairs\"" + seperator + pepCount + seperator + pepInternalTT + seperator + pepInternalTD + seperator + pepInternalDD
                 + seperator + pepBetweenTT + seperator + pepBetweenTD + seperator + pepBetweenDD
+                + seperator + pepNonCovTT + seperator + pepNonCovTD + seperator + pepNonCovDD
                 + seperator + pepLinearT + seperator + pepLinearD);
 
         summaryOut.println("\"fdr Link\"" + seperator + linkCount + seperator + linkInternalTT + seperator + linkInternalTD + seperator + linkInternalDD
@@ -2268,6 +2328,7 @@ public abstract class OfflineFDR {
                 + seperator + ppiBetweenTT + seperator + ppiBetweenTD + seperator + ppiBetweenDD);
 
         summaryOut.println("\"fdr Protein Groups\"" + seperator + proteinCount + seperator + seperator + seperator
+                + seperator + seperator + seperator
                 + seperator + seperator + seperator
                 + seperator + proteinGroupT + seperator + proteinGroupD);
 
@@ -3748,7 +3809,7 @@ public abstract class OfflineFDR {
 
     protected ArrayList<String> getXlPepeptideOutputLine(PeptidePair pp) {
         ProteinGroupLink l = pp.getFdrLink();
-        ProteinGroupPair ppi = l.getFdrPPI();
+        ProteinGroupPair ppi = l == null ? null : l.getFdrPPI();
         String[] psmids = pp.getPSMids();
         ProteinGroup pg1 = pp.getPeptide1().getProteinGroup();
         ProteinGroup pg2 = pp.getPeptide2().getProteinGroup();
@@ -3803,11 +3864,11 @@ public abstract class OfflineFDR {
         ret.add("");
         ret.add((pp.getFdrProteinGroup1() == null ? "" : d2s(pp.getFdrProteinGroup1().getFDR())));
         ret.add((pp.getFdrProteinGroup2() == null ? "" : d2s(pp.getFdrProteinGroup2().getFDR())));
-        ret.add(d2s(l.getFDR()));
-        ret.add(d2s(ppi.getFDR()));
+        ret.add(l == null ? "" : d2s(l.getFDR()));
+        ret.add(ppi == null ? "" : d2s(ppi.getFDR()));
         ret.add("");
-        ret.add(i2s(l.getLinkID()));
-        ret.add(i2s(ppi.getProteinGroupPairID()));
+        ret.add(l == null ? "" : i2s(l.getLinkID()));
+        ret.add(ppi == null ? "" : i2s(ppi.getProteinGroupPairID()));
 
         HashSet<String> linkRuns = new HashSet<>();
         HashMap<String, Double> runScore = new HashMap<>();
@@ -4366,6 +4427,9 @@ public abstract class OfflineFDR {
             MaximizeLevelInfo targetInfoFirst;
 
             switch (level) {
+                case PSM:
+                    targetInfoFirst = psmFDRInfo;
+                    break;
                 case PEPTIDE_PAIR:
                     targetInfoFirst = pepFDRInfo;
                     break;
