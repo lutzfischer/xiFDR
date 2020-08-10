@@ -4,6 +4,12 @@
  */
 package org.rappsilber.fdr.gui.components;
 
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
@@ -11,6 +17,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.Action;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import rappsilber.config.LocalProperties;
 import rappsilber.utils.MyArrayUtils;
 
@@ -22,6 +34,7 @@ public class DBFIlters extends javax.swing.JFrame {
 
     public Semaphore finishedsp = new Semaphore(0);
     private ArrayList<String> runHistory = new ArrayList<String>();
+    private ArrayList<String> subscores;
 
 
     private String withinBetweenBaseFilter ="(select p1.id from unnest(protein1id) p1(id) inner join protein pr1 on p1.id = pr1.id, "
@@ -199,6 +212,15 @@ public class DBFIlters extends javax.swing.JFrame {
         if (m.find()) {
             cbNonCovalent.setSelected(true);
         }
+        
+        p= DBSubScoreFilter.filterPattern;
+        m = p.matcher((prevFilter));
+        while (m.find()) {
+           pSubScores.add(new SubFilterPanel(m.group()));
+        }
+                
+        
+        
     }
     
     /**
@@ -252,6 +274,9 @@ public class DBFIlters extends javax.swing.JFrame {
         lblPrecCharge2 = new javax.swing.JLabel();
         stspMaxMGXRank = new org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner();
         cbNonCovalent = new javax.swing.JCheckBox();
+        jButton2 = new javax.swing.JButton();
+        spSubScores = new javax.swing.JScrollPane();
+        pSubScores = new javax.swing.JPanel();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosed(java.awt.event.WindowEvent evt) {
@@ -358,24 +383,36 @@ public class DBFIlters extends javax.swing.JFrame {
 
         cbNonCovalent.setText("exclude non-covalent");
 
+        jButton2.setText("Add SubScore");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        pSubScores.setLayout(new javax.swing.BoxLayout(pSubScores, javax.swing.BoxLayout.Y_AXIS));
+        spSubScores.setViewportView(pSubScores);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButton1))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblPep1)
-                            .addComponent(lblProt1))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtPep1, javax.swing.GroupLayout.DEFAULT_SIZE, 84, Short.MAX_VALUE)
-                            .addComponent(txtProt1))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lblPep1)
+                                    .addComponent(lblProt1))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(txtPep1)
+                                    .addComponent(txtProt1)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jButton2)
+                                .addGap(0, 0, Short.MAX_VALUE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
@@ -401,7 +438,7 @@ public class DBFIlters extends javax.swing.JFrame {
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                     .addComponent(stspMaxMGXRank, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(stspMinDSSOPep, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(stspMinLinkSiteDelta, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 110, Short.MAX_VALUE)
+                                    .addComponent(stspMinLinkSiteDelta, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(stspMinDelta, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(stspMinFrags, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(txtProt2, javax.swing.GroupLayout.Alignment.LEADING)
@@ -418,23 +455,29 @@ public class DBFIlters extends javax.swing.JFrame {
                                             .addComponent(lblPep12, javax.swing.GroupLayout.Alignment.TRAILING))
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(stspMaxPrecCharge, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
-                                            .addComponent(txtProt12, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
-                                            .addComponent(txtPep12, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)))
+                                            .addComponent(stspMaxPrecCharge, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addComponent(txtProt12)
+                                            .addComponent(txtPep12)))
                                     .addGroup(layout.createSequentialGroup()
                                         .addComponent(ckDeltaTimesScore)
                                         .addGap(0, 0, Short.MAX_VALUE))))))
+                    .addComponent(ckXLOnly)
                     .addGroup(layout.createSequentialGroup()
+                        .addComponent(pWithinBetween, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(ckSpecial)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(ckAutovalidated, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(cbNonCovalent)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(cbNonCovalent))
-                            .addComponent(ckXLOnly)
-                            .addComponent(pWithinBetween, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                                .addComponent(ckSpecial)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+                                .addComponent(jButton1))))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(spSubScores)))
                 .addContainerGap())
         );
 
@@ -459,13 +502,19 @@ public class DBFIlters extends javax.swing.JFrame {
                             .addComponent(txtProt12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(lblProt12)))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txtPep2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(txtProt2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblProt2)
-                            .addComponent(txtProt1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblProt1))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(txtPep2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(txtProt2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lblProt2)
+                                    .addComponent(txtProt1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lblProt1)))
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(txtPep1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(lblPep1)
+                                .addComponent(lblPep2)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(stspMinFrags, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -489,28 +538,28 @@ public class DBFIlters extends javax.swing.JFrame {
                             .addComponent(lblPrecCharge)
                             .addComponent(lblMinPrecCharge)
                             .addComponent(stspMaxPrecCharge, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblMaxPrecCharge)))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(txtPep1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(lblPep1)
-                        .addComponent(lblPep2)))
+                            .addComponent(lblMaxPrecCharge))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(stspMinDSSOPep, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblPrecCharge1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(stspMaxMGXRank, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblPrecCharge2))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 50, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(ckSpecial)
-                    .addComponent(ckAutovalidated)
-                    .addComponent(cbNonCovalent))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                    .addComponent(lblPrecCharge2)
+                    .addComponent(jButton2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(spSubScores, javax.swing.GroupLayout.DEFAULT_SIZE, 48, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pWithinBetween, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1))
+                    .addComponent(pWithinBetween, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(ckAutovalidated)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(cbNonCovalent)
+                            .addComponent(ckSpecial)
+                            .addComponent(jButton1))))
                 .addContainerGap())
         );
 
@@ -533,6 +582,14 @@ public class DBFIlters extends javax.swing.JFrame {
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         finishedsp.release();
     }//GEN-LAST:event_formWindowClosing
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        if (subscores == null || subscores.size() == 0) {
+            JOptionPane.showMessageDialog(this,"No search with subscores selected");
+            return;
+        }
+        pSubScores.add(new SubFilterPanel());
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     
     public String getWhere() {
@@ -624,40 +681,34 @@ public class DBFIlters extends javax.swing.JFrame {
             filters.add("(site1>0 OR pepSeq2 isnull)");
         }
         
+        for (Component c : pSubScores.getComponents()) {
+            SubFilterPanel fp = (SubFilterPanel) c;
+            filters.add(fp.getFilter());
+        }
+        
         return MyArrayUtils.toString(filters, " AND ");
 
     }
     
     
-    public static String showAndGetFilter() {
-        DBFIlters dbf = new DBFIlters();
-        dbf.setVisible(true);
-        boolean ok = false;
-        while (!ok)
-            try {
-                dbf.finishedsp.acquire();
-                ok = true;
-            } catch (InterruptedException ex) {
-                Logger.getLogger(DBFIlters.class.getName()).log(Level.SEVERE, null, ex);
-            }
+    public static String showAndGetFilter(ArrayList<String> subscores) {
+        return showAndGetFilter(null, null);
+    }
+    public static String showAndGetFilter(String prevFilter) {
         
-        String ret = dbf.getWhere();
-        HashSet<String> runset = new HashSet<String>();
-        ArrayList<String> rh = new ArrayList<String>();
-        if (dbf.cbRun.getSelectedItem() != null) {
-            dbf.runHistory.add(dbf.cbRun.getSelectedItem().toString());
-            while (dbf.runHistory.size() > 10) {
-                dbf.runHistory.remove(0);
-            }
-            LocalProperties.setProperty(dbf.getClass().getName()+".PreviousRuns", MyArrayUtils.toString(dbf.runHistory, "|||"));
-        }
-        dbf.dispose();
-        return ret;
+        return showAndGetFilter(prevFilter,null);
     }
 
-    public static String showAndGetFilter(String prevFilter) {
-        DBFIlters dbf = new DBFIlters(prevFilter);
+    public static String showAndGetFilter(String prevFilter, ArrayList<String> subscores) {
+        DBFIlters dbf = null;
+        if (prevFilter == null || prevFilter.trim().length() == 0)
+            dbf = new DBFIlters();
+        else
+            dbf = new DBFIlters(prevFilter);
+        if (subscores != null && subscores.size()>0)
+            dbf.setSubscores(subscores);
         dbf.setVisible(true);
+
         boolean ok = false;
         while (!ok)
             try {
@@ -706,11 +757,15 @@ public class DBFIlters extends javax.swing.JFrame {
         }
         //</editor-fold>
         //</editor-fold>
+        System.out.println(showAndGetFilter("(@[%C%] > -1)"));
+        
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new DBFIlters().setVisible(true);
+                DBFIlters f = new DBFIlters();
+                f.setDefaultCloseOperation(DBFIlters.EXIT_ON_CLOSE);
+                f.setVisible(true);
             }
         });
     }
@@ -723,6 +778,7 @@ public class DBFIlters extends javax.swing.JFrame {
     private javax.swing.JCheckBox ckSpecial;
     private javax.swing.JCheckBox ckXLOnly;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -739,10 +795,12 @@ public class DBFIlters extends javax.swing.JFrame {
     private javax.swing.JLabel lblProt1;
     private javax.swing.JLabel lblProt12;
     private javax.swing.JLabel lblProt2;
+    private javax.swing.JPanel pSubScores;
     private javax.swing.JPanel pWithinBetween;
     private javax.swing.JRadioButton rbAll;
     private javax.swing.JRadioButton rbBetween;
     private javax.swing.JRadioButton rbWithin;
+    private javax.swing.JScrollPane spSubScores;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner stspMaxMGXRank;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner stspMaxPrecCharge;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner stspMinDSSOPep;
@@ -767,5 +825,62 @@ public class DBFIlters extends javax.swing.JFrame {
                 + "p.name ilike '%" + text + "%' OR "
                 + "p.description ilike '%" + text + "%'))";
         return filter;
+    }
+    
+    /**
+     * Panel that contains one filter
+     */
+    private class SubFilterPanel extends JPanel {
+        
+        DBSubScoreFilter filter = new DBSubScoreFilter();
+        JButton delete = new JButton("X");
+
+        public SubFilterPanel(String filter) {
+            this();
+            this.filter.setFilter(filter);
+        }
+        
+        public SubFilterPanel() {
+            filter.setSubScores(getSubscores());
+            JPanel flowPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            setLayout(new BorderLayout());
+            flowPanel.add(delete);
+            add(flowPanel, BorderLayout.EAST);
+            add(filter, BorderLayout.CENTER);
+            delete.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    DBFIlters.this.pSubScores.remove(SubFilterPanel.this);
+                    DBFIlters.this.pSubScores.revalidate();
+                    DBFIlters.this.pSubScores.repaint();
+                }
+            });
+        }
+        
+        public String getFilter() {
+            return filter.getFilter();
+        }
+        
+        public void setSubScores(ArrayList<String> subscores) {
+            filter.setSubScores(subscores);
+        }
+    }
+
+    /**
+     * @return the subscores
+     */
+    public ArrayList<String> getSubscores() {
+        return subscores;
+    }
+
+    /**
+     * @param subscores the subscores to set
+     */
+    public void setSubscores(ArrayList<String> subscores) {
+        this.subscores = subscores;
+        for (Component c : pSubScores.getComponents()) {
+            SubFilterPanel fp = (SubFilterPanel) c;
+            fp.setSubScores(subscores);
+        }
     }
 }

@@ -24,9 +24,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import org.rappsilber.config.LocalProperties;
 import org.rappsilber.fdr.entities.DBPSM;
 import rappsilber.config.DBRunConfig;
 import org.rappsilber.fdr.entities.PSM;
@@ -57,6 +59,7 @@ import rappsilber.ms.sequence.AminoModification;
  */
 public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
+    public static final String subscoreroperty = "xiFDR.FILTER_SUBSCORES";
     private Connection m_db_connection;
     private long       m_db_last_used;
     private Timer      m_db_autoclosetimer;
@@ -639,6 +642,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
         for (int currentsearch = 0 ; currentsearch<searchIds.length;currentsearch++){
             int searchId = searchIds[currentsearch];
+            String searchfilter = filter;
             // wee read that one already
             if (m_search_ids.contains(searchId)) {
                 continue;
@@ -667,6 +671,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     java.sql.Array sn = rs.getArray(1);
                     if (sn != null) {
                         for (String s : (String[])sn.getArray()) {
+                            if (s.contains("recoursor"))
+                                s = s.replace("recoursor", "recursor");
                             additionalInfoNames.add(s);
 
                             if (s.contentEquals(sPepCoverage1)) {
@@ -695,6 +701,46 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Warning - no relative peptide coverage for peptide 2 - bossting on minimum peptide coverage likely not helpfull");
             }
             HashSet<Long> proteinIds = new HashSet<>();
+
+            // if any custom scores where filtered - adapt these
+            Pattern subscorepattern = Pattern.compile("\\[%([^%]*)%\\]");
+            Matcher subscorematcher = subscorepattern.matcher(searchfilter);
+            ArrayList<String> scorefilters_used = new ArrayList<>();
+            while(subscorematcher.find()) {
+                String scorename = subscorematcher.group(1).replace("oursor", "ursor");
+                
+                int scoreid=-1;
+                for (int i = 0;i<scorenames.size();i++) {
+                    if (scorenames.get(i).toLowerCase().equals(scorename.trim().toLowerCase())) {
+                        scoreid = i;
+                    }
+                }
+                if (scoreid == -1) {
+                    throw new SQLException("subscore [" + scorename + "] not found");
+                }
+                
+                scorefilters_used.add(subscorematcher.group(1));
+                
+                searchfilter = searchfilter.substring(0, subscorematcher.start()) 
+                        +"subscores[" + (scoreid+1) + "]" + searchfilter.substring(subscorematcher.end());
+                subscorematcher = subscorepattern.matcher(searchfilter);
+                if (!scoresForwarded.contains(scoreid)) {
+                    scoresForwarded.add(scoreid);
+                }
+            }   
+            // make sure the gui shows previously used subscores higher up in the list
+            if (scorefilters_used.size()>0) {
+                String prev = LocalProperties.getProperty(DBinFDR.subscoreroperty, "");
+                if (prev.length() > 0) {
+                    for (String s : prev.split(";")) {
+                        if (!scorefilters_used.contains(s))
+                            scorefilters_used.add(s);
+                    }
+                    
+                }
+                LocalProperties.setProperty(DBinFDR.subscoreroperty, RArrayUtils.toString(scorefilters_used,";"));
+            }
+            
             
             String matchQuerry;
             matchQuerry
@@ -807,7 +853,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , s.precursor_intensity\n"
                     + " , s.elution_time_start \n"
                     + " ORDER BY sm.score DESC)  i \n"
-                    + (filter == null || filter.isEmpty() ? "" : " WHERE ( " + filter + " )");
+                    + (searchfilter == null || searchfilter.isEmpty() ? "" : " WHERE ( " + searchfilter + " )");
 
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from db");
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
@@ -1131,51 +1177,52 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 rs.close();
                 stm.close();
 
-
-                HashMap<Long,Protein> id2Protein = new HashMap<>();
-                for (Protein p : allProteins) {
-                    id2Protein.put(p.getId(), p);
-                }
-
-                String proteinQuerry = "SELECT id, accession_number, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
-                Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Geting protein information: \n" + proteinQuerry);
-                stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                stm.setFetchSize(100);
-                rs = stm.executeQuery(proteinQuerry);
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
-                
-                int idColumn = rs.findColumn("id");
-                int accessionColumn = rs.findColumn("accession_number");
-                int descriptionColumn = rs.findColumn("description");
-                int proteinSequenceColumn = rs.findColumn("sequence");
-                int proteinNameColumn = rs.findColumn("name");
-                while (rs.next()) {
-                    long id = rs.getLong(idColumn);
-                    String sequence =  rs.getString(proteinSequenceColumn).replaceAll("[^A-Z]", "");
-                    String accession = rs.getString(accessionColumn);
-                    String name = rs.getString(proteinNameColumn);
-                    String description = rs.getString(descriptionColumn);
-
-                    if (accession == null && description !=null) {
-                        accession = description;
+                if (allProteins.size() > 0) {
+                    HashMap<Long,Protein> id2Protein = new HashMap<>();
+                    for (Protein p : allProteins) {
+                        id2Protein.put(p.getId(), p);
                     }
 
-                    if (description==null || description.isEmpty()) {
-                        if (name == null || name.isEmpty())
-                            description = accession;
-                        else
-                            description = name;
+                    String proteinQuerry = "SELECT id, accession_number, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
+                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Geting protein information: \n" + proteinQuerry);
+                    stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                    stm.setFetchSize(100);
+                    rs = stm.executeQuery(proteinQuerry);
+                    Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
+
+                    int idColumn = rs.findColumn("id");
+                    int accessionColumn = rs.findColumn("accession_number");
+                    int descriptionColumn = rs.findColumn("description");
+                    int proteinSequenceColumn = rs.findColumn("sequence");
+                    int proteinNameColumn = rs.findColumn("name");
+                    while (rs.next()) {
+                        long id = rs.getLong(idColumn);
+                        String sequence =  rs.getString(proteinSequenceColumn).replaceAll("[^A-Z]", "");
+                        String accession = rs.getString(accessionColumn);
+                        String name = rs.getString(proteinNameColumn);
+                        String description = rs.getString(descriptionColumn);
+
+                        if (accession == null && description !=null) {
+                            accession = description;
+                        }
+
+                        if (description==null || description.isEmpty()) {
+                            if (name == null || name.isEmpty())
+                                description = accession;
+                            else
+                                description = name;
+                        }
+
+                        Protein p = id2Protein.get(id);
+                        p.setSequence(sequence);
+                        p.setAccession(accession);
+                        p.setDescription(description);
+
                     }
-                    
-                    Protein p = id2Protein.get(id);
-                    p.setSequence(sequence);
-                    p.setAccession(accession);
-                    p.setDescription(description);
-          
+
+                    rs.close();
+                    stm.close();
                 }
-                
-                rs.close();
-                stm.close();
                         
                 m_search_ids.add(searchId);
 
@@ -1266,6 +1313,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         boolean shownMinPepWarning =false;
 
         for (int currentsearch = 0 ; currentsearch<searchIds.length;currentsearch++){
+            String searchfilter = filter;
             int searchId = searchIds[currentsearch];
             // wee read that one already
             if (m_search_ids.contains(searchId)) {
@@ -1315,6 +1363,16 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             if (cPepCoverage2 <0 && !shownMinPepWarning) {
                 shownMinPepWarning = true;
                 Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Warning - no relative peptide coverage for peptide 2 - bossting on minimum peptide coverage likely not helpfull");
+            }
+            
+            // if any custom scores where filtered - adapt these
+            Pattern subscorepattern = Pattern.compile("\\[%([^%]*)%\\]");
+            Matcher subscorematcher = subscorepattern.matcher(searchfilter);
+            while(subscorematcher.find()) {
+                String scorename = subscorematcher.group(1);
+                int scoreid=scorenames.indexOf(scorename);
+                searchfilter = searchfilter.substring(0, subscorematcher.start()) +"subscores[" + (scoreid+1) + "]" + searchfilter.substring(subscorematcher.end());
+                subscorematcher = subscorepattern.matcher(searchfilter);
             }
             
             String matchQuerry;
@@ -1436,7 +1494,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , s.precursor_intensity\n"
                     + " , s.elution_time_start \n"
                     + " ORDER BY sm.score DESC)  i \n"
-                    + (filter == null || filter.isEmpty() ? "" : " WHERE ( " + filter + " )");
+                    + (searchfilter == null || searchfilter.isEmpty() ? "" : " WHERE ( " + searchfilter + " )");
 
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from db");
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
@@ -1783,7 +1841,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
             } catch (SQLException sex) {
                 if (tries < 5) {
-                    readDB(searchIds, filter, topOnly, skip, tries + 1);
+                    readDB(searchIds, searchfilter, topOnly, skip, tries + 1);
                 }
                 Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
                 return;

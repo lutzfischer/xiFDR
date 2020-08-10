@@ -17,8 +17,10 @@ package org.rappsilber.fdr.gui.components;
 
 import java.awt.EventQueue;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
@@ -298,6 +300,41 @@ public class GetDBFDR extends javax.swing.JPanel {
     }
     
 
+    private ArrayList<String> getSubscores() {
+        if (this.getSearch.getSelectedSearchIds().length > 0) {
+            try {
+                Connection c = getSearch.getConnection();
+                boolean first = true;
+                Statement st = c.createStatement();
+                ResultSet rs = st.executeQuery("SELECT scorenames from search where id in (" +
+                        RArrayUtils.toString(this.getSearch.getSelectedSearchIds(),",") + ");");
+                ArrayList<String> ret = null;
+                while(rs.next()) {
+                    String[] names = (String[]) rs.getArray(1).getArray();
+                    ArrayList<String> subnames = new ArrayList<>(RArrayUtils.toCollection(names));
+                    if (first)
+                        ret = subnames;
+                    else
+                        ret.retainAll(subnames);
+                }
+                for (int i = 0 ; i< ret.size(); i++) {
+                    if (ret.get(i).matches(".*oursor.*"))
+                        ret.set(i, ret.get(i).replace("oursor", "ursor"));
+
+                }
+                rs.close();
+                c.close();
+                return ret;
+            } catch (SQLException ex) {
+                Logger.getLogger(GetDBFDR.class.getName()).log(Level.SEVERE, null, ex);
+                setStatus("error retriving subscores:" + ex);
+            }
+        } 
+        return null;
+        
+            
+    }
+
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -457,12 +494,14 @@ public class GetDBFDR extends javax.swing.JPanel {
     private void btnReadFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnReadFilterActionPerformed
         new Thread() {
             public void run () {
-                txtReadFilter.setText(DBFIlters.showAndGetFilter(txtReadFilter.getText()));
+                txtReadFilter.setText(DBFIlters.showAndGetFilter(txtReadFilter.getText(), getSubscores()));
             }
         }.start();            
 
     }//GEN-LAST:event_btnReadFilterActionPerformed
 
+    
+    
     private void btnSelectIDSActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSelectIDSActionPerformed
         String idsString = JOptionPane.showInputDialog(this, "Database IDs to select (comma-separated list)");
         String[] ids = idsString.trim().split("\\s*,\\s*");
