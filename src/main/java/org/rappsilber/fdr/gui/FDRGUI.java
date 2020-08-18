@@ -1081,7 +1081,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int targetLinearPSM = 0;
         int decoyXLPSM = 0;
         int decoyLinearPSM = 0;
-        for (PSM psm : getResult().psmFDR) {
+        for (PSM psm : getResult().psmFDR.filteredResults()) {
             if (psm.isLinear()) {
                 sumLinearPSM++;
                 if (!psm.isDecoy()) {
@@ -1104,7 +1104,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int targetLinearPepPairs = 0;
         int decoyXLPepPairs = 0;
         int decoyLinearPepPairs = 0;
-        for (PeptidePair pp : result.peptidePairFDR) {
+        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
             if (pp.isLinear()) {
                 sumLinearPepPairs++;
                 if (!pp.isDecoy()) {
@@ -1127,7 +1127,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int sumLinksInternalTarget = 0;
         int sumLinksBetweenTarget = 0;
         int sumLinks = getResult().proteinGroupLinkFDR.getResultCount();
-        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR) {
+        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR.filteredResults()) {
             if (l.isDecoy()) {
                 if (l.isInternal) {
                     sumLinksInternalDecoy++;
@@ -1148,6 +1148,35 @@ public class FDRGUI extends javax.swing.JFrame {
 
         }
 
+        int sumLinksBetweenDecoyUF = 0;
+        int sumLinksInternalDecoyUF = 0;
+        int sumLinksBetweenDDUF = 0;
+        int sumLinksInternalDDUF = 0;
+        int sumLinksInternalTargetUF = 0;
+        int sumLinksBetweenTargetUF = 0;
+        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR) {
+            if (l.isDecoy()) {
+                if (l.isInternal) {
+                    sumLinksInternalDecoyUF++;
+                    if (l.isDD()) {
+                        sumLinksInternalDDUF++;
+                    }
+                } else {
+                    sumLinksBetweenDecoyUF++;
+                    if (l.isDD()) {
+                        sumLinksBetweenDDUF++;
+                    }
+                }
+            } else if (l.isInternal) {
+                sumLinksInternalTargetUF++;
+            } else {
+                sumLinksBetweenTargetUF++;
+            }
+
+        }
+
+        
+        
         int sumProteinGroupPairs = getResult().proteinGroupPairFDR.getResultCount();
         int sumProteinGroupPairsBetweenDecoy = 0;
         int sumProteinGroupPairsInternalDecoy = 0;
@@ -1155,7 +1184,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int sumProteinGroupPairsInternalDD = 0;
         int sumProteinGroupPairsInternalTarget = 0;
         int sumProteinGroupPairsBetweenTarget = 0;
-        for (ProteinGroupPair pgl : getResult().proteinGroupPairFDR) {
+        for (ProteinGroupPair pgl : getResult().proteinGroupPairFDR.filteredResults()) {
             if (pgl.isDecoy()) {
                 if (pgl.isInternal()) {
                     sumProteinGroupPairsInternalDecoy++;
@@ -1190,9 +1219,9 @@ public class FDRGUI extends javax.swing.JFrame {
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupLinkFDR.getHigherFDR() * 100, result.proteinGroupLinkFDR.getLowerFDR() * 100}, 1);
         txtSumLinks.setText(sumLinks + " [" + nice[0] + "%," + nice[1] + "%]");
         txtSumLinks.setToolTipText(fdrLevelSummary(result.proteinGroupLinkFDR));
-        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksBetweenDecoy-2*sumLinksBetweenDD)/(double)sumLinksBetweenTarget * 100, (sumLinksBetweenDecoy-2*sumLinksBetweenDD+1)/(double)sumLinksBetweenTarget * 100}, 1);
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksBetweenDecoyUF-2*sumLinksBetweenDDUF)/(double)sumLinksBetweenTargetUF * 100, (sumLinksBetweenDecoyUF-2*sumLinksBetweenDDUF+1)/(double)sumLinksBetweenTargetUF * 100}, 1);
         txtSumLinksBetween.setText((sumLinksBetweenTarget + sumLinksBetweenDecoy) + " (" + sumLinksBetweenTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
-        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksInternalDecoy-2*sumLinksInternalDD)/(double)sumLinksInternalTarget * 100, (sumLinksInternalDecoy-2*sumLinksInternalDD+1)/(double)sumLinksInternalTarget * 100}, 1);
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksInternalDecoyUF-2*sumLinksInternalDDUF)/(double)sumLinksInternalTargetUF * 100, (sumLinksInternalDecoyUF-2*sumLinksInternalDDUF+1)/(double)sumLinksInternalTargetUF * 100}, 1);
         txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + " TT)  [" + nice[0] + "%," + nice[1] + "%]");
 
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupFDR.getHigherFDR() * 100, result.proteinGroupFDR.getLowerFDR() * 100}, 1);

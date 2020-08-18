@@ -977,7 +977,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     double peptide1score = score*scoreRatio;
                     double peptide2score = score*(1-scoreRatio);
                     
-
                     String xl = rs.getString(xlColumn);
                     if (xl == null) {
                         xl = "";
@@ -1021,8 +1020,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                             String s2 = Long.toString(p2id);
 
                             psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
-                            
-
                         }
                     } else {
                         String a2 = "";
@@ -1047,7 +1044,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                             }
                             psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, xl, pmz, calc_mass, pep1mass, pep2mass, search_id, scan_id);
                         }
-                        
                     }
                     
                     psm.setRank(rank);

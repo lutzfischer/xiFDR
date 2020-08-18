@@ -121,7 +121,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     
     @Override
     public int hashCode() {
-        return Long.hashCode(id) + 31 * sequence.hashCode();
+        return Boolean.hashCode(isDecoy) +  31 * sequence.hashCode();
     }
 
     /**
@@ -133,7 +133,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      */
     @Override
     public boolean equals(Object o) {
-        return ((Peptide) o).id == id && ((Peptide) o).sequence.equals(sequence) && ((Peptide) o).isDecoy == isDecoy;
+        return ((Peptide) o).id == id || (((Peptide) o).sequence.equals(sequence) && ((Peptide) o).isDecoy == isDecoy);
     }
 
 //    public int compareTo(Peptide o) {

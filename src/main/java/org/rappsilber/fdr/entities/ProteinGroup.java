@@ -297,10 +297,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     }
 
     public Collection<PeptidePair> getPeptidePairs() {
-        HashSet<PeptidePair> ret = new HashSet<PeptidePair>();
-        for (Protein p : getProteins()) {
-            ret.addAll(p.getPeptidePairs());
-        }
+        HashSet<PeptidePair> ret = new HashSet<PeptidePair>(this.peppairs);
         return ret;
     }
 

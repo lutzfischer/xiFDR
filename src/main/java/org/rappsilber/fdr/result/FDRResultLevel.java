@@ -88,7 +88,7 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         return fdr/c;
     }
 
-    public Iterator<T> iterator() {
+    public Iterator<T>iterator() {
         final Iterator<SubGroupFdrInfo<T>> gi = groups.values().iterator();
 
         return new Iterator<T>() {
@@ -117,6 +117,7 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
         };
 
     }
+    
     public Iterable<T> filteredResults() {
         return new Iterable<T>() {
 
