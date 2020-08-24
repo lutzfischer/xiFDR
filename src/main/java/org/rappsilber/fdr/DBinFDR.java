@@ -2479,7 +2479,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 //                }
             } else {
                 // just validate
-                for (PSM psm : result.psmFDR) {
+                for (PSM psm : result.psmFDR.filteredResults()) {
                     Long psmid = Long.parseLong(psm.getPsmID());
 //                    for (PeptidePair pp : result.peptidePairFDR) {
 //                        for (String psmid : pp.getPSMids()) {
@@ -2487,15 +2487,16 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         updateValidateNonOverWrite.setString(1, validate);
                         updateValidateNonOverWrite.setLong(2, psmid);
                         updateValidateNonOverWrite.addBatch();
-                        if ((count = (count + 1) % maxUpdate) == 0) {
+                        if ((count = (count + 1)) % maxUpdate == 0) {
                             updateValidateNonOverWrite.executeBatch();
                             Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
+                            count = 0;
                          }
                     }
 //                        }
                 }
                 
-                if (count > 0) {
+                if (count % maxUpdate > 0) {
                     updateValidateNonOverWrite.executeBatch();
                     Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
                 }
