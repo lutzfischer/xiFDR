@@ -597,7 +597,6 @@ public class FDRImplement implements FDR {
 
                                 } else if (e.isTD()) {
                                     TD--;
-                                    info.resultTD++;
                                     for (int l = i + 1; l <= lastTDIndex; l++) {
                                         group.get(l).setLowerFDRTD(e);
                                     }
@@ -605,7 +604,6 @@ public class FDRImplement implements FDR {
                                     lastTDElement = e;
                                 } else if (e.isDD()) {
                                     DD--;
-                                    info.resultDD++;
                                 }
 
                                 double currfdr = 0;

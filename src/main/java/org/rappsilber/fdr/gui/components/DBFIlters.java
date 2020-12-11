@@ -195,7 +195,7 @@ public class DBFIlters extends javax.swing.JFrame {
             txtCrosslinker.setText(m.group(1));
         }
 
-        p = Pattern.compile("\\(cleavclpep1fragmatched::int\\s+\\+\\s+cleavclpep1fragmatched::int\\s+>=\\s+([0-9]+)\\s*\\)",Pattern.CASE_INSENSITIVE);
+        p = Pattern.compile("\\(cleavclpep1fragmatched::int\\s+\\+\\s+cleavclpep2fragmatched::int\\s+>=\\s+([0-9]+)\\s*\\)",Pattern.CASE_INSENSITIVE);
         m = p.matcher(prevFilter);
         if (m.find()) {
             stspMinDSSOPep.setValue(Integer.parseInt(m.group(1)));
@@ -661,7 +661,7 @@ public class DBFIlters extends javax.swing.JFrame {
         }
         
         if ((Integer)stspMinDSSOPep.getValue() > 0) {
-            filters.add("(cleavclpep1fragmatched::int + cleavclpep1fragmatched::int >= " + ((Integer)stspMinDSSOPep.getValue()) +")");
+            filters.add("(cleavclpep1fragmatched::int + cleavclpep2fragmatched::int >= " + ((Integer)stspMinDSSOPep.getValue()) +")");
         }
         
         

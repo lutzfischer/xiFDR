@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
@@ -337,17 +338,40 @@ public class CSVinFDR extends OfflineFDR {
                 String[] pepPositions2 = accessionParser.splitLine(spepPosition2).toArray(new String[0]);
 
                 if (!sdescription1.isEmpty()) {
-                    if (descriptions1.length != accessions1.length)
-                        throw new ParseException("Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                    // some discrepancy between accession and description field?
+                    if (descriptions1.length != accessions1.length) {
+                        if (accessions2.length == 1) {
+                            // probably some unquoted ";" in description - just ignore it
+                            descriptions2 = new String[]{sdescription2};
+                        } else {
+                            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                            descriptions1 = new String[accessions1.length];
+                            Arrays.fill(descriptions1, "");
+                        }
+                    }
                 } else {
-                    descriptions1 = accessions1;
+                    
+                    descriptions1 = new String[accessions1.length];
+                    Arrays.fill(descriptions1, "");
                 }
 
                 if (!sdescription2.isEmpty()) {
-                    if (descriptions2.length != accessions2.length)
-                        throw new ParseException("Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                    // some discrepancy between accession and description field?
+                    if (descriptions2.length != accessions2.length) {
+                        if (accessions2.length == 1) {
+                            // probably some unquoted ";" in description - just ignore it
+                            descriptions2 = new String[]{sdescription2};
+                        } else {
+                            // could be a lot of things - ignore descrition for now
+                            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                            descriptions2 = new String[accessions2.length];
+                            Arrays.fill(descriptions2, "");
+                        }
+                    }
                 } else {
-                    descriptions2 = accessions2;
+                    
+                    descriptions2 = new String[accessions2.length];
+                    Arrays.fill(descriptions2, "");
                 }
 
                 if (accessions1.length ==1) {

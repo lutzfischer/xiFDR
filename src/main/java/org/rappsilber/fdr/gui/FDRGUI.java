@@ -1244,19 +1244,20 @@ public class FDRGUI extends javax.swing.JFrame {
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsComplete);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsMedium);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsSimple);
+            final FDRSettingsImpl settings = new FDRSettingsImpl(fdrSettings);
             
-            getFdr().setMinDecoys(fdrSettings.getMinTD());
+            getFdr().setMinDecoys(settings.getMinTD());
             
-            fdrSettings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
+            settings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
                     
             if (fdrSettings.doOptimize() != null) {
-                final OfflineFDR.FDRLevel l = fdrSettings.doOptimize();
-                if (l == OfflineFDR.FDRLevel.PSM && !(fdrSettings.boostMinFragments() || fdrSettings.boostDeltaScore() || fdrSettings.boostPepCoverage()))
+                final OfflineFDR.FDRLevel l = settings.doOptimize();
+                if (l == OfflineFDR.FDRLevel.PSM && !(settings.boostMinFragments() || settings.boostDeltaScore() || settings.boostPepCoverage()))
                     JOptionPane.showMessageDialog(this, "Boosting of that Level currently not supported!");
                 else { 
                     Thread ml = new Thread() {
                         public void run() {
-                            maximise(l, getFdrSettings().getBoostBetween());
+                            maximise(l, settings);
                             getFdrSettingsComplete().btnStopBoost.setEnabled(false);
                             fdrSettingsMedium.btnStopBoost.setEnabled(false);
                             fdrSettingsSimple.btnStopBoost.setEnabled(false);
@@ -1350,7 +1351,7 @@ public class FDRGUI extends javax.swing.JFrame {
         txtSumProtGroups.setText("");
     }
 
-    public void maximise(OfflineFDR.FDRLevel level, boolean between) {
+    public void maximise(OfflineFDR.FDRLevel level, FDRSettings settings) {
         clearResults();
         prepareFDRCalculation();
        
@@ -1358,7 +1359,7 @@ public class FDRGUI extends javax.swing.JFrame {
         setEnableCalc(false);
         setEnableWrite(false);
         
-        final MaximisingStatus result = m_fdr.maximise(fdrSettings, level, between, new MaximizingUpdate() {
+        final MaximisingStatus result = m_fdr.maximise(settings, level, settings.getBoostBetween(), new MaximizingUpdate() {
             @Override
             public void setStatus(final MaximisingStatus state) {
                 javax.swing.SwingUtilities.invokeLater(new Runnable() {

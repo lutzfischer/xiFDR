@@ -79,26 +79,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 
     
     
-    private void setValueLater(final JSpinner sp, final Object value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                sp.setValue(value);
-            }
-        });
-            
-    }
-
-    private void setValueLater(final JCheckBox ck, final boolean value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                ck.setSelected(value);
-            }
-        });
-        
-    }
-    
     /**
      * Creates new form FDRSettingsComplete
      */

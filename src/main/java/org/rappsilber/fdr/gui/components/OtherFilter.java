@@ -26,6 +26,12 @@ import javax.swing.SwingConstants;
  */
 public class OtherFilter extends javax.swing.JPanel {
 
+    private int minPepFrags = 0;
+    private double minPepCoverage = 0;
+    private double minDeltaScore = 0;
+    private int minPepStubs;
+    private int minPepDoublets;
+
     /**
      * Creates new form OtherFilter
      */
@@ -35,6 +41,8 @@ public class OtherFilter extends javax.swing.JPanel {
         txtMinPepFrags.setHorizontalAlignment(SwingConstants.RIGHT);
         txtDeltaScore.setHorizontalAlignment(SwingConstants.RIGHT);
         txtMinPepCoverage.setHorizontalAlignment(SwingConstants.RIGHT);
+        txtMinPepStubs.setHorizontalAlignment(SwingConstants.RIGHT);
+        txtMinPepDoublets.setHorizontalAlignment(SwingConstants.RIGHT);
     }
 
     /**
@@ -54,6 +62,10 @@ public class OtherFilter extends javax.swing.JPanel {
         txtMinPepFrags = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         ckTwoStepBoost = new javax.swing.JCheckBox();
+        txtMinPepStubs = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        txtMinPepDoublets = new javax.swing.JTextField();
 
         txtMinPepCoverage.setText("0");
         txtMinPepCoverage.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -86,6 +98,24 @@ public class OtherFilter extends javax.swing.JPanel {
 
         ckTwoStepBoost.setText("Boost Separately");
 
+        txtMinPepStubs.setText("0");
+        txtMinPepStubs.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtMinPepFragshigherThen1Test(evt);
+            }
+        });
+
+        jLabel4.setText("Minimum Peptide-Stubs");
+
+        jLabel5.setText("Minimum Peptide-Doublets");
+
+        txtMinPepDoublets.setText("0");
+        txtMinPepDoublets.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtMinPepFragshigherThen1Test(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -93,25 +123,22 @@ public class OtherFilter extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ckCombineScoreAndDelta, javax.swing.GroupLayout.DEFAULT_SIZE, 309, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
+                    .addComponent(ckCombineScoreAndDelta, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel1)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel4)
+                            .addComponent(ckTwoStepBoost)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel5))
+                        .addGap(5, 5, 5)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(txtMinPepFrags))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel1)
-                                    .addComponent(jLabel2))
-                                .addGap(28, 28, 28)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(txtMinPepCoverage)
-                                    .addComponent(txtDeltaScore))))
-                        .addGap(28, 28, 28))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(ckTwoStepBoost)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                            .addComponent(txtMinPepDoublets)
+                            .addComponent(txtMinPepFrags)
+                            .addComponent(txtMinPepCoverage, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
+                            .addComponent(txtDeltaScore, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(txtMinPepStubs, javax.swing.GroupLayout.Alignment.LEADING))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -129,10 +156,18 @@ public class OtherFilter extends javax.swing.JPanel {
                     .addComponent(jLabel2)
                     .addComponent(txtDeltaScore, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(ckCombineScoreAndDelta)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel4)
+                    .addComponent(txtMinPepStubs, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel5)
+                    .addComponent(txtMinPepDoublets, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(ckCombineScoreAndDelta)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckTwoStepBoost)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -147,30 +182,56 @@ public class OtherFilter extends javax.swing.JPanel {
             v=v/100.0;
             txt.setText(v.toString());
         }
+        if (txt == txtMinPepCoverage) { 
+            if (!Double.toString(this.minPepCoverage).contentEquals(txtMinPepCoverage.getText()))
+                this.minPepCoverage = Double.parseDouble(txtMinPepCoverage.getText());
+            
+        } else if (txt == txtDeltaScore) {
+            if (!Double.toString(this.minDeltaScore).contentEquals(txtDeltaScore.getText()))
+                this.minDeltaScore = Double.parseDouble(txtDeltaScore.getText());
+        }
     }//GEN-LAST:event_higherThen1Test
 
     private void txtMinPepFragshigherThen1Test(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtMinPepFragshigherThen1Test
         JTextField txt  = (JTextField) (evt.getSource());
         String sValue = txt.getText();
         sValue = sValue.replaceAll("[^0-9+\\-\\.Ee]", "");
+        sValue = sValue.replaceAll("\\[.,].*", "");
         if (sValue.length()< txt.getText().length())
             txt.setText(sValue);
+        
+        if (txt == txtMinPepFrags) 
+            this.minPepFrags = Integer.parseInt(txtMinPepFrags.getText());
+        else if (txt == txtMinPepDoublets)
+            this.minPepDoublets = Integer.parseInt(txtMinPepDoublets.getText());
+        else if (txt == txtMinPepStubs)
+            this.minPepStubs = Integer.parseInt(txtMinPepStubs.getText());
     }//GEN-LAST:event_txtMinPepFragshigherThen1Test
 
     public double getMinDeltaScore() {
-        return Double.parseDouble(txtDeltaScore.getText());
+        return minDeltaScore;
     }
 
     public double getMinPepCoverage() {
-        return Double.parseDouble(txtMinPepCoverage.getText());
+        return minPepCoverage;
     }
 
+    public int getMinPepFrags() {
+        return minPepFrags;
+    }
+
+    public void setMinPepFrags(int minPepFrags) {
+        this.minPepFrags = minPepFrags;
+        txtMinPepFrags.setText(Integer.toString(minPepFrags));
+    }
 
     public void setMinDeltaScore(Double d) {
+        minDeltaScore = d;
         txtDeltaScore.setText(d.toString());
     }
 
     public void setMinPepCoverage(Double d) {
+        minPepCoverage = d;
         txtMinPepCoverage.setText(d.toString());
     }
     
@@ -190,6 +251,23 @@ public class OtherFilter extends javax.swing.JPanel {
         return ckTwoStepBoost.isSelected();
     }
 
+    public double getMinPeptideStubFilter() {
+        return minPepStubs;
+    }
+    
+    public void setMinPeptideStubFilter(Double d) {
+        minPepStubs = d.intValue();;
+        txtMinPepStubs.setText(Integer.toString(d.intValue()));
+    }
+    
+    public double getMinPeptideDoubletFilter() {
+        return minPepDoublets;
+    }
+    
+    public void setMinPeptideDoubletFilter(Double d) {
+        minPepDoublets = d.intValue();
+        txtMinPepDoublets.setText(Integer.toString(d.intValue()));
+    }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox ckCombineScoreAndDelta;
@@ -197,8 +275,12 @@ public class OtherFilter extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
-    public javax.swing.JTextField txtDeltaScore;
-    public javax.swing.JTextField txtMinPepCoverage;
-    public javax.swing.JTextField txtMinPepFrags;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JTextField txtDeltaScore;
+    private javax.swing.JTextField txtMinPepCoverage;
+    private javax.swing.JTextField txtMinPepDoublets;
+    private javax.swing.JTextField txtMinPepFrags;
+    private javax.swing.JTextField txtMinPepStubs;
     // End of variables declaration//GEN-END:variables
 }

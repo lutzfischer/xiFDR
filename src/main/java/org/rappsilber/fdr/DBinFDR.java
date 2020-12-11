@@ -7,6 +7,7 @@ package org.rappsilber.fdr;
 import java.awt.GraphicsEnvironment;
 import org.rappsilber.fdr.result.FDRResult;
 import java.io.FileNotFoundException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -750,7 +751,9 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + "p1.peptide_length as peplen1, \n"
                     + "p2.peptide_length as peplen2, \n"
                     + "mp1.link_position + 1 as site1, \n"
+                    + "mp1.link_site_score as link_site_score1, \n"
                     + "mp2.link_position + 1 as site2, \n"
+                    + "mp2.link_site_score as link_site_score2, \n"
                     + "pr1.is_decoy AS isDecoy1, \n"
                     + "pr2.is_decoy AS isDecoy2, \n"
                     + "sm.precursor_charge AS calc_charge, \n"
@@ -852,6 +855,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , scoredelta "
                     + " , s.precursor_intensity\n"
                     + " , s.elution_time_start \n"
+                    + " , mp1.link_site_score \n"
+                    + " , mp2.link_site_score \n"
                     + " ORDER BY sm.score DESC)  i \n"
                     + (searchfilter == null || searchfilter.isEmpty() ? "" : " WHERE ( " + searchfilter + " )");
 
@@ -907,6 +912,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             int subscoresColumn = rs.findColumn("subscores");
             int precIntensityColumn = rs.findColumn("precursor_intensity");
             int retentiontimeColumn = rs.findColumn("retentiontime");
+            int linkSiteScore1Column = rs.findColumn("link_site_score1");
+            int linkSiteScore2Column = rs.findColumn("link_site_score2");
             int clMassColumn = rs.findColumn("clmass");
             int clDeltaColumn = rs.findColumn("delta");
             Pattern modDetect = Pattern.compile(".*[^A-Z].*");
@@ -1048,16 +1055,19 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     
                     psm.setRank(rank);
                     
-                    Float[] scorevalues = (Float[])subscores.getArray();
-                    if (cPepCoverage1 >= 0) {
-                        if (cPepCoverage2 <0 || Double.isNaN(scorevalues[cPepCoverage2]))
-                            psm.addOtherInfo("minPepCoverage",
-                                scorevalues[cPepCoverage1]);
-                        else
-                            psm.addOtherInfo("minPepCoverage",
-                                Math.min(scorevalues[cPepCoverage1], 
-                                        scorevalues[cPepCoverage2])
-                        );
+                    Float[] scorevalues = null;
+                    if (subscores != null) {
+                        scorevalues = (Float[])subscores.getArray();
+                        if (cPepCoverage1 >= 0) {
+                            if (cPepCoverage2 <0 || Double.isNaN(scorevalues[cPepCoverage2]))
+                                psm.addOtherInfo("minPepCoverage",
+                                    scorevalues[cPepCoverage1]);
+                            else
+                                psm.addOtherInfo("minPepCoverage",
+                                    Math.min(scorevalues[cPepCoverage1], 
+                                            scorevalues[cPepCoverage2])
+                            );
+                        }
                     }
 
                     if (cPepStubs >= 0) {
@@ -1094,6 +1104,18 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     psm.addOtherInfo("mgxrank",rs.getDouble(mgxrankColumn));
                     psm.addOtherInfo("PrecursorIntensity",rs.getDouble(precIntensityColumn));
                     psm.addOtherInfo("RetentionTime",rs.getDouble(retentiontimeColumn));
+                    Array lss1 = rs.getArray(linkSiteScore1Column);
+                    Array lss2 = rs.getArray(linkSiteScore2Column);
+                    if (lss1 != null) {
+                        psm.addOtherInfo("LinkSiteScore1",(Float[])lss1.getArray());
+                    } else {
+                        psm.addOtherInfo("LinkSiteScore1", new Float[0]);
+                    }
+                    if (lss2 != null) {
+                        psm.addOtherInfo("LinkSiteScore2",(Float[])lss2.getArray());
+                    } else {
+                        psm.addOtherInfo("LinkSiteScore2", new Float[0]);
+                    }
                     
                     for (Integer p : peaks) {
                         psm.addOtherInfo(scorenames.get(p), scorevalues[p]);
@@ -1224,6 +1246,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
             } catch (SQLException sex) {
                 if (tries < 5) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "failed to read from the database retrying", sex);
                     readDBSteps(searchIds, filter, topOnly, skip, tries + 1);
                 } else {
                     Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
@@ -2361,7 +2384,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         boolean autocomit = getDBConnection().getAutoCommit();
         getDBConnection().setAutoCommit(false);
         // also write the fdr-values
-        for (PeptidePair pp : result.peptidePairFDR) {
+        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
             ProteinGroupPair pgp = pp.getFdrLink().getFdrPPI();
             double confidence = 100 * (1 - pgp.getFDR());
             for (String psmid : pp.getPSMids()) {
@@ -2392,7 +2415,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         boolean autocomit = getDBConnection().getAutoCommit();
         getDBConnection().setAutoCommit(false);
         // also write the fdr-values
-        for (PeptidePair pp : result.peptidePairFDR) {
+        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
 
             double confidence = 100 * (1 - pp.getFDR());
             for (String psmid : pp.getPSMids()) {
@@ -2423,7 +2446,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         boolean autocomit = getDBConnection().getAutoCommit();
         getDBConnection().setAutoCommit(false);
         // also write the fdr-values
-        for (PeptidePair pp : result.peptidePairFDR) {
+        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
             if (!pp.isLinear()) {
                 ProteinGroupLink l = pp.getFdrLink();
                 double confidence = 100 * (1 - l.getFDR());
@@ -2456,54 +2479,35 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         boolean autocomit = getDBConnection().getAutoCommit();
         getDBConnection().setAutoCommit(false);
         if (validate != null) {
+            PreparedStatement stVal = null;
             if (overwrite) { // overwrite validation
-
-                // just validate
-                for (PSM psm : result.psmFDR) {
-                    String psmid = psm.getPsmID();
-                    
-                    if (psm.isLinear() || (psm.isBetween() && between) || (psm.isInternal() && within)) {
-                        updateValidateOverWrite.setString(1, validate);
-                        updateValidateOverWrite.setLong(2, Long.parseLong(psmid));
-                        updateValidateOverWrite.addBatch();
-                        if ((count = (count + 1) % maxUpdate) == 0) {
-                            updateValidateOverWrite.executeBatch();
-                            Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
-                    }
-                    }
-                }
-                if (count > 0) {
-                    updateValidateOverWrite.executeBatch();
-                    Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
-                }
-//                }
+                // clear all previous validations of this label
+                clearDBValidation(validate);
+                stVal = updateValidateOverWrite;
             } else {
-                // just validate
-                for (PSM psm : result.psmFDR.filteredResults()) {
-                    Long psmid = Long.parseLong(psm.getPsmID());
+                stVal = updateValidateNonOverWrite;
+            }
+            // write out validations - but only if the match was not already validated
+            for (PSM psm : result.psmFDR.filteredResults()) {
+                Long psmid = Long.parseLong(psm.getPsmID());
 //                    for (PeptidePair pp : result.peptidePairFDR) {
 //                        for (String psmid : pp.getPSMids()) {
-                    if (psm.isLinear() || (psm.isBetween() && between) || (psm.isInternal() && within)) {
-                        updateValidateNonOverWrite.setString(1, validate);
-                        updateValidateNonOverWrite.setLong(2, psmid);
-                        updateValidateNonOverWrite.addBatch();
-                        if ((count = (count + 1)) % maxUpdate == 0) {
-                            updateValidateNonOverWrite.executeBatch();
-                            Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
-                            count = 0;
-                         }
-                    }
-//                        }
+                if (psm.isLinear() || (psm.isBetween() && between) || (psm.isInternal() && within)) {
+                    stVal.setString(1, validate);
+                    stVal.setLong(2, psmid);
+                    stVal.addBatch();
+                    if ((count = (count + 1)) % maxUpdate == 0) {
+                        stVal.executeBatch();
+                        Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
+                        count = 0;
+                     }
                 }
-                
-                if (count % maxUpdate > 0) {
-                    updateValidateNonOverWrite.executeBatch();
-                    Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
-                }
-//                }
-
             }
-        } else { // do not validate
+
+            if (count % maxUpdate > 0) {
+                stVal.executeBatch();
+                Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, count+" updated");
+            }
         }
         getDBConnection().commit();
         getDBConnection().setAutoCommit(autocomit);

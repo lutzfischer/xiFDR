@@ -116,6 +116,8 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         linearSupport |= o.linearSupport;
         internalSupport |= o.internalSupport;
         this.betweenSupport |= o.betweenSupport;
+        if (this.description == null || this.description.length()==0)
+            this.description = o.description;
         //setFDRGroup();
        //isAmbigious &= o.isAmbigious;        
         //            score+= o.score;

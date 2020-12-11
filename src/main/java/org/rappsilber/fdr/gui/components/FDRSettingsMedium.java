@@ -28,6 +28,7 @@ import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.OfflineFDR.FDRLevel;
 import static org.rappsilber.fdr.gui.components.FDRSettingsComplete.setSpinnerModel;
+import rappsilber.ms.statistics.utils.UpdateableDouble;
 
 /**
  *
@@ -41,7 +42,6 @@ public class FDRSettingsMedium extends FDRSettingsPanel  {
     
     private int m_minPepLength = 0;
     private int m_boostingSteps = 4;
-    private double m_protfdr = 100;
     private int m_minTD = DEFAULT_MIN_TD_COUNT;
 
     
@@ -63,6 +63,7 @@ public class FDRSettingsMedium extends FDRSettingsPanel  {
     private boolean linkDirectional;
     private boolean ppiDirectional;
     private double reportFactor;
+    UpdateableDouble protFDR = new UpdateableDouble(0);
 
     @Override
     public boolean getBoostBetween() {
@@ -79,27 +80,6 @@ public class FDRSettingsMedium extends FDRSettingsPanel  {
         });
     }    
 
-    
-    
-    private void setValueLater(final JSpinner sp, final Object value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                sp.setValue(value);
-            }
-        });
-            
-    }
-
-    private void setValueLater(final JCheckBox ck, final boolean value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                ck.setSelected(value);
-            }
-        });
-        
-    }
     
     /**
      * Creates new form FDRSettingsComplete
@@ -126,7 +106,7 @@ public class FDRSettingsMedium extends FDRSettingsPanel  {
     
     private void doCalc() {
  //       if (ckMaximize.isSelected()) {
-        m_protfdr = 1;
+        protFDR.value = 1;
 
         this.psmLocalFDR = tsLocalFDR.getSelectionState();
         this.peppairLocalFDR = tsLocalFDR.getSelectionState();
@@ -143,54 +123,54 @@ public class FDRSettingsMedium extends FDRSettingsPanel  {
     
     @Override
     public double getPSMFDR() {
-        return Double.parseDouble(spPsmFDR.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spPsmFDR.getModel())).getFDR();
     }
 
     
     @Override
     public double getPeptidePairFDR() {
-        return Double.parseDouble(spPepFDR.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spPepFDR.getModel())).getFDR();
     }
 
     @Override
     public double getProteinGroupFDR() {
-        return m_protfdr;
+        return protFDR.value;
     }
 
     @Override
-    public double getProteinGroupLinkFDR() { 
-        return Double.parseDouble(spLinkFDR.getValue().toString())/100.0;
+    public double getProteinGroupLinkFDR() {
+        return ((FDRSpinnerModel)(spLinkFDR.getModel())).getFDR();
     }
 
     @Override
     public double getProteinGroupPairFDR() {
-        return Double.parseDouble(spPPIFdr.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spPPIFdr.getModel())).getFDR();
     }
 
     @Override
     public void setPSMFDR( Double fdr) {
-        setValueLater(spPsmFDR,fdr*100);
+        setFDRLater(spPsmFDR,fdr);
     }
 
     
     @Override
     public void setPeptidePairFDR( Double fdr) {
-        setValueLater(spPepFDR,fdr*100);
+        setFDRLater(spPepFDR,fdr);
     }
 
     @Override
     public void setProteinGroupLinkFDR( Double fdr) {
-        setValueLater(spLinkFDR,fdr*100);
+        setFDRLater(spLinkFDR,fdr);
     }
 
     @Override
     public void setProteinGroupPairFDR( Double fdr) {
-        setValueLater(spPPIFdr,fdr*100);
+        setFDRLater(spPPIFdr,fdr);
     }
 
     @Override
     public void setProteinGroupFDR( Double fdr) {
-        m_protfdr = fdr;
+        protFDR.value = fdr;
     }
 
     @Override

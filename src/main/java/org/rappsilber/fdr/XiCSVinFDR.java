@@ -197,6 +197,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             rappsilber.ms.sequence.Sequence ps2= new rappsilber.ms.sequence.Sequence(peptide2.getSequence(), m_config);
             peptide2.mass = ps2.getWeight();
             Double xlmass = crossLinkerMass.get(crosslinker);
+            if (xlmass == null && crosslinker.contains("+"))
+                xlmass = crossLinkerMass.get(crosslinker.substring(0,crosslinker.indexOf("+")));
             psm.setCalcMass(peptide1.mass + peptide2.mass + xlmass);
         } else {
             psm.setCalcMass(peptide1.mass);

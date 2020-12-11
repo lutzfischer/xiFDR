@@ -21,8 +21,11 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JSpinner;
+import javax.swing.SwingUtilities;
 import org.rappsilber.fdr.FDRSettingsImpl;
 
 /**
@@ -196,6 +199,39 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     public void setAll(FDRSettings settings) {
         FDRSettingsImpl.transferSettings(settings, this);
     }
+
+
+    protected static void setFDRLater(final JSpinner sp, final double value) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ((FDRSpinnerModel)sp.getModel()).setFDR(value);
+            }
+        });
+            
+    }
+
+    protected void setValueLater(final JSpinner sp, final Object value) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                sp.setValue(value);
+            }
+        });
+            
+    }
+    
+    protected void setValueLater(final JCheckBox ck, final boolean value) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ck.setSelected(value);
+            }
+        });
+        
+    }
+    
+    
     
 //    public abstract void setEnabled(boolean e);
 //

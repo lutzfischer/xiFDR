@@ -15,9 +15,13 @@
  */
 package org.rappsilber.fdr.gui.components;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.HashMap;
 import javax.swing.AbstractSpinnerModel;
 import javax.swing.JCheckBox;
 import javax.swing.JFormattedTextField;
+import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
 import javax.swing.SwingConstants;
@@ -34,104 +38,12 @@ import org.rappsilber.fdr.gui.CalculateRanges;
  */
 public class FDRSettingsComplete extends FDRSettingsPanel {
 
-//    private ArrayList<java.awt.event.ActionListener> m_calc_listener = new ArrayList<ActionListener>();
-//    
-//    private OfflineFDR.FDRLevel m_optimizeWhat; 
-//    
-
-    public static class CustomSpinnerModel extends AbstractSpinnerModel {
-
-
-        private double value = 100.0;
-        private double increment = 1;
-        private double max = 100;
-        private double min  = 0;
-                
-
-        public CustomSpinnerModel(){
-             this.value=value;
-        }
-
-        public CustomSpinnerModel(Double value){
-             this.value=value;
-        }
-
-        @Override
-        public Object getNextValue() {
-            setValue(Math.round((value+increment)/increment)*increment);
-            return value+"";//return as string to avoid round
-        }
-
-        @Override
-        public Object getPreviousValue() {
-            setValue(Math.round((value-increment)/increment)*increment);
-            return value+"";//return as string to avoid round
-        }
-
-        @Override
-        public Object getValue() {
-            if (value == (int)value) {
-                return ((int) value) + "";
-            }
-            return value+"";//return as string to avoid round
-        }
-
-        @Override
-        public void setValue(Object o) {
-            double newValue = Double.NaN;
-            if (o instanceof Number) {
-                newValue = ((Number)o).doubleValue();
-            } else {
-                try{
-                   newValue=Double.parseDouble(o.toString());
-                } catch(Exception e){
-                   newValue = value;
-                }
-            }
-            if (newValue < min)
-                newValue = min;
-            if (newValue>max) 
-                newValue = max;
-            String svalue = value+"";
-            if (svalue.contains("00000")) {
-                newValue = Double.parseDouble(svalue.substring(0,svalue.indexOf("0000")));
-            }
-            if (newValue != value) {
-                value = newValue;
-                fireStateChanged();
-            } else if (newValue+"" != o.toString()) {
-                fireStateChanged();
-            }
-        }
-
-        /**
-         * @return the increment
-         */
-        public double getIncrement() {
-            return increment;
-        }
-
-        /**
-         * @param increment the increment to set
-         */
-        public void setIncrement(double increment) {
-            this.increment = increment;
-        }
-        
-    }
     
     /**
      * Creates new form FDRSettingsComplete
      */
     public FDRSettingsComplete() {
         initComponents();
-        ChangeListener max100Listener = new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                SpinnerModel sp = (SpinnerModel) e.getSource();
-                if (((Double)sp.getValue()) >100)
-                    sp.setValue(100d);
-            }
-        };    
         setSpinnerModel(spPsmFDR, 100);
         setSpinnerModel(spPepFDR, 100);
         setSpinnerModel(spProteinFDR, 100);
@@ -151,12 +63,12 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     }
 
     public static void setSpinnerModel(JSpinner sp, double intialValue) {
-        sp.setModel(new CustomSpinnerModel(intialValue));
+        sp.setModel(new FDRSpinnerModel(intialValue));
         JFormattedTextField tf = ((JSpinner.DefaultEditor) sp.getEditor()).getTextField();
         tf.setEditable(true);
         tf.setHorizontalAlignment(SwingConstants.RIGHT);
-    }
-    
+                    }
+                    
     
     @Override
     public boolean getBoostBetween() {
@@ -171,41 +83,30 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 ckBoostBetween.setSelected(between);
             }
         });
-    }
-
-
-    
-    private void setValueLater(final JSpinner sp, final Object value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                sp.setValue(value);
-            }
-        });
-            
-    }
-    
-    private void setValueLater(final JCheckBox ck, final boolean value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                ck.setSelected(value);
-            }
-        });
-    }      
-        
+    }    
     
     private void doCalc() {
 
         btnStopBoost.setEnabled(ckMaximize.isSelected());        
-
-        if (!ckMoreOptions.isSelected() && ckMaximize.isSelected()) {
-            setMinPeptideFragmentsFilter(0);
-            setMinDeltaScoreFilter(0d);
-            setMinPeptideCoverageFilter(0d);
-            setMinPeptideDoubletFilter(0);
-            setMinPeptideStubFilter(0);
-            setMinPeptideCoverageFilter(0d);
+        
+        if (!ckMoreOptions.isSelected()) {
+            boolean clear = ckMaximize.isSelected();
+            if (!clear)
+                clear = (getMinPeptideFragmentsFilter() +
+                    getMinDeltaScoreFilter() + 
+                    getMinPeptideCoverageFilter() + 
+                    getMinPeptideDoubletFilter() +
+                    getMinPeptideStubFilter() +
+                    getMinPeptideCoverageFilter() >0) && 
+                        JOptionPane.showConfirmDialog(this, "\"More Options\" set but not shown\n Reset these?", "More set but not options shown", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+            if (clear) {
+                setMinPeptideFragmentsFilter(0);
+                setMinDeltaScoreFilter(0d);
+                setMinPeptideCoverageFilter(0d);
+                setMinPeptideDoubletFilter(0);
+                setMinPeptideStubFilter(0);
+                setMinPeptideCoverageFilter(0d);
+            }
         }
         raiseStartCalc(ckMaximize.isSelected());
         
@@ -222,54 +123,54 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     
     @Override
     public double getPSMFDR() {
-        return Double.parseDouble(spPsmFDR.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spPsmFDR.getModel())).getFDR();
     }
 
     
     @Override
     public double getPeptidePairFDR() {
-        return Double.parseDouble(spPepFDR.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spPepFDR.getModel())).getFDR();
     }
 
     @Override
     public double getProteinGroupFDR() {
-        return Double.parseDouble(spProteinFDR.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spProteinFDR.getModel())).getFDR();
     }
 
     @Override
     public double getProteinGroupLinkFDR() {
-        return Double.parseDouble(spLinkFDR.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spLinkFDR.getModel())).getFDR();
     }
 
     @Override
     public double getProteinGroupPairFDR() {
-        return Double.parseDouble(spPPIFdr.getValue().toString())/100.0;
+        return ((FDRSpinnerModel)(spPPIFdr.getModel())).getFDR();
     }
 
     @Override
     public void setPSMFDR( Double fdr) {
-        setValueLater(spPsmFDR,fdr*100);
+        setFDRLater(spPsmFDR,fdr);
     }
 
     
     @Override
     public void setPeptidePairFDR( Double fdr) {
-        setValueLater(spPepFDR,fdr*100);
+        setFDRLater(spPepFDR, fdr);
     }
 
     @Override
     public void setProteinGroupFDR( Double fdr) {
-        setValueLater(spProteinFDR,fdr*100);
+        setFDRLater(spProteinFDR, fdr);
     }
 
     @Override
     public void setProteinGroupLinkFDR( Double fdr) {
-        setValueLater(spLinkFDR,fdr*100);
+        setFDRLater(spLinkFDR, fdr);
     }
 
     @Override
     public void setProteinGroupPairFDR( Double fdr) {
-        setValueLater(spPPIFdr,fdr*100);
+        setFDRLater(spPPIFdr, fdr);
     }
 
     @Override
@@ -550,14 +451,35 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
 
     @Override
     public int getMinPeptideFragmentsFilter() {
-        return Integer.parseInt(this.otherFilter.txtMinPepFrags.getText());
+        return this.otherFilter.getMinPepFrags();
     }
 
     @Override
     public void setMinPeptideFragmentsFilter(int frags) {
-        this.otherFilter.txtMinPepFrags.setText(Integer.toString(frags));
+        this.otherFilter.setMinPepFrags(frags);
     }    
 
+    @Override
+    public double getMinPeptideStubFilter() {
+        return this.otherFilter.getMinPeptideStubFilter();
+    }
+    
+    @Override
+    public void setMinPeptideStubFilter(double d) {
+        this.otherFilter.setMinPeptideStubFilter(d);
+    }
+    
+    @Override
+    public double getMinPeptideDoubletFilter() {
+        return this.otherFilter.getMinPeptideDoubletFilter();
+    }
+    
+    @Override
+    public void setMinPeptideDoubletFilter(double d) {
+        this.otherFilter.setMinPeptideDoubletFilter(d);
+    }
+
+    
     @Override
     public boolean ignoreValidityChecks() {
         return this.ckIgnoreValidity.isSelected();
