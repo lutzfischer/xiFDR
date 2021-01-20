@@ -1386,6 +1386,7 @@ public class FDRGUI extends javax.swing.JFrame {
         setEnableRead(false);
         setEnableCalc(false);
         setEnableWrite(false);
+        m_fdr.setIgnoreGroupsSetting(ckIgnoreGroups1.isSelected());
         
         final MaximisingStatus result = m_fdr.maximise(settings, level, settings.getBoostBetween(), new MaximizingUpdate() {
             @Override
