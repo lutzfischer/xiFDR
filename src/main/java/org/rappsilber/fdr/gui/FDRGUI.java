@@ -583,28 +583,56 @@ public class FDRGUI extends javax.swing.JFrame {
         }
                 
         try {
-            File f = getMzIdentMLOutput();
+            final File f = getMzIdentMLOutput();
+            if (f == null) {
+                setStatus("No output file selected");
+                return;
+            }
+            final OfflineFDR fdr = getFdr();
+            final FDRResult res = getResult();
+            final MZIdentMLOwner mzo = new MZIdentMLOwner(getMzIdentMLOwnerFirst(), getMzIdentMLOwnerLast(), getMzIdentMLOwnerEmail(), getMzIdentMLOwnerOrg(), getMzIdentMLOwnerAdress());
+            final String extension = cmbPeakListFormat.getSelectedItem().toString();
+            final String template  = cmbMzMLScan2ID.getSelectedItem().toString();
             // if (f.canWrite())
-            if ( getFdr() instanceof MZIdentXLFDR) {
+            if ( fdr instanceof MZIdentXLFDR) {
+                setStatus("Writing mzIdenML");
                 writeMZIdentML();
+                setStatus("done writing mzIdentML");
             } else if (getFdr()instanceof XiInFDR) {
-                MZIdentMLExport export =  new MZIdentMLExport(getFdr(), getResult(), new MZIdentMLOwner(getMzIdentMLOwnerFirst(), getMzIdentMLOwnerLast(), getMzIdentMLOwnerEmail(), getMzIdentMLOwnerOrg(), getMzIdentMLOwnerAdress()));
-                export.setForceExtension(cmbPeakListFormat.getSelectedItem().toString());
-                export.setMZMLTemplate(cmbMzMLScan2ID.getSelectedItem().toString());
-                export.convertFile(f.getAbsolutePath());
+                setEnableWrite(false);
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        
+                        try {
+                            setStatus("Exporting mzIdenML");
+                            MZIdentMLExport export = new MZIdentMLExport(fdr, res, mzo);
+                            export.setForceExtension(extension);
+                            export.setMZMLTemplate(template);
+                            export.convertFile(f.getAbsolutePath());
+                            
+                            setStatus("done exporting mzIdentML");
+                        } catch (Exception ex) {
+                            setStatus("Error exporting mzIdentML");
+                            Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, "Error writing mzIdentML", ex);
+                        } finally {
+                            setEnableWrite(true);
+                        }
+                    }
+                };
+                Thread t = new Thread(runnable);
+                t.setName(t.getName() + " Writing mzIdentML");
+                t.start();
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error while writing the xml-file:" + ex + "\n" + RArrayUtils.toString(ex.getStackTrace(), "\n"));
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error while writing the xml-file", ex);
             setStatus("error:" + ex);
-            
-            
         }
     }    
     
     protected void writeMZIdentML() {
         try {
-            File f = getMzIdentMLOutput();
+            final File f = getMzIdentMLOutput();
             // if (f.canWrite())
             if (getFdr() instanceof MZIdentXLFDR) {
                 ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), getResult());
@@ -2827,11 +2855,11 @@ public class FDRGUI extends javax.swing.JFrame {
 
     private void btnWriteMzIdentMLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnWriteMzIdentMLActionPerformed
         exportMZIdentML();
-        LocalProperties.setProperty("mzIdenMLOwnerFirst", txtmzIdentOwnerFirst.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerLast", txtmzIdentOwnerLast.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerEmail", txtmzIdentOwnerEmail.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerAddress", txtmzIdentAdress.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerOrg", txtmzIdentOwnerOrg.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyFirst, txtmzIdentOwnerFirst.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyLast, txtmzIdentOwnerLast.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyEMail, txtmzIdentOwnerEmail.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyAddress, txtmzIdentAdress.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyOrg, txtmzIdentOwnerOrg.getText());
 
     }//GEN-LAST:event_btnWriteMzIdentMLActionPerformed
 

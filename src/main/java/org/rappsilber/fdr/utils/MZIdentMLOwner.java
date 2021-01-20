@@ -6,6 +6,7 @@
 package org.rappsilber.fdr.utils;
 
 import java.util.Objects;
+import org.rappsilber.config.LocalProperties;
 
 /**
  *
@@ -18,6 +19,12 @@ public class MZIdentMLOwner {
     public String org;
     public String address;
 
+    public final static String propertyFirst = "mzIdenMLOwnerFirst";
+    public final static String propertyLast = "mzIdenMLOwnerLast";
+    public final static String propertyEMail = "mzIdenMLOwnerEmail";
+    public final static String propertyAddress = "mzIdenMLOwnerAddress";
+    public final static String propertyOrg = "mzIdenMLOwnerOrg";
+    
     public MZIdentMLOwner() {
         
     }
@@ -27,6 +34,15 @@ public class MZIdentMLOwner {
         this.email = email;
         this.org = org;
         this.address = adress;
+    }
+    
+    public void readLast() {
+        first = LocalProperties.getProperty(propertyFirst, "");
+        last = LocalProperties.getProperty(propertyLast, "");
+        email = LocalProperties.getProperty(propertyEMail, "");
+        address = LocalProperties.getProperty(propertyAddress, "");
+        org = LocalProperties.getProperty(MZIdentMLOwner.propertyOrg, "");
+
     }
     
     public boolean isEmpty() {

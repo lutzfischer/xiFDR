@@ -65,6 +65,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     HashMap<String, Integer> scanIDs = new HashMap<>();
     ArrayList<String> searchedFastas = new ArrayList<>();
     HashMap<String,Double> crossLinkerMass = new HashMap<>(1);
+    boolean lastMzIDowner = false;
 
     private boolean markModifications;
 
@@ -245,7 +246,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }    
     
     public String argList() {
-        return super.argList() + " --xiconfig=[path to config] --fasta=[path to fasta] --flagModifications --gui";
+        return super.argList() + " --xiconfig=[path to config] --fasta=[path to fasta] --flagModifications --gui --lastowner";
     }
     
     public String argDescription() {
@@ -253,6 +254,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                 + "--xiconfig=             what xi config to use to turn find modifications\n"
                 + "--fasta=                fasta file searched"
                 + "--flagModifications     should modified peptide make their own sub-group\n"
+                + "--lastowner             instead of asking for an mzIdentML document owner\n"
+                + "                        reuse the last defined one\n"
                 + "--gui                   forward settings to gui\n";
         
     }
@@ -280,7 +283,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             }else if (arg.toLowerCase().startsWith("--fasta=")) {
                     String fastapath=arg.substring("--fasta=".length());
                     searchedFastas.add(fastapath);
-                    
+            }else if (arg.toLowerCase().equals("--lastowner")) {
+                    lastMzIDowner = true;
             }else if (arg.toLowerCase().startsWith("--flagmodifications")) {
                 setMarkModifications(true);
             }  else {
@@ -446,6 +450,13 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             String baseName = ofdr.getCsvOutBaseSetting();
             String out = path + (path.endsWith(File.separator)?"":File.separator) + baseName + ".mzid";
             try {
+                MZIdentMLOwner o = new MZIdentMLOwner();
+                
+                if (ofdr.lastMzIDowner) {
+                    o.readLast();
+                } else {
+                    o = MZIdentMLOwnerGUI.getSetOwner(o);
+                }
                 Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Writing mzIdentML to " + out);
                 MZIdentMLExport mze = new MZIdentMLExport(ofdr, res, out, MZIdentMLOwnerGUI.getSetOwner(new MZIdentMLOwner()));
             } catch (Exception ex) {

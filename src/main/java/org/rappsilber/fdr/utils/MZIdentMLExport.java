@@ -650,6 +650,9 @@ public class MZIdentMLExport {
 
         
         
+        int proteingrouppairID = 1;
+        HashMap<ProteinAmbiguityGroup,HashMap<ProteinAmbiguityGroup,Integer>> protPair2ID = new HashMap<ProteinAmbiguityGroup,HashMap<ProteinAmbiguityGroup,Integer>>();
+        int factor = (int) Math.pow(10,Math.round(Math.log10(fdrResult.proteinGroupLinkFDR.size()+1)+0.5));
         
         for (ArrayList<DBPSM> psms : allSpectra.values()) {
             // Get the next spectrum.
@@ -1018,12 +1021,68 @@ public class MZIdentMLExport {
                 // Fill the maps
                 //allMzValues.put(new Integer(spectrumNumber), mzValues);
                 // allIntensityValues.put(new Integer(spectrumNumber), intensityValues);
+                {
+//                    if (fdrResult.proteinGroupPairFDR.filteredContains(pgp)) {
+//                        passed = true;
+//                    }
+                    
+                    ProteinAmbiguityGroup pag1 = pg2Pag.get(psm.getProteinGroup1());
+                    ProteinAmbiguityGroup pag2 = pg2Pag.get(psm.getProteinGroup2());
+                    HashMap<ProteinAmbiguityGroup,Integer> prot22id = protPair2ID.get(pag1);
+                    if (prot22id == null) {
+                        prot22id = new HashMap<ProteinAmbiguityGroup, Integer>();
+                        protPair2ID.put(pag1, prot22id);
+                    }
+                    
+                    Integer currentppiID = prot22id.get(pag2);
+                    
+                    if (currentppiID == null) {
+                        currentppiID = proteingrouppairID;
+                        prot22id.put(pag2, currentppiID);
+                        proteingrouppairID++;
+                    }
 
 
+                    if (!pag1.equals(pag2)) {
+                        prot22id = protPair2ID.get(pag2);
+                        if (prot22id == null) {
+                            prot22id = new HashMap<ProteinAmbiguityGroup, Integer>();
+                            protPair2ID.put(pag2, prot22id);
+                        }
+                        prot22id.put(pag1, currentppiID);
+                    }
+                    CvParam cvp1 = null;
+                    CvParam cvp2 = null;
+                    if (pag2 != null) {
+                        if (passed) {
+                            ProteinGroupPair pgp = psm.getLinks().iterator().next().getProteinGroupPair();
+                            cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".a:null:"+pgp.getFDR()+":"+passed);
+                            cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".b:null:"+pgp.getFDR()+":"+passed);
+                        } else {
+                            ProteinGroupPair pgp = psm.getLinks().iterator().next().getProteinGroupPair();
+                            if (pgp.getFDR() != -1) {
+                                cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".a:null:"+pgp.getFDR()+":"+passed);
+                                cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".b:null:"+pgp.getFDR()+":"+passed);
+                            }
+                        }
+                    }
+                    if (cvp1 != null) {
+                        for (ProteinDetectionHypothesis pdh : pag1.getProteinDetectionHypothesis()) {
+                            pdh.getCvParam().add(cvp1);
+                        }
+                    }
+                    if (cvp2 != null) {
+                        for (ProteinDetectionHypothesis pdh : pag2.getProteinDetectionHypothesis()) {
+                            pdh.getCvParam().add(cvp2);
+                        }
+                    }
+                }
             }
             SpectrumIdentificationList sil =  getSpectrumIdentificationList(psms.get(0));
             
             sil.getSpectrumIdentificationResult().add(specIdentRes);
+            
+            
             sirCounter++;
 
             
@@ -1031,45 +1090,6 @@ public class MZIdentMLExport {
             
         }
 
-        int factor = (int) Math.pow(10,Math.round(Math.log10(fdrResult.proteinGroupLinkFDR.size()+1)+0.5));
-        int proteingrouppairID = 1;
-        HashMap<ProteinAmbiguityGroup,HashMap<ProteinAmbiguityGroup,Integer>> protPair2ID = new HashMap<ProteinAmbiguityGroup,HashMap<ProteinAmbiguityGroup,Integer>>();
-        for (ProteinGroupPair pgp : fdrResult.proteinGroupPairFDR) {
-            
-            boolean passed = false;
-            if (fdrResult.proteinGroupPairFDR.filteredContains(pgp)) {
-                passed = true;
-            }
-            ProteinAmbiguityGroup pag1 = pg2Pag.get(pgp.getProtein1());
-            ProteinAmbiguityGroup pag2 = pg2Pag.get(pgp.getProtein2());
-            HashMap<ProteinAmbiguityGroup,Integer> prot22id = protPair2ID.get(pag1);
-            if (prot22id == null) {
-                prot22id = new HashMap<ProteinAmbiguityGroup, Integer>();
-                protPair2ID.put(pag1, prot22id);
-            }
-            prot22id.put(pag2, proteingrouppairID);
-            
-            
-            if (!pgp.getProtein1().equals(pgp.getProtein2())) {
-                prot22id = protPair2ID.get(pag2);
-                if (prot22id == null) {
-                    prot22id = new HashMap<ProteinAmbiguityGroup, Integer>();
-                    protPair2ID.put(pag2, prot22id);
-                }
-                prot22id.put(pag1, proteingrouppairID);
-            }
-            
-            
-            CvParam cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(proteingrouppairID*factor)+".a:null:"+pgp.getFDR()+":"+passed);
-            CvParam cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(proteingrouppairID*factor)+".b:null:"+pgp.getFDR()+":"+passed);
-            for (ProteinDetectionHypothesis pdh : pag1.getProteinDetectionHypothesis()) {
-                pdh.getCvParam().add(cvp1);
-            }
-            for (ProteinDetectionHypothesis pdh : pag2.getProteinDetectionHypothesis()) {
-                pdh.getCvParam().add(cvp2);
-            }
-            proteingrouppairID++;
-        }
         
         int residuepairID = 1;
         for (ProteinGroupLink pgl : fdrResult.proteinGroupLinkFDR) {
