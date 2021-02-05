@@ -234,6 +234,7 @@ public class CSVinFDR extends OfflineFDR {
         Pattern cterminalAminoAcids = Pattern.compile("\\."+terminalAminoAcids +"$");
         
         int noPSMID =0;
+        double minscore = Double.MAX_VALUE;
         try {
             while (csv.next()) {
                 lineNumber++;
@@ -525,8 +526,13 @@ public class CSVinFDR extends OfflineFDR {
                 for (int c : forwardCols) {
                     psm.addOtherInfo(header[c], csv.getValue(c));
                 }
+                if (psm.getScore() < minscore)
+                    minscore = psm.getScore();
                 
             }
+            if (minscore< 0)
+                for (PSM p : allPSMs)
+                    p.setScore(p.getScore()-minscore+1);
             return true;
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE,"Unexecpted exception while parsing line " + lineNumber, ex);
