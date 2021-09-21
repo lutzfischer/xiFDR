@@ -123,10 +123,10 @@ public class MgfStyleTitleParser {
                 }
                 
             } else if (line.startsWith(header)) {
-                title = line;
+                title = line.substring(header.length());
                 if (ignoreTitle!= null && ignoreTitle.matcher(line).matches())
                     continue;
-                String[] parts=line.split("\\b");
+                String[] parts=title.split("\\b");
                 for (String p : parts) {
                     if (p.trim().length()>0) {
                         titelParts.add(p);
@@ -135,7 +135,7 @@ public class MgfStyleTitleParser {
                             titelParts.add(pt);
                     }
                 }
-                parts=line.split("\\.");
+                parts=title.split("\\.");
                 for (String p : parts) {
                     if (p.trim().length()>0) {
                         titelParts.add(p);
@@ -144,7 +144,7 @@ public class MgfStyleTitleParser {
                             titelParts.add(pt);
                     }
                 }
-                parts=line.split("\\s+");
+                parts=title.split("\\s+");
                 for (String p : parts) {
                     if (p.trim().length()>0)
                         titelParts.add(p);

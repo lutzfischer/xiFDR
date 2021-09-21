@@ -585,10 +585,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     public void readDB(int[] searchIds, String filter, boolean topOnly) throws SQLException {
-        this.readDBSteps(searchIds, filter, topOnly, new ArrayList<Long>(), 0);
+        this.readDBSteps(searchIds, filter, topOnly, new ArrayList<Long>(), 0, Double.MAX_VALUE);
     }
 
-    public void readDBSteps(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries) throws SQLException {
+    public void readDBSteps(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries, double lastScore) throws SQLException {
 
         if (!ensureConnection()) {
             return;
@@ -794,7 +794,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , s.elution_time_start as retentiontime\n"
                     + " \n"
                     + "FROM \n"
-                    + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm \n"
+                    + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")
+                    + "     AND score>0 "+ (lastScore == Double.MAX_VALUE ? "": " AND score <= " + lastScore) +" ) sm \n"
                     + "  INNER JOIN (\n"
                     + "SELECT ss.name as run_name, s.scan_number, sm.id as spectrum_match_id FROM (select * from spectrum_match where Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm inner join spectrum s on sm.spectrum_id = s.id INNER JOIN spectrum_source ss on s.source_id = ss.id\n"                            
                     + ") v \n"
@@ -1190,6 +1191,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                                 "go through the results ({0}) Search {1} of {2}", 
                                 new Object[]{allPSMs.size(), currentsearch+1, searchIds.length});
                     }
+                    lastScore = score;
+                    skip.add(ipsmID);
 
                 }
                 rs.close();
@@ -1246,8 +1249,11 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
             } catch (SQLException sex) {
                 if (tries < 5) {
-                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "failed to read from the database retrying", sex);
-                    readDBSteps(searchIds, filter, topOnly, skip, tries + 1);
+                    int nexttry = tries;
+                    if (total<10)
+                        nexttry++;
+                        Logger.getLogger(this.getClass().getName()).log(Level.FINE, "failed to read from the database retrying", sex);
+                    readDBSteps(searchIds, filter, topOnly, skip, nexttry, lastScore);
                 } else {
                     Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
                 }
