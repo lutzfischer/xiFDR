@@ -392,12 +392,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 //        } catch (Exception e) {
         try {
             Statement st = m_db_connection.createStatement();
-            ResultSet rs = st.executeQuery("select 1+1");
+            ResultSet rs = st.executeQuery("select 1");
             rs.close();
             st.close();
             isconnected = true;
         } catch (Exception sex) {
-            Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, "Database connection is closed/ non-functioning. Will try to reopen", sex);
+            //Logger.getLogger(DBinFDR.class.getName()).log(Level.INFO, "Database connection is closed/ non-functioning. Will try to reopen", sex);
             try {
                 m_db_connection.close();
             } catch (Exception e) {
@@ -421,6 +421,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 }
 
                 isconnected = true;
+                this.m_db_connection.setAutoCommit(true);
 
                 setupPreparedStatements();
 
@@ -585,10 +586,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     public void readDB(int[] searchIds, String filter, boolean topOnly) throws SQLException {
-        this.readDBSteps(searchIds, filter, topOnly, new ArrayList<Long>(), 0, Double.MAX_VALUE);
+        this.readDBSteps(searchIds, filter, topOnly, new HashMap<Integer, HashSet<Long>>(), new ArrayList<Long>(), 0, new HashMap<Integer, Double>());
     }
 
-    public void readDBSteps(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries, double lastScore) throws SQLException {
+    public void readDBSteps(int[] searchIds, String filter, boolean topOnly, HashMap<Integer,HashSet<Long>> allProteinIds, ArrayList<Long> skip, int tries, HashMap<Integer,Double>  lastScore) throws SQLException {
 
         if (!ensureConnection()) {
             return;
@@ -648,6 +649,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             if (m_search_ids.contains(searchId)) {
                 continue;
             }
+            HashSet<Long> proteinIds = allProteinIds.get(searchId);
+            if (proteinIds == null) {
+                proteinIds = new HashSet<>();
+                allProteinIds.put(searchId, proteinIds);
+            }
+                        
             String sPepCoverage1 = "peptide1 unique matched non lossy coverage";
             String sPepCoverage2 = "peptide2 unique matched non lossy coverage";
             String sPepStubs = "fragment CCPepFragment";
@@ -701,7 +708,6 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 shownMinPepWarning = true;
                 Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Warning - no relative peptide coverage for peptide 2 - bossting on minimum peptide coverage likely not helpfull");
             }
-            HashSet<Long> proteinIds = new HashSet<>();
 
             // if any custom scores where filtered - adapt these
             Pattern subscorepattern = Pattern.compile("\\[%([^%]*)%\\]");
@@ -742,7 +748,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 LocalProperties.setProperty(DBinFDR.subscoreroperty, RArrayUtils.toString(scorefilters_used,";"));
             }
             
-            
+            Double searchLastScore = lastScore.get(searchId);
             String matchQuerry;
             matchQuerry
                     = "SELECT * FROM (SELECT sm.id AS psmID, \n"
@@ -795,7 +801,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " \n"
                     + "FROM \n"
                     + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")
-                    + "     AND score>0 "+ (lastScore == Double.MAX_VALUE ? "": " AND score <= " + lastScore) +" ) sm \n"
+                    + "     AND score>0 "+ (searchLastScore == null ? "": " AND score <= " + searchLastScore) +" ) sm \n"
                     + "  INNER JOIN (\n"
                     + "SELECT ss.name as run_name, s.scan_number, sm.id as spectrum_match_id FROM (select * from spectrum_match where Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")+ " AND score>0) sm inner join spectrum s on sm.spectrum_id = s.id INNER JOIN spectrum_source ss on s.source_id = ss.id\n"                            
                     + ") v \n"
@@ -865,7 +871,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
             if (searchIds.length >1)
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Search {0} of {1}", new Object[]{currentsearch+1, searchIds.length});
-            getDBConnection().setAutoCommit(false);
+            //getDBConnection().setAutoCommit(false);
             Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stm.setFetchSize(100);
             ResultSet rs = stm.executeQuery(matchQuerry);
@@ -1191,7 +1197,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                                 "go through the results ({0}) Search {1} of {2}", 
                                 new Object[]{allPSMs.size(), currentsearch+1, searchIds.length});
                     }
-                    lastScore = score;
+                    lastScore.put(searchId, score);
                     skip.add(ipsmID);
 
                 }
@@ -1199,50 +1205,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 stm.close();
 
                 if (allProteins.size() > 0) {
-                    HashMap<Long,Protein> id2Protein = new HashMap<>();
-                    for (Protein p : allProteins) {
-                        id2Protein.put(p.getId(), p);
-                    }
-
-                    String proteinQuerry = "SELECT id, accession_number, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
-                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Geting protein information: \n" + proteinQuerry);
-                    stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                    stm.setFetchSize(100);
-                    rs = stm.executeQuery(proteinQuerry);
-                    Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
-
-                    int idColumn = rs.findColumn("id");
-                    int accessionColumn = rs.findColumn("accession_number");
-                    int descriptionColumn = rs.findColumn("description");
-                    int proteinSequenceColumn = rs.findColumn("sequence");
-                    int proteinNameColumn = rs.findColumn("name");
-                    while (rs.next()) {
-                        long id = rs.getLong(idColumn);
-                        String sequence =  rs.getString(proteinSequenceColumn).replaceAll("[^A-Z]", "");
-                        String accession = rs.getString(accessionColumn);
-                        String name = rs.getString(proteinNameColumn);
-                        String description = rs.getString(descriptionColumn);
-
-                        if (accession == null && description !=null) {
-                            accession = description;
-                        }
-
-                        if (description==null || description.isEmpty()) {
-                            if (name == null || name.isEmpty())
-                                description = accession;
-                            else
-                                description = name;
-                        }
-
-                        Protein p = id2Protein.get(id);
-                        p.setSequence(sequence);
-                        p.setAccession(accession);
-                        p.setDescription(description);
-
-                    }
-
-                    rs.close();
-                    stm.close();
+                    readProteinInfos(proteinIds);
                 }
                         
                 m_search_ids.add(searchId);
@@ -1253,7 +1216,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     if (total<10)
                         nexttry++;
                         Logger.getLogger(this.getClass().getName()).log(Level.FINE, "failed to read from the database retrying", sex);
-                    readDBSteps(searchIds, filter, topOnly, skip, nexttry, lastScore);
+                    readDBSteps(searchIds, filter, topOnly, allProteinIds, skip, nexttry, lastScore);
                 } else {
                     Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
                 }
@@ -1282,6 +1245,52 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             }
         }
 
+    }
+
+    protected void readProteinInfos(HashSet<Long> proteinIds) throws SQLException {
+        Statement stm;
+        ResultSet rs;
+        HashMap<Long,Protein> id2Protein = new HashMap<>();
+        for (Protein p : allProteins) {
+            id2Protein.put(p.getId(), p);
+        }
+        String proteinQuerry = "SELECT id, accession_number, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
+        Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Geting protein information: \n" + proteinQuerry);
+        stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        stm.setFetchSize(100);
+        rs = stm.executeQuery(proteinQuerry);
+        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
+        int idColumn = rs.findColumn("id");
+        int accessionColumn = rs.findColumn("accession_number");
+        int descriptionColumn = rs.findColumn("description");
+        int proteinSequenceColumn = rs.findColumn("sequence");
+        int proteinNameColumn = rs.findColumn("name");
+        while (rs.next()) {
+            long id = rs.getLong(idColumn);
+            String sequence =  rs.getString(proteinSequenceColumn).replaceAll("[^A-Z]", "");
+            String accession = rs.getString(accessionColumn);
+            String name = rs.getString(proteinNameColumn);
+            String description = rs.getString(descriptionColumn);
+            
+            if (accession == null && description !=null) {
+                accession = description;
+            }
+            
+            if (description==null || description.isEmpty()) {
+                if (name == null || name.isEmpty())
+                    description = accession;
+                else
+                    description = name;
+            }
+            
+            Protein p = id2Protein.get(id);
+            p.setSequence(sequence);
+            p.setAccession(accession);
+            p.setDescription(description);
+            
+        }
+        rs.close();
+        stm.close();
     }
 
     public void readDB(int[] searchIds, String filter, boolean topOnly, ArrayList<Long> skip, int tries) throws SQLException {
@@ -1525,7 +1534,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, matchQuerry);
             if (searchIds.length >1)
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Search {0} of {1}", new Object[]{currentsearch+1, searchIds.length});
-            getDBConnection().setAutoCommit(false);
+            //getDBConnection().setAutoCommit(false);
             Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stm.setFetchSize(100);
             ResultSet rs = stm.executeQuery(matchQuerry);
@@ -2271,7 +2280,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         + " matched_peptide mp ON sm.search_id = " + id + " AND sm.id = mp.match_id INNER JOIN "
                         + " has_protein hp on mp.peptide_id = hp.peptide_id) i ON p.id = i.protein_id;";
 
-                getDBConnection().setAutoCommit(false);
+                //getDBConnection().setAutoCommit(false);
                 Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
                 stm.setFetchSize(100);
                 ResultSet rs = stm.executeQuery(dbQuerry);

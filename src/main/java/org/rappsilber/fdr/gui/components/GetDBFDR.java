@@ -522,6 +522,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             if (JOptionPane.showConfirmDialog(this, "Clear validation on searches " + RArrayUtils.toString(ids, ",") + "?", "Clear Validation?", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
                 String query = "UPDATE spectrum_match set validated=null where search_id in (" + RArrayUtils.toString(ids, ",") + ") and validated is not null";
                 Connection c = getSearch.getConnection();
+                boolean autocmoit = c.getAutoCommit();
                 c.setAutoCommit(false);
                 Statement s =  c.createStatement();
                 int ret = s.executeUpdate(query);
@@ -536,6 +537,7 @@ public class GetDBFDR extends javax.swing.JPanel {
                 }
 
                 s.close();
+                c.setAutoCommit(autocmoit);
                 c.close();
             }
         } catch (SQLException ex) {
