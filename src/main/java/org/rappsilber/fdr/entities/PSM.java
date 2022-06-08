@@ -193,6 +193,13 @@ public class PSM extends AbstractFDRElement<PSM> {
 
     private static Object2IntOpenHashMap<String> otherInfoColumn = new Object2IntOpenHashMap<String>();
     
+    protected String searchID;
+    protected String scanID;
+    private boolean isAutoValidated;
+    private boolean hasVarMods;
+    private boolean hasFixedMods;
+    
+    
     static {
         numericInfoColumn.defaultReturnValue​(-1);
         allInfoColumn.defaultReturnValue​(-1);
@@ -1275,6 +1282,78 @@ public class PSM extends AbstractFDRElement<PSM> {
 
     public void reTestInternal() {
         this.isInternal = peptide1.sameProtein(peptide2);
+    }
+ 
+    
+    /**
+     * @return the searchID
+     */
+    public String getSearchID() {
+        return searchID;
+    }
+
+    /**
+     * @param searchID the searchID to set
+     */
+    public void setSearchID(String searchID) {
+        this.searchID = searchID;
+    }
+
+    /**
+     * @return the scanID
+     */
+    public String getScanID() {
+        return scanID;
+    }
+
+    /**
+     * @param scanID the scanID to set
+     */
+    public void setScanID(String scanID) {
+        this.scanID = scanID;
+    }
+
+    
+    /**
+     * @return the hasVarMods
+     */
+    public boolean hasVarMods() {
+        return hasVarMods;
+    }
+
+    /**
+     * @param hasVarMods the hasVarMods to set
+     */
+    public void setHasVarMods(boolean hasVarMods) {
+        this.hasVarMods = hasVarMods;
+    }
+
+    /**
+     * @return the hasFixedMods
+     */
+    public boolean hasFixedMods() {
+        return hasFixedMods;
+    }
+
+    /**
+     * @param hasFixedMods the hasFixedMods to set
+     */
+    public void setHasFixedMods(boolean hasFixedMods) {
+        this.hasFixedMods = hasFixedMods;
+    }
+
+    /**
+     * @return the isAutoValidated
+     */
+    public boolean isAutoValidated() {
+        return isAutoValidated;
+    }
+
+    /**
+     * @param isAutoValidated the isAutoValidated to set
+     */
+    public void setAutoValidated(boolean isAutoValidated) {
+        this.isAutoValidated = isAutoValidated;
     }
     
 }

@@ -7,12 +7,11 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.5.0:exec</goal>
             </goals>
             <properties>
-                <exec.args>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx25g -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>-classpath %classpath org.rappsilber.fdr.DB2inFDR --connection=jdbc:postgresql://192.168.121.72:5432/xisearch2 --user=xisearch2 --password=xisearch2 --dbids=d8a32f90-aa94-42f6-b718-59d54734368b --csvBaseName=test --csvOutDir=/tmp/lfischer/</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
         </action>
         <action>
@@ -22,13 +21,12 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.5.0:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} --add-opens java.base/java.lang=ALL-UNNAMED -Xmx25g -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.rappsilber.fdr.DB2inFDR --connection=jdbc:postgresql://192.168.121.72:5432/xisearch2 --user=xisearch2 --password=xisearch2 --dbids=d8a32f90-aa94-42f6-b718-59d54734368b --csvBaseName=test --csvOutDir=/tmp/lfischer/</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
-                <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
         </action>
         <action>
@@ -38,12 +36,11 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.5.0:exec</goal>
             </goals>
             <properties>
-                <exec.args>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx25g -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>-classpath %classpath org.rappsilber.fdr.DB2inFDR --connection=jdbc:postgresql://192.168.121.72:5432/xisearch2 --user=xisearch2 --password=xisearch2 --dbids=d8a32f90-aa94-42f6-b718-59d54734368b --csvBaseName=test --csvOutDir=/tmp/lfischer/</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer</exec.workingdir>
             </properties>
         </action>
     </actions>

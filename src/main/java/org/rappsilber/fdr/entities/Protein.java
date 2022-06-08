@@ -26,6 +26,7 @@ import org.rappsilber.fdr.utils.FDRGroupNames;
  */
 public class Protein extends AbstractFDRElement<Protein> {//implements Comparable<Protein> {
     private long id;
+    private String searchId;
     private String accession;
     private String description;
     private String sequence="";
@@ -189,6 +190,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         return id;
     }
 
+    /**
+     * @return the search id
+     */
+    public String getSearchId() {
+        return searchId;
+    }
+    
     /**
      * @return the accession
      */

@@ -41,6 +41,8 @@ public class ValidityCheckImplement implements CheckValid {
      */
     @Override
     public <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info) {
+        if (info.targteFDR>=1)
+            return null;
         // make sure we have enough targets that we could theoretically thsi number of TD 
         if (info.resultTT * info.targteFDR < (double) minTDCount) {
             return "not enough TT";

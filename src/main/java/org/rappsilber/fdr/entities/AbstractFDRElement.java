@@ -213,6 +213,9 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     
     
     public double getEstimatedFDR() {
+        if (this.getLowerFDRTD() == null || this.getHigherFDRTD() == null) {
+            return Double.NaN;
+        }
         double lowerFDRScore = this.getLowerFDRTD().getScore();
         double higherFDRScore = this.getHigherFDRTD().getScore();
         double lowerFDR = this.getLowerFDRTD().getFDR();

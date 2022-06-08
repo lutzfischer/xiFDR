@@ -225,9 +225,10 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         //this.score = psm.getScore();
         isNonCovalent = psm.isNonCovalent();
 
-        setFDRGroup();
         this.m_positiveGroups = psm.getPositiveGrouping();
         this.m_negativeGroups = psm.getNegativeGrouping();
+
+        setFDRGroup();
 
     }
 
@@ -805,6 +806,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     public void setFDRGroup() {
         String sc = null;
         fdrGroup = getFDRGroup(peptide1, peptide2, isLinear, isInternal, m_negativeGroups, m_positiveGroups, isNonCovalent ? "NonCovalent" : "");
+        String ag = RArrayUtils.toString(getAdditionalFDRGroups(), " ");
+        if (!ag.isEmpty())
+            fdrGroup = ag + " " + fdrGroup;
     }
 
     /**

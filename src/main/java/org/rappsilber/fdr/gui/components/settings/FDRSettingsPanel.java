@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import org.rappsilber.fdr.FDRSettings;
 import java.awt.Component;
@@ -27,6 +27,8 @@ import javax.swing.JFrame;
 import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 import org.rappsilber.fdr.FDRSettingsImpl;
+import org.rappsilber.fdr.gui.components.BoostIncludes;
+import org.rappsilber.fdr.gui.components.FDRSpinnerModel;
 
 /**
  *

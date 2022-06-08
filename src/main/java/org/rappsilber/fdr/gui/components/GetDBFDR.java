@@ -15,19 +15,23 @@
  */
 package org.rappsilber.fdr.gui.components;
 
+import org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete;
 import java.awt.EventQueue;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
+import org.rappsilber.fdr.DB2inFDR;
 import org.rappsilber.fdr.DBinFDR;
 import org.rappsilber.fdr.OfflineFDR;
+import org.rappsilber.fdr.dataimport.Xi2Config;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.gui.FDRGUI;
 import org.rappsilber.utils.RArrayUtils;
@@ -100,7 +104,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Start");
 //            String searchId;
 //            int[] selectedlines = lstSearches.getSelectedIndices();
-            final int[] searchIds = getSearch.getSelectedSearchIds();
+            final String[] searchIds = getSearch.getSelectedSearchIds();
             if (searchIds.length == 0) {
                 setStatus("Nothing Selected");
                 return;
@@ -121,14 +125,25 @@ public class GetDBFDR extends javax.swing.JPanel {
 //            Object o = Class.forName("org.postgresql.Driver");
             // Establish network connection to database
             Connection connection = getSearch.getConnection();
-            final DBinFDR ofdr = new DBinFDR();
-            if (!txtSubScorePattern.getText().trim().isEmpty()) {
-                ofdr.setSubScoresToForward(txtSubScorePattern.getText());
-            }
-            ofdr.setDatabaseProvider(getSearch);
-            m_fdr = ofdr;
+            if (getSearch.isIX2) {
+                DB2inFDR ofdr = new DB2inFDR();
+                if (!txtSubScorePattern.getText().trim().isEmpty()) {
+                    ofdr.setSubScoresToForward(txtSubScorePattern.getText());
+                }
+                ofdr.setDatabaseProvider(getSearch);
+                m_fdr = ofdr;
 
-            readData(ofdr, searchIds, (OfflineFDR.Normalisation) cbNormalize.getSelectedItem());
+                readData(ofdr, searchIds, (OfflineFDR.Normalisation) cbNormalize.getSelectedItem());
+            } else {
+                DBinFDR ofdr = new DBinFDR();
+                if (!txtSubScorePattern.getText().trim().isEmpty()) {
+                    ofdr.setSubScoresToForward(txtSubScorePattern.getText());
+                }
+                ofdr.setDatabaseProvider(getSearch);
+                m_fdr = ofdr;
+
+                readData(ofdr, searchIds, (OfflineFDR.Normalisation) cbNormalize.getSelectedItem());
+            }
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
             setStatus("error:" + ex);
@@ -142,7 +157,7 @@ public class GetDBFDR extends javax.swing.JPanel {
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Start");
 //            String searchId;
 //            int[] selectedlines = lstSearches.getSelectedIndices();
-            final int[] searchIds = getSearch.getSelectedSearchIds();
+            final String[] searchIds = getSearch.getSelectedSearchIds();
             if (searchIds.length == 0) {
                 setStatus("Nothing Selected");
                 return;
@@ -173,31 +188,34 @@ public class GetDBFDR extends javax.swing.JPanel {
     }
     
 
-    protected void readData(final DBinFDR ofdr, final int[] searchIds, OfflineFDR.Normalisation normalize) {
+    protected void readData(final OfflineFDR ofdr, final String[] searchIds, OfflineFDR.Normalisation normalize) {
         this.readData(ofdr, searchIds, null, normalize);
     }
     
-    protected void readData(final DBinFDR ofdr, final int[] searchIds, final OfflineFDR addTo, final OfflineFDR.Normalisation normalize) {
+    protected void readData(final OfflineFDR ofdr, final String[] searchIds, final OfflineFDR addTo, final OfflineFDR.Normalisation normalize) {
         fdrgui.setEnableCalc(false);
         fdrgui.setEnableRead(false);
-        if (additionalFDRGroups.getFlagAutoValidated())
-            ofdr.setFlagAutoValidated(true);
-        if (additionalFDRGroups.getFlagModified())
-            ofdr.setMarkModifications(true);
-        if (additionalFDRGroups.getFlagSearchID())
-            ofdr.setMarkSearchID(true);
-        if (additionalFDRGroups.getFlagRun())
-            ofdr.setMarkRun(true);
-        if (addTo == null) {
-            PSM.resetAdditionalColumnNames();
-        }
+        if (ofdr instanceof DBinFDR)
+            setFlags((DBinFDR)ofdr, addTo);
+        else
+            setFlags((DB2inFDR)ofdr, addTo);
         
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
                     setStatus("Read from db");
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from db");
-                    ofdr.readDB(searchIds, txtReadFilter.getText(), ckToprankingOnly.isSelected());
+                    if (ofdr instanceof DBinFDR)
+                        ((DBinFDR)ofdr).readDB(searchIds, txtReadFilter.getText(), ckToprankingOnly.isSelected());
+                    else {
+                        UUID[] searchuuids = new UUID[searchIds.length];
+                        int i=0;
+                        for (String id : searchIds ) {
+                            searchuuids[i++] = UUID.fromString(id);
+                        }
+                        ((DB2inFDR)ofdr).readDB(searchuuids, txtReadFilter.getText(), ckToprankingOnly.isSelected());
+                    }
+                        
                     
                     EventQueue.invokeLater(new Runnable() {
                         
@@ -217,9 +235,9 @@ public class GetDBFDR extends javax.swing.JPanel {
                             ofdr.coNormalizePSMs(addTo, normalize);
                         }
                         addTo.getAllPSMs().addAll(ofdr.getAllPSMs());
-                        if (addTo instanceof DBinFDR) {
+                        if (addTo instanceof DBinFDR && ofdr instanceof DBinFDR) {
                             RunConfig prev_conf = ((DBinFDR)addTo).getConfig();
-                            for (rappsilber.ms.sequence.AminoAcid aa:  ofdr.getConfig().getAllAminoAcids()) {
+                            for (rappsilber.ms.sequence.AminoAcid aa:  ((DBinFDR)ofdr).getConfig().getAllAminoAcids()) {
                                 boolean missing = true;
                                 for (rappsilber.ms.sequence.AminoAcid aaold:  prev_conf.getAllAminoAcids()) {
                                     if (aaold.SequenceID.equals(aa.SequenceID)) {
@@ -234,6 +252,23 @@ public class GetDBFDR extends javax.swing.JPanel {
                                 }
                             }
                         }
+//                        if (addTo instanceof DB2inFDR && ofdr instanceof DB2inFDR) {
+//                            Xi2Config prev_conf = ((DB2inFDR)addTo).getConfig();
+//                            for (rappsilber.ms.sequence.AminoAcid aa:  ofdr.getConfig().getAllAminoAcids()) {
+//                                boolean missing = true;
+//                                for (rappsilber.ms.sequence.AminoAcid aaold:  prev_conf.getAllAminoAcids()) {
+//                                    if (aaold.SequenceID.equals(aa.SequenceID)) {
+//                                        missing = false;
+//                                        break;
+//                                    }
+//                                }
+//                                if (missing) {
+//                                    if (aa instanceof rappsilber.ms.sequence.AminoModification) {
+//                                        prev_conf.addKnownModification((AminoModification) aa);
+//                                    }
+//                                }
+//                            }
+//                        }
                         
                     }  else {
                         if (normalize != OfflineFDR.Normalisation.None) {
@@ -256,6 +291,33 @@ public class GetDBFDR extends javax.swing.JPanel {
         Thread t = new Thread(runnable);
         t.setName("Reading From DB");
         t.start();
+    }
+
+    protected void setFlags(final DBinFDR ofdr, final OfflineFDR addTo) {
+        if (additionalFDRGroups.getFlagAutoValidated())
+            ofdr.setFlagAutoValidated(true);
+        if (additionalFDRGroups.getFlagModified())
+            ofdr.setMarkModifications(true);
+        if (additionalFDRGroups.getFlagSearchID())
+            ofdr.setMarkSearchID(true);
+        if (additionalFDRGroups.getFlagRun())
+            ofdr.setMarkRun(true);
+        if (addTo == null) {
+            PSM.resetAdditionalColumnNames();
+        }
+    }
+    protected void setFlags(final DB2inFDR ofdr, final OfflineFDR addTo) {
+        if (additionalFDRGroups.getFlagAutoValidated())
+            ofdr.setFlagAutoValidated(true);
+        if (additionalFDRGroups.getFlagModified())
+            ofdr.setMarkModifications(true);
+        if (additionalFDRGroups.getFlagSearchID())
+            ofdr.setMarkSearchID(true);
+        if (additionalFDRGroups.getFlagRun())
+            ofdr.setMarkRun(true);
+        if (addTo == null) {
+            PSM.resetAdditionalColumnNames();
+        }
     }
 
     
@@ -306,11 +368,22 @@ public class GetDBFDR extends javax.swing.JPanel {
                 Connection c = getSearch.getConnection();
                 boolean first = true;
                 Statement st = c.createStatement();
-                ResultSet rs = st.executeQuery("SELECT scorenames from search where id in (" +
-                        RArrayUtils.toString(this.getSearch.getSelectedSearchIds(),",") + ");");
+                ResultSet rs = null;
+                if (getSearch.isIX2) {
+                     rs = st.executeQuery("SELECT ARRAY_AGG(name) from scorename where resultset_id in ('" +
+                           RArrayUtils.toString(this.getSearch.getSelectedSearchIds(),"','") + "') GROUP BY resultset_id;");
+                } else {
+                     rs = st.executeQuery("SELECT scorenames from search where id in (" +
+                           RArrayUtils.toString(this.getSearch.getSelectedSearchIds(),",") + ");");
+                }
                 ArrayList<String> ret = null;
                 while(rs.next()) {
-                    String[] names = (String[]) rs.getArray(1).getArray();
+                    java.sql.Array sa_names = rs.getArray(1);
+                    String[] names;
+                    if (sa_names != null)
+                        names = (String[]) sa_names.getArray();
+                    else
+                        names = new String[0];
                     ArrayList<String> subnames = new ArrayList<>(RArrayUtils.toCollection(names));
                     if (first)
                         ret = subnames;
@@ -346,7 +419,6 @@ public class GetDBFDR extends javax.swing.JPanel {
     private void initComponents() {
 
         additionalFDRGroups = new org.rappsilber.fdr.gui.components.AdditionalFDRGroups();
-        getSearch = new rappsilber.gui.components.db.GetSearch();
         txtReadFilter = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
         ckToprankingOnly = new javax.swing.JCheckBox();
@@ -359,6 +431,7 @@ public class GetDBFDR extends javax.swing.JPanel {
         cbNormalize = new javax.swing.JComboBox<>();
         jLabel2 = new javax.swing.JLabel();
         btnClearValidation = new javax.swing.JButton();
+        getSearch = new org.rappsilber.fdr.gui.components.GetSearch();
 
         txtReadFilter.setText("(site1 > 0 OR pepSeq2 isnull)");
         txtReadFilter.setToolTipText("Texttual representation of the filter");
@@ -431,21 +504,13 @@ public class GetDBFDR extends javax.swing.JPanel {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txtReadFilter)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(ckToprankingOnly)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnClearValidation)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton1))
-                    .addGroup(layout.createSequentialGroup()
                         .addComponent(btnReadFilter)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnSelectIDS)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblSubScorePattern)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtSubScorePattern, javax.swing.GroupLayout.DEFAULT_SIZE, 125, Short.MAX_VALUE)
+                        .addComponent(txtSubScorePattern, javax.swing.GroupLayout.DEFAULT_SIZE, 139, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -453,15 +518,23 @@ public class GetDBFDR extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnAdd)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRead)))
+                        .addComponent(btnRead))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(txtReadFilter)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(ckToprankingOnly)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnClearValidation)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton1)))
                 .addContainerGap())
-            .addComponent(getSearch, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(getSearch, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(getSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 266, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(getSearch, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtReadFilter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton1)
@@ -477,7 +550,7 @@ public class GetDBFDR extends javax.swing.JPanel {
                     .addComponent(btnAdd)
                     .addComponent(cbNormalize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel2))
-                .addContainerGap(17, Short.MAX_VALUE))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -518,7 +591,7 @@ public class GetDBFDR extends javax.swing.JPanel {
 
     private void btnClearValidationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearValidationActionPerformed
         try {
-            int[] ids = getSearch.getSelectedSearchIds();
+            String[] ids = getSearch.getSelectedSearchIds();
             if (JOptionPane.showConfirmDialog(this, "Clear validation on searches " + RArrayUtils.toString(ids, ",") + "?", "Clear Validation?", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
                 String query = "UPDATE spectrum_match set validated=null where search_id in (" + RArrayUtils.toString(ids, ",") + ") and validated is not null";
                 Connection c = getSearch.getConnection();
@@ -556,7 +629,7 @@ public class GetDBFDR extends javax.swing.JPanel {
     private javax.swing.JButton btnSelectIDS;
     private javax.swing.JComboBox<OfflineFDR.Normalisation> cbNormalize;
     private javax.swing.JCheckBox ckToprankingOnly;
-    public rappsilber.gui.components.db.GetSearch getSearch;
+    public org.rappsilber.fdr.gui.components.GetSearch getSearch;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel lblSubScorePattern;

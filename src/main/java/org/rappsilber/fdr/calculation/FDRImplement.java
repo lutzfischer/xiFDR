@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +32,6 @@ import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.utils.HashedArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.UpdateableInteger;
-import ucar.nc2.dt.point.decode.MP;
 
 /**
  *
@@ -562,8 +560,7 @@ public class FDRImplement implements FDR {
                         }
 
                         info.higherFDR = prevFDR;
-                        info.worstAcceptedScore
-                                = info.lowerFDR = efdr;
+                        info.lowerFDR = efdr;
                         info.resultCount = i;
                         int lastFDRIndex = i;
 
@@ -621,7 +618,7 @@ public class FDRImplement implements FDR {
                                         group.get(li).setLowerFDR(currfdr);
                                     }
                                     lastFDRIndex = i - 1;
-                                }
+                                    }
 
                             }
                             for (int li = lastFDRIndex; li <= i && li >= 0; li++) {

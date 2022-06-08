@@ -22,10 +22,10 @@ public interface XiInFDR {
      */
     RunConfig getConfig();
 
-    RunConfig getConfig(int searchid);
+    RunConfig getConfig(String searchid);
 
-    public IntArrayList getSearchIDs();
+    public ArrayList<String> getSearchIDs();
 
 
-    int getFastas(int searchID, ArrayList<Integer> dbIDs, ArrayList<String> names);
+    int getFastas(String searchID, ArrayList<Integer> dbIDs, ArrayList<String> names);
 }

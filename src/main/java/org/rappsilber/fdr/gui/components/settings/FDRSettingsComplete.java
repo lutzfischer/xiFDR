@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -31,6 +31,7 @@ import javax.swing.event.ChangeListener;
 import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.gui.CalculateRanges;
+import org.rappsilber.fdr.gui.components.FDRSpinnerModel;
 
 /**
  *
@@ -552,7 +553,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         tsLocalPPIFDR = new org.rappsilber.gui.components.TriStateCheckBox();
         ckMoreOptions = new javax.swing.JCheckBox();
         spOtherFilter = new javax.swing.JScrollPane();
-        otherFilter = new org.rappsilber.fdr.gui.components.OtherFilter();
+        otherFilter = new org.rappsilber.fdr.gui.components.settings.OtherFilter();
         ckIgnoreValidity = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
@@ -941,7 +942,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     public javax.swing.JLabel lblReportFactor;
-    private org.rappsilber.fdr.gui.components.OtherFilter otherFilter;
+    private org.rappsilber.fdr.gui.components.settings.OtherFilter otherFilter;
     private javax.swing.JSpinner spLinkFDR;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMaxLinkAmbiguity;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMaxProteinAmbiguity;
