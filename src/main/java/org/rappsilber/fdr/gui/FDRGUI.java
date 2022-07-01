@@ -400,9 +400,13 @@ public class FDRGUI extends javax.swing.JFrame {
         
     }
 
-    public void setTitle(String title) {
-        super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ")" + title);
-
+    public void setTitle(final String title) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                FDRGUI.super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ") " + title);
+            }
+        });
     }
 
     public void prepareFDRCalculation() throws NumberFormatException {
@@ -480,7 +484,31 @@ public class FDRGUI extends javax.swing.JFrame {
      */
     public void setFdr(OfflineFDR m_fdr) {
         this.m_fdr = m_fdr;
-        ckGroupByCrossLinkerStubs.setEnabled(m_fdr.stubsFound());
+        final OfflineFDR cfdr = m_fdr;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ckGroupByCrossLinkerStubs.setEnabled(cfdr.stubsFound());
+                if (cfdr instanceof DBinFDR && cfdr.singleClassFDR) {
+                    if (tpResult.indexOfComponent(writeDB) == -1)
+                        tpResult.add("To Database", writeDB);
+
+                    if (tpResult.indexOfComponent(writeToDBXi2) != -1)
+                        tpResult.remove(writeToDBXi2);
+                } else if (cfdr instanceof DB2inFDR && cfdr.singleClassFDR) {
+                    if (tpResult.indexOfComponent(writeDB) != -1)
+                        tpResult.remove(writeDB);
+
+                    if (tpResult.indexOfComponent(writeToDBXi2) == -1)
+                        tpResult.add("To Database", writeToDBXi2);
+                } else {
+                    if (tpResult.indexOfComponent(writeDB) != -1)
+                        tpResult.remove(writeDB);
+                    if (tpResult.indexOfComponent(writeToDBXi2) != -1)
+                        tpResult.remove(writeToDBXi2);
+                }
+            }
+        });
     }
 
     /**
@@ -840,6 +868,7 @@ public class FDRGUI extends javax.swing.JFrame {
         Iterator<CsvParser> csvs = csvSelect.iterator();
         CsvParser csv = csvs.next();
         String forwardPattern = csvSelect.getForwardPattern();
+        String window_title = csv.getInputFile().getName();
 
         CSVinFDR ofdr = null;
         if (config != null && fasta != null) {
@@ -854,6 +883,7 @@ public class FDRGUI extends javax.swing.JFrame {
         if (forwardPattern != null && !forwardPattern.isEmpty())
             ofdr.setForwardPattern(forwardPattern);
         if (addCSV(ofdr, null, csv,filter)) {
+            setTitle(window_title);
 
             while (csvs.hasNext()) {
                 csv = csvs.next();
@@ -874,6 +904,9 @@ public class FDRGUI extends javax.swing.JFrame {
 
                 if (!addCSV(nextfdr, ofdr, csv,filter)) {
                     return null;
+                } else {
+                    window_title += ";" + csv.getInputFile().getName();
+                    setTitle(window_title);
                 }
             }
             if (normalisation != OfflineFDR.Normalisation.None) {
@@ -903,7 +936,7 @@ public class FDRGUI extends javax.swing.JFrame {
             public void run() {
                 try {
 
-                    setStatus("Start");
+                    setStatus("Start reading");
                     setFdr(innerBatchReadCSV(config, fasta, filter, normalisation));
                     setEnableCalc(true);
                     setStatus("finished reading");
@@ -945,6 +978,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     CSVinFDR nextfdr = innerBatchReadCSV(config, fasta, filter, normalisation);
                     
                     getFdr().normaliseAndAddPsmList(nextfdr, normalisation);
+                    setFdr(getFdr());
                     
                     setEnableCalc(true);
                     setStatus("finished reading");
@@ -962,7 +996,7 @@ public class FDRGUI extends javax.swing.JFrame {
         Thread t = new Thread(runnable);
         t.setName("Reading From CSV");
         t.start();
-
+        
 
     }
 
@@ -1575,6 +1609,8 @@ public class FDRGUI extends javax.swing.JFrame {
         fdrSettingsSimple = new org.rappsilber.fdr.gui.components.settings.FDRSettingsSimple();
         fdrSettingsMedium = new org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium();
         rbFDRSimple = new javax.swing.JRadioButton();
+        writeDB = new org.rappsilber.fdr.gui.components.WriteToDB();
+        writeToDBXi2 = new org.rappsilber.fdr.gui.components.WriteToDBXi2();
         jScrollPane6 = new javax.swing.JScrollPane();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
@@ -1697,8 +1733,6 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookup = new javax.swing.JPanel();
         flPeakLists = new org.rappsilber.gui.components.FileList();
         btnPeakListParse = new javax.swing.JButton();
-        writeDB = new org.rappsilber.fdr.gui.components.WriteToDB();
-        writeToDBXi2 = new org.rappsilber.fdr.gui.components.WriteToDBXi2();
         pLog = new javax.swing.JPanel();
         spLog = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
@@ -2609,7 +2643,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                     .addComponent(txtmzIdentOwnerEmail)
                                     .addComponent(txtmzIdentOwnerOrg)
                                     .addComponent(cmbPeakListFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 350, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 365, Short.MAX_VALUE)
                                 .addComponent(btnWriteMzIdentML)))))
                 .addContainerGap())
         );
@@ -2664,7 +2698,7 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookupLayout.setHorizontalGroup(
             pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pPeakListLookupLayout.createSequentialGroup()
-                .addContainerGap(805, Short.MAX_VALUE)
+                .addContainerGap(802, Short.MAX_VALUE)
                 .addComponent(btnPeakListParse)
                 .addContainerGap())
             .addGroup(pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2687,14 +2721,12 @@ public class FDRGUI extends javax.swing.JFrame {
         );
 
         tpResult.addTab("PeakListLookup", pPeakListLookup);
-        tpResult.addTab("To Database", writeDB);
-        tpResult.addTab("xiSEARCH2 DB", writeToDBXi2);
 
         javax.swing.GroupLayout pResultLayout = new javax.swing.GroupLayout(pResult);
         pResult.setLayout(pResultLayout);
         pResultLayout.setHorizontalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 894, Short.MAX_VALUE)
         );
         pResultLayout.setVerticalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -3283,8 +3315,8 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTextField txtmzIdentOwnerFirst;
     private javax.swing.JTextField txtmzIdentOwnerLast;
     private javax.swing.JTextField txtmzIdentOwnerOrg;
-    private org.rappsilber.fdr.gui.components.WriteToDB writeDB;
-    private org.rappsilber.fdr.gui.components.WriteToDBXi2 writeToDBXi2;
+    public org.rappsilber.fdr.gui.components.WriteToDB writeDB;
+    public org.rappsilber.fdr.gui.components.WriteToDBXi2 writeToDBXi2;
     // End of variables declaration//GEN-END:variables
 
     /**

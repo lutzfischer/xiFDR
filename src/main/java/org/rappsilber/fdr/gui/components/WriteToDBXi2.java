@@ -4,14 +4,20 @@
  */
 package org.rappsilber.fdr.gui.components;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
+import org.rappsilber.config.LocalProperties;
 import org.rappsilber.fdr.DB2inFDR;
 import org.rappsilber.fdr.DBinFDR;
 import org.rappsilber.fdr.gui.FDRGUI;
+import rappsilber.gui.components.db.DatabaseProvider;
 
 /**
  *
@@ -20,29 +26,74 @@ import org.rappsilber.fdr.gui.FDRGUI;
 public class WriteToDBXi2 extends javax.swing.JPanel {
 
     FDRGUI m_gui;
+    
+    class DBUser {
+        long id;
+        String username;
+
+        public DBUser(long id, String username) {
+            this.id = id;
+            this.username = username;
+        }
+
+        @Override
+        public String toString() {
+            return username; //To change body of generated methods, choose Tools | Templates.
+        }
+        
+    }
+    
     /**
      * Creates new form WriteToDB
      */
     public WriteToDBXi2() {
         initComponents();
+        
+        this.txtNotes.setText("Add your notes here \n" + DB2inFDR.summary_marker_long);
     }
 
+    public void setDBProvider(DatabaseProvider provider) throws SQLException {
+        ArrayList<DBUser> users = new ArrayList<>();
+        String user_querry = "select id, username from core_user where is_active OR username = 'xiFDR' order by username <> 'xiFDR', username";
+        Statement st  = (((GetSearch) provider).getConnectionAdmin()).createStatement();
+        String default_user = LocalProperties.getProperty("xi2db_default_user", "xiFDR");
+        if (cbUser.getSelectedItem()!=null)  {
+            default_user = ((DBUser)cbUser.getSelectedItem()).username;
+        }
+        ResultSet rs = st.executeQuery(user_querry);
+        int default_user_id = -1;
+        while (rs.next()) {
+            DBUser u = new DBUser(rs.getLong(1), rs.getString(2));
+            if (u.username.contentEquals(default_user))
+                default_user_id = users.size();
+            users.add(u);
+        }
+        this.cbUser.setModel(new DefaultComboBoxModel(users.toArray(new DBUser[users.size()])));
+        if (default_user_id>=0) {
+            this.cbUser.setSelectedIndex(default_user_id);
+        }
+        rs.close();
+        st.close();
+        
+    }
     
     private void writeDB() {
         final DB2inFDR ofdr = (DB2inFDR) m_gui.getFdr();
+        
         
         m_gui.setEnableCalc(false);
         this.setEnableWrite(false);
         m_gui.setEnableRead(false);
         final boolean within = rbWithin.isSelected() || rbAll.isSelected();
         final boolean between = rbBetween.isSelected()  || rbAll.isSelected();
+        final long userid = ((DBUser)this.cbUser.getSelectedItem()).id;
         
 
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
                     m_gui.setStatus("Writing to db: " + ofdr.summaryString(m_gui.getResult()));
-                    ofdr.writeResult(txtName.getText(), txtNotes.getText(), (UUID)null, m_gui.getResult(),within, between);
+                    ofdr.writeResult(txtName.getText(), txtNotes.getText(), (UUID)null, m_gui.getResult(),within, between, userid);
                     m_gui.setStatus("finished writing: " + ofdr.summaryString(m_gui.getResult()));
 
                 } catch (SQLException sex) {
@@ -98,6 +149,8 @@ public class WriteToDBXi2 extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         txtNotes = new javax.swing.JTextArea();
+        cbUser = new javax.swing.JComboBox<>();
+        jLabel3 = new javax.swing.JLabel();
 
         btnWriteDB.setText("Write");
         btnWriteDB.setEnabled(false);
@@ -130,17 +183,18 @@ public class WriteToDBXi2 extends javax.swing.JPanel {
         txtNotes.setRows(5);
         jScrollPane1.setViewportView(txtNotes);
 
+        cbUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbUserActionPerformed(evt);
+            }
+        });
+
+        jLabel3.setText("As User");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(0, 237, Short.MAX_VALUE)
-                .addComponent(rbAll)
-                .addGap(18, 18, 18)
-                .addComponent(rbWithin)
-                .addGap(18, 18, 18)
-                .addComponent(rbBetween))
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -152,6 +206,16 @@ public class WriteToDBXi2 extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGap(0, 0, Short.MAX_VALUE)
                 .addComponent(btnWriteDB))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(cbUser, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                .addComponent(rbAll)
+                .addGap(18, 18, 18)
+                .addComponent(rbWithin)
+                .addGap(18, 18, 18)
+                .addComponent(rbBetween))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -163,12 +227,14 @@ public class WriteToDBXi2 extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 130, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(rbAll)
                     .addComponent(rbWithin)
-                    .addComponent(rbBetween))
+                    .addComponent(rbBetween)
+                    .addComponent(cbUser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnWriteDB)
                 .addContainerGap())
@@ -185,11 +251,17 @@ public class WriteToDBXi2 extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_rbBetweenActionPerformed
 
+    private void cbUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbUserActionPerformed
+        LocalProperties.setProperty("xi2db_default_user", ((DBUser)cbUser.getSelectedItem()).username);
+    }//GEN-LAST:event_cbUserActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnWriteDB;
     private javax.swing.ButtonGroup buttonGroup1;
+    private javax.swing.JComboBox<String> cbUser;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JRadioButton rbAll;
     private javax.swing.JRadioButton rbBetween;

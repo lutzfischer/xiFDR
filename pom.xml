@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rappsilberlab</groupId>
     <artifactId>xiFDR</artifactId>
-    <version>2.2.beta</version>
+    <version>2.2.beta1</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -164,5 +164,5 @@
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
     <description>Application for FDR estimation cross-linking massspectrometry data </description>
-    <name>xiFDR-2.2.beta</name>
+    <name>xiFDR-2.2.beta1</name>
 </project>

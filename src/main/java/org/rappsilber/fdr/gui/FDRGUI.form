@@ -56,6 +56,16 @@
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="changFDRSettingsInterface"/>
       </Events>
     </Component>
+    <Component class="org.rappsilber.fdr.gui.components.WriteToDB" name="writeDB">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.WriteToDBXi2" name="writeToDBXi2">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
+    </Component>
   </NonVisualComponents>
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="3"/>
@@ -764,7 +774,7 @@
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="tpResult" alignment="1" max="32767" attributes="0"/>
+                      <Component id="tpResult" alignment="1" pref="894" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -1526,7 +1536,7 @@
                                                       <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
                                                       <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace type="unrelated" pref="350" max="32767" attributes="0"/>
+                                                  <EmptySpace type="unrelated" pref="365" max="32767" attributes="0"/>
                                                   <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                               </Group>
                                           </Group>
@@ -1732,7 +1742,7 @@
                         <DimensionLayout dim="0">
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="1" attributes="0">
-                                  <EmptySpace pref="805" max="32767" attributes="0"/>
+                                  <EmptySpace pref="802" max="32767" attributes="0"/>
                                   <Component id="btnPeakListParse" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
@@ -1785,24 +1795,6 @@
                         </Component>
                       </SubComponents>
                     </Container>
-                    <Component class="org.rappsilber.fdr.gui.components.WriteToDB" name="writeDB">
-                      <Constraints>
-                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-                          <JTabbedPaneConstraints tabName="To Database">
-                            <Property name="tabTitle" type="java.lang.String" value="To Database"/>
-                          </JTabbedPaneConstraints>
-                        </Constraint>
-                      </Constraints>
-                    </Component>
-                    <Component class="org.rappsilber.fdr.gui.components.WriteToDBXi2" name="writeToDBXi2">
-                      <Constraints>
-                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-                          <JTabbedPaneConstraints tabName="xiSEARCH2 DB">
-                            <Property name="tabTitle" type="java.lang.String" value="xiSEARCH2 DB"/>
-                          </JTabbedPaneConstraints>
-                        </Constraint>
-                      </Constraints>
-                    </Component>
                   </SubComponents>
                 </Container>
               </SubComponents>

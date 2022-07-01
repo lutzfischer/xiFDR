@@ -134,6 +134,8 @@ public class GetDBFDR extends javax.swing.JPanel {
                 m_fdr = ofdr;
 
                 readData(ofdr, searchIds, (OfflineFDR.Normalisation) cbNormalize.getSelectedItem());
+                
+                
             } else {
                 DBinFDR ofdr = new DBinFDR();
                 if (!txtSubScorePattern.getText().trim().isEmpty()) {
@@ -176,8 +178,15 @@ public class GetDBFDR extends javax.swing.JPanel {
 //            Object o = Class.forName("org.postgresql.Driver");
             // Establish network connection to database
             Connection connection = getSearch.getConnection();
-            final DBinFDR ofdr = new DBinFDR();
-            ofdr.setDatabaseProvider(getSearch);
+            OfflineFDR dbfdr;
+            if (getSearch.isIX2) {
+                dbfdr = new DB2inFDR();
+                ((DB2inFDR)dbfdr).setDatabaseProvider(getSearch);
+            }else {
+                dbfdr = new DBinFDR();
+                ((DBinFDR)dbfdr).setDatabaseProvider(getSearch);
+            }
+            final OfflineFDR ofdr = dbfdr;
 
             readData(ofdr, searchIds, m_fdr,normalize);
             
@@ -205,15 +214,16 @@ public class GetDBFDR extends javax.swing.JPanel {
                 try {
                     setStatus("Read from db");
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from db");
-                    if (ofdr instanceof DBinFDR)
+                    if (ofdr instanceof DBinFDR) {
                         ((DBinFDR)ofdr).readDB(searchIds, txtReadFilter.getText(), ckToprankingOnly.isSelected());
-                    else {
+                    }else {
                         UUID[] searchuuids = new UUID[searchIds.length];
                         int i=0;
                         for (String id : searchIds ) {
                             searchuuids[i++] = UUID.fromString(id);
                         }
                         ((DB2inFDR)ofdr).readDB(searchuuids, txtReadFilter.getText(), ckToprankingOnly.isSelected());
+                        fdrgui.writeToDBXi2.setDBProvider(getSearch);
                     }
                         
                     
@@ -225,16 +235,13 @@ public class GetDBFDR extends javax.swing.JPanel {
                     });
                     if (fdrgui.getFdr() != null)
                         fdrgui.getFdr().cleanup();
-                    if (m_fdr != null) {
-                        fdrgui.setFdr(m_fdr);
-                    }
                     fdrgui.setEnableRead(true);
                     fdrgui.setEnableCalc(true);
                     if (addTo != null) {
                         if (normalize != OfflineFDR.Normalisation.None) {
                             ofdr.coNormalizePSMs(addTo, normalize);
                         }
-                        addTo.getAllPSMs().addAll(ofdr.getAllPSMs());
+                        addTo.add(ofdr);
                         if (addTo instanceof DBinFDR && ofdr instanceof DBinFDR) {
                             RunConfig prev_conf = ((DBinFDR)addTo).getConfig();
                             for (rappsilber.ms.sequence.AminoAcid aa:  ((DBinFDR)ofdr).getConfig().getAllAminoAcids()) {
@@ -269,13 +276,15 @@ public class GetDBFDR extends javax.swing.JPanel {
 //                                }
 //                            }
 //                        }
-                        
                     }  else {
                         if (normalize != OfflineFDR.Normalisation.None) {
                             ofdr.normalizePSMs(normalize);
                         }
                     }
                     
+                    if (m_fdr != null) {
+                        fdrgui.setFdr(m_fdr);
+                    }
                     
                     setStatus("finished reading");
 //                    setEnableAdd(true);

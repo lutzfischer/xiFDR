@@ -57,7 +57,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
  * @author lfischer
  */
  public class DB2inFDR extends org.rappsilber.fdr.OfflineFDR {
-
+     public static final String summary_marker_long = "%leave_this_here_to_get_the_summary_added_to_the_notes%";
+     public static String summary_marker = "%summarys%";
 
     public class Xi2Score {
         int id;
@@ -239,6 +240,11 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     public void setDBConnectionAdmin(Connection connection) throws SQLException {
         this.m_db_connectionAdmin = connection;
         setupPreparedStatements();
+    }
+
+
+    public DatabaseProvider getDatabaseProvider()  {
+        return databaseProvider;
     }
 
     public void setDatabaseProvider(DatabaseProvider getSearch) throws SQLException {
@@ -1487,7 +1493,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 //        }
         //System.out.println(ofdr.summaryString(result));
         if (ofdr.command_line_auto_validate != null) {
-            ofdr.writeResult("xiFDR_offline","",(UUID)null, result, true, true);
+            ofdr.writeResult("xiFDR_offline","",(UUID)null, result, true, true, null);
         }
         System.exit(0);
 
@@ -1776,15 +1782,22 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     }
     
     
-    public void writeResult(String name, String notes, UUID FDRresultset, FDRResult result, boolean within, boolean  between) throws SQLException {
+    public void writeResult(String name, String notes, UUID FDRresultset, FDRResult result, boolean within, boolean  between, Long userID) throws SQLException {
         UUID id;
         boolean autocommitAdmin = false;
         boolean autocomit_result  =false;
         try {
+            String summary = this.getSummary(result);
+            if (notes.contains(summary_marker)) {
+                notes = notes.replace(summary_marker, summary);
+            }
+            if (notes.contains(summary_marker_long)) {
+                notes = notes.replace(summary_marker_long, summary);
+            }
             // write new resultset
             if (FDRresultset == null) {
                 id = UUID.randomUUID();
-                autocommitAdmin = setupAdminResultSet(name, id, notes);
+                autocommitAdmin = setupAdminResultSet(name, id, notes, userID);
 
             } else {
                 id = FDRresultset;
@@ -1812,20 +1825,25 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
             }
 
             if (ensureConnection()) {
-                st = this.m_db_connection.createStatement();
     //            id uuid NOT NULL,
     //            name character varying NOT NULL,
     //            note character varying,
     //            rstype_id integer NOT NULL,
     //            config text NOT NULL,
     //            main_score integer NOT NULL,            
-                st.execute("INSERT INTO resultset (id, name, note, rstype_id, config, main_score)"
+                PreparedStatement pst  = this.m_db_connection.prepareStatement("INSERT INTO resultset (id, name, note, rstype_id, config, main_score)"
                         + " VALUES "
-                        + "('"+ id + "', '" + name + "','" + notes + "'," + 
-                        xifdr_rs_type + ",'xiFDR',0)" );
-
+                        + "(?, ?,?,?,?,0)" );
+                pst.setObject(1, id);
+                pst.setString(2, name);
+                pst.setString(3, notes);
+                pst.setInt(4, xifdr_rs_type);
+                pst.setString(5, summary);
+                pst.execute();
+                pst.close();
+                
                 // link to previous resultsets (history)
-                PreparedStatement pst = this.m_db_connection.prepareStatement("INSERT INTO history (resultset_id , parent_resultset_id) VALUES (? ,?)");
+                pst = this.m_db_connection.prepareStatement("INSERT INTO history (resultset_id , parent_resultset_id) VALUES (? ,?)");
                 for (UUID base: this.m_resultset_ids) {
                     pst.setObject(1, id);
                     pst.setObject(2, base);
@@ -1922,28 +1940,30 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         
     }
 
-    protected boolean setupAdminResultSet(String name, UUID id, String notes) throws SQLException {
+    protected boolean setupAdminResultSet(String name, UUID id, String notes, Long user_id) throws SQLException {
         boolean autocommitAdmin;
         ensureConnectionAdmin();
-        long user_id = 0;
         // guess we also should write out to the admin DB
         autocommitAdmin = this.m_db_connectionAdmin.getAutoCommit();
         this.m_db_connectionAdmin.setAutoCommit(false);
         Statement userst = this.m_db_connectionAdmin.createStatement();
         // get the user id for xiFDR
-        ResultSet userrs = userst.executeQuery("SELECT id FROM core_user WHERE username = 'xiFDR'");
-        if (userrs.next()) {
-            user_id = userrs.getLong(1);
-            userrs.close();
-            userst.close();
-        } else {
-            userrs.close();
-            userrs = userst.executeQuery("INSERT INTO core_user (password,is_superuser,username,first_name,last_name,email,is_staff,is_active,date_joined) VALUES ('',false,'xiFDR','xi','FDR','xiFDR@bioanalytik.tu-berlin.de',false,false,now()) RETURNING id");
-            userrs.next();
-            user_id = userrs.getLong(1);
-            userrs.close();
-            userst.close();
-        }
+        if (user_id == null) {
+            ResultSet userrs = userst.executeQuery("SELECT id FROM core_user WHERE username = 'xiFDR'");
+            if (userrs.next()) {
+                user_id = userrs.getLong(1);
+                userrs.close();
+                userst.close();
+            } else {
+                userrs.close();
+                userrs = userst.executeQuery("INSERT INTO core_user (password,is_superuser,username,first_name,last_name,email,is_staff,is_active,date_joined) VALUES ('',false,'xiFDR','xi','FDR','xiFDR@bioanalytik.tu-berlin.de',false,false,now()) RETURNING id");
+                userrs.next();
+                user_id = userrs.getLong(1);
+                userrs.close();
+                userst.close();
+            }
+        } 
+       
         // core_fdr
         // status, name, task_uuid, submit_date, notes, config, deleted,
         // owner_id, resultset_uuid
