@@ -612,6 +612,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
                 String sPepCoverage1 = "unique_peak_primary_coverage_p1";
                 String sPepCoverage2 = "unique_peak_primary_coverage_p2";
+                String sPepUniqueMatchedCons1 = "unique_peak_conservative_fragsites_p1";
+                String sPepUniqueMatchedCons2 = "unique_peak_conservative_fragsites_p2";
                 String sPepStubs = "cc_pep_frag_pp";
                 String sDelta = "delta";
                 String sPepDoublets = "fragment CCPepDoubletFound";
@@ -627,6 +629,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 Integer cCleavCLPep1Fragmatched = null;
                 Integer cCleavCLPep2Fragmatched = null;
                 Integer cAutoValidated = null;
+                Integer cPepUniqueMatchedCons1 = null;
+                Integer cPepUniqueMatchedCons2 = null;
 
                 ArrayList<Integer> peaks = new ArrayList<>();
                 ArrayList<Integer> scoresForwarded = new ArrayList<>();
@@ -641,6 +645,11 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
                     }
                 }
+                if (subscoreDefs.get(resultset_id).get(sPepUniqueMatchedCons1)!=null)
+                    cPepUniqueMatchedCons1 = subscoreDefs.get(resultset_id).get(sPepUniqueMatchedCons1).id+1;
+                if (subscoreDefs.get(resultset_id).get(sPepUniqueMatchedCons2)!=null)
+                    cPepUniqueMatchedCons2 = subscoreDefs.get(resultset_id).get(sPepUniqueMatchedCons2).id+1;
+
                 if (subscoreDefs.get(resultset_id).get(sPepCoverage1)!=null)
                     cPepCoverage1 = subscoreDefs.get(resultset_id).get(sPepCoverage1).id+1;
                 if (subscoreDefs.get(resultset_id).get(sPepCoverage2)!=null)
@@ -754,8 +763,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         + " , s.scan_index\n"
                         + " , plf.name as peaklistfile\n"
                         + " , scores AS subscores\n"
-                        + (cPepCoverage1 == null ? ", 0" : " , scores[" + cPepCoverage1 + "]") + " as scoreP1Coverage\n"
-                        + (cPepCoverage2 == null ? ", 0" : " , scores[" + cPepCoverage2 + "]") + " as scoreP2Coverage\n"
+                        + (cPepUniqueMatchedCons1 == null ? ", 0" : " , scores[" + cPepUniqueMatchedCons1 + "]") + " as scoreP1Coverage\n"
+                        + (cPepUniqueMatchedCons2 == null ? ", 0" : " , scores[" + cPepUniqueMatchedCons2 + "]") + " as scoreP2Coverage\n"
                         + (cDelta == null ? ", 0" : " , scores[" + cDelta + "]" ) + " as deltaScore\n"
                         + " , scores[" + cPrimaryScore + "] as score\n"
                         + (cCleavCLPep1Fragmatched == null ? ", 0" : " , scores[" + cCleavCLPep1Fragmatched +"]::int") + " as cleavCLPep1Fragmatched \n"
