@@ -642,22 +642,22 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                     }
                 }
                 if (subscoreDefs.get(resultset_id).get(sPepCoverage1)!=null)
-                    cPepCoverage1 = subscoreDefs.get(resultset_id).get(sPepCoverage1).id;
+                    cPepCoverage1 = subscoreDefs.get(resultset_id).get(sPepCoverage1).id+1;
                 if (subscoreDefs.get(resultset_id).get(sPepCoverage2)!=null)
-                    cPepCoverage2 = subscoreDefs.get(resultset_id).get(sPepCoverage2).id;
+                    cPepCoverage2 = subscoreDefs.get(resultset_id).get(sPepCoverage2).id+1;
                 if (subscoreDefs.get(resultset_id).get(sCleavCLPep1Fragmatched) != null)
-                    cCleavCLPep1Fragmatched = subscoreDefs.get(resultset_id).get(sCleavCLPep1Fragmatched).id;
+                    cCleavCLPep1Fragmatched = subscoreDefs.get(resultset_id).get(sCleavCLPep1Fragmatched).id+1;
                 if (subscoreDefs.get(resultset_id).get(sCleavCLPep2Fragmatched) != null)
-                    cCleavCLPep2Fragmatched = subscoreDefs.get(resultset_id).get(sCleavCLPep2Fragmatched).id;
+                    cCleavCLPep2Fragmatched = subscoreDefs.get(resultset_id).get(sCleavCLPep2Fragmatched).id+1;
                 if (subscoreDefs.get(resultset_id).get(sPepStubs) != null)
-                    cPepStubs = subscoreDefs.get(resultset_id).get(sPepStubs).id;
+                    cPepStubs = subscoreDefs.get(resultset_id).get(sPepStubs).id+1;
                 if (subscoreDefs.get(resultset_id).get(sPepDoublets) != null)
-                    cPepDoublets = subscoreDefs.get(resultset_id).get(sPepDoublets).id;
+                    cPepDoublets = subscoreDefs.get(resultset_id).get(sPepDoublets).id+1;
                 if (subscoreDefs.get(resultset_id).get(sDelta) != null)
-                    cDelta = subscoreDefs.get(resultset_id).get(sDelta).id;
+                    cDelta = subscoreDefs.get(resultset_id).get(sDelta).id+1;
                 if (subscoreDefs.get(resultset_id).get(sAutoValidated) != null)
-                    cAutoValidated = subscoreDefs.get(resultset_id).get(sAutoValidated).id;
-                cPrimaryScore = subscoreDefs.get(resultset_id).primaryScore.id;
+                    cAutoValidated = subscoreDefs.get(resultset_id).get(sAutoValidated).id+1;
+                cPrimaryScore = subscoreDefs.get(resultset_id).primaryScore.id+1;
                 
 
                 if (cPepCoverage2 <0 && !shownMinPepWarning) {
