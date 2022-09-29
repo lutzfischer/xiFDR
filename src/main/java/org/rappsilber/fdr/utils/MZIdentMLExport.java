@@ -2615,23 +2615,6 @@ public class MZIdentMLExport {
 
 
 
-            // writer.write(m.createSpectrumIdentificationListStartTag("SIL_1", null, 71412L) + "\n");
-
-            //FragmentationTable table = unmarshaller.unmarshal(MzIdentMLElement.FragmentationTable.getXpath());
-            //m.marshal(table, writer);
-            //writer.write("\n");
-
-
-            //Iterator<SpectrumIdentificationResult> specResIter = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.SpectrumIdentificationResult);
-
-            /*
-             Iterator<SpectrumIdentificationResult> specResIter = specIdentResults.iterator();
-             while (specResIter.hasNext()) {
-             SpectrumIdentificationResult specIdentRes = specResIter.next();
-             m.marshal(specIdentRes, writer);
-             writer.write("\n");
-             }
-             */
             for (HashMap<String,SpectrumIdentificationList> run2sil : siList.values()) {
                 for (SpectrumIdentificationList sil : run2sil.values()) {
                     m.marshal(sil, writer);
@@ -2647,15 +2630,6 @@ public class MZIdentMLExport {
             proteinDetectionList.setId("PDL_1");
             proteinDetectionList.getCvParam().add(makeCvParam("MS:1002404", "count of identified proteins",psiCV,""+ proteinDetectionList.getProteinAmbiguityGroup().size()));
             m.marshal(proteinDetectionList, writer);
-            /*
-             Iterator<ProteinAmbiguityGroup> protAmbGroupIter = unmarshaller.unmarshalCollectionFromXpath(MzIdentMLElement.ProteinAmbiguityGroup);
-             while (protAmbGroupIter.hasNext()) {
-             ProteinAmbiguityGroup protAmbGroup = protAmbGroupIter.next();
-             m.marshal(protAmbGroup, writer);
-             writer.write("\n");
-             }
-
-             */
 
 //            writer.write(m.createProteinDetectionListClosingTag() + "\n");
 

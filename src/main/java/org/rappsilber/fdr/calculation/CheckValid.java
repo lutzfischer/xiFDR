@@ -32,5 +32,7 @@ public interface CheckValid {
      * @return null pass; otherwise reason
      */
     <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info);
+
+    <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info, int minTD, double factor);
     
 }

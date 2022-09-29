@@ -372,21 +372,6 @@ public class PSM extends AbstractFDRElement<PSM> {
     }
     
     /**
-     * get the proteingroups for both peptides
-     * @return 
-     */
-    public ArrayList<ProteinGroup> getProteinGroupss() {
-        HashSet<ProteinGroup> prots = new HashSet<ProteinGroup>();
-        for (Peptide p : getPeptides()) {
-            if (p != Peptide.NOPEPTIDE) {
-                prots.add(p.getProteinGroup());
-            }
-        }
-        ArrayList<ProteinGroup> ret = new ArrayList<ProteinGroup>(prots);
-        return ret;
-    }
-    
-    /**
      * Return the supporting proteins, but filter them first through the 
      * given {@link SelfAddHashSet} to make sure that all PSMs return the same
      * instance of the proteins

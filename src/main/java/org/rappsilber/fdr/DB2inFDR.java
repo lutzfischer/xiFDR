@@ -356,7 +356,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 if (m_connectionStringAdmin != null && m_dbuserAdmin != null && m_dbpassAdmin != null) {
                     this.m_db_connectionAdmin = DriverManager.getConnection(m_connectionStringAdmin, m_dbuserAdmin, m_dbpassAdmin);
                 } else if (databaseProvider != null && databaseProvider instanceof GetSearch) {
-                    setDBConnection(databaseProvider.getConnection());
+                    setDBConnectionAdmin(((GetSearch) databaseProvider).getConnectionAdmin());
                 } else {
                     Logger.getLogger(DB2inFDR.class.getName()).log(Level.SEVERE, "Currently I don't have a way to reopen the connection");
                     return false;
@@ -564,10 +564,10 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     }
 
     public void readDB(UUID[] resultsetIds, String filter, boolean topOnly) throws SQLException {
-        this.readDBSteps(resultsetIds, filter, topOnly, new HashMap<UUID, HashSet<Long>>(), new ArrayList<UUID>(), 0, new HashMap<UUID, Double>());
+        this.readDBSteps(resultsetIds, filter, topOnly, new ArrayList<UUID>(), 0, new HashMap<UUID, Double>());
     }
 
-    public void readDBSteps(UUID[] resultset_ids, String filter, boolean topOnly, HashMap<UUID,HashSet<Long>> allProteinIds, ArrayList<UUID> skip, int tries, HashMap<UUID,Double>  lastScore) throws SQLException {
+    public void readDBSteps(UUID[] resultset_ids, String filter, boolean topOnly, ArrayList<UUID> skip, int tries, HashMap<UUID,Double>  lastScore) throws SQLException {
 
         if (!ensureConnection()) {
             return;
@@ -576,7 +576,11 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         for (UUID resultset_id : resultset_ids) {
             m_configs.putAll(readconfig(resultset_id));
         }
-
+        HashMap<UUID, HashMap<Long, Protein>> search_proteins = new HashMap<>();
+        for (UUID searchid : m_configs.keySet()) {
+            search_proteins.put(searchid, readProteinInfos(searchid));
+        }
+        
         if (!m_resultset_ids.isEmpty()) {
             if ((filter == null && !filterSetting.isEmpty()) || (!filter.contentEquals(filterSetting))) {
                 filterSetting = filterSetting + "\n ResultSet IDS:" + RArrayUtils.toString(resultset_ids, ",") +":" + filter;
@@ -592,7 +596,6 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
             UUID resultset_id = resultset_ids[currentresultset];
             Statement stmSearch_ids = getDBConnection().createStatement();
             
-            ResultSet rsSearch_ids = stmSearch_ids.executeQuery("SELECT search_id FROM resultsearch where resultset_id = '" + resultset_id + "';");
             if (m_resultset_ids.contains(resultset_id)) {
                 continue;
             }
@@ -603,12 +606,6 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 //                UUID search_id = rsSearch_ids.getObject(0, UUID.class);
                 String searchfilter = filter;
                 
-                // wee read that one already
-                HashSet<Long> proteinIds = allProteinIds.get(resultset_id);
-                if (proteinIds == null) {
-                    proteinIds = new HashSet<>();
-                    allProteinIds.put(resultset_id, proteinIds);
-                }
 
                 String sPepCoverage1 = "unique_peak_primary_coverage_p1";
                 String sPepCoverage2 = "unique_peak_primary_coverage_p2";
@@ -735,8 +732,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 //                        + "m.link_score_site1, \n"
 //                        + "m.link_score_site2, \n"
                         + "m.link_score, \n"
-                        + "m.site1 + 1 as site1, \n"
-                        + "m.site2 + 1 as site2, \n"
+                        + "m.site1 as site1, \n"
+                        + "m.site2 as site2, \n"
                         + "mp1.is_decoy AS isDecoy1, \n"
                         + "mp2.is_decoy AS isDecoy2, \n"
                         + "m.assumed_prec_charge AS calc_charge, \n"
@@ -886,10 +883,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 int search_idColumn = rs.findColumn("search_id");
                 int spectrum_idColumn = rs.findColumn("spectrum_id");
                 int xlColumn = rs.findColumn("crosslinker_id");
-                //int rankColumn = rs.findColumn("rank");
                 int scanIndexColumn = rs.findColumn("scan_index");
                 int peaklistfileColumn = rs.findColumn("peaklistfile");
-                //int mgxrankColumn = rs.findColumn("mgxrank");
                 int subscoresColumn = rs.findColumn("subscores");
                 int precIntensityColumn = rs.findColumn("precursor_intensity");
                 int retentiontimeColumn = rs.findColumn("retentiontime");
@@ -953,13 +948,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         double pmz = rs.getDouble(exp_mzColumn);
                         double f = 1;
                         if (pepSeq2 != null && !pepSeq2.isEmpty() && p1c + p2c > 0) {
-                            ////                    double max = Math.max(p1c,p2c);
-                            ////                    double min = Math.min(p1c,p2c);
-                            ////                    f = min/(p1c+p2c);
-                            ////                    score = score * f;
                             scoreRatio = (p1c) / (p1c + p2c + 1);
-                            //                    if (p1c <3 || p2c <3) 
-                            //                        continue;
                         }
 
                         double peptide1score = score*scoreRatio;
@@ -971,13 +960,6 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         double pep1mass = rs.getDouble(pep1massColumn);
                         double pep2mass = rs.getDouble(pep2massColumn);
                         UUID scan_id = (UUID)rs.getObject(spectrum_idColumn);
-//                        if (pepSeq2 != null && pepSeq2.matches("^X-?[0-9\\.]*$")) {
-//                            double mass = Double.parseDouble(pepSeq2.substring(1));
-//                            AminoModification am = new AminoModification(pepSeq2, AminoAcid.A, mass-18.0105647);
-//                            m_conf.addKnownModification(am);
-//                            getConfig(searchId).addKnownModification(am);
-//                            tmmodcount.add(((int)mass*10)/10.0);
-//                        }
 
                        // int mgxrank = rs.getInt(mgxrankColumn);
                         boolean cleavclpep1fragmatched = rs.getBoolean(cleavclpep1fragmatchedColumn);
@@ -989,22 +971,14 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                             for (int p = 0; p< protein1ID.length; p++) {
                                 int p1 = pepPosition1[p];
                                 long p1id = protein1ID[p];
-                                proteinIds.add(p1id);
-
-                                String a1 = Long.toString(p1id);
-                                String n1 = Long.toString(p1id);
-                                String d1 = Long.toString(p1id);
-                                String s1 = Long.toString(p1id);
+                                HashMap<Long,Protein> sprots = search_proteins.get(search_id);
+                                Protein prot1 = sprots.get(p1id);
 
                                 int p2 = pepPosition2[p];
                                 long p2id = protein2ID[p];
-                                proteinIds.add(p2id);
-                                String a2 = Long.toString(p2id);
-                                String n2 = Long.toString(p2id);
-                                String d2 = Long.toString(p2id);
-                                String s2 = Long.toString(p2id);
+                                Protein prot2 = sprots.get(p2id);
 
-                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, conf.crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
+                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, prot2.getAccession(), prot2.getDescription(), p1, p2, prot1.getSequence(), prot2.getSequence(), peptide1score, peptide2score, spectrum_charge, conf.crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
                             }
                         } else {
                             String a2 = "";
@@ -1016,18 +990,11 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                             for (int p = 0; p< protein1ID.length; p++) {
                                 int p1 = pepPosition1[p];
                                 long p1id = protein1ID[p];
-                                proteinIds.add(p1id);
-                                String s1 = Long.toString(p1id);
-                                String a1 = Long.toString(p1id);
-                                String n1 = Long.toString(p1id);
-                                String d1 = Long.toString(p1id);
-                                if (d2==null || d2.isEmpty()) {
-                                    if (n2 == null || n2.isEmpty())
-                                        d2 = a2;
-                                    else
-                                        d2 = n2;
-                                }
-                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, a1, d1, p2id, a2, d2, p1, p2, s1, s2, peptide1score, peptide2score, spectrum_charge, conf.crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
+
+                                HashMap<Long,Protein> sprots = search_proteins.get(search_id);
+                                Protein prot1 = sprots.get(p1id);
+                                
+                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, a2, d2, p1, p2, prot1.getSequence(), s2, peptide1score, peptide2score, spectrum_charge, conf.crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
                             }
                         }
 
@@ -1165,10 +1132,6 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                     rs.close();
                     stm.close();
 
-                    if (allProteins.size() > 0) {
-                        readProteinInfos(proteinIds);
-                    }
-
                     m_resultset_ids.add(resultset_id);
 
                 } catch (SQLException sex) {
@@ -1178,7 +1141,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                             nexttry++;
                             Logger.getLogger(this.getClass().getName()).log(Level.FINE, "failed to read from the database retrying", sex);
                         Logger.getLogger(this.getClass().getName()).log(Level.FINEST, "failed to read from the database retrying", sex);
-                        readDBSteps(resultset_ids, filter, topOnly, allProteinIds, skip, nexttry, lastScore);
+                        readDBSteps(resultset_ids, filter, topOnly, skip, nexttry, lastScore);
                     } else {
                         Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Repeatedly (" + total + ") failed to read from the database giving up now", sex);
                     }
@@ -1210,7 +1173,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
     }
 
-    protected void readProteinInfos(HashSet<Long> proteinIds) throws SQLException {
+    protected HashMap<Long, Protein> readProteinInfos(UUID search_id) throws SQLException {
         Statement stm;
         ResultSet rs;
         ensureConnection();
@@ -1218,7 +1181,10 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         for (Protein p : allProteins) {
             id2Protein.put(p.getId(), p);
         }
-        String proteinQuerry = "SELECT id, accession, name, description, sequence FROM protein WHERE id IN (" + RArrayUtils.toString(proteinIds, ", ") + ")";
+        
+        HashMap<Long, Protein> ret = new HashMap<>();
+        
+        String proteinQuerry = "SELECT id, accession, name, description, sequence, is_decoy FROM protein WHERE search_id = '" + search_id + "'";
         Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Geting protein information: \n" + proteinQuerry);
         stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         stm.setFetchSize(100);
@@ -1229,12 +1195,14 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         int descriptionColumn = rs.findColumn("description");
         int proteinSequenceColumn = rs.findColumn("sequence");
         int proteinNameColumn = rs.findColumn("name");
+        int decoyColumn = rs.findColumn("is_decoy");
         while (rs.next()) {
             long id = rs.getLong(idColumn);
             String sequence =  rs.getString(proteinSequenceColumn).replaceAll("[^A-Z]", "");
             String accession = rs.getString(accessionColumn);
             String name = rs.getString(proteinNameColumn);
             String description = rs.getString(descriptionColumn);
+            boolean is_decoy = rs.getBoolean(decoyColumn);
             
             if (accession == null && description !=null) {
                 accession = description;
@@ -1246,18 +1214,15 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 else
                     description = name;
             }
-            
-            Protein p = id2Protein.get(id);
-            p.setSequence(sequence);
-            p.setAccession(accession);
-            p.setDescription(description);
-            
+            Protein p = new Protein(id, accession, description, is_decoy, false, false, false);
+            ret.put(id, p);
         }
         rs.close();
         stm.close();
+        return ret;
     }
-
-
+    
+    
     protected PSM setUpDBPSM(String psmID, String run, String scan, long pep1ID, long pep2ID, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, long protein1ID, String accession1, String description1, long protein2ID, String accession2, String description2, int pepPosition1, int pepPosition2, String sequence1, String sequence2, double peptide1score, double peptide2score, int spectrum_charge, String xl, double pmz, double calc_mass, double pep1mass, double pep2mass, String search_id, UUID scan_id) {
         PSM psm = (PSM)addMatch(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, protein1ID, accession1, description1, protein2ID, accession2, description2, pepPosition1, pepPosition2, sequence1, sequence2, peptide1score, peptide2score, spectrum_charge == -1?"Unknow Charge" : null, xl);
         if (spectrum_charge == -1) {
@@ -1898,9 +1863,19 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 int batch_count=0;
                 if (within && between) {
                     for (PSM psm: result.psmFDR.filteredResults()) {
-                        addPSMtoBatch(pst, id, psm, outScores);
-                        if (++batch_count % 1000 == 0) {
-                            pst.executeBatch();
+                        if (!psm.isLinear()) {
+                            addPSMtoBatch(pst, id, psm, outScores);
+                            if (++batch_count % 1000 == 0) {
+                                pst.executeBatch();
+                            }
+                        }
+                    }
+                    for (PSM psm: result.psmFDR.filteredResults()) {
+                        if (psm.isLinear()) {
+                            addPSMtoBatch(pst, id, psm, outScores);
+                            if (++batch_count % 1000 == 0) {
+                                pst.executeBatch();
+                            }
                         }
                     }
                 } else if (within) {
@@ -2025,18 +2000,19 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         scores[3] = pp.getFDR();
         scores[4] = pp.getPEP();
         scores[5] = pp.getScore();
-        scores[6] = (psm.isLinear() ? Double.NaN : pgl.getFDR());
-        scores[7] = (psm.isLinear() ? Double.NaN : pgl.getPEP());
-        scores[8] = (psm.isLinear() ? Double.NaN : pgl.getScore());
-        scores[9] = (psm.isLinear() ? Double.NaN : pgp.getFDR());
-        scores[10] = (psm.isLinear() ? Double.NaN : pgp.getPEP());
-        scores[11] = (psm.isLinear() ? Double.NaN : pgp.getScore());
-        scores[12] = pg1.getFDR();
-        scores[13] = pg1.getPEP();
-        scores[14] = pg1.getScore();
-        scores[15] = (psm.isLinear() ? Double.NaN : pg2.getFDR());
-        scores[16] = (psm.isLinear() ? Double.NaN : pg2.getPEP());
-        scores[17] = (psm.isLinear() ? Double.NaN : pg2.getScore());
+        scores[6] = (psm.isLinear() || psm.isNonCovalent() ? Double.NaN : pgl.getFDR());
+        scores[7] = (psm.isLinear() || psm.isNonCovalent() ? Double.NaN : pgl.getPEP());
+        scores[8] = (psm.isLinear() || psm.isNonCovalent() ? Double.NaN : pgl.getScore());
+        scores[9] = (psm.isLinear() || psm.isNonCovalent()  ? Double.NaN : pgp.getFDR());
+        scores[10] = (psm.isLinear() || psm.isNonCovalent()  ? Double.NaN : pgp.getPEP());
+        scores[11] = (psm.isLinear() || psm.isNonCovalent()  ? Double.NaN : pgp.getScore());
+        scores[12] = (pg1 == null ? Double.NaN : pg1.getFDR());
+        scores[13] = (pg1 == null ? Double.NaN : pg1.getPEP());
+        scores[14] = (pg1 == null ? Double.NaN : pg1.getScore());
+        scores[15] = (pg2 == null ? Double.NaN : pg2.getFDR());
+        scores[16] = (pg2 == null ? Double.NaN : pg2.getPEP());
+        scores[17] = (pg2 == null ? Double.NaN : pg2.getScore());
+
         
         for (int i = 18; i< outScores.size(); i++) {
             scores[i] = psm.getDoubleInfo(outScores.get(i).name);

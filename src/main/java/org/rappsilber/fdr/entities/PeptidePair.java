@@ -887,7 +887,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         if (pg == null) {
             this.fdrProteinGroup1 = null;
             this.fdrProteinGroup2 = null;
-            for (PSM psm : chargeTopScoresPSM) {
+            for (PSM psm : getAllPSMs()) {
                 if (psm != null) {
                     psm.setFdrProteinGroup(null);
                 }
@@ -901,7 +901,7 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
                 this.fdrProteinGroup2 = pg;
             }
 
-            for (PSM psm : chargeTopScoresPSM) {
+            for (PSM psm : getAllPSMs()) {
                 if (psm != null) {
                     psm.setFdrProteinGroup(pg);
                 }
