@@ -13,8 +13,21 @@ Correct estimation of false discovery rates in crosslinked peptide identificatio
 
 1. Estimation of FDRs in crosslinking MS via the target-decoy approach
 
+The theoretical basis of adapting the proteomic target-decoy approach for crosslinking MS are covered in [Waltzoheni et al. 2012](https://www.nature.com/articles/nmeth.2103) and [Fisher et al. 2017](https://pubs.acs.org/doi/pdf/10.1021/acs.analchem.6b03745)  and updated for heterobifunctional crosslinkers (crosslinkers with different reactivities at either end) in [Fisher et al. 2018](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0196672). The approach outlined in those papers is implemented in xiFDR. Briefly, decoy protein sequences are added to the database and spectra can then be matched to target linear peptides (T), decoy linear peptides (D) or to crosslinked peptide pairs made up of 2 target sequences (TT), a target-decoy (TD) sequence pair or a decoy-decoy pair (DD).
+
+The formula to estimate FDR for CSMs is then
+
+    FDR=(TD-DD)/TT
+
+xiFDR perfoms this calculation by finding the score that corresponds to a desired FDR level. 
 
 2. Error propagation
+
+Very often, the final product of a crosslinking MS experiment is not a list of spectral matches, but rather a list of which residues were found crosslinked to which other residues ("crosslinks" or "links" or "crosslinked residue pairs"). To obtain this list, CSMs must be aggregated into which peptides are paired with each other (multiple spectra can come from the same peptide pair), and those need to be aggregated into crosslinked residues (multiple peptide pairs can come from the same crosslinked residues, because of modifications and miscleavages, for example). Finally, if we are interested in producing a protein-protein interaction (PPI) network, error has to be propagated from residue pairs to PPIs. Correct error propagation from lower to higher levels of result aggregation has big implications for the error rate of the final result, as covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) and [Yugandhar et al. 2020](https://www.nature.
+com/articles/s41592-020-0959-9). Thus, in reporting crosslinking MS data on which residues are crosslinked to each other, FDR filtering should be set at the link level and not at the CSM level.
+
+xiFDR allows the user to filter for the desired FDR at the level of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach.
+
 
 #### Terminology
 
@@ -30,12 +43,13 @@ The "Results" tab shows a summary of the FDR calculation. It also allows the use
 There is then a tab displaying a log of the FDR calculation and an "about" tab with software information.
 
 #### Loading search results from xiSEARCH
+xiSEARCH outputs results in a .csv file that contains all crosslinked peptide spectrum matches (CSMs) and scores. It includes target-target matches, target-decoy and decoy-decoy matches.
 
 #### Loading search results from other crosslinking MS search engines
 
 #### Performing FDR filtering
 
-#### FDR suggestions
+#### FDR suggestions & gotchas
 
 #### Boosting
 
@@ -43,3 +57,4 @@ There is then a tab displaying a log of the FDR calculation and an "about" tab w
 
 ### Custom FDR settings and filters
 
+### Running xiFDR from the command line
