@@ -13,11 +13,21 @@ Correct estimation of false discovery rates in crosslinked peptide identificatio
 
 1. Estimation of FDRs in crosslinking MS via the target-decoy approach
 
+
 2. Error propagation
 
 #### Terminology
 
 ### The interface
+The interface provides several tabs. 
+
+The first tab, "input", is used to read in results from search engines, define column names if necessary, and apply prefilters prior to FDR estimation.
+
+The second, "FDR settings", performs the actual FDR calculation at the desired error level.
+
+The "Results" tab shows a summary of the FDR calculation. It also allows the user to save FDR-filtered crosslinking MS results in .csv or [HUPO-compliant mzIdentML 1.2.0 format](https://www.psidev.info/mzidentml#mzid12) for deposition in databases. The output can also be directly uploaded to [xiView.org](https://xiview.org/xiNET_website/index.php) for spectral analysis, network visualization and mapping to structures.
+
+There is then a tab displaying a log of the FDR calculation and an "about" tab with software information.
 
 #### Loading search results from xiSEARCH
 
