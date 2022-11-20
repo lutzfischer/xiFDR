@@ -3,7 +3,7 @@ xiFDR
 
 xiFDR is an application for estimating false discovery rates (FDRs) in crosslinking mass spectrometry. It filters crosslinked peptide spectra matches (CSMs) to a list of identifications and derives associated confidence values (False Discovery Rate).
 
-It performs generic FDR calculations for CSMs and resulting peptide pairs, crosslinks and protein pairs. It complies with the standards for data reporting set by the HUPO proteomics standards initiative and can output results in .mzIdentML 1.2.0 format for deposition in databases. It is search engine-agnostic and can therefore perform FDR filtering on results from [xiSEARCH](https://github.com/Rappsilber-Laboratory/xisearch) as well as a number of other crosslinking MS search engines. The output can then be directly uploaded to [xiView.org](https://xiview.org/xiNET_website/index.php) for spectral analysis, network visualization and mapping to structures.
+It performs generic FDR calculations for CSMs and resulting peptide pairs, crosslinks and protein pairs. It complies with the standards for data reporting set by the HUPO proteomics standards initiative and can output results in .mzIdentML 1.2.0 format for deposition in databases. It is search engine-agnostic and can therefore perform FDR filtering on results from [xiSEARCH](https://github.com/Rappsilber-Laboratory/xisearch) but also other crosslinking MS search engines. The output can then be directly uploaded to [xiView.org](https://xiview.org/xiNET_website/index.php) for spectral analysis, network visualization and mapping to structures.
 
 You can download the latest release of xiFDR from 
 https://www.rappsilberlab.org/software/xifdr/ . xiFDR is implemented as a java application and requires java 8 or above to run.
@@ -29,34 +29,38 @@ xiFDR performs this calculation by finding the score cutoff that corresponds to 
 
 Very often, the final product of a crosslinking MS experiment is not a list of spectral matches, but rather a list of which residues were found crosslinked to which other residues ("crosslinks" or "links" or "crosslinked residue pairs"). To obtain this list, CSMs must be aggregated into which peptides are paired with each other (multiple spectra can come from the same peptide pair), and those need to be aggregated into crosslinked residues (multiple peptide pairs can come from the same crosslinked residues, because of modifications and miscleavages, for example). Finally, if we are interested in producing a protein-protein interaction (PPI) network, error has to be propagated from residue pairs to PPIs. Correct error propagation from lower to higher levels of result aggregation has big implications for the error rate of the final 
 result, as
-covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) and [Yugandhar et al. 2020](https://www.nature.com/articles/s41592-020-0959-9). Thus, in reporting crosslinking MS data on which residues are crosslinked to each other, FDR filtering should be set at the link level and not at the CSM level. 
+covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) and [Yugandhar et al. 2020](https://www.nature.com/articles/s41592-020-0959-9). Thus, in reporting crosslinking MS data on which residues are crosslinked to each other, FDR filtering should be set at the link level and not at the CSM level.
 
-xiFDR allows the user to filter for the desired FDR at the level of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach.
+
+
+xiFDR allows the user to filter for the desired FDR at the level or levels of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach.
 
 
 #### Terminology
-| Term                        | Description |
-|-----------------------------| ----------- |
-| CSM                         | Title       |
-| PSM                         | Title       |
-| peptide pair                | Title       |
-| Link/crosslink/residue pair | Title       |
-| PPI                         | Title       |
-| linear peptide              | Title       |
-| Self link                   | Title       |
-| Heteromeric link            | Title       |
-| Ambiguity                   | Title       |
-| Protein Group               | Title       |
-| Prefilter                   | Title       |
-| Local FDR                   | Title       |
-| Posterior Error Probability | Title       |
-| Boosting                    | Title       |
-| DeltaScore                  | Title       |
-| Conservative                | Title       |
-| Coverage                    | Title       |
+| Term                            | Description |
+|---------------------------------| ----------- |
+| CSM                             | Title       |
+| PSM                             | Title       |
+| peptide pair                    | Title       |
+| Link/crosslink/residue pair     | Title       |
+| PPI                             | Title       |
+| linear peptide                  | Title       |
+| Self link                       | Title       |
+| Heteromeric link                | Title       |
+| Ambiguity                       | Title       |
+| Protein Group                   | Title       |
+| Prefilter                       | Title       |
+| Local FDR                       | Title       |
+| Posterior Error Probability/PEP | Title       |
+| Boosting                        | Title       |
+| DeltaScore                      | Title       |
+| Conservative                    | Title       |
+| Coverage                        | Title       |
 
 
 
+
+## Calculating FDR for crosslinking MS data with xiFDR
 
 ### The interface
 The interface provides several tabs. 
