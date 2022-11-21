@@ -1,19 +1,18 @@
 xiFDR
 =====
 
-xiFDR is an application for estimating false discovery rates (FDRs) in crosslinking mass spectrometry. It filters crosslinked peptide spectra matches (CSMs) to a list of identifications and derives associated confidence values (False Discovery Rate).
+xiFDR is an application for estimating false discovery rates (FDRs) in crosslinking mass spectrometry. It filters crosslinked peptide spectra matches (CSMs) to a list of identifications and derives associated confidence values.
 
-It performs generic FDR calculations for CSMs and resulting peptide pairs, crosslinks and protein pairs. It complies with the standards for data reporting set by the HUPO proteomics standards initiative and can output results in .mzIdentML 1.2.0 format for deposition in databases. It is search engine-agnostic and can therefore perform FDR filtering on results from [xiSEARCH](https://github.com/Rappsilber-Laboratory/xisearch) but also other crosslinking MS search engines. The output can then be directly uploaded to [xiView.org](https://xiview.org/xiNET_website/index.php) for spectral analysis, network visualization and mapping to structures.
+It performs a generic FDR calculations for CSMs and resulting peptide pairs, crosslinks and protein pairs. It complies with the standards for data reporting set by the HUPO proteomics standards initiative and can output results in .mzIdentML 1.2.0 format for deposition in databases. It is search engine-agnostic and can therefore perform FDR filtering on results from [xiSEARCH](https://github.com/Rappsilber-Laboratory/xisearch) but also other crosslinking MS search engines. The output can then be directly uploaded to [xiView.org](https://xiview.org/xiNET_website/index.php) for spectral analysis, network visualization and mapping to structures.
 
-You can download the latest release of xiFDR from 
-https://www.rappsilberlab.org/software/xifdr/ . xiFDR is implemented as a java application and requires java 8 or above to run.
+You can download the latest release of xiFDR from https://www.rappsilberlab.org/software/xifdr/ . xiFDR is implemented as a java application and requires java 8 or above to run.
 
 ### Background
 Correct estimation of false discovery rates in crosslinked peptide identifications presents several quirks that must be taken into account. The 2 main issues are 1) correct estimation of FDR from the target-decoy approach at the level of CSMs 2) Correct handling of the random space for self and heteromeric crosslinks and 3) propagation of error from CSMs to peptide pairs, crosslinked residue pairs and protein-protein interactions. xiFDR handles both of these issues allowing for accurate FDR estimation from a search result file.
 
 1. Estimation of FDRs in crosslinking MS via the target-decoy approach
 
-The theoretical basis of adapting the proteomic target-decoy approach for crosslinking MS are covered in [Waltzoheni et al. 2012](https://www.nature.com/articles/nmeth.2103) and [Fisher et al. 2017](https://pubs.acs.org/doi/pdf/10.1021/acs.analchem.6b03745)  and updated for heterobifunctional crosslinkers (crosslinkers with different reactivities at either end) in [Fisher et al. 2018](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0196672). The approach outlined in those papers is implemented in xiFDR. Briefly, decoy protein sequences are added to the database and spectra can then be matched to target linear peptides (T), decoy linear peptides (D) or to crosslinked peptide pairs made up of 2 target sequences (TT), a target-decoy (TD) sequence pair or a decoy-decoy pair (DD).
+The theoretical basis of adapting the proteomic target-decoy approach for crosslinking MS are covered in [Waltzoheni et al. 2012](https://www.nature.com/articles/nmeth.2103) and [Fisher et al. 2017](https://pubs.acs.org/doi/pdf/10.1021/acs.analchem.6b03745) and updated for heterobifunctional crosslinkers (crosslinkers with different reactivities at either end) in [Fisher et al. 2018](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0196672). The approach outlined in those papers is implemented in xiFDR. Briefly, decoy protein sequences are added to the database and spectra can then be matched to target linear peptides (T), decoy linear peptides (D) or to crosslinked peptide pairs made up of 2 target sequences (TT), a target-decoy (TD) sequence pair or a decoy-decoy pair (DD).
 
 The formula to estimate FDR (provided the chance of matching decoys accurately models the chance of random matching) for CSMs is then
 
@@ -26,6 +25,9 @@ xiFDR performs this calculation by finding the score cutoff that corresponds to 
 The chance of random matching a crosslinked peptide pair spectrum within a protein sequence (self crosslink) is different from that of matching a crosslink between 2 different proteins (heteromeric crosslink) as shown in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) Fig. 1. Moreover, spectra of heteromeric crosslinks tend to have lower signal-to-noise than those of self crosslinks. For these reasons, FDR calculation on self and heteromeric crosslinks should be performed separately. xiFDR automatically splits FDR calculations between self and heteromeric crosslinks reporting them separately in the "results" page. 
 
 3. Error propagation
+
+
+
 
 Very often, the final product of a crosslinking MS experiment is not a list of spectral matches, but rather a list of which residues were found crosslinked to which other residues ("crosslinks" or "links" or "crosslinked residue pairs"). To obtain this list, CSMs must be aggregated into which peptides are paired with each other (multiple spectra can come from the same peptide pair), and those need to be aggregated into crosslinked residues (multiple peptide pairs can come from the same crosslinked residues, because of modifications and miscleavages, for example). Finally, if we are interested in producing a protein-protein interaction (PPI) network, error has to be propagated from residue pairs to PPIs. Correct error propagation from lower to higher levels of result aggregation has big implications for the error rate of the final 
 result, as
@@ -157,15 +159,30 @@ These are minimum filters that essentially act as prefilters prior to FDR calcul
 |min. peptide doublets| minimum number of  peptide doublets observed | important for DSSO searches, included in boosting              |
 | boost separately|perform independent optimisation of each parameter| on by default                                                  |
 
+The settings in "define groups" are currently very beta and unsupported.
 
 #### Boosting
+xiFDR's boosting feature performs a grid search to optimise FDR settings at lower levels to reach the maximum number of matches passing validation at the desired FDR level. For example, enabling boosting for a residue pair-level FDR of 5% will tweak PSM, peptide pair and protein group level FDR cutoffs to maximise the number of residue pairs passing the 5% FDR threshold.
 
+Boosting is performed with a grid search of parameters as described in [Fisher et al. 2017](https://pubs.acs.org/doi/pdf/10.1021/acs.analchem.6b03745). 
 
-### FDR suggestions & gotchas
+The user may control which parameters are part of boosting by changing the selection in the "boosting includes" button. 
+
+The "steps" controls how many steps of the grid search per parameter. The "between" box ensures that boosting is performed to maximise the number of heteromeric residue pairs/PPIs etc. passing FDR rather than the overall number. This is recommended for searches where the goal is to produce a protein-protein interaction network and where large numbers of heteromeric crosslinks are available.
+
+We recommend leaving boosting on and selecting "between" if desired. For experiments with MS-cleavable crosslinkers, we suggest boosting on minimum peptide stubs and minimum peptide doublets.
+
+### FDR suggestions & common mistakes
+
+The extreme flexibility of xiFDR requires some careful use. Here are some of our suggestions and ways to spot that the FDR calculation may not be giving sensible results. When in doubt, keep it simple! 
 
 #### Tips & tricks
+- For searches with cleavable crosslinkers such as DSSO, set prefilters (see below) on the number of peptide doublets and boost on that parameter
+- For searches with unspecific crosslinkers like SDA, include prefilters (or boost) on minimum number of fragments. Include also a prefilter on "fragment unique crosslinked matched conservative" and exclude consecutives. This ensures that only spectral matches with at least one fragment proving a crosslinked peptide pair are considered.
 
 #### Watch out for:
+- The program warns if there aren't sufficient targets to estimate FDR accurately. If this warning refers to the level of analysis you are interested in, there is likely almost nothing in the data. Unless prefilters were set way too stringent.
+- The FDR calculation rests on the assumption that target-decoy pairs explain spectra better than decoy-decoy pairs. If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are no crosslinks in the datasets, or that prefilters are not working as intended.
 
 
 ### Writing out search results
