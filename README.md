@@ -75,6 +75,8 @@ The "Results" tab shows a summary of the FDR calculation. It also allows the use
 
 There is then a tab displaying a log of the FDR calculation and an "about" tab with software information.
 
+### Loading crosslinking MS search results
+
 #### Loading search results from xiSEARCH
 xiSEARCH outputs results in a .csv file that contains all crosslinked peptide spectrum matches (CSMs) and scores. It includes target-target matches, target-decoy and decoy-decoy matches.
 
@@ -108,15 +110,25 @@ Column names may be remapped in the bottom half of the csv interface by XXXX
 
 #### Loading results from ProteomeXchange repositories
 
-#### Performing FDR filtering
+### Performing FDR filtering
 
+In the "FDR settings", one can perform the actual FDR filtering. 
 
+By default, the view is set to "reduced FDR", which shows just the basic settings. The cutoff is set at 5% at the residue pair level, meaning the  error will be propagated so that 5% of the residue pairs correspond to a wrong/random match. The "boosting" features is enabled (see below for more details). These are perfectly acceptable FDR filtering settings for experiments aimed at characterising the crosslinks in a purified protein complex and should give a good idea of the number of crosslinks detectable with reasonable certainty in the sample. In analyses of cellular fractions or searches with hundreds of proteins in the database, it is advisable to also include an FDR cutoff at the "Protein Pairs" level. Similarly, in analyses devoted to method development on the quality of spectra, a filter at the "PSM" is advised.
 
-#### FDR suggestions & gotchas
+If one ticks the "complete FDR" setting, more options are presented. Ticking the box "more" will present the full set of options for FDR filtering in xiFDR. We cover the settings here
+
 
 #### Boosting
 
-#### Writing out search results
+
+### FDR suggestions & gotchas
+#### Tips & tricks
+
+#### Watch out for:
+
+
+### Writing out search results
 
 ### Custom FDR settings and filters
 
