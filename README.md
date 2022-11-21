@@ -34,25 +34,25 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 
 
 #### Terminology
-| Term                            | Description |
-|---------------------------------| ----------- |
-| CSM                             | Title       |
-| PSM                             | Title       |
-| peptide pair                    | Title       |
-| Link/crosslink/residue pair     | Title       |
-| PPI                             | Title       |
-| linear peptide                  | Title       |
-| Self link                       | Title       |
-| Heteromeric link                | Title       |
-| Ambiguity                       | Title       |
-| Protein Group                   | Title       |
-| Prefilter                       | Title       |
-| Local FDR                       | Title       |
-| Posterior Error Probability/PEP | Title       |
-| Boosting                        | Title       |
-| DeltaScore                      | Title       |
-| Conservative                    | Title       |
-| Coverage                        | Title       |
+| Term                            | Description                                                                                                                                     |
+|---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| CSM                             | crosslink spectra match                                                                                                                         |
+| PSM                             | peptide (or crosslink) spectra match                                                                                                            |
+| peptide pair                    | 2 peptides crosslinked to each other, no matter the crosslink site. Multiple CSMs can support the same peptide pair                             |
+| Link/crosslink/residue pair     | 2 residues crosslinked to each other. Multiple peptide pairs can support the same crosslink                                                     |
+| Protein pair/PPI                | 2 proteins found crosslinked to each other, no matter the number/identity of the residue pairs. Multiple residue pairs can support the same PPI |
+| linear peptide                  | a non-crosslinked peptide                                                                                                                       |
+| Self link                       | a link within a protein sequence (includes links between multiple copies of the same protein)                                                   |
+| Heteromeric link                | a link between 2 different protein sequences                                                                                                    |
+| Ambiguity                       | when peptide pairs or residue pairs can be mapped to multiple proteins because these share the same sequence                                    |
+| Protein Group                   | the group of proteins sharing the sequence making up the ambiguous group                                                                        |
+| Prefilter                       | a score filter applied prior to FDR calculation to both target and decoy matches                                                                |
+| Local FDR                       | the estimation of FDR of a particular match based on a windowed approach or a fitting of the score distributions.                               |
+| Posterior Error Probability/PEP | the square root of the local FDR                                                                                                                |
+| Boosting                        | a grid search approach optimising settings to maximise the number of matches passing a given FDR threshold                                      |
+| DeltaScore                      | The score of the best explanation of a CSM/residue pair etc. divided by the second best explanation                                             |
+| Conservative                    | An explanation of a spectral feature where non-lossy matches are weighted more heavily than lossy ones.                                         |
+| Coverage                        | number of fragments matched / max number of theoretical fragments                                                                               |
 
 ## Calculating FDR for crosslinking MS data with xiFDR
 
@@ -166,7 +166,6 @@ The "steps" controls how many steps of the grid search per parameter. The "betwe
 
 We recommend leaving boosting on and selecting "between" if desired. For experiments with MS-cleavable crosslinkers, we suggest boosting on minimum peptide stubs and minimum peptide doublets.
 
-
 FDR calculations with boosting enabled can take some minutes to conclude.
 
 ### FDR suggestions & common mistakes
@@ -180,6 +179,7 @@ The extreme flexibility of xiFDR requires some careful use. Here are some of our
 #### Watch out for:
 - The program warns if there aren't sufficient targets to estimate FDR accurately. If this warning refers to the level of analysis you are interested in, there is likely almost nothing in the data. Unless prefilters were set way too stringent.
 - The FDR calculation rests on the assumption that target-decoy pairs explain spectra better than decoy-decoy pairs. If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are no crosslinks in the datasets, or that prefilters are not working as intended.
+
 
 ### Results summary
 After the calculation is complete (check the log tab, the lower bottom left of the window or the "calculate" button becoming clickable again), the results tab presents a summary of all matches passing the FDR threshold with the number of decoys and target-decoys in each category. Remember the ratio of targets and decoys passing determines the accuracy of the FDR estimation.
@@ -199,6 +199,8 @@ will generate several files:
 - PPI file: all the protein-protein interactions passing the thresold.
 
 Each file contains information about the FDR, local FDR (if enabled), posterior error probability, target/decoy nature of each match, as well as the peakfile of origin.
+
+Beware that if multiple FDR thresholds are set, *only* the matches passing the highest level of aggregation are included in the results. In other words, the csv files for a search with both a 5% residue pair FDR and 5% protein pair FDR will only include residue pairs with a 5% or better FDR that also lead to a protein pair with a 5% or better FDR.
 
 #### mzIdentmL output
 will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation.
