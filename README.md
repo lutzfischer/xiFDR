@@ -9,7 +9,7 @@ You can download the latest release of xiFDR from
 https://www.rappsilberlab.org/software/xifdr/ . xiFDR is implemented as a java application and requires java 8 or above to run.
 
 ### Background
-Correct estimation of false discovery rates in crosslinked peptide identifications presents several quirks that must be taken into account. The 2 main issues are 1) correct estimation of FDR from the target-decoy approach at the level of CSMs and 2) propagation of error from CSMs to peptide pairs, crosslinked residue pairs and protein-protein interactions. xiFDR handles both of these issues allowing for accurate FDR estimation from a search result file.
+Correct estimation of false discovery rates in crosslinked peptide identifications presents several quirks that must be taken into account. The 2 main issues are 1) correct estimation of FDR from the target-decoy approach at the level of CSMs 2) Correct handling of the random space for self and heteromeric crosslinks and 3) propagation of error from CSMs to peptide pairs, crosslinked residue pairs and protein-protein interactions. xiFDR handles both of these issues allowing for accurate FDR estimation from a search result file.
 
 1. Estimation of FDRs in crosslinking MS via the target-decoy approach
 
@@ -63,6 +63,8 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 ## Calculating FDR for crosslinking MS data with xiFDR
 
 ### The interface
+The interface should be loaded via the executable files "startWindows.bat"/"startUnix.sh"/"startMacOS.command" depending on whether the program is run in Windows, Linux or Mac. It is not advisable to run the .jar file directly as this may not detect the correct encoding, which will impact writing the .mzIdentML file.
+
 The interface provides several tabs. 
 
 The first tab, "input", is used to read in results from search engines, define column names if necessary, and apply prefilters prior to FDR estimation.
@@ -76,15 +78,45 @@ There is then a tab displaying a log of the FDR calculation and an "about" tab w
 #### Loading search results from xiSEARCH
 xiSEARCH outputs results in a .csv file that contains all crosslinked peptide spectrum matches (CSMs) and scores. It includes target-target matches, target-decoy and decoy-decoy matches.
 
+Select the output .csv file. The .fasta database and the .config file used in the search should also be uploaded in the respective boxes if one plans to generate an .mzIdentML result file.
+
+At this stage, any prefilters on spectral quality (see below) should be set by ticking the "filter" box.
+
+Press "read" to initiate reading of result. Monitor  the bottom left of the window for the message "finished reading file" and the bottom right for memory usage. 
+
+If xiFDR is very slow or crashing, restart the program by increasing the allocated memory by editing the java -Xmx option in the startup .bat/.sh/.command file. The default is -Xmx3G, providing 3 Gb of RAM. Often, this will not be enough for searches with dozens of runs and thousands of matches.
+
+
 #### Loading search results from other crosslinking MS search engines
+xiFDR can directly read search result files in te standard .mzIdentML format in the mzIdentML tab. 
+
+If the results are not in .mzIdentML format, search results should be read in via the csv tab. To do so, a minimal csv has to be generated containing the following information:
+
+
+| column name | Description |
+|-------------| ----------- |
+| XXX         | Title       |
+| XXX         | Title       |
+| XXX         | Title       |
+| XXX         | Title       |
+| XXX         | Title       |
+
+Below are a few tips for specific search engines:
+
+
+Column names may be remapped in the bottom half of the csv interface by XXXX
+
+#### Loading results from ProteomeXchange repositories
 
 #### Performing FDR filtering
+
+
 
 #### FDR suggestions & gotchas
 
 #### Boosting
 
-#### Writing search results
+#### Writing out search results
 
 ### Custom FDR settings and filters
 
