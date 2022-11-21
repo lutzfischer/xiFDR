@@ -107,27 +107,55 @@ Column names may be remapped in the bottom half of the csv interface by XXXX
 
 #### Loading results from ProteomeXchange repositories
 
-### Performing FDR filtering
+
+#### other settings in input tab
+
+| setting      | Description                                                                                                             | When to use                                                                                                                                                                                                                   |
+|--------------|-------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Flag modifications | splits FDR calculation for modified and unmodified peptides                                                             | if spectral quality of modified and unmodified peptides differs and there are sufficient numbers of matches in both modified and unmodified to perform FDR calculation                                                        |
+| Normalize    | Normalize score distributions according to FDR or the decoy distribution. Suggested settings "FDR based" or "AutoScore" | generate results to be merged with other searches with different settings. For example, normalize scores to later combine FDR results from searches with HCD and ETD fragmentation, that yield different score distributions. |
+| Forward Columns    | Text box for a regular expression to take columns from the input .csv file and include it in the xiFDR output files | include for example retention time in the result file to perform additional rescoring based on machine learning, for example with [xiRT](https://www.nature.com/articles/s41467-021-23441-0)|
+
+
+
+### Performing the FDR calculation
 
 In the "FDR settings", one can perform the actual FDR filtering. 
 
 By default, the view is set to "reduced FDR", which shows just the basic settings. The cutoff is set at 5% at the residue pair level, meaning the  error will be propagated so that 5% of the residue pairs correspond to a wrong/random match. The "boosting" features is enabled (see below for more details). These are perfectly acceptable FDR filtering settings for experiments aimed at characterising the crosslinks in a purified protein complex and should give a good idea of the number of crosslinks detectable with reasonable certainty in the sample. In analyses of cellular fractions or searches with hundreds of proteins in the database, it is advisable to also include an FDR cutoff at the "Protein Pairs" level. Similarly, in analyses devoted to method development on the quality of spectra, a filter at the "PSM" is advised.
 
-If these settings are satisfactory, press "calculate". Otherwise, more advanced options are available if one ticks the "complete FDR" setting. Further ticking the box "more" will present the full set of options for FDR filtering in xiFDR. Hovering the mouse over checkboxes provides a brief explanation of the setting.
+If these settings are satisfactory, press "calculate". 
 
-| Setting                                                     | Description                                                                                                                                                                                                                                         | when to use                                                                                                                                  |
-|-------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| max FDR                                                     | the FDR setting at that particular level (PSM, peptide pair etc.)                                                                                                                                                                                   |                                                                                                                                              |
-| Local FDR                                                   | whether to compute a per-PSM/per-peptide pair etc. score based on a windowed FDR approach. Black box=compute local FDR, ticked box=calculate and filter by local FDR, white box=do not calculate local FDR                                          | to analyse distributions of scores and FDR or to generate a per-crosslink error estimate e.g. for structure modeling.                        |
-| min Pep. length                                             | minimum length of peptide 1 and peptide 2                                                                                                                                                                                                           | increase to 6 if noise matching of short sequences                                                                                           |
-| min supporting peptide pairs Protein Group/Residue Pair/PPI | minimum number of peptide pairs necessary to aggregate to higher level                                                                                                                                                                              | define to have more robust network especially at the PPI level.                                                                              |
-| min TD chance                                               |                                                                                                                                                                                                                                                     |
-| Ambiguity                                                   |                                                                                                                                                                                                                                                     |
-| Unique PSMs                                                 | Aggregate specral matches so that only the top scoring spectrum is considered per spectral match                                                                                                                                                    | on by default. Untick if interested in an analysis of spectral matches                                                                       |
-| Group by PSMs                                               | split FDR calculations into groups of protein pairs having different numbers of matches. In theory splittng FDR for highly abundant proteins and low-abundant                                                                                       | off by default. Experimental                                                                                                                 |
+Otherwise, more advanced options are available if one ticks the "complete FDR" setting. Further ticking the box "more" will present the full set of options for FDR filtering in xiFDR. Hovering the mouse over checkboxes or up/down arrows provides a brief explanation of the setting.
+
+All FDR settings:
+
+| Setting                                                     | Description                                                                                                                                                                                                                                        | when to use                                                                                                           |
+|-------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| max FDR                                                     | the FDR setting at that particular level (PSM, peptide pair etc.)                                                                                                                                                                                  |                                                                                                                       |
+| Local FDR                                                   | whether to compute a per-PSM/per-peptide pair etc. score based on a windowed FDR approach. Black box=compute local FDR, ticked box=calculate and filter by local FDR, white box=do not calculate local FDR                                         | to analyse distributions of scores and FDR or to generate a per-crosslink error estimate e.g. for structure modeling. |
+| min Pep. length                                             | minimum length of peptide 1 and peptide 2                                                                                                                                                                                                          | increase to 6 if noise matching of short sequences                                                                    |
+| min supporting peptide pairs Protein Group/Residue Pair/PPI | minimum number of peptide pairs necessary to aggregate to a given level                                                                                                                                                                            | define to have more robust network especially at the PPI level.                                                       |
+| min TD chance                                               | require enough target matches so that these number of decoy matches would still pass the target FDR. In other words, a minimum number for reliable FDR calculation                                                                                 | Use for more accurate FDR calculation. By default, this number is ignored because "ignore validity checks" is ticked  |
+| Ignore validity checks                                      | Allow FDR calculation even if number of decoys is not sufficient for sufficiently accurate estimation of FDR                                                                                                                                       | Untick and use in combination with min TD chance to only get results with accurate FDR calculation                    |
+| Ambiguity                                                   | increase number to only allow matches with at most N ambiguity. E.g. if "ambiguity" is set to 1 in the residue pairs, residue pairs that could come from more than 1 place in the sequence or more than 2 unique proteins are discarded            | Set to a number if not interested in considering ambiguous crosslinks at all |
+| Unique PSMs                                                 | Aggregate specral matches so that only the top scoring spectrum is considered per spectral match                                                                                                                                                   | on by default. Untick if interested in an analysis of spectral matches                                                                       |
+| Group by PSMs                                               | split FDR calculations into groups of protein pairs having different numbers of matches. In theory splittng FDR for highly abundant proteins and low-abundant                                                                                      | off by default. Experimental                                                                                                                 |
 | No consecutive                                              | remove matches from consecutive peptides. 2 consecutive (in sequence) linear peptides of which one is crosslinker modified can have the same mass and even fragmentation pattern of a crosslinked peptide pair and tend to be not very informative | Consider switching on in searches were protein interactions are the focus, or searches where short range sequence contacts are not the focus |
-| Unique PSMs                                                 | Aggregate specral matches so that only the top scoring spectrum is considered per spectral match | on by default. Untick if interested in an analysis of spectral matches|
+| Unique PSMs                                                 | Aggregate specral matches so that only the top scoring spectrum is considered per spectral match                                                                                                                                                   | on by default. Untick if interested in an analysis of spectral matches                                                                       |
 
+Settings in the "more" panel:
+
+These are minimum filters that essentially act as prefilters prior to FDR calculation. The difference between setting them here versus in the "input" tab is that these parameters can then be part of the boosting grid search (see below).
+
+| Setting | Description| when to use                                                    |
+|---------|------------|----------------------------------------------------------------|
+| min. peptide fragments| minimum observed fragments per peptide | 0 by default, increase number in SDA searches                  |
+| min. coverage| number between 0 and 1. Minimum fraction of theoretical fragments required | included in boosting                                           |
+| min. coverage| number between 0 and 1. Minimum fraction of theoretical fragments required | included in boosting                                           |
+| min. peptide stubs| minimum number of fragment stubs observed | important for MS-cleavable crosslinkers, included in boosting  |
+|min. peptide doublets| minimum number of  peptide doublets observed | important for DSSO searches, included in boosting              |
+| boost separately|perform independent optimisation of each parameter| on by default                                                  |
 
 
 #### Boosting
@@ -142,6 +170,6 @@ If these settings are satisfactory, press "calculate". Otherwise, more advanced 
 
 ### Writing out search results
 
-### Custom FDR settings and filters
+### Custom FDR settings and prefilters
 
 ### Running xiFDR from the command line
