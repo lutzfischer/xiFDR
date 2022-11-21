@@ -26,14 +26,9 @@ The chance of random matching a crosslinked peptide pair spectrum within a prote
 
 3. Error propagation
 
-
-
-
 Very often, the final product of a crosslinking MS experiment is not a list of spectral matches, but rather a list of which residues were found crosslinked to which other residues ("crosslinks" or "links" or "crosslinked residue pairs"). To obtain this list, CSMs must be aggregated into which peptides are paired with each other (multiple spectra can come from the same peptide pair), and those need to be aggregated into crosslinked residues (multiple peptide pairs can come from the same crosslinked residues, because of modifications and miscleavages, for example). Finally, if we are interested in producing a protein-protein interaction (PPI) network, error has to be propagated from residue pairs to PPIs. Correct error propagation from lower to higher levels of result aggregation has big implications for the error rate of the final 
 result, as
 covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) and [Yugandhar et al. 2020](https://www.nature.com/articles/s41592-020-0959-9). Thus, in reporting crosslinking MS data on which residues are crosslinked to each other, FDR filtering should be set at the link level and not at the CSM level.
-
-
 
 xiFDR allows the user to filter for the desired FDR at the level or levels of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach.
 
@@ -109,7 +104,6 @@ Column names may be remapped in the bottom half of the csv interface by XXXX
 
 #### Loading results from ProteomeXchange repositories
 
-
 #### other settings in input tab
 
 | setting      | Description                                                                                                             | When to use                                                                                                                                                                                                                   |
@@ -159,7 +153,7 @@ These are minimum filters that essentially act as prefilters prior to FDR calcul
 |min. peptide doublets| minimum number of  peptide doublets observed | important for DSSO searches, included in boosting              |
 | boost separately|perform independent optimisation of each parameter| on by default                                                  |
 
-The settings in "define groups" are currently very beta and unsupported.
+The settings in "define groups" are currently very beta and unsupported. They allow for splitting the dataset further down into custom groups for FDR calculation.
 
 #### Boosting
 xiFDR's boosting feature performs a grid search to optimise FDR settings at lower levels to reach the maximum number of matches passing validation at the desired FDR level. For example, enabling boosting for a residue pair-level FDR of 5% will tweak PSM, peptide pair and protein group level FDR cutoffs to maximise the number of residue pairs passing the 5% FDR threshold.
@@ -171,6 +165,9 @@ The user may control which parameters are part of boosting by changing the selec
 The "steps" controls how many steps of the grid search per parameter. The "between" box ensures that boosting is performed to maximise the number of heteromeric residue pairs/PPIs etc. passing FDR rather than the overall number. This is recommended for searches where the goal is to produce a protein-protein interaction network and where large numbers of heteromeric crosslinks are available.
 
 We recommend leaving boosting on and selecting "between" if desired. For experiments with MS-cleavable crosslinkers, we suggest boosting on minimum peptide stubs and minimum peptide doublets.
+
+
+FDR calculations with boosting enabled can take some minutes to conclude.
 
 ### FDR suggestions & common mistakes
 
@@ -184,8 +181,27 @@ The extreme flexibility of xiFDR requires some careful use. Here are some of our
 - The program warns if there aren't sufficient targets to estimate FDR accurately. If this warning refers to the level of analysis you are interested in, there is likely almost nothing in the data. Unless prefilters were set way too stringent.
 - The FDR calculation rests on the assumption that target-decoy pairs explain spectra better than decoy-decoy pairs. If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are no crosslinks in the datasets, or that prefilters are not working as intended.
 
+### Results summary
+After the calculation is complete (check the log tab, the lower bottom left of the window or the "calculate" button becoming clickable again), the results tab presents a summary of all matches passing the FDR threshold with the number of decoys and target-decoys in each category. Remember the ratio of targets and decoys passing determines the accuracy of the FDR estimation.
 
 ### Writing out search results
+
+Results may be written out in xiFDR .csv format (csv tab) or in mzIdentML1.2.0 format.
+
+#### csv output 
+will generate several files:
+
+- Summary file: a file containing a summary of the FDR calculation, results and all settings
+- CSM file: a file containing all crosslink spectra matches passing the threshold. This file can be uploaded to xiview.org for visualization
+- peptide pairs file: a file containing all peptide pairs passing the threshold
+- protein groups file: all protein groups passing the threshold (i.e. including ambiguity when a peptide cannot be assigned to an individual protein)
+- Links file: all the crosslinked residue pairs passing the threshold
+- PPI file: all the protein-protein interactions passing the thresold.
+
+Each file contains information about the FDR, local FDR (if enabled), posterior error probability, target/decoy nature of each match, as well as the peakfile of origin.
+
+#### mzIdentmL output
+will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation.
 
 ### Custom FDR settings and prefilters
 
