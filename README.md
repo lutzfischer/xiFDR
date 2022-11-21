@@ -57,9 +57,6 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 | Conservative                    | Title       |
 | Coverage                        | Title       |
 
-
-
-
 ## Calculating FDR for crosslinking MS data with xiFDR
 
 ### The interface
@@ -116,13 +113,24 @@ In the "FDR settings", one can perform the actual FDR filtering.
 
 By default, the view is set to "reduced FDR", which shows just the basic settings. The cutoff is set at 5% at the residue pair level, meaning the  error will be propagated so that 5% of the residue pairs correspond to a wrong/random match. The "boosting" features is enabled (see below for more details). These are perfectly acceptable FDR filtering settings for experiments aimed at characterising the crosslinks in a purified protein complex and should give a good idea of the number of crosslinks detectable with reasonable certainty in the sample. In analyses of cellular fractions or searches with hundreds of proteins in the database, it is advisable to also include an FDR cutoff at the "Protein Pairs" level. Similarly, in analyses devoted to method development on the quality of spectra, a filter at the "PSM" is advised.
 
-If one ticks the "complete FDR" setting, more options are presented. Ticking the box "more" will present the full set of options for FDR filtering in xiFDR. We cover the settings here
+If one ticks the "complete FDR" setting, more options are presented. Ticking the box "more" will present the full set of options for FDR filtering in xiFDR. Hovering the mouse over checkboxes provides a brief explanation of the setting.
 
+| Setting                                                     | Description                                                                                                                                                                                                | when to use                                                                                                           |
+|-------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| max FDR                                                     | the FDR setting at that particular level (PSM, peptide pair etc.)                                                                                                                                          |                                                                                                                       |
+| Local FDR                                                   | whether to compute a per-PSM/per-peptide pair etc. score based on a windowed FDR approach. Black box=compute local FDR, ticked box=calculate and filter by local FDR, white box=do not calculate local FDR | to analyse distributions of scores and FDR or to generate a per-crosslink error estimate e.g. for structure modeling. |
+| min Pep. length                                             | minimum length of peptide 1 and peptide 2                                                                                                                                                                  | increase to 6 if noise matching of short sequences                                                                    |
+| min supporting peptide pairs Protein Group/Residue Pair/PPI | minimum number of peptide pairs necessary to aggregate to higher level                                                                                                                                     | define to have more robust network especially at the PPI level.                                                       |
+| min TD chance                                               |                                                                                                                                                                                                            |
+| Ambiguity                                                   |                                                                                                                                                                                                            |
+| Unique PSMs                                                 | Aggregate specral matches so that only the top scoring spectrum is considered per spectral match | on by default. Untick if interested in an analysis of spectral matches|
+| Group by PSMs                                               | Aggregate specral matches so that only the top scoring spectrum is considered per spectral match | on by default. Untick if interested in an analysis of spectral matches|
 
 #### Boosting
 
 
 ### FDR suggestions & gotchas
+
 #### Tips & tricks
 
 #### Watch out for:
