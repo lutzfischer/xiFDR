@@ -204,5 +204,14 @@ Each file contains information about the FDR, local FDR (if enabled), posterior 
 will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation.
 
 ### Custom FDR settings and prefilters
+xiSEARCH provides many columns with features of CSMs that may be used to prefilter the results prior to FDR estimation. These may be toggled in the "input" tab by clicking the "filter" option. Some of the commonly used prefilters are
+
+| Filter name | Description |
+|-------------| ----------- |
+| XXX         | Title       |
+| XXX         | Title       |
+
+MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets allow to discriminate between crosslinked and co-eluting peptide pairs. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
 
 ### Running xiFDR from the command line
+
