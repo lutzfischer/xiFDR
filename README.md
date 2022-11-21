@@ -23,7 +23,7 @@ xiFDR performs this calculation by finding the score cutoff that corresponds to 
 
 2. Self and heteromeric crosslinks
 
-
+The chance of random matching a crosslinked peptide pair spectrum within a protein sequence (self crosslink) is different from that of matching a crosslink between 2 different proteins (heteromeric crosslink) as shown in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) Fig. 1. Moreover, spectra of heteromeric crosslinks tend to have lower signal-to-noise than those of self crosslinks. For these reasons, FDR calculation on self and heteromeric crosslinks should be performed separately. xiFDR automatically splits FDR calculations between self and heteromeric crosslinks reporting them separately in the "results" page. 
 
 3. Error propagation
 
