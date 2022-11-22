@@ -26,9 +26,15 @@ The chance of random matching a crosslinked peptide pair spectrum within a prote
 
 3. Error propagation
 
+
+
 Very often, the final product of a crosslinking MS experiment is not a list of spectral matches, but rather a list of which residues were found crosslinked to which other residues ("crosslinks" or "links" or "crosslinked residue pairs"). To obtain this list, CSMs must be aggregated into which peptides are paired with each other (multiple spectra can come from the same peptide pair), and those need to be aggregated into crosslinked residues (multiple peptide pairs can come from the same crosslinked residues, because of modifications and miscleavages, for example). Finally, if we are interested in producing a protein-protein interaction (PPI) network, error has to be propagated from residue pairs to PPIs. Correct error propagation from lower to higher levels of result aggregation has big implications for the error rate of the final 
 result, as
 covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) and [Yugandhar et al. 2020](https://www.nature.com/articles/s41592-020-0959-9). Thus, in reporting crosslinking MS data on which residues are crosslinked to each other, FDR filtering should be set at the link level and not at the CSM level.
+
+![ErrorPropagation](https://user-images.githubusercontent.com/44289027/203276815-046f76bf-2c1d-49a0-ac7a-479c73b32a3a.PNG)
+
+(target-target matches in grey, matches involving decoys in red. Error control should account for aggregation of matches from lower levels to higher levels.)
 
 xiFDR allows the user to filter for the desired FDR at the level or levels of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach.
 
@@ -80,8 +86,26 @@ At this stage, any prefilters on spectral quality (see below) should be set by t
 
 Press "read" to initiate reading of result. Monitor  the bottom left of the window for the message "finished reading file" and the bottom right for memory usage. 
 
-If xiFDR is very slow or crashing, restart the program by increasing the allocated memory by editing the java -Xmx option in the startup .bat/.sh/.command file. The default is -Xmx3G, providing 3 Gb of RAM. Often, this will not be enough for searches with dozens of runs and thousands of matches.
+If xiFDR is very slow or crashing, restart the program by increasing the allocated memory by editing the java -Xmx option in the startup .bat/.sh/.command file. The default is -Xmx3G, providing 3 Gb of RAM. Often, this will not be enough for searches with dozens of runs and thousands of matches. Large searches may require tens of Gb to read in. In this case, prefilters (see below) are a useful way to reduce memory requirements if needed.
 
+
+#### prefilters
+xiSEARCH provides many features of CSMs that may be used to prefilter the results prior to FDR estimation. Doing so equally on targets and decoys prior to FDR estimation retains the accuracy of FDR, while doing score filtering or other filters post FDR estimation generates results with unknown error rates.
+
+The prefilters may be toggled in the "input" tab by clicking the "filter" option. These are generally used after a first look at results without prefilters if spectra of low quality are still passing the FDR. Some of the commonly used prefilters (for FDR calculation performed on xiSEARCH results) are
+
+| Filter name                                         | Description                                                                                             | Commonly set to               |
+|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------|
+| peptide 1/unique matched                            | minimum observed fragments for peptide 1 or 2                                                           | >3 (4-5 to be more stringent) |
+| fragment unique crosslinked matched conservative    | minimum fragments across both peptides containing the crosslink site                                    | >0                            |
+| peptide 1/2 unique crosslinked matched conservative | impose to have only spectra where both peptides have a fragment of the other                            | >0                            |
+| delta                                               | only spectra where the best match is x times better than the second best by score                       | >1.2                          |
+| peptide1/2 CCPepFragmentDoubletCount                | For cleavable crosslinkers, only consider spectra where at least X doublets are found on peptide 1/2    | >0                            |
+| fragment CCPepDoubletCount                          | For cleavable crosslinkers, only consider spectra where at least X doublets are found on either peptide | >0                            |
+
+MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets allow to discriminate between crosslinked and co-eluting peptide pairs. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
+
+For MS-cleavable crosslinkers, some useful prefilters are 
 
 #### Loading search results from other crosslinking MS search engines
 xiFDR can directly read search result files in te standard .mzIdentML format in the mzIdentML tab. 
@@ -98,6 +122,8 @@ If the results are not in .mzIdentML format, search results should be read in vi
 | XXX         | Title       |
 
 Below are a few tips for specific search engines:
+- The decoys have to be reported in the search results and they should be then mapped to target proteins
+- XXX
 
 
 Column names may be remapped in the bottom half of the csv interface by XXXX
@@ -178,7 +204,7 @@ The extreme flexibility of xiFDR requires some careful use. Here are some of our
 
 #### Watch out for:
 - The program warns if there aren't sufficient targets to estimate FDR accurately. If this warning refers to the level of analysis you are interested in, there is likely almost nothing in the data. Unless prefilters were set way too stringent.
-- The FDR calculation rests on the assumption that target-decoy pairs explain spectra better than decoy-decoy pairs. If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are no crosslinks in the datasets, or that prefilters are not working as intended.
+- The FDR calculation rests on the assumption that target-decoy pairs have twice the chance of random matching than decoy-decoy pairs (TD+DT vs DD). If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are no crosslinks in the datasets, or that prefilters are not working as intended.
 
 
 ### Results summary
@@ -186,7 +212,7 @@ After the calculation is complete (check the log tab, the lower bottom left of t
 
 ### Writing out search results
 
-Results may be written out in xiFDR .csv format (csv tab) or in mzIdentML1.2.0 format.
+Results may be written out in xiFDR .csv format (csv tab) or in mzIdentML1.2.0 format. We advise to do both every time, as the summary file is useful to keep track of what was done, and the mzIdentML for later deposition or upload to [xiView.org](https://www.xiview.org).
 
 #### csv output 
 will generate several files:
@@ -205,15 +231,16 @@ Beware that if multiple FDR thresholds are set, *only* the matches passing the h
 #### mzIdentmL output
 will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation.
 
-### Custom FDR settings and prefilters
-xiSEARCH provides many columns with features of CSMs that may be used to prefilter the results prior to FDR estimation. These may be toggled in the "input" tab by clicking the "filter" option. Some of the commonly used prefilters are
 
-| Filter name | Description |
-|-------------| ----------- |
-| XXX         | Title       |
-| XXX         | Title       |
-
-MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets allow to discriminate between crosslinked and co-eluting peptide pairs. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
 
 ### Running xiFDR from the command line
 
+xiFDR may be run in the command line for automated processing or cluster jobs.
+
+The full range of options and their description is available with
+
+    java --jar xiFDR.jar --help
+
+Allocate memory with the -XmX flag.
+
+Prefilters are not supported in the command line version of xiFDR. However, prefiltering the .csv input file as desired may be done in python/pandas, R, or any other tool prior to loading the input file into xiFDR.
