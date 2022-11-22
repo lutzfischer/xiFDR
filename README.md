@@ -108,7 +108,6 @@ Notice that these are not meant to be used blindly all at once!
 
 MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets allow to discriminate between crosslinked and co-eluting peptide pairs. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
 
-For MS-cleavable crosslinkers, some useful prefilters are 
 
 #### Loading search results from other crosslinking MS search engines
 xiFDR can directly read search result files in te standard .mzIdentML format in the mzIdentML tab. 
