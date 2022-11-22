@@ -7,6 +7,8 @@ It performs a generic FDR calculations for CSMs and resulting peptide pairs, cro
 
 You can download the latest release of xiFDR from https://www.rappsilberlab.org/software/xifdr/ . xiFDR is implemented as a java application and requires java 8 or above to run.
 
+For questions regarding usage of xiFDR, please open a [discussion](https://github.com/Rappsilber-Laboratory/XiSearch/discussions).
+
 ### Background
 Correct estimation of false discovery rates in crosslinked peptide identifications presents several quirks that must be taken into account. The 2 main issues are 1) correct estimation of FDR from the target-decoy approach at the level of CSMs 2) Correct handling of the random space for self and heteromeric crosslinks and 3) propagation of error from CSMs to peptide pairs, crosslinked residue pairs and protein-protein interactions. xiFDR handles both of these issues allowing for accurate FDR estimation from a search result file.
 
