@@ -94,16 +94,17 @@ If xiFDR is very slow or crashing, restart the program by increasing the allocat
 #### prefilters
 xiSEARCH provides many features of CSMs that may be used to prefilter the results prior to FDR estimation. Doing so equally on targets and decoys prior to FDR estimation retains the accuracy of FDR, while doing score filtering or other filters post FDR estimation generates results with unknown error rates.
 
-The prefilters may be toggled in the "input" tab by clicking the "filter" option. These are generally used after a first look at results without prefilters if spectra of low quality are still passing the FDR. Some of the commonly used prefilters (for FDR calculation performed on xiSEARCH results) are
+The prefilters may be toggled in the "input" tab by clicking the "filter" option. These are generally used after a first look at results without prefilters if spectra of low quality are still passing the FDR. Some of the commonly used prefilters (for FDR calculation performed on xiSEARCH results, especially on large scale searches) are
 
-| Filter name                                         | Description                                                                                             | Commonly set to               |
-|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------|
-| peptide 1/unique matched                            | minimum observed fragments for peptide 1 or 2                                                           | >3 (4-5 to be more stringent) |
-| fragment unique crosslinked matched conservative    | minimum fragments across both peptides containing the crosslink site                                    | >0                            |
-| peptide 1/2 unique crosslinked matched conservative | impose to have only spectra where both peptides have a fragment of the other                            | >0                            |
-| delta                                               | only spectra where the best match is x times better than the second best by score                       | >1.2                          |
-| peptide1/2 CCPepFragmentDoubletCount                | For cleavable crosslinkers, only consider spectra where at least X doublets are found on peptide 1/2    | >0                            |
-| fragment CCPepDoubletCount                          | For cleavable crosslinkers, only consider spectra where at least X doublets are found on either peptide | >0                            |
+| Filter name                                         | Description                                                                                                                                                    | Commonly set to               |
+|-----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| peptide 1/unique matched                            | minimum observed fragments for peptide 1 or 2                                                                                                                  | >3 (4-5 to be more stringent) |
+| fragment unique crosslinked matched conservative    | minimum fragments across both peptides containing the crosslink site                                                                                           | >0                            |
+| peptide 1/2 unique crosslinked matched conservative | impose to have only spectra where both peptides have a fragment of the other                                                                                   | >0                            |
+| delta                                               | only spectra where the best match is x times better than the second best by score                                                                              | >1.2                          |
+| peptide1/2 CCPepFragmentDoubletCount                | For cleavable crosslinkers, only consider spectra where at least X doublets are found on peptide 1/2                                                           | >0                            |
+| fragment CCPepDoubletCount                          | For cleavable crosslinkers, only consider spectra where at least X doublets are found on either peptide. usually set to greater than 0 in large scale searches | >0                            |
+Notice that these are not meant to be used blindly all at once!
 
 MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets allow to discriminate between crosslinked and co-eluting peptide pairs. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
 
