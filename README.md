@@ -42,25 +42,24 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 
 
 #### Terminology
-| Term                            | Description                                                                                                                                     |
-|---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| CSM                             | crosslink spectra match                                                                                                                         |
-| PSM                             | peptide (or crosslink) spectra match                                                                                                            |
-| peptide pair                    | 2 peptides crosslinked to each other, no matter the crosslink site. Multiple CSMs can support the same peptide pair                             |
-| Link/crosslink/residue pair     | 2 residues crosslinked to each other. Multiple peptide pairs can support the same crosslink                                                     |
-| Protein pair/PPI                | 2 proteins found crosslinked to each other, no matter the number/identity of the residue pairs. Multiple residue pairs can support the same PPI |
-| linear peptide                  | a non-crosslinked peptide                                                                                                                       |
-| Self link                       | a link within a protein sequence (includes links between multiple copies of the same protein)                                                   |
-| Heteromeric link                | a link between 2 different protein sequences                                                                                                    |
-| Ambiguity                       | when peptide pairs or residue pairs can be mapped to multiple proteins because these share the same sequence                                    |
-| Protein Group                   | the group of proteins sharing the sequence making up the ambiguous group                                                                        |
-| Prefilter                       | a score filter applied prior to FDR calculation to both target and decoy matches                                                                |
-| Local FDR                       | the estimation of FDR of a particular match based on a windowed approach or a fitting of the score distributions.                               |
-| Posterior Error Probability/PEP | the square root of the local FDR                                                                                                                |
-| Boosting                        | a grid search approach optimising settings to maximise the number of matches passing a given FDR threshold                                      |
-| DeltaScore                      | The score of the best explanation of a CSM/residue pair etc. divided by the second best explanation                                             |
-| Conservative                    | An explanation of a spectral feature where non-lossy matches are weighted more heavily than lossy ones.                                         |
-| Coverage                        | number of fragments matched / max number of theoretical fragments                                                                               |
+| Term                                     | Description                                                                                                                                     |
+|------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| CSM                                      | crosslink spectra match                                                                                                                         |
+| PSM                                      | peptide (or crosslink) spectra match                                                                                                            |
+| peptide pair                             | 2 peptides crosslinked to each other, no matter the crosslink site. Multiple CSMs can support the same peptide pair                             |
+| Link/crosslink/residue pair              | 2 residues crosslinked to each other. Multiple peptide pairs can support the same crosslink                                                     |
+| Protein pair/PPI                         | 2 proteins found crosslinked to each other, no matter the number/identity of the residue pairs. Multiple residue pairs can support the same PPI |
+| linear peptide                           | a non-crosslinked peptide                                                                                                                       |
+| Self link                                | a link within a protein sequence (includes links between multiple copies of the same protein)                                                   |
+| Heteromeric link                         | a link between 2 different protein sequences                                                                                                    |
+| Ambiguity                                | when peptide pairs or residue pairs can be mapped to multiple proteins because these share the same sequence                                    |
+| Protein Group                            | the group of proteins sharing the sequence making up the ambiguous group                                                                        |
+| Prefilter                                | a score filter applied prior to FDR calculation to both target and decoy matches                                                                |
+| Local FDR/poterior error probability/PEP | the estimation of FDR of a particular match based on a windowed approach or a fitting of the score distributions.                               |
+| Boosting                                 | a grid search approach optimising settings to maximise the number of matches passing a given FDR threshold                                      |
+| DeltaScore                               | The score of the best explanation of a CSM/residue pair etc. divided by the second best explanation                                             |
+| Conservative                             | An explanation of a spectral feature where non-lossy matches are weighted more heavily than lossy ones.                                         |
+| Coverage                                 | number of fragments matched / max number of theoretical fragments                                                                               |
 
 ## Calculating FDR for crosslinking MS data with xiFDR
 
