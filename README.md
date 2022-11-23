@@ -124,7 +124,7 @@ If the results are not in .mzIdentML format, search results should be read in vi
 | XXX         | Title       |
 
 Below are a few tips for specific search engines:
-- The decoys have to be reported in the search results and they should be then mapped to target proteins
+- The decoys have to be reported in the search results and the accession of decoy proteins need to pairable with target proteins. xiFDR recognises following prefixes `REV_`, `RAN_` and `DECOY:` to the accession-numbers.
 - XXX
 
 
