@@ -58,7 +58,7 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 | Local FDR                       | the estimation of FDR of a particular match based on a windowed approach or a fitting of the score distributions.                               |
 | Posterior Error Probability/PEP | the square root of the local FDR                                                                                                                |
 | Boosting                        | a grid search approach optimising settings to maximise the number of matches passing a given FDR threshold                                      |
-| DeltaScore                      | The score of the best explanation of a CSM/residue pair etc. divided by the second best explanation                                             |
+| DeltaScore                      | The score of the best explanation of a CSM/residue pair etc. divided by the second best explanation .  xiSEARCH reports two delta scores. One considering all matches to a spectrum and a second one only considering matches involving peptides of a different sequence. xiFDR by default uses there the second one.|
 | Conservative                    | An explanation of a spectral feature where non-lossy matches are weighted more heavily than lossy ones.                                         |
 | Coverage                        | number of fragments matched / max number of theoretical fragments                                                                               |
 
