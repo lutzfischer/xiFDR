@@ -65,7 +65,7 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 ## Calculating FDR for crosslinking MS data with xiFDR
 
 ### The interface
-The interface should be loaded via the executable files "startWindows.bat"/"startUnix.sh"/"startMacOS.command" depending on whether the program is run in Windows, Linux or Mac. It is not advisable to run the .jar file directly as this may not detect the correct encoding, which will impact writing the .mzIdentML file.
+The interface should be loaded via the executable files "startWindows.bat"/"startUnix.sh"/"startMacOS.command" depending on whether the program is run in Windows, Linux or Mac. Under windows it is not advisable to run the .jar file directly as this may not detect the correct encoding, which will impact writing the .mzIdentML file.
 
 The interface provides several tabs. 
 
