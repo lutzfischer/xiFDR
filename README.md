@@ -105,7 +105,7 @@ The prefilters may be toggled in the "input" tab by clicking the "filter" option
 | fragment CCPepDoubletCount                          | For cleavable crosslinkers, only consider spectra where at least X doublets are found on either peptide. usually set to greater than 0 in large scale searches | >0                            |
 Notice that these are not meant to be used blindly all at once!
 
-MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets allow to discriminate between crosslinked and co-eluting peptide pairs. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
+MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets help to provide extra confidence, that the peptide masses are correct - and in extend increases the chance that the the peptides themself are correctly identified. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
 
 
 #### Loading search results from other crosslinking MS search engines
