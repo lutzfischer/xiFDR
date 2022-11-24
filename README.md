@@ -28,8 +28,6 @@ The chance of random matching a crosslinked peptide pair spectrum within a prote
 
 3. Error propagation
 
-
-
 Very often, the final product of a crosslinking MS experiment is not a list of spectral matches, but rather a list of which residues were found crosslinked to which other residues ("crosslinks" or "links" or "crosslinked residue pairs"). To obtain this list, CSMs must be aggregated into which peptides are paired with each other (multiple spectra can come from the same peptide pair), and those need to be aggregated into crosslinked residues (multiple peptide pairs can come from the same crosslinked residues, because of modifications and miscleavages, for example). Finally, if we are interested in producing a protein-protein interaction (PPI) network, error has to be propagated from residue pairs to PPIs. Correct error propagation from lower to higher levels of result aggregation has big implications for the error rate of the final 
 result, as
 covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z) and [Yugandhar et al. 2020](https://www.nature.com/articles/s41592-020-0959-9). Thus, in reporting crosslinking MS data on which residues are crosslinked to each other, FDR filtering should be set at the link level and not at the CSM level.
@@ -38,7 +36,8 @@ covered in [Lenz et al. 2021](https://www.nature.com/articles/s41467-021-23666-z
 
 (target-target matches in grey, matches involving decoys in red. Error control should account for aggregation of matches from lower levels to higher levels.)
 
-xiFDR allows the user to filter for the desired FDR at the level or levels of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach.
+xiFDR allows the user to filter for the desired FDR at the level or levels of interpretation of the results. For example, data may be filtered at 5% FDR at the link level, and 10% at the PPI level. Error is propagated by aggregating target and decoy matches from lower levels with a sum of squares approach. The "boosting" feature sets thresholds at lower error levels to reduce the number of decoys at higher error levels, resulting in more matches passing FDR at residue pair or protein pair levels.
+
 
 
 #### Terminology
@@ -62,6 +61,8 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 | Coverage                                 | number of fragments matched / max number of theoretical fragments                                                                               |
 
 ## Calculating FDR for crosslinking MS data with xiFDR
+
+xiFDR reads in search results from xiSEARCH in .csv format or from other search engines. It then performs FDR filtering and writes out results in .csv and .mzIdentML formats.
 
 ### The interface
 The interface should be loaded via the executable files "startWindows.bat"/"startUnix.sh"/"startMacOS.command" depending on whether the program is run in Windows, Linux or Mac. It is not advisable to run the .jar file directly as this may not detect the correct encoding, which will impact writing the .mzIdentML file.
@@ -91,7 +92,7 @@ If xiFDR is very slow or crashing, restart the program by increasing the allocat
 
 
 #### prefilters
-xiSEARCH provides many features of CSMs that may be used to prefilter the results prior to FDR estimation. Doing so equally on targets and decoys prior to FDR estimation retains the accuracy of FDR, while doing score filtering or other filters post FDR estimation generates results with unknown error rates.
+xiSEARCH provides many features of CSMs that may be used to prefilter the results prior to FDR estimation. Doing so equally on targets and decoys prior to FDR estimation retains the accuracy of FDR, while doing score filtering or other filters post FDR estimation generates results with unknown error rates. We recommend doing this only after having a look at the FDR-filtered results without any prefilters.
 
 The prefilters may be toggled in the "input" tab by clicking the "filter" option. These are generally used after a first look at results without prefilters if spectra of low quality are still passing the FDR. Some of the commonly used prefilters (for FDR calculation performed on xiSEARCH results, especially on large scale searches) are
 
@@ -105,7 +106,7 @@ The prefilters may be toggled in the "input" tab by clicking the "filter" option
 | fragment CCPepDoubletCount                          | For cleavable crosslinkers, only consider spectra where at least X doublets are found on either peptide. usually set to greater than 0 in large scale searches | >0                            |
 Notice that these are not meant to be used blindly all at once!
 
-MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets help to provide extra confidence, that the peptide masses are correct - and in extend increases the chance that the the peptides themself are correctly identified. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
+MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets help to provide extra confidence, that the peptide masses are correct. This increases the chance that the peptides themselves are correctly identified. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
 
 
 #### Loading search results from other crosslinking MS search engines
@@ -282,8 +283,8 @@ Each file contains information about the FDR, local FDR (if enabled), posterior 
 
 Beware that if multiple FDR thresholds are set, *only* the matches passing the highest level of aggregation are included in the results. In other words, the csv files for a search with both a 5% residue pair FDR and 5% protein pair FDR will only include residue pairs with a 5% or better FDR that also lead to a protein pair with a 5% or better FDR.
 
-#### mzIdentmL output
-will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation.
+#### mzIdentML output
+will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation. Reading in the xiSEARCH "config" file in the "input" tab is required for mzIdentML output.
 
 
 
