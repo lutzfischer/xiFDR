@@ -291,6 +291,7 @@ The full range of options and their description is available with
 
     java -jar xiFDR.jar --help
 
-Allocate memory with the -XmX flag.
+Allocate memory with the java -Xmx flag. E.g. 
+    java -Xmx5G -jar xiFDR.jar ...
 
 Prefilters are not supported in the command line version of xiFDR. However, prefiltering the .csv input file as desired may be done in python/pandas, R, or any other tool prior to loading the input file into xiFDR.
