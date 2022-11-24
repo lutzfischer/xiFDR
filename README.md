@@ -181,10 +181,6 @@ Additionally there are some columns that are mainly just passed through to provi
 For xiSEARCH results there some more columns that are important for the mzIdentML export that get automatically mapped. 
 
 
-
-
-#### Loading results from ProteomeXchange repositories
-
 #### other settings in input tab
 
 | setting      | Description                                                                                                             | When to use                                                                                                                                                                                                                   |
