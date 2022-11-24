@@ -114,13 +114,72 @@ xiFDR can directly read search result files in te standard .mzIdentML format in 
 If the results are not in .mzIdentML format, search results should be read in via the csv tab. To do so, a minimal csv has to be generated containing the following information:
 
 
+
+Following are lists of columns that have to be or can be provided. The name of the columns do not need to match exactly - but can be manually assigned. I.e. if instead of `scan ` the column in the CSV file is called `spectrum number` then these columns can be associated in the interface. Internally  xiFDR has a list of known alternative names for a some of the columns and will try to automatically match the right columns. This can be expanded by selecting "intelligent column matching" before selecting a file - but in both one should check that the correct columns are used.
+
+The minimal set of columns that need to be present are:
 | column name | Description |
 |-------------| ----------- |
-| XXX         | Title       |
-| XXX         | Title       |
-| XXX         | Title       |
-| XXX         | Title       |
-| XXX         | Title       |
+| run         | raw file name that the spectrum derived from |
+| scan        | scan number within that run |
+| peptide1 | sequence of the first peptide |
+| peptide2 | sequence of the second peptide |
+| peptide link 1 | which residue of the first peptide does the cross-linker attach to |
+| peptide link 2 | which residue of the second peptide does the cross-linker attach to |
+| is decoy 1 | is the first peptide from the decoy database |
+| is decoy 2 | is the second peptide from the decoy database |
+| precursor charge | charge state of the precursor ion |
+| accession1 | protein accession number(s) for the source of the first peptide |
+| accession2 | protein accession number(s) for the source of the second peptide |
+| peptide position 1 | position(s) of the first peptide in the protein(s) |
+| peptide position 2 | position(s) of the second peptide in the protein(s) |
+| score | score of the spectrum match |
+
+The decoys have to be reported in the search results and the accession of decoy proteins need to pairable with target proteins. Meaning a decoy protein protein needs to have the same accesion number as a target protein plus an optional prefix. xiFDR recognises following prefixes `REV_`, `RAN_` and `DECOY:` to the accession-numbers.
+
+For ambiguous peptides xiFDR assumes that all proteins for the given peptide are either target- or decoy-proteins.
+
+There are several more columns mappable.
+
+Some column will get their value assigned/guessed from the top columns:
+| column name | Description |
+|-------------| ----------- |
+| psmid   | a unique ID for the PSM - if not given will be defined based on run and scan |
+| peptide length 1 | length (in amino acids) of the first peptide - if not given, then it will be guessed from the sequence|
+| peptide length 2 | length (in amino acids) of the second peptide - if not given, then it will be guessed from the sequence|
+Actually when psmid is given run and scan number become optional.
+
+
+Some more that can be used xiFDR internal to improve the results of the FDR calculation:
+| column name | Description |
+|-------------| ----------- |
+| delta score | the delta score of the match |
+| peptide coverage1 | how well is peptide explained |
+| peptide coverage2 | how well is peptide 2 explained |
+| minimum peptide coverage | how well is the worse explained peptide explained |
+| peptide1 fragments | How many unique fragments where assigned to peptide 1 |
+| peptide2 fragments | How many unique fragments where assigned to peptide 2 |
+| peptides with stubs | For how many peptides was an cross-linker stub identified |
+| peptides with doublets | For how many peptides was an doublet of cross-linker stubs identified |
+| negative grouping | if some matches have an inherently higher chance to be false positive then they can be flagged here |
+| positive grouping | if some matches have an inherently lower chance to be false positive then they can be flagged here |
+
+The last two columns are used to group matches for which the FDR is calculated separately. This requires that enough data are present and should be considered experimental.
+
+Additionally there are some columns that are mainly just passed through to provide a "nice" output:
+| crosslinker | name of the cross-linker involved in this PSM |
+| crossLinkerModMass | mass difference between the sum of the non-cross-linked peptides and the cross-linked peptides |
+| experimental mz | experimental precursor M/Z |
+| calculated mass | calculated mass of the precursor |
+| Protein name1 | a name for the first protein |
+| Protein name2 | a name for the second protein |
+| description1 | description of the first protein |
+| description2 | description of the second protein |
+| info | arbitrary info field to be forwarded to the results table |
+
+For xiSEARCH results there some more columns that are important for the mzIdentML export that get automatically mapped. 
+
+
 
 Below are a few tips for specific search engines:
 - The decoys have to be reported in the search results and they should be then mapped to target proteins
