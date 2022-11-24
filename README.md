@@ -268,11 +268,11 @@ Results may be written out in xiFDR .csv format (csv tab) or in mzIdentML1.2.0 f
 will generate several files:
 
 - Summary file: a file containing a summary of the FDR calculation, results and all settings
-- CSM file: a file containing all crosslink spectra matches passing the threshold. This file can be uploaded to xiview.org for visualization
-- peptide pairs file: a file containing all peptide pairs passing the threshold
-- protein groups file: all protein groups passing the threshold (i.e. including ambiguity when a peptide cannot be assigned to an individual protein)
-- Links file: all the crosslinked residue pairs passing the threshold
-- PPI file: all the protein-protein interactions passing the thresold.
+- CSM file: a file containing all crosslink spectra matches passing all thresholds. This file can be uploaded to xiview.org for visualization
+- peptide pairs file: a file containing all peptide pairs passing all thresholds
+- protein groups file: all protein groups passing all thresholds (i.e. including ambiguity when a peptide cannot be assigned to an individual protein)
+- Links file: all the crosslinked residue pairs passing all thresholds
+- PPI file: all the protein-protein interactions passing all thresholds.
 
 Each file contains information about the FDR, local FDR (if enabled), posterior error probability, target/decoy nature of each match, as well as the peakfile of origin.
 
