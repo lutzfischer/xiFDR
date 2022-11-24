@@ -254,7 +254,7 @@ The extreme flexibility of xiFDR requires some careful use. Here are some of our
 
 #### Watch out for:
 - The program warns if there aren't sufficient targets to estimate FDR accurately. If this warning refers to the level of analysis you are interested in, there is likely almost nothing in the data. Unless prefilters were set way too stringent.
-- The FDR calculation rests on the assumption that target-decoy pairs have twice the chance of random matching than decoy-decoy pairs (TD+DT vs DD). If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are no crosslinks in the datasets, or that prefilters are not working as intended.
+- The FDR calculation rests on the assumption that target-decoy pairs have twice the chance of random matching than decoy-decoy pairs (TD+DT vs DD). If in your results you have more decoy-decoy (DD) than target-decoy (TD), your FDR evaluates to a negative number and becomes meaningless. This may be a sign that there are very few crosslinks in the datasets, or that prefilters are not working as intended.
 
 
 ### Results summary
