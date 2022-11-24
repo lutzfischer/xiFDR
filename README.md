@@ -181,12 +181,6 @@ For xiSEARCH results there some more columns that are important for the mzIdentM
 
 
 
-Below are a few tips for specific search engines:
-- The decoys have to be reported in the search results and they should be then mapped to target proteins
-- XXX
-
-
-Column names may be remapped in the bottom half of the csv interface by XXXX
 
 #### Loading results from ProteomeXchange repositories
 
