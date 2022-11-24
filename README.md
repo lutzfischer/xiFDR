@@ -227,7 +227,7 @@ These are minimum filters that essentially act as prefilters prior to FDR calcul
 | min. coverage| number between 0 and 1. Minimum fraction of theoretical fragments required | included in boosting                                           |
 | min. peptide stubs| minimum number of fragment stubs observed | important for MS-cleavable crosslinkers, included in boosting  |
 |min. peptide doublets| minimum number of  peptide doublets observed | important for DSSO searches, included in boosting              |
-| boost separately|perform independent optimisation of each parameter| on by default                                                  |
+| boost separately|boosting in two steps - first on the lower level FDRs and in a second step change optimize these pre-filter| on by default                                                     |
 
 The settings in "define groups" are currently very beta and unsupported. They allow for splitting the dataset further down into custom groups for FDR calculation.
 
