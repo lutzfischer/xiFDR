@@ -274,7 +274,7 @@ will generate several files:
 - Links file: all the crosslinked residue pairs passing all thresholds
 - PPI file: all the protein-protein interactions passing all thresholds.
 
-Each file contains information about the FDR, local FDR (if enabled), posterior error probability, target/decoy nature of each match, as well as the peakfile of origin.
+Each file contains information about the FDR, posterior error probability (local FDR), target/decoy nature of each match, as well as the peakfile of origin.
 
 Beware that if multiple FDR thresholds are set, *only* the matches passing the highest level of aggregation are included in the results. In other words, the csv files for a search with both a 5% residue pair FDR and 5% protein pair FDR will only include residue pairs with a 5% or better FDR that also lead to a protein pair with a 5% or better FDR.
 
