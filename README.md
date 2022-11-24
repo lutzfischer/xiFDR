@@ -289,7 +289,7 @@ xiFDR may be run in the command line for automated processing or cluster jobs.
 
 The full range of options and their description is available with
 
-    java --jar xiFDR.jar --help
+    java -jar xiFDR.jar --help
 
 Allocate memory with the -XmX flag.
 
