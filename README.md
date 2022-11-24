@@ -276,7 +276,9 @@ will generate several files:
 
 Each file contains information about the FDR, posterior error probability (local FDR), target/decoy nature of each match, as well as the peakfile of origin.
 
-Beware that if multiple FDR thresholds are set, *only* the matches passing the highest level of aggregation are included in the results. In other words, the csv files for a search with both a 5% residue pair FDR and 5% protein pair FDR will only include residue pairs with a 5% or better FDR that also lead to a protein pair with a 5% or better FDR.
+Beware that if multiple FDR thresholds are set, *only* the matches passing all levels of aggregation are included in the results. In other words, the csv files for a search with both a 5% residue pair FDR and 5% protein pair FDR will only include residue pairs with a 5% or better FDR that also lead to a protein pair with a 5% or better FDR.
+
+This can result in a lower number of decoys at a given FDR level than the reported FDR number. Meaning, when filtering for both 5% residue pair FDR and 5% protein pair FDR the resulting residue pair file will contain only decoys that reach the protein pair level. This should not be misconstrued as having only as many false positives left at the residue pair level as you have decoys residue pairs: the protein pair filter basically invalidates any follow up decoy based error estimation at the lower residue pair level. Thus, any FDR at a higher level of aggregation (eg. protein pair vs CSM) will prevent a meaningful analysis of false positives via decoys at lower levels.
 
 #### mzIdentML output
 will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXchange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation. Reading in the xiSEARCH "config" file in the "input" tab is required for mzIdentML output.
