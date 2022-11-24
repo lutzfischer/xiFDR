@@ -279,7 +279,7 @@ Each file contains information about the FDR, local FDR (if enabled), posterior 
 Beware that if multiple FDR thresholds are set, *only* the matches passing the highest level of aggregation are included in the results. In other words, the csv files for a search with both a 5% residue pair FDR and 5% protein pair FDR will only include residue pairs with a 5% or better FDR that also lead to a protein pair with a 5% or better FDR.
 
 #### mzIdentML output
-will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXChange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation. Reading in the xiSEARCH "config" file in the "input" tab is required for mzIdentML output.
+will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXchange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation. Reading in the xiSEARCH "config" file in the "input" tab is required for mzIdentML output.
 
 
 
