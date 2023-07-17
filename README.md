@@ -121,6 +121,7 @@ If the results are not in .mzIdentML format, search results should be read in vi
 Following are lists of columns that have to be or can be provided. The name of the columns do not need to match exactly - but can be manually assigned. I.e. if instead of `scan ` the column in the CSV file is called `spectrum number` then these columns can be associated in the interface. Internally  xiFDR has a list of known alternative names for a some of the columns and will try to automatically match the right columns. This can be expanded by selecting "intelligent column matching" before selecting a file - but in both one should check that the correct columns are used.
 
 The minimal set of columns that need to be present are:
+
 | column name | Description |
 |-------------| ----------- |
 | run         | raw file name that the spectrum derived from |
@@ -145,12 +146,14 @@ For ambiguous peptides xiFDR assumes that all proteins for the given peptide are
 There are several more columns mappable.
 
 Some column will get their value assigned/guessed from the top columns:
+
 | column name | Description |
 |-------------| ----------- |
-| psmid   | a unique ID for the PSM - if not given will be defined based on run and scan |
+| psmid       | a unique ID for the PSM - if not given will be defined based on run and scan |
 | peptide length 1 | length (in amino acids) of the first peptide - if not given, then it will be guessed from the sequence|
-| peptide length 2 | length (in amino acids) of the second peptide - if not given, then it will be guessed from the sequence|
-Actually when psmid is given run and scan number become optional.
+| peptide length 2 | length (in amino acids) of the second peptide - if not given, then it will be guessed from the sequence |
+
+When psmid is given run and scan number become optional.
 
 
 Some more that can be used xiFDR internal to improve the results of the FDR calculation:
