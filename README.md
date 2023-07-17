@@ -87,6 +87,8 @@ Select the output .csv file. The .fasta database and the .config file used in th
 
 At this stage, any prefilters on spectral quality (see below) should be set by ticking the "filter" box.
 
+At this stage, one can select .fasta file and .config files from xiSEARCH, which are required to write out results in .mzIdentML format. These should be set before pressing "read".
+
 Press "read" to initiate reading of result. Monitor  the bottom left of the window for the message "finished reading file" and the bottom right for memory usage. 
 
 If xiFDR is very slow or crashing, restart the program by increasing the allocated memory by editing the java -Xmx option in the startup .bat/.sh/.command file. The default is -Xmx3G, providing 3 Gb of RAM. Often, this will not be enough for searches with dozens of runs and thousands of matches. Large searches may require tens of Gb to read in. In this case, prefilters (see below) are a useful way to reduce memory requirements if needed.
