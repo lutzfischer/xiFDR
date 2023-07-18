@@ -292,7 +292,7 @@ This can result in a lower number of decoys at a given FDR level than the report
 #### mzIdentML output
 will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXchange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation. Reading in the xiSEARCH "config" file in the "input" tab is required for mzIdentML output.
 
-On some new versions of java (such as 17.0.6 2023-01-17), xiFDR produces the "ExceptionInitializerError" when writing mzIdentML output. In this case, edit the java command in the launcher script (on windows, startWindows.bat):
+On some new versions of java (such as 17.0.6 2023-01-17), xiFDR produces the "ExceptionInitializerError" when writing mzIdentML output. In this case, edit the java command in the launcher script (on windows, startWindows.bat) to:
 
     java -Dfile.encoding=UTF-8 -Xmx3g --add-opens java.base/java.lang=ALL-UNNAMED -jar %mypath%xiFDR-2.1.5.2.jar
 
