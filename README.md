@@ -1,11 +1,12 @@
 xiFDR
 =====
 
+You can download the latest release of xiFDR **[here](https://www.rappsilberlab.org/software/xifdr/)**. The application can then be run by clicking on "startWindows", "startUnix" or "startMacOS". xiFDR is implemented as a java application and requires java 8 or above to run.
+
 xiFDR is an application for estimating false discovery rates (FDRs) in crosslinking mass spectrometry. It filters crosslinked peptide spectra matches (CSMs) to a list of identifications and derives associated confidence values.
 
 It performs a generic FDR calculations for CSMs and resulting peptide pairs, crosslinks and protein pairs. It complies with the standards for data reporting set by the HUPO proteomics standards initiative and can output results in .mzIdentML 1.2.0 format for deposition in databases. It is search engine-agnostic and can therefore perform FDR filtering on results from [xiSEARCH](https://github.com/Rappsilber-Laboratory/xisearch) but also other crosslinking MS search engines. The output can then be directly uploaded to [xiView.org](https://xiview.org/xiNET_website/index.php) for spectral analysis, network visualization and mapping to structures.
 
-You can download the latest release of xiFDR from https://www.rappsilberlab.org/software/xifdr/ . xiFDR is implemented as a java application and requires java 8 or above to run.
 
 For questions regarding usage of xiFDR, please open a [discussion](https://github.com/Rappsilber-Laboratory/XiSearch/discussions).
 
@@ -86,6 +87,8 @@ Select the output .csv file. The .fasta database and the .config file used in th
 
 At this stage, any prefilters on spectral quality (see below) should be set by ticking the "filter" box.
 
+At this stage, one can select .fasta file and .config files from xiSEARCH, which are required to write out results in .mzIdentML format. These should be set before pressing "read".
+
 Press "read" to initiate reading of result. Monitor  the bottom left of the window for the message "finished reading file" and the bottom right for memory usage. 
 
 If xiFDR is very slow or crashing, restart the program by increasing the allocated memory by editing the java -Xmx option in the startup .bat/.sh/.command file. The default is -Xmx3G, providing 3 Gb of RAM. Often, this will not be enough for searches with dozens of runs and thousands of matches. Large searches may require tens of Gb to read in. In this case, prefilters (see below) are a useful way to reduce memory requirements if needed.
@@ -94,7 +97,7 @@ If xiFDR is very slow or crashing, restart the program by increasing the allocat
 #### prefilters
 xiSEARCH provides many features of CSMs that may be used to prefilter the results prior to FDR estimation. Doing so equally on targets and decoys prior to FDR estimation retains the accuracy of FDR, while doing score filtering or other filters post FDR estimation generates results with unknown error rates. We recommend doing this only after having a look at the FDR-filtered results without any prefilters.
 
-The prefilters may be toggled in the "input" tab by clicking the "filter" option. These are generally used after a first look at results without prefilters if spectra of low quality are still passing the FDR. Some of the commonly used prefilters (for FDR calculation performed on xiSEARCH results, especially on large scale searches) are
+The prefilters may be toggled in the "input" tab by clicking the "filter" option. These are generally used after a first look at results without prefilters if spectra of low quality are still passing the FDR. A sufficient number of target-target CSMs are still needed to estimate an accurate FDR. xiFDR will therefore warn you once you attempt to calculate FDR if there are too many decoy or not enough target hits at each particular FDR level ("not enough TT"). Some of the commonly used prefilters (for FDR calculation performed on xiSEARCH results, especially on large scale searches) are
 
 | Filter name                                         | Description                                                                                                                                                    | Commonly set to               |
 |-----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
@@ -104,6 +107,8 @@ The prefilters may be toggled in the "input" tab by clicking the "filter" option
 | delta                                               | only spectra where the best match is x times better than the second best by score                                                                              | >1.2                          |
 | peptide1/2 CCPepFragmentDoubletCount                | For cleavable crosslinkers, only consider spectra where at least X doublets are found on peptide 1/2                                                           | >0                            |
 | fragment CCPepDoubletCount                          | For cleavable crosslinkers, only consider spectra where at least X doublets are found on either peptide. usually set to greater than 0 in large scale searches | >0                            |
+
+
 Notice that these are not meant to be used blindly all at once!
 
 MS-cleavable crosslinkers present several advantages. Their signature crosslinker stubs and peptide doublets help to provide extra confidence, that the peptide masses are correct. This increases the chance that the peptides themselves are correctly identified. xiFDR can make the most out of these features by prefiltering spectra on a minimum of crosslinker stubs observed, and then boosting on stubs and doublets.
@@ -119,6 +124,7 @@ If the results are not in .mzIdentML format, search results should be read in vi
 Following are lists of columns that have to be or can be provided. The name of the columns do not need to match exactly - but can be manually assigned. I.e. if instead of `scan ` the column in the CSV file is called `spectrum number` then these columns can be associated in the interface. Internally  xiFDR has a list of known alternative names for a some of the columns and will try to automatically match the right columns. This can be expanded by selecting "intelligent column matching" before selecting a file - but in both one should check that the correct columns are used.
 
 The minimal set of columns that need to be present are:
+
 | column name | Description |
 |-------------| ----------- |
 | run         | raw file name that the spectrum derived from |
@@ -143,12 +149,14 @@ For ambiguous peptides xiFDR assumes that all proteins for the given peptide are
 There are several more columns mappable.
 
 Some column will get their value assigned/guessed from the top columns:
+
 | column name | Description |
 |-------------| ----------- |
-| psmid   | a unique ID for the PSM - if not given will be defined based on run and scan |
+| psmid       | a unique ID for the PSM - if not given will be defined based on run and scan |
 | peptide length 1 | length (in amino acids) of the first peptide - if not given, then it will be guessed from the sequence|
-| peptide length 2 | length (in amino acids) of the second peptide - if not given, then it will be guessed from the sequence|
-Actually when psmid is given run and scan number become optional.
+| peptide length 2 | length (in amino acids) of the second peptide - if not given, then it will be guessed from the sequence |
+
+When psmid is given run and scan number become optional.
 
 
 Some more that can be used xiFDR internal to improve the results of the FDR calculation:
@@ -294,6 +302,9 @@ The full range of options and their description is available with
     java -jar xiFDR.jar --help
 
 Allocate memory with the java -Xmx flag. E.g. 
+
     java -Xmx5G -jar xiFDR.jar ...
+
+To allocate 5 Gb of RAM. 
 
 Prefilters are not supported in the command line version of xiFDR. However, prefiltering the .csv input file as desired may be done in python/pandas, R, or any other tool prior to loading the input file into xiFDR.
