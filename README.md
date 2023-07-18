@@ -309,7 +309,7 @@ The full range of options and their description is available with
 
 Allocate memory with the java -Xmx flag. E.g. 
 
-    java -Xmx5G -jar xiFDR.jar ...
+    java -Xmx5g -jar xiFDR.jar
 
 To allocate 5 Gb of RAM. 
 
