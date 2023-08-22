@@ -66,6 +66,7 @@ xiFDR allows the user to filter for the desired FDR at the level or levels of in
 xiFDR reads in search results from xiSEARCH in .csv format or from other search engines. It then performs FDR filtering and writes out results in .csv and .mzIdentML formats.
 
 ### The interface
+
 The interface should be loaded via the executable files "startWindows.bat"/"startUnix.sh"/"startMacOS.command" depending on whether the program is run in Windows, Linux or Mac. It is not advisable to run the .jar file directly as this may not detect the correct encoding, which will impact writing the .mzIdentML file.
 
 The interface provides several tabs. 
@@ -85,7 +86,7 @@ xiSEARCH outputs results in a .csv file that contains all crosslinked peptide sp
 
 Select the output .csv file. The .fasta database and the .config file used in the search should also be uploaded in the respective boxes if one plans to generate an .mzIdentML result file.
 
-At this stage, any prefilters on spectral quality (see below) should be set by ticking the "filter" box.
+Any prefilters on spectral quality (see below) should be set by ticking the "filter" box.
 
 At this stage, one can select .fasta file and .config files from xiSEARCH, which are required to write out results in .mzIdentML format. These should be set before pressing "read".
 
@@ -291,6 +292,11 @@ This can result in a lower number of decoys at a given FDR level than the report
 #### mzIdentML output
 will generate a single file .mzIdentML compliant with standards. The file can be deposited in ProteomeXchange repositories or uploaded to xiview.org for visualization. It contains information about the search results, peaks and validation. Reading in the xiSEARCH "config" file in the "input" tab is required for mzIdentML output.
 
+On some new versions of java (such as 17.0.6 2023-01-17), xiFDR produces the "ExceptionInitializerError" when writing mzIdentML output. In this case, edit the java command in the launcher script (on windows, startWindows.bat) to:
+
+    java -Dfile.encoding=UTF-8 -Xmx3g --add-opens java.base/java.lang=ALL-UNNAMED -jar %mypath%xiFDR-2.1.5.2.jar
+
+Which should fix the error (remember to edit the Xmx option for memory allocation as appropriate).
 
 
 ### Running xiFDR from the command line
@@ -303,7 +309,7 @@ The full range of options and their description is available with
 
 Allocate memory with the java -Xmx flag. E.g. 
 
-    java -Xmx5G -jar xiFDR.jar ...
+    java -Xmx5g -jar xiFDR.jar
 
 To allocate 5 Gb of RAM. 
 
