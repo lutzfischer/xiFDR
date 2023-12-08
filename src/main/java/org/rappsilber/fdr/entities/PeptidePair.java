@@ -71,11 +71,11 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
     /**
      * link-site in peptide1
      */
-    private byte pepsite1;
+    private short pepsite1;
     /**
      * link-site in peptide2
      */
-    private byte pepsite2;
+    private short pepsite2;
 
     /**
      * overall score of this pair
@@ -218,9 +218,9 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
 
         this.hashcode = (peptide1.hashCode() + peptide2.hashCode()) % 100000 * 10 + (pepsite1 + pepsite2) % 10;
 
-        this.isLinear = peptide1 == Peptide.NOPEPTIDE || peptide2 == Peptide.NOPEPTIDE;
-        this.isLoop = isLinear && pepsite1 >= 0 && pepsite2 >= 0;
-        this.isInternal = peptide1.sameProtein(peptide2);
+        this.isLinear = psm.isLinear();
+        this.isLoop = psm.isLoop();
+        this.isInternal = psm.isInternal();
         addFDRGroups(psm);
         //this.score = psm.getScore();
         isNonCovalent = psm.isNonCovalent();
@@ -291,9 +291,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
             }
 
         }
-        boolean setFDR = false;
-        addFDRGroups(p);
-
+        boolean setFDR = addFDRGroups(p);
+        
         if (p.isInternal && !isInternal) {
             isInternal = true;
             setFDR = true;

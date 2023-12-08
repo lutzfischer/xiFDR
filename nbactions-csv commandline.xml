@@ -10,8 +10,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/temp/xi_test.csv --uniquePSMs=True</exec.args>
+                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CommandLine --inputlocale=en --outputlocale=en --linkfdr=5.0 --boost=link --boost-between --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,\nEtage 4, Raum 474\nGustav-Meyer-Allee 25\n13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/xitest/FDR_rpfdr5.0 --csvBaseName=hsa_test_Xi1.8.0 --xiconfig=/home/lfischer/xitest/hsa_test_Xi1.8.0.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/load_test/1_P02768.fasta /home/lfischer/xitest/hsa_test_Xi1.8.0.csv</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/WrongFilter/26S/results</exec.workingdir>
             </properties>
         </action>
         <action>
@@ -24,9 +25,10 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/temp/xi_test.csv --uniquePSMs=True</exec.args>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -Xms1g -classpath %classpath org.rappsilber.fdr.CommandLine --inputlocale=en --outputlocale=en --linkfdr=5.0 --boost=link --boost-between --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,\nEtage 4, Raum 474\nGustav-Meyer-Allee 25\n13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/xitest/FDR_rpfdr5.0 --csvBaseName=hsa_test_Xi1.8.0 --xiconfig=/home/lfischer/xitest/hsa_test_Xi1.8.0.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/load_test/1_P02768.fasta /home/lfischer/xitest/hsa_test_Xi1.8.0.csv</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/WrongFilter/26S/results</exec.workingdir>
             </properties>
         </action>
         <action>
@@ -39,8 +41,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/temp/xi_test.csv --uniquePSMs=True</exec.args>
+                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CommandLine --inputlocale=en --outputlocale=en --linkfdr=5.0 --boost=link --boost-between --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,\nEtage 4, Raum 474\nGustav-Meyer-Allee 25\n13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/xitest/FDR_rpfdr5.0 --csvBaseName=hsa_test_Xi1.8.0 --xiconfig=/home/lfischer/xitest/hsa_test_Xi1.8.0.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/load_test/1_P02768.fasta /home/lfischer/xitest/hsa_test_Xi1.8.0.csv</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/WrongFilter/26S/results</exec.workingdir>
             </properties>
         </action>
     </actions>

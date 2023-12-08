@@ -462,7 +462,11 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
                     try {
                         if (connAdmin != null) {
                             String q = "SELECT resultset_uuid as id, name, notes, status, username as user_name, '' AS FASTA, '' as p"
-                                    + " FROM core_search cs inner join core_user as cu on cs.owner_id = cu.id "
+                                    + " FROM "
+                                    + "   (SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id  FROM core_search"
+                                    + "   UNION"
+                                    + "   SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id  FROM core_postprocessing"
+                                    + "   ) cs inner join core_user as cu on cs.owner_id = cu.id "
                                     + (showHidden ? "": "WHERE (cs.deleted is null OR cs.deleted = false)")
                                     + " ORDER BY submit_date DESC;";
                             Statement s = connAdmin.createStatement();

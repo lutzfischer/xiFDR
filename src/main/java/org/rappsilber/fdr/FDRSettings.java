@@ -120,6 +120,9 @@ public interface FDRSettings {
     
     void setFilterConsecutivePeptides(boolean filterConsecutive);
 
+    boolean filterBySelfAndMono();
+    
+    void setfilterBySelfAndMono(boolean filter);
     
     public void setAll(FDRSettings settings);
     
@@ -140,7 +143,12 @@ public interface FDRSettings {
 
     public boolean boostPeptideDoublets();
     public void boostPeptideDoublets(boolean boost);
-    
+
+    public boolean boostMinScore();
+    public void boostMinScore(boolean boost);
+
+    public Double minScore();
+    public void minScore(Double minScore);
     
     public boolean boostPSMs();
     public void boostPSMs(boolean boost);
@@ -168,7 +176,6 @@ public interface FDRSettings {
     
     public double getMinPeptideDoubletFilter();
     public void setMinPeptideDoubletFilter(double d);
-    
     
     public void setMinTD(Integer c) ;
 

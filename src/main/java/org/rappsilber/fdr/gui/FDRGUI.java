@@ -24,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -67,6 +68,7 @@ import org.rappsilber.fdr.XiInFDR;
 import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
+import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.gui.components.settings.FDRSettingsPanel;
@@ -639,6 +641,9 @@ public class FDRGUI extends javax.swing.JFrame {
                             export.setForceExtension(extension);
                             export.setMZMLTemplate(template);
                             export.convertFile(f.getAbsolutePath());
+                            FileWriter fw = new FileWriter(f.getAbsolutePath() + ".summary.csv");
+                            fw.write(fdr.getSummary(m_result));
+                            fw.close();
                             
                             setStatus("done exporting mzIdentML");
                         } catch (Exception ex) {
@@ -749,9 +754,9 @@ public class FDRGUI extends javax.swing.JFrame {
             setStatus("updating PSMs");
             int current = 0;
             int oldCurrent = -100;
-            int all = getResult().psmFDR.size();
+            int all = this.getFdr().getAllPSMs().size();
             int oldPerc = -1;
-            for (PSM p : getResult().psmFDR) {
+            for (PSM p : this.getFdr().getAllPSMs()) {
                 int percent = (int) (current++ *1000.0 /all);
                 if (percent>oldPerc&& current-oldCurrent>100) {
                     setStatus("updating PSMs ("+percent/10.0+"%)" );
@@ -924,6 +929,8 @@ public class FDRGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "No file selected", "no File Selected", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        
+        Protein.DECOY_PREFIX = csvSelect.getDecoyPrefix();
         final CsvCondition filter = csvSelect.getFilter();
         final File config=csvSelect.fbConfigIn.getFile();
         final File fasta=csvSelect.fbFastaIn.getFile();
@@ -960,6 +967,7 @@ public class FDRGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "No file selected", "no File Selected", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        Protein.DECOY_PREFIX = csvSelect.getDecoyPrefix();
 
         setEnableRead(false);
         setEnableCalc(false);
@@ -1314,6 +1322,7 @@ public class FDRGUI extends javax.swing.JFrame {
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsComplete);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsMedium);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsSimple);
+            fdrSettings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
             final FDRSettingsImpl settings = new FDRSettingsImpl(fdrSettings);
             
             getFdr().setMinDecoys(settings.getMinTD());
@@ -1439,6 +1448,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         getFdrSettingsComplete().setMinPeptideStubFilter(state.showMinStubs);
                         getFdrSettingsComplete().setMinPeptideDoubletFilter(state.showMinDoublets);
                         getFdrSettingsComplete().setMinPeptideFragmentsFilter(state.showMinFrags);
+                        getFdrSettingsComplete().minScore(state.showMinScore);
                         getFdrSettingsComplete().setMinDeltaScoreFilter(state.showDelta);
                         getFdrSettingsComplete().setMinPeptideCoverageFilter(state.showPepCoverage);
                         getFdrSettingsComplete().setPeptidePairFDR(state.showPepFDR);

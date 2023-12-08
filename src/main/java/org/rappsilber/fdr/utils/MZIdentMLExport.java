@@ -11,11 +11,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -76,6 +78,7 @@ import uk.ac.ebi.jmzidml.model.mzidml.SpectrumIdentificationResult;
 import uk.ac.ebi.jmzidml.model.mzidml.Tolerance;
 import uk.ac.ebi.jmzidml.model.mzidml.UserParam;
 import uk.ac.ebi.jmzidml.xml.io.MzIdentMLMarshaller;
+import uk.ac.ebi.jmzidml.model.utils.MzIdentMLVersion;
 
 //import uk.ac.liv.mzidconverters.ReadUnimod;
 //import uk.ac.liv.unimod.ModT;
@@ -96,6 +99,7 @@ import rappsilber.config.RunConfig;
 import rappsilber.ms.crosslinker.NonCovalentBound;
 import rappsilber.ms.sequence.AminoAcid;
 import rappsilber.ms.sequence.AminoModification;
+import rappsilber.ms.sequence.ions.AIon;
 import rappsilber.utils.Util;
 import uk.ac.ebi.jmzidml.model.mzidml.PeptideHypothesis;
 import uk.ac.ebi.jmzidml.model.mzidml.ProteinAmbiguityGroup;
@@ -132,7 +136,10 @@ public class MZIdentMLExport {
         new String[]{"MS:1001918", "2-iodobenzoate"},
         new String[]{"MS:1001955", "no cleavage"},
         new String[]{"MS:1001956", "unspecific cleavage"}};
+    
 
+
+    
     HashMap<String,String[]> name2Enzyme=new HashMap<String, String[]>();
     {
         for (String[] e : psiEnzymes) {
@@ -425,7 +432,7 @@ public class MZIdentMLExport {
     public void convertFile(String outputfile) throws Exception {
         convertFile(fdr, fdrResult, outputfile);
     }
-    
+
     private void convertFile(OfflineFDR fdr, FDRResult fdrResult, String outputfile) throws Exception {
         try {
             unimodDoc = new ReadUnimod();
@@ -598,6 +605,8 @@ public class MZIdentMLExport {
         
         int proteingrouppairID = 1;
         HashMap<ProteinAmbiguityGroup,HashMap<ProteinAmbiguityGroup,Integer>> protPair2ID = new HashMap<ProteinAmbiguityGroup,HashMap<ProteinAmbiguityGroup,Integer>>();
+        HashMap<ProteinGroupPair,CvParam> protein_pair_globa_fdr_term1 = new HashMap<>();
+        HashMap<ProteinGroupPair,CvParam> protein_pair_globa_fdr_term2 = new HashMap<>();
         int factor = (int) Math.pow(10,Math.round(Math.log10(fdrResult.proteinGroupLinkFDR.size()+1)+0.5));
         
         for (ArrayList<PSM> psms : allSpectra.values()) {
@@ -628,7 +637,6 @@ public class MZIdentMLExport {
             HashMap<String, SpectrumIdentificationItem> sIIMap = new HashMap<String, SpectrumIdentificationItem>();
             HashSet<org.rappsilber.fdr.entities.Peptide> allPeps = new HashSet<org.rappsilber.fdr.entities.Peptide>();
             HashMap<String,SpectraData> runData = new HashMap<String,SpectraData>();
-
             for (PSM psm : psms) {
                 xlModId++;
                 org.rappsilber.fdr.entities.PeptidePair peppair = psm.getPeptidePair();
@@ -664,7 +672,8 @@ public class MZIdentMLExport {
                     name2xiXL.put(xl_name, selected_xl);
 
                 }
-                psmXLMass = massNormalise(selected_xl.getCrossLinkedMass());
+                if (selected_xl != null)
+                    psmXLMass = massNormalise(selected_xl.getCrossLinkedMass());
                 //In mzIdentML we have 1 SepctrumIdentificationItem (SII) linked to 1 Peptide item
                 //via the peptide_ref attribute. Each Peptide item is a unique combination of:
                 // peptidesequence + modifications + substitutionModifications.
@@ -694,7 +703,7 @@ public class MZIdentMLExport {
                         // crosslink -> two peptides
                         psmpeps = new Peptide[2];
                         peppairkey = pp.getPeptide1().getId() +"_"+pp.getPeptide1().getSequence() + "_" + pp.getPeptide2().getId()  +"_"+pp.getPeptide2().getSequence()+
-                                 "_" + pp.getPeptideLinkSite1() + "_" + pp.getPeptideLinkSite2();
+                                 "_" + pp.getPeptideLinkSite1() + "_" + pp.getPeptideLinkSite2() + "_" + psm.getCrosslinker();
                     }
                     //psmpeps = new Peptide[pp_peptides.size()];
                     
@@ -861,7 +870,7 @@ public class MZIdentMLExport {
                             dbSeq = new DBSequence();
                             foundProts.put(protKey, dbSeq);
                             dbSeq.setAccession(prot.getAccession());
-                            dbSeq.setName(prot.getDescription());
+                            dbSeq.setName(prot.getName());
                             dbSeq.getCvParam().add(makeCvParam("MS:1001088", "protein description", psiCV,prot.getDescription()));
                             if (prot.getSize() >0)
                                 dbSeq.setLength(prot.getSize());
@@ -1056,15 +1065,29 @@ public class MZIdentMLExport {
                     CvParam cvp1 = null;
                     CvParam cvp2 = null;
                     if (pag2 != null) {
+                        ProteinGroupPair pgp = psm.getLinks().iterator().next().getProteinGroupPair();
+                        ProteinGroupPair pgp_final =  result.proteinGroupPairFDR.filteredGet(pgp);
+                        double pgp_fdr = (pgp_final == null?pgp.getFDR(): pgp_final.getFDR());
                         if (passed) {
-                            ProteinGroupPair pgp = psm.getLinks().iterator().next().getProteinGroupPair();
-                            cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".a:null:"+pgp.getFDR()+":"+passed);
-                            cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".b:null:"+pgp.getFDR()+":"+passed);
+                            Iterator<ProteinGroupLink> linkiter =  psm.getLinks().iterator();                                    
+                            CvParam prev_cvp1 = protein_pair_globa_fdr_term1.get(pgp);
+                            if (prev_cvp1 != null) {
+                                prev_cvp1.setValue((currentppiID*factor)+".a:null:"+pgp_fdr+":"+passed);
+                                protein_pair_globa_fdr_term2.get(pgp).setValue((currentppiID*factor)+".b:null:"+pgp_fdr+":"+passed);
+                            } else {
+                                cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".a:null:"+pgp_fdr+":"+passed);
+                                cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".b:null:"+pgp_fdr+":"+passed);
+                                protein_pair_globa_fdr_term1.put(pgp,cvp1);
+                                protein_pair_globa_fdr_term2.put(pgp,cvp2);
+                            }
                         } else {
-                            ProteinGroupPair pgp = psm.getLinks().iterator().next().getProteinGroupPair();
-                            if (pgp.getFDR() != -1) {
-                                cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".a:null:"+pgp.getFDR()+":"+passed);
-                                cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".b:null:"+pgp.getFDR()+":"+passed);
+                            if (protein_pair_globa_fdr_term1.get(pgp)== null) {
+                                if (pgp.getFDR() != -1) {
+                                    cvp1 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".a:null:"+pgp_fdr+":"+passed);
+                                    cvp2 = makeCvParam("MS:1002676", "protein-pair-level global FDR", psiCV,(currentppiID*factor)+".b:null:"+pgp_fdr+":"+passed);
+                                    protein_pair_globa_fdr_term1.put(pgp,cvp1);
+                                    protein_pair_globa_fdr_term2.put(pgp,cvp2);
+                                }
                             }
                         }
                     }
@@ -1493,7 +1516,7 @@ public class MZIdentMLExport {
         unimodCV.setFullName("UNIMOD");
 
         xlmodCV = new Cv();
-        xlmodCV.setUri(xlmod.getUsedURL());
+        xlmodCV.setUri("https://raw.githubusercontent.com/HUPO-PSI/mzIdentML/master/cv/XLMOD.obo");
         xlmodCV.setId(xlmodID);
         xlmodCV.setFullName("XLMOD");
         
@@ -2022,6 +2045,31 @@ public class MZIdentMLExport {
             }
 
             cvParamList.add(makeCvParam("MS:1002494", "cross-linking search", psiCV));
+            if (conf != null) {
+                ArrayList<Method> fragm = conf.getFragmentMethods();
+//                new String[] {"MS:1001108", "param: a ion"},
+//                new String[] {"MS:1001118", "param: b ion"},
+//                new String[] {"MS:1001108", "param: a ion"},
+//                new String[] {"MS:1001261", "param: x ion"},
+//                new String[] {"MS:1001262", "param: y ion"},
+//                new String[] {"MS:1001263", "param: z ion"}
+    
+                for (Method m : fragm) {
+                    if (m.getDeclaringClass() == AIon.class) {
+                        cvParamList.add(makeCvParam("MS:1001108", "param: a ion", psiCV));
+                    } else if (m.getDeclaringClass() == rappsilber.ms.sequence.ions.BIon.class) {
+                        cvParamList.add(makeCvParam("MS:1001118", "param: b ion", psiCV));
+                    } else if (m.getDeclaringClass() == rappsilber.ms.sequence.ions.CIon.class) {
+                        cvParamList.add(makeCvParam("MS:1001119", "param: c ion", psiCV));
+                    } else if (m.getDeclaringClass() == rappsilber.ms.sequence.ions.XIon.class) {
+                        cvParamList.add(makeCvParam("MS:1001261", "param: x ion", psiCV));
+                    } else if (m.getDeclaringClass() == rappsilber.ms.sequence.ions.YIon.class) {
+                        cvParamList.add(makeCvParam("MS:1001262", "param: y ion", psiCV));
+                    } else if (m.getDeclaringClass() == rappsilber.ms.sequence.ions.ZIon.class) {
+                        cvParamList.add(makeCvParam("MS:1001263", "param: z ion", psiCV));
+                    }
+                }
+            }
 
     //        // state that we aredoing something with cross-links
     //        cvParamList.add(makeCvParam("MS:100XXXX", "crosslinking search", psiCV));
@@ -2163,6 +2211,8 @@ public class MZIdentMLExport {
             //<cvParam accession="MS:1001494" name="no threshold" cvRef="PSI-MS" />
             sipList.add(siProt);
             siProtocol.put(sID.toString(), siProt);
+            if (sID.toString().trim().length()==0)
+                siProtocol.put(null, siProt);
         }
         return true;
     }
@@ -2175,8 +2225,14 @@ public class MZIdentMLExport {
         HashMap<Double, ArrayList<AminoModification>> sameMassModificationPepCterm = new HashMap<>();
         
         for (AminoModification am : modList) {
-            if (am.BaseAminoAcid != AminoAcid.X) {
-                Double mass = massNormalise(am.weightDiff);
+            AminoAcid  base = am.BaseAminoAcid;
+            Double weightDiff = am.weightDiff;
+            while (base instanceof AminoModification) {
+                weightDiff += ((AminoModification)base).weightDiff;
+                base= ((AminoModification)base).BaseAminoAcid;
+            }
+            if (base != AminoAcid.X) {
+                Double mass = massNormalise(weightDiff);
                 ArrayList<AminoModification> mods = null;
                 if (am.prot_position == AminoModification.POSITIONAL_NTERMINAL) {
                     mods = getMassModiciations(sameMassModificationProtNterm, mass);
@@ -2221,9 +2277,14 @@ public class MZIdentMLExport {
             ArrayList<AminoModification> mods = sameMassModification.get(mass);
             ArrayList<String> cResidues = new ArrayList<String>(mods.size());
             AminoModification am = null;
+            AminoAcid  base = null;
             for (int i = 0; i < mods.size(); i++) {
                 am = mods.get(i);
-                String residue = am.BaseAminoAcid.SequenceID;
+                base = am.BaseAminoAcid;
+                while (base instanceof AminoModification) {
+                    base= ((AminoModification)base).BaseAminoAcid;
+                }                
+                String residue = base.SequenceID;
                 if (residue.contains("X")) {
                     cResidues.clear();
                     cResidues.add(".");
@@ -2231,14 +2292,17 @@ public class MZIdentMLExport {
                 }
                 cResidues.add(residue);
             }
+            convertTermModificationAddSearcModList(cResidues, am, base, fragmentIsMono, fdr, pepNTerm, pepCTerm, protNTerm, protCTerm, searchModList);
+        }
+    }
+
+    protected void convertTermModificationAddSearcModList(ArrayList<String> cResidues, AminoModification am, AminoAcid base, boolean fragmentIsMono, OfflineFDR fdr1, boolean pepNTerm, boolean pepCTerm, boolean protNTerm, boolean protCTerm, List<SearchModification> searchModList) {
+        if (cResidues.size() > 0) {
             if (cResidues.size()>20) {
                 cResidues.clear();
                 cResidues.add(".");
             }
-            SearchModification searchMod = translateToSearchModification(
-                    am, cResidues, fragmentIsMono, 
-                    false, ((XiInFDR) fdr).getConfig(),
-                    pepNTerm, pepCTerm, protNTerm, protCTerm);
+            SearchModification searchMod = translateToSearchModification(am, base, cResidues, fragmentIsMono, false, ((XiInFDR) fdr1).getConfig(), pepNTerm, pepCTerm, protNTerm, protCTerm);
             searchModList.add(searchMod);
         }
     }
@@ -2266,7 +2330,8 @@ public class MZIdentMLExport {
      * @return
      */
     private SearchModification translateToSearchModification(
-            AminoModification reportedMod, 
+            AminoModification reportedMod,
+            AminoAcid base,
             Collection<String> modResidues, 
             boolean fragmentIsMono, 
             boolean isFixedMod, 
@@ -2274,7 +2339,7 @@ public class MZIdentMLExport {
             boolean pepNTerm, boolean pepCTerm,
             boolean protNTerm, boolean protCTerm) {
         Vector<String> residues = new Vector<String>();
-        double monoMass = reportedMod.weightDiff;
+        double monoMass = reportedMod.mass - base.mass;
 
         residues.addAll(modResidues);
         uk.ac.liv.unimod.ModT unimod = unimodDoc.getModByMass(monoMass, unimodMassError, fragmentIsMono, residues);
@@ -2282,30 +2347,28 @@ public class MZIdentMLExport {
         SearchModification searchMod = new SearchModification();
         searchMod.setFixedMod(isFixedMod);
 
-        if (unimod == null && reportedMod.BaseAminoAcid != AminoAcid.X) {
+        if (unimod == null && base != AminoAcid.X) {
             String modname = reportedMod.SequenceID.replaceAll("[A-Z]", "");
             boolean[] term =new boolean[]{false};
-            XLModEntry e = xlmod.guessModificationCached(new XLModQuery(monoMass, modname, new String[]{reportedMod.BaseAminoAcid.SequenceID}, term, term, term, term));
+            XLModEntry e = xlmod.guessModificationCached(new XLModQuery(monoMass, modname, new String[]{base.SequenceID}, term, term, term, term));
             
             if (e==null) {
                 // could be a cross-linker specific modification
                 for (rappsilber.ms.crosslinker.CrossLinker cl :conf.getCrossLinker()) {
-                    e = xlmod.guessModificationCached(new XLModQuery(monoMass, cl.getName(), new String[]{reportedMod.BaseAminoAcid.SequenceID}, term, term, term, term));                
+                    e = xlmod.guessModificationCached(new XLModQuery(monoMass, cl.getName(), new String[]{base.SequenceID}, term, term, term, term));                
                 }
             }
             // nothing found wih name so try without name
             if (e==null) {
                 
-                e = xlmod.guessModificationCached(new XLModQuery(monoMass, new String[]{reportedMod.BaseAminoAcid.SequenceID}, term, term, term, term));
+                e = xlmod.guessModificationCached(new XLModQuery(monoMass, new String[]{base.SequenceID}, term, term, term, term));
             }
             if  (e == null) {
                 searchMod.getCvParam().add(makeCvParam("MS:1001460", "unknown modification", psiCV));
             } else {
                 searchMod.getCvParam().add(makeCvParam(e.getId(), e.getName(), xlmodCV));
             }
-
-            
-        } else if (reportedMod.BaseAminoAcid != AminoAcid.X) {
+        } else if (base != AminoAcid.X) {
 
             searchMod.getCvParam().add(makeCvParam("UNIMOD:" + unimod.getRecordId(), unimod.getTitle(), unimodCV));
         }
@@ -2317,7 +2380,7 @@ public class MZIdentMLExport {
             searchMod.getCvParam().add(makeCvParam("MS:1001190", "modification specificity C-term", psiCV));
         } else if (protCTerm) {
             searchMod.getCvParam().add(makeCvParam("MS:1002058", "modification specificity protein C-term", psiCV));
-        } else if (protCTerm) {
+        } else if (protNTerm) {
             searchMod.getCvParam().add(makeCvParam("MS:1002057", "modification specificity protein N-term", psiCV));
         }
 
@@ -2498,7 +2561,7 @@ public class MZIdentMLExport {
         ArrayList<SearchDatabase> dbs = searchDatabases.get(searchID);
         if (dbs == null) {
             ArrayList<String> dbName = new ArrayList<String>();
-            ArrayList<Integer> dbId = new ArrayList<Integer>();
+            ArrayList<String> dbId = new ArrayList<String>();
             int c = ((XiInFDR)fdr).getFastas(searchID, dbId, dbName);
             
             dbs = new ArrayList<SearchDatabase>(c);
@@ -2540,24 +2603,23 @@ public class MZIdentMLExport {
     
     
     
-    
-
+            
+            
     public void writeMzidFile(String outputfile) {
-
+            
         try {
-            FileWriter fwriter = null;
-            fwriter = new FileWriter(outputfile);
+            FileWriter writer = new FileWriter(outputfile);
 
-            MzIdentMLMarshaller m = new MzIdentMLMarshaller();
+            MzIdentMLMarshaller m = new MzIdentMLMarshaller(MzIdentMLVersion.Version_1_2);
 
-            StreamReplaceWriter writer = new StreamReplaceWriter(fwriter, "xmlns=\"http://psidev.info/psi/pi/mzIdentML/1.1\"", "");
+            //StreamReplaceWriter writer = new StreamReplaceWriter(fwriter, "xmlns=\"http://psidev.info/psi/pi/mzIdentML/1.1\"", "");
 
 
             writer.write(m.createXmlHeader());
             writer.write("\n");
 
             // I replaced all 1.1 with 1.2 in the start tag - I am not sure if really all need to be replaced
-            writer.write(m.createMzIdentMLStartTag("12345").replace("1.1","1.2") + "\n");
+            writer.write(m.createMzIdentMLStartTag("12345") + "\n");
 
             
 //            // XML header

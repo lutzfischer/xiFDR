@@ -60,6 +60,9 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean boostPeptideStubs;
     private double minMinPeptideDoubpletFilter;
     private double minPeptideStubFilter;
+    private boolean filterBySelfAndMono = false;
+    private boolean boostMinScore;
+    private Double minScore = 0d;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -369,6 +372,39 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public void setMinPeptideDoubletFilter(double d) {
         this.minMinPeptideDoubpletFilter = d;
+    }
+
+    @Override
+    public boolean filterBySelfAndMono() {
+        return filterBySelfAndMono;
+    }
+
+    @Override
+    public void setfilterBySelfAndMono(boolean filter) {
+        filterBySelfAndMono = filter;
+    }
+
+    
+    
+    @Override
+    public boolean boostMinScore(){
+        return this.boostMinScore;
+    }
+
+    @Override
+    public void boostMinScore(boolean boost){
+        this.boostMinScore = boost;
+    }
+
+    
+    @Override
+    public Double minScore(){
+        return this.minScore;
+    }
+
+    @Override
+    public void minScore(Double minScore){
+        this.minScore = minScore;
     }
     
 }

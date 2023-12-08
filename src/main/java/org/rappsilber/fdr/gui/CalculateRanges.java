@@ -275,6 +275,7 @@ public class CalculateRanges extends javax.swing.JFrame {
                         fdrgui.getFdrSettingsComplete().setMinPeptideDoubletFilter(state.showMinDoublets);
                         fdrgui.getFdrSettingsComplete().setMinPeptideFragmentsFilter(state.showMinFrags);
                         fdrgui.getFdrSettingsComplete().setMinDeltaScoreFilter(state.showDelta);
+                        fdrgui.getFdrSettingsComplete().minScore(state.showMinScore);
                         fdrgui.getFdrSettingsComplete().setMinPeptideCoverageFilter(state.showPepCoverage);
                         fdrgui.getFdrSettingsComplete().setPeptidePairFDR(state.showPepFDR);
                         fdrgui.getFdrSettingsComplete().setPSMFDR(state.showPSMFDR);

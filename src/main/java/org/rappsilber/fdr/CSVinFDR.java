@@ -69,7 +69,9 @@ public class CSVinFDR extends OfflineFDR {
         {"lengthpeptide1", "peptide1 length", "peptide1 length", "peptide length 1", "length1", "aa_len_p1"},
         {"lengthpeptide2", "peptide2 length", "peptide2 length", "peptide length 2", "length2", "aa_len_p2"},
         {"peptide1", "peptide 1", "pepseq1", "peptide", "modified sequence", "sequence_p1"},
-        {"peptide2" , "peptide 2", "pepseq2", "sequence_p2"},
+        {"peptide2", "peptide 2", "pepseq2", "sequence_p2"},
+        {"protein name 1", "name 1", "protname1"},
+        {"protein name 2", "name 2", "protname2"},
         {"precursermz", "precursor mz", "experimental mz", "exp mz"},
         {"precursor charge", "precoursorcharge", "charge"},
         {"calculated mass", "calc mass", "theoretical mass"},
@@ -97,6 +99,28 @@ public class CSVinFDR extends OfflineFDR {
         {"calculated mass", "calc mass"},
         {"retention time", "elution time", "elution time start", "rt"}
     };
+    
+    public class Pair<T,Y> {
+        public T v1;
+        public Y v2;
+
+        public Pair(T v1, Y v2) {
+            this.v1 = v1;
+            this.v2 = v2;
+        }
+
+        public T v1() {
+            return v1;
+        }
+
+        public Y v2() {
+            return v2;
+        }
+
+        public Pair() {
+        }
+
+    }    
     
     public CSVinFDR() {
     }
@@ -152,6 +176,61 @@ public class CSVinFDR extends OfflineFDR {
     public boolean readCSV(File f) throws FileNotFoundException, IOException, ParseException  {
         return readCSV(CsvParser.guessCsv(f, 50), null);
     }
+    
+    public String[] convert_to_array_by_ref(String values, String[] referenceArray, CsvParser fieldsplitter, long lineNumber){
+        String[] descriptions1 = fieldsplitter.splitLine(values).toArray(new String[0]);
+        if (!values.trim().isEmpty()) {
+            // some discrepancy between accession and description field?
+            if (descriptions1.length != referenceArray.length) {
+                if (referenceArray.length == 1) {
+                    // probably some unquoted ";" in description - just ignore it
+                    descriptions1 = new String[]{values};
+                } else {
+                    Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                    descriptions1 = new String[referenceArray.length];
+                    Arrays.fill(descriptions1, "");
+                }
+            }
+        } else {
+
+            descriptions1 = new String[referenceArray.length];
+            Arrays.fill(descriptions1, "");
+        }
+        return descriptions1;
+
+    }
+
+    public Pair<String[],String[]> match_accession_to_peppositions(String[] accessions,String[] descriptions, String[] pepPositions, int lineNumber) throws ParseException {
+        if (accessions.length ==1) {
+            if (pepPositions.length > 1) {
+                String[] daccessions1 = new String[pepPositions.length];
+                String[] ddescriptions1 = new String[pepPositions.length];
+                for (int i = 0; i< pepPositions.length; i++) {
+                    daccessions1[i] = accessions[0];
+                    ddescriptions1[i] = descriptions[0];
+                }
+                accessions = daccessions1;
+                descriptions = ddescriptions1;
+            }
+        } else if (accessions.length != pepPositions.length){
+            throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
+        }
+        return new Pair<String[],String[]>(accessions,descriptions);
+    }
+    
+    public void merge_name_into_description(String[] descriptions, String[] names) {
+        for (int i = 0; i< names.length;i++) {
+            if (names[i] != null) {
+                String n = names[i].trim();
+                if (n.length()>0) {
+                    if (descriptions[i] == null || descriptions[i].trim().length() == 0)
+                        descriptions[i] = n;
+                    else
+                        descriptions[i] = descriptions[i] + ((char)0) + n;
+                }
+            }
+        }
+    }
 
     public boolean readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException  {
         OfflineFDR.getXiFDRVersion();
@@ -181,6 +260,8 @@ public class CSVinFDR extends OfflineFDR {
         int cscore = getColumn(csv,"score",false);
         int caccession1 = getColumn(csv,"accession1",false);
         int caccession2 = getColumn(csv,"accession2",false);
+        Integer cname1 = getColumn(csv,"name1",true);
+        Integer cname2 = getColumn(csv,"name2",true);
         Integer cdescription1 = getColumn(csv,"description1",true);
         Integer cdescription2 = getColumn(csv,"description2",true);
         Integer cpeptide_position1 = getColumn(csv,"peptide position 1",true);
@@ -306,8 +387,10 @@ public class CSVinFDR extends OfflineFDR {
                 int charge = csv.getInteger(cprecZ);
                 Double score = csv.getDouble(cscore);
                 String saccession1 = csv.getValue(caccession1);
+                String sname1 = csv.getValue(cname1);
                 String sdescription1 = csv.getValue(cdescription1);
                 String saccession2 = csv.getValue(caccession2);
+                String sname2 = csv.getValue(cname2);
                 String sdescription2 = csv.getValue(cdescription2);
                 String spepPosition1 = csv.getValue(cpeptide_position1);
                 String spepPosition2= csv.getValue(cpeptide_position2);
@@ -316,10 +399,13 @@ public class CSVinFDR extends OfflineFDR {
                 }
 
                 if (saccession2 == null || saccession2.trim().isEmpty())  {
-                    saccession2 = " ";
+                    saccession2 = "";
+                }
+                if (sname2 == null || sname2.trim().isEmpty())  {
+                    sname2 = "";
                 }
                 if (sdescription2 == null || sdescription2.trim().isEmpty())  {
-                    sdescription2 = " ";
+                    sdescription2 = "";
                 }
                 
 
@@ -336,78 +422,23 @@ public class CSVinFDR extends OfflineFDR {
                 // split field by semicolon - but look out for quoted ";"
                 String[] accessions1 = accessionParser.splitLine(saccession1).toArray(new String[0]);
                 String[] accessions2 = accessionParser.splitLine(saccession2).toArray(new String[0]);
-                String[] descriptions1 = accessionParser.splitLine(sdescription1).toArray(new String[0]);
-                String[] descriptions2 = accessionParser.splitLine(sdescription2).toArray(new String[0]);
+                String[] name1 = convert_to_array_by_ref(sname1, accessions1,accessionParser,lineNumber);
+                String[] name2 = convert_to_array_by_ref(sname2, accessions2,accessionParser,lineNumber);
+                String[] descriptions1 = convert_to_array_by_ref(sdescription1, accessions1,accessionParser,lineNumber);
+                String[] descriptions2 = convert_to_array_by_ref(sdescription2, accessions2,accessionParser,lineNumber);
                 String[] pepPositions1 = accessionParser.splitLine(spepPosition1).toArray(new String[0]);
                 String[] pepPositions2 = accessionParser.splitLine(spepPosition2).toArray(new String[0]);
 
-                if (!sdescription1.isEmpty()) {
-                    // some discrepancy between accession and description field?
-                    if (descriptions1.length != accessions1.length) {
-                        if (accessions2.length == 1) {
-                            // probably some unquoted ";" in description - just ignore it
-                            descriptions2 = new String[]{sdescription2};
-                        } else {
-                            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
-                            descriptions1 = new String[accessions1.length];
-                            Arrays.fill(descriptions1, "");
-                        }
-                    }
-                } else {
-                    
-                    descriptions1 = new String[accessions1.length];
-                    Arrays.fill(descriptions1, "");
-                }
+                Pair<String[],String[]> acc_desc  = match_accession_to_peppositions(accessions1, descriptions1, pepPositions1, lineNumber);
+                accessions1 = acc_desc.v1();
+                descriptions1 = acc_desc.v2();
+                merge_name_into_description(descriptions1, name1);
 
-                if (!sdescription2.isEmpty()) {
-                    // some discrepancy between accession and description field?
-                    if (descriptions2.length != accessions2.length) {
-                        if (accessions2.length == 1) {
-                            // probably some unquoted ";" in description - just ignore it
-                            descriptions2 = new String[]{sdescription2};
-                        } else {
-                            // could be a lot of things - ignore descrition for now
-                            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
-                            descriptions2 = new String[accessions2.length];
-                            Arrays.fill(descriptions2, "");
-                        }
-                    }
-                } else {
-                    
-                    descriptions2 = new String[accessions2.length];
-                    Arrays.fill(descriptions2, "");
-                }
-
-                if (accessions1.length ==1) {
-                    if (pepPositions1.length > 1) {
-                        String[] daccessions1 = new String[pepPositions1.length];
-                        String[] ddescriptions1 = new String[pepPositions1.length];
-                        for (int i = 0; i< pepPositions1.length; i++) {
-                            daccessions1[i] = saccession1;
-                            ddescriptions1[i] = descriptions1[0];
-                        }
-                        accessions1 = daccessions1;
-                        descriptions1 = ddescriptions1;
-                    }
-                } else if (accessions1.length != pepPositions1.length){
-                    throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
-                }
-
-                if (accessions2.length ==1) {
-                    if (pepPositions2.length > 1) {
-                        String[] daccessions2 = new String[pepPositions2.length];
-                        String[] ddescriptions2 = new String[pepPositions2.length];
-                        for (int i = 0; i< pepPositions1.length; i++) {
-                            daccessions2[i] = saccession2;
-                            ddescriptions2[i] = descriptions2[0];
-                        }
-                        accessions2 = daccessions2;
-                        descriptions2 = ddescriptions2;
-                    }
-                } else if (accessions2.length != pepPositions2.length){
-                    throw new ParseException("Don't know how to handle different numbers of proteins and peptide positions", lineNumber);
-                }
-
+                acc_desc  = match_accession_to_peppositions(accessions2, descriptions2, pepPositions2, lineNumber);
+                accessions2 = acc_desc.v1();
+                descriptions2 = acc_desc.v2();
+                merge_name_into_description(descriptions2, name2);
+                
                 int[] ipeppos1 = new int[pepPositions1.length];
                 for (int i = 0; i<pepPositions1.length; i++) {
                     ipeppos1[i] = Integer.parseInt(pepPositions1[i].trim().replace(",", ""));
@@ -423,16 +454,16 @@ public class CSVinFDR extends OfflineFDR {
                 String crosslinker = cCrosslinker == null ? "":csv.getValue(cCrosslinker);
                 double crosslinkerMass = cCrosslinkerMass == null ? -1:csv.getDouble(cCrosslinkerMass);
                 String negativeCase = null;
-                String poisitiveCase = null;
+                String positiveCase = null;
                 if (cNegativeGrouping != null && cNegativeGrouping >=0) {
                     negativeCase = csv.getValue(cNegativeGrouping);
                     if (negativeCase.isEmpty())
                         negativeCase=null;
                 }
                 if (cPositiveGrouping != null && cPositiveGrouping >=0) {
-                    poisitiveCase = csv.getValue(cPositiveGrouping);
-                    if (poisitiveCase.isEmpty())
-                        poisitiveCase=null;
+                    positiveCase = csv.getValue(cPositiveGrouping);
+                    if (positiveCase.isEmpty())
+                        positiveCase=null;
                 }
 
 
@@ -446,8 +477,8 @@ public class CSVinFDR extends OfflineFDR {
                                 descriptions2[p2], ipeppos1[p1], ipeppos2[p2], 
                                 peptide1score, peptide2score, negativeCase,crosslinker,run,scan);
                         psm.setCrosslinkerModMass(crosslinkerMass);
-                        if (poisitiveCase != null) {
-                            psm.setPositiveGrouping(poisitiveCase);
+                        if (positiveCase != null) {
+                            psm.setPositiveGrouping(positiveCase);
                         }
                         Double expMZ = null;
                         if (cExpMZ != null) {
@@ -492,6 +523,7 @@ public class CSVinFDR extends OfflineFDR {
                 
                 if (cPepStubs != null) {
                     double s = csv.getDouble(cPepStubs);
+                    psm.peptidesWithStubs =  (int)s;
                     psm.addOtherInfo("PeptidesWithStubs", s);
                     if (s >0)  {
                         stubsFound(true);
@@ -499,8 +531,8 @@ public class CSVinFDR extends OfflineFDR {
                     
                 }
                 if (cPepDoublets != null) {
-                    
-                    psm.addOtherInfo("PeptidesWithDoublets", csv.getDouble(cPepDoublets));
+                    psm.addOtherInfo("PeptidesWithDoublets", csv.getInteger(cPepDoublets));
+                    psm.peptidesWithDoublets = csv.getInteger(cPepDoublets);
                     
                 }
                 

@@ -48,6 +48,7 @@ public class FDRSettingsImpl implements FDRSettings {
     protected boolean groupByPPI = false;
     int minTD = DEFAULT_MIN_TD_COUNT;
     private boolean filterConsectutivePeptides = false;
+    private boolean filterBySelfAndMono = false;
     private double subScoreCutOff = 1;
     private boolean boostPepCoverage = true;
     private Boolean psmLocalFDR = null;
@@ -68,8 +69,10 @@ public class FDRSettingsImpl implements FDRSettings {
     private boolean twoStepBoost = true;
     private boolean boostPeptideStubs;
     private boolean boostPeptideDoublets;
+    private boolean boostMinScore;
     private double minMinPeptideDoubpletFilter;
     private double minPeptideStubFilter;
+    private double minScore = 0d;
 
     public FDRSettingsImpl() {
     }
@@ -322,8 +325,6 @@ public class FDRSettingsImpl implements FDRSettings {
         to.boostPeptidePairs(from.boostPeptidePairs());
         to.boostProteins(from.boostProteins());
         to.boostMinFragments(from.boostMinFragments());
-//        to.boostSubScores(from.boostSubScores());
-//        to.setSubScoreCutOff(from.getSubScoreCutOff());
         to.setFilterConsecutivePeptides(from.filterConsecutivePeptides());
         to.psmLocalFDR(from.psmLocalFDR());    
         to.peppairLocalFDR(from.peppairLocalFDR());    
@@ -343,7 +344,9 @@ public class FDRSettingsImpl implements FDRSettings {
         to.ignoreValidityChecks(from.ignoreValidityChecks());
         to.setGroupByCrosslinkerStubs(from.getGroupByCrosslinkerStubs());
         to.twoStepOptimization(from.twoStepOptimization());
-
+        to.setfilterBySelfAndMono(from.filterBySelfAndMono());
+        to.boostMinScore(from.boostMinScore());
+        to.minScore(from.minScore());
     }
 
     public boolean combineScoreAndDelta() {
@@ -454,6 +457,26 @@ public class FDRSettingsImpl implements FDRSettings {
         this.boostPeptideStubs = boost;
     }
     
+    @Override
+    public boolean boostMinScore(){
+        return this.boostMinScore;
+    }
+
+    @Override
+    public void boostMinScore(boolean boost){
+        this.boostMinScore = boost;
+    }
+    
+    @Override
+    public Double minScore(){
+        return this.minScore;
+    }
+
+    @Override
+    public void minScore(Double minScore){
+        this.minScore = minScore;
+    }
+
     @Override
     public boolean boostPeptideDoublets(){
         return this.boostPeptideDoublets;
@@ -608,6 +631,17 @@ public class FDRSettingsImpl implements FDRSettings {
     @Override
     public void twoStepOptimization(boolean stepped) {
         this.twoStepBoost = stepped;
+    }
+
+    @Override
+    public boolean filterBySelfAndMono() {
+        return filterBySelfAndMono;
+    }
+
+    @Override
+    public void setfilterBySelfAndMono(boolean filter) {
+        filterBySelfAndMono = filter;
+        boostMinScore(filter);
     }
     
     

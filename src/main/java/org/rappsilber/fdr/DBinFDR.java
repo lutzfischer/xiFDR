@@ -5,8 +5,10 @@
 package org.rappsilber.fdr;
 
 import java.awt.GraphicsEnvironment;
+import java.io.File;
 import org.rappsilber.fdr.result.FDRResult;
 import java.io.FileNotFoundException;
+import java.lang.invoke.MethodHandles;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -30,6 +33,7 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.rappsilber.config.LocalProperties;
+import org.rappsilber.fdr.dataimport.Xi2Config;
 import rappsilber.config.DBRunConfig;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
@@ -37,7 +41,10 @@ import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.entities.ProteinGroup;
+import org.rappsilber.fdr.gui.components.MZIdentMLOwnerGUI;
 import org.rappsilber.fdr.utils.CalculateWriteUpdate;
+import org.rappsilber.fdr.utils.MZIdentMLExport;
+import org.rappsilber.fdr.utils.MZIdentMLOwner;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import rappsilber.ms.crosslinker.CrossLinker;
 import rappsilber.ms.lookup.peptides.PeptideTree;
@@ -63,6 +70,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     public static final String subscoreroperty = "xiFDR.FILTER_SUBSCORES";
     private Connection m_db_connection;
     private UpdateableLong       m_db_last_used = new UpdateableLong(0);
+    private AtomicBoolean       keepConnection  = new AtomicBoolean(false);
     private Timer      m_db_autoclosetimer;
     private PreparedStatement updateValidateOverWrite;
     private PreparedStatement updateValidateNonOverWrite;
@@ -105,6 +113,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     
     private Pattern subScoresToForward;
 
+    // reuse the last mzidentml owner infos
+    boolean lastMzIDowner = false;
 
     private Sequence loadSequence(long id) throws SQLException {
         Connection con = getDBConnection();
@@ -341,8 +351,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                         synchronized (m_db_last_used) {
                             timeUnused = n.getTimeInMillis() - m_db_last_used.value;
                         }
-                        if (timeUnused > 1800000) {
-                            closeConnection();
+                        if (!keepConnection.get()) {
+                            if (timeUnused > 3600000) {
+                                closeConnection();
+                            }
                         }
                         running = false;
                     }
@@ -599,10 +611,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     public void readDB(String[] searchIds, String filter, boolean topOnly) throws SQLException {
-        this.readDBSteps(searchIds, filter, topOnly, new HashMap<String, HashSet<Long>>(), new ArrayList<Long>(), 0, new HashMap<String, Double>());
+        this.readDBSteps(searchIds, filter, topOnly, new HashMap<String, HashSet<Long>>(), new HashSet<Long>(), 0, new HashMap<String, Double>());
     }
 
-    public void readDBSteps(String[] searchIds, String filter, boolean topOnly, HashMap<String,HashSet<Long>> allProteinIds, ArrayList<Long> skip, int tries, HashMap<String,Double>  lastScore) throws SQLException {
+    public void readDBSteps(String[] searchIds, String filter, boolean topOnly, HashMap<String,HashSet<Long>> allProteinIds, HashSet<Long> skip, int tries, HashMap<String,Double>  lastScore) throws SQLException {
 
         if (!ensureConnection()) {
             return;
@@ -900,8 +912,15 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             //getDBConnection().setAutoCommit(false);
             Statement stm = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stm.setFetchSize(1000000);
-            ResultSet rs = stm.executeQuery(matchQuerry);
-            flagDBUsage();
+            ResultSet rs;
+            this.keepConnection.set(true);
+            try {
+                flagDBUsage();
+                rs = stm.executeQuery(matchQuerry);
+                flagDBUsage();
+            } finally{
+                this.keepConnection.set(false);
+            }
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "go through the results");
 
             int psmIDColumn = rs.findColumn("psmID");
@@ -1103,7 +1122,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     }
 
                     if (cPepStubs >= 0) {
-                        double s = scorevalues[cPepStubs];
+                        int s = scorevalues[cPepStubs].intValue();
+                        psm.peptidesWithStubs =  s;
                         psm.addOtherInfo("PeptidesWithStubs", s);
                         if (s >0)  {
                             stubsFound(true);
@@ -1112,7 +1132,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     }
                     if (cPepDoublets >= 0) {
 
-                        psm.addOtherInfo("PeptidesWithDoublets", scorevalues[cPepDoublets]);
+                        psm.peptidesWithDoublets = scorevalues[cPepDoublets].intValue();
+                        psm.addOtherInfo("PeptidesWithDoublets", psm.peptidesWithDoublets);
 
                     }
                     
@@ -1217,11 +1238,14 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 //                    if (isMultpleSearches) {
 //                        psm.addPositiveGrouping("" + searchId);
 //                    }
+                    if (total % 100 == 0) {
+                        flagDBUsage();
+                    }
+                    
                     if (total % 10000 == 0) {
                         Logger.getLogger(this.getClass().getName()).log(Level.INFO, 
                                 "go through the results ({0}) Search {1} of {2}", 
                                 new Object[]{allPSMs.size(), currentsearch+1, searchIds.length});
-                        flagDBUsage();
                     }
                     lastScore.put(searchId, score);
                     skip.add(ipsmID);
@@ -1265,12 +1289,11 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
             
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Count results : " + total);
-            
+
             if (tmmodcount.size()>10) {
                 PeptidePair.ISTARGETED = false;
             }
         }
-
     }
 
     protected void readProteinInfos(HashSet<Long> proteinIds) throws SQLException {
@@ -1314,6 +1337,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
             p.setSequence(sequence);
             p.setAccession(accession);
             p.setDescription(description);
+            p.setName(name);
             
         }
         rs.close();
@@ -2372,6 +2396,8 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                 dbPassword = arg.substring(arg.indexOf("=") + 1).trim();
             }else if (arg.toLowerCase().startsWith("--flagmodifications")) {
                 setMarkModifications(true);
+            }else if (arg.toLowerCase().equals("--lastowner")) {
+                lastMzIDowner = true;
             } else if (arg.toLowerCase().startsWith("--validate=")) {
                 command_line_auto_validate = arg.substring(arg.indexOf("=") + 1).trim();
             } else {
@@ -2514,6 +2540,27 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         if (ofdr.command_line_auto_validate != null) {
             ofdr.writeDB(ofdr.command_line_auto_validate, true, false, result, true, true);
         }
+        
+        if (ofdr.singleCalculation()) {
+            // we should be able to write out an mzIdentML
+            String path =ofdr.getCsvOutDirSetting();
+            String baseName = ofdr.getCsvOutBaseSetting();
+            String out = path + (path.endsWith(File.separator)?"":File.separator) + baseName + ".mzid";
+            try {
+                MZIdentMLOwner o = new MZIdentMLOwner();
+                
+                if (ofdr.lastMzIDowner) {
+                    o.readLast();
+                } else {
+                    o = MZIdentMLOwnerGUI.getSetOwner(o);
+                }
+                Logger.getLogger(MethodHandles.lookup().lookupClass().getName()).log(Level.INFO, "Writing mzIdentML to " + out);
+                MZIdentMLExport mze = new MZIdentMLExport(ofdr, result, out, MZIdentMLOwnerGUI.getSetOwner(new MZIdentMLOwner()));
+            } catch (Exception ex) {
+                Logger.getLogger(MethodHandles.lookup().lookupClass().getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
         System.exit(0);
 
     }
@@ -2758,15 +2805,15 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         return ret;
     }
 
-    public int getFastas(Collection<String> searchID, ArrayList<Integer> dbIDs, ArrayList<String> names) {
+    public int getFastas(Collection<String> searchID, ArrayList<String> dbIDs, ArrayList<String> names) {
         int c = 0;
-        ArrayList<Integer> i = new ArrayList<Integer>();
+        ArrayList<String> i = new ArrayList<>();
         ArrayList<String> n = new ArrayList<String>();
         try {
             Statement s = getDBConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs = s.executeQuery("SELECT  DISTINCT file_name, id FROM search_sequencedb ss INNER JOIN sequence_file sf on ss.seqdb_id = sf.id WHERE search_id in (" + RArrayUtils.toString(m_search_ids, ",") + ");");
             while (rs.next()) {
-                i.add(rs.getInt(2));
+                i.add(rs.getInt(2)+"");
                 n.add(rs.getString(1));
                 c++;
             }
@@ -2779,7 +2826,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         return c;
     }
 
-    public int getFastas(String searchID, ArrayList<Integer> dbIDs, ArrayList<String> names) {
+    public int getFastas(String searchID, ArrayList<String> dbIDs, ArrayList<String> names) {
         ArrayList<String> id = new ArrayList<>(1);
         id.add(searchID);
         return getFastas(id, dbIDs, names);
@@ -2840,6 +2887,22 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     public void setSubScoresToForward(String subScoresToForward) {
         this.subScoresToForward = Pattern.compile(subScoresToForward);
     }
+
+    @Override
+    public int getxiMajorVersion() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Xi2Config getXi2Config() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Xi2Config getXi2Config(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     
             
     

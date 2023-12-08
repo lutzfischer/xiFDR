@@ -33,6 +33,8 @@ import org.rappsilber.utils.SelfAddHashSet;
 public class PSM extends AbstractFDRElement<PSM> { 
 
     private double deltaScore = Double.POSITIVE_INFINITY;
+    public int peptidesWithStubs = 0;
+    public int peptidesWithDoublets = 0;
     
     /**
      * unique id for the PSM.
@@ -53,9 +55,9 @@ public class PSM extends AbstractFDRElement<PSM> {
     
 
     /** link-site in peptide1 */
-    private byte pepsite1;
+    private short pepsite1;
     /** link-site in peptide2 */
-    private byte pepsite2;
+    private short pepsite2;
     /** positions of peptide1 */
     Peptide peptide1;
     /** positions of peptide2 */
@@ -193,11 +195,14 @@ public class PSM extends AbstractFDRElement<PSM> {
 
     private static Object2IntOpenHashMap<String> otherInfoColumn = new Object2IntOpenHashMap<String>();
     
+    public static HashMap<String,Object> nonPublicFlags = new HashMap<>();
+    
     protected String searchID;
     protected String scanID;
     private boolean isAutoValidated;
     private boolean hasVarMods;
     private boolean hasFixedMods;
+    private boolean hasXLMods;
     
     
     static {
@@ -254,7 +259,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
+    public PSM(String psmID, Peptide peptide1, Peptide peptide2, short site1, short site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
         this.psmID = psmID;
 //        this.id1 = id1;
 //        this.id2 = id2;
@@ -404,6 +409,9 @@ public class PSM extends AbstractFDRElement<PSM> {
             isInternal = true;
           //  setFDRGroup();
         }
+        for (Map.Entry<String,Object> e : p.nonPublicFlags.entrySet()) {
+            nonPublicFlags.put(e.getKey(), e.getValue());
+        }
     }
 
     /**
@@ -433,14 +441,14 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * @return the link site of the first peptide
      */
-    public byte getPeptideLinkSite1() {
+    public short getPeptideLinkSite1() {
         return pepsite1;
     }
 
     /**
      * @return the link site of the second peptide
      */
-    public byte getPeptideLinkSite2() {
+    public short getPeptideLinkSite2() {
         return pepsite2;
     }
 
@@ -448,7 +456,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param peptide
      * @return the link site of the given peptide
      */
-    public byte getPeptideLinkSite(int peptide) {
+    public short getPeptideLinkSite(int peptide) {
         return peptide == 0 ? pepsite1 : pepsite2;
     }
     
@@ -736,7 +744,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         represents.add(this);
         this.m_fdr = -1;
         this.setPEP(Double.NaN);
-        reTestInternal();
+        //reTestInternal();
     }
     
     /**
@@ -1304,6 +1312,15 @@ public class PSM extends AbstractFDRElement<PSM> {
      */
     public boolean hasVarMods() {
         return hasVarMods;
+    }
+
+
+    public void setHasXLMods(boolean hxlm) {
+        hasXLMods=hxlm;
+    }
+
+    public boolean hasXLMods() {
+        return hasXLMods;
     }
 
     /**
