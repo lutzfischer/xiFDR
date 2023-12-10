@@ -835,7 +835,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         jLabel28.setText("Language");
 
         txtDecoyPrefix.setText("auto");
-        txtDecoyPrefix.setToolTipText("In order to accurately match decoy proteins to their corresponding target proteins, it's important to remove any prefix included in the accession numbers for the decoys. \nFailing to do so can prevent proper assignment of target-decoy matches as self-links, resulting in false FDR estimates.\u0000");
+        txtDecoyPrefix.setToolTipText("<html><body><p>In order to accurately match decoy proteins to their corresponding target proteins, <br/>it's important to remove any prefix included in the accession numbers for the decoys.<br/> \nFailing to do so can prevent proper assignment of target-decoy matches as self-links, resulting in false FDR estimates.\u0000<br/></p><p>\nBy default REV_, REVERSE_, DECOY_, DECOY:, RANDOM_, and RAN_ are recognised.</p></body></html>");
 
         jLabel3.setText("decoy prefix:");
 

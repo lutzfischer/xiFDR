@@ -34,6 +34,7 @@ import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.PSM;
+import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.utils.AutoIncrementValueMap;
@@ -670,7 +671,7 @@ public class CSVinFDR extends OfflineFDR {
     }
     
     public String argList() {
-        return super.argList() + " --map=col:name,col:name --delimiter= --quote= --inputlocale=  csv-file1 csv-file2";
+        return super.argList() + " --map=col:name,col:name --delimiter= --quote= --inputlocale=  csv-file1 csv-file2 --decoy-prefix";
     }
     
     public String argDescription() {
@@ -717,7 +718,9 @@ public class CSVinFDR extends OfflineFDR {
                 + "--forward=X              additional collumns to be forwarded\n "
                 + "--quote                  how are text fields qoted\n"
                 + "                         e.g. each field that contains the\n"
-                + "                         delimiter needs to be in quotes\n ";
+                + "                         delimiter needs to be in quotes\n"
+                + "--decoy-prefix           prefix used to denote decoy accessions\n"
+                + "                         if empty RAN_, REV_ and DECOY: are tried\n";
         
     }
     
@@ -770,6 +773,11 @@ public class CSVinFDR extends OfflineFDR {
                 if (!CSVinFDR.this.setInputLocale(locale)) {
                     Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "could not set the locale "+ locale);
                     System.exit(-1);
+                }
+            } else if(arg.toLowerCase().startsWith("--decoy-prefix=")) {
+                String prefix = arg.substring("--decoy-prefix=".length());
+                if (!prefix.toLowerCase().trim().contentEquals("auto")) {
+                    Protein.DECOY_PREFIX = prefix;
                 }
             } else if(arg.toLowerCase().contentEquals("--help")) {
                 printUsage();
