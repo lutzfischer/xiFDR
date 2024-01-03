@@ -10,9 +10,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CommandLine --inputlocale=en --outputlocale=en --linkfdr=5.0 --boost=link --boost-between --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,\nEtage 4, Raum 474\nGustav-Meyer-Allee 25\n13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/xitest/FDR_rpfdr5.0 --csvBaseName=hsa_test_Xi1.8.0 --xiconfig=/home/lfischer/xitest/hsa_test_Xi1.8.0.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/load_test/1_P02768.fasta /home/lfischer/xitest/hsa_test_Xi1.8.0.csv</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer/Dropbox/Projects/WrongFilter/26S/results</exec.workingdir>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.appArgs>--reportfactor=10000 --pepfdr=100 --psmfdr=2 --boost=PSM --boost-between --csvOutDir=search_results/xisearch/FDR_test search_results/xisearch/ID2all+human3_linMod_filtered_0.csv</exec.appArgs>
+                <exec.vmArgs>-Xms1g</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -25,10 +28,13 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -Xms1g -classpath %classpath org.rappsilber.fdr.CommandLine --inputlocale=en --outputlocale=en --linkfdr=5.0 --boost=link --boost-between --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,\nEtage 4, Raum 474\nGustav-Meyer-Allee 25\n13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/xitest/FDR_rpfdr5.0 --csvBaseName=hsa_test_Xi1.8.0 --xiconfig=/home/lfischer/xitest/hsa_test_Xi1.8.0.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/load_test/1_P02768.fasta /home/lfischer/xitest/hsa_test_Xi1.8.0.csv</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
-                <exec.workingdir>/home/lfischer/Dropbox/Projects/WrongFilter/26S/results</exec.workingdir>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.appArgs>--reportfactor=10000 --pepfdr=100 --psmfdr=2 --boost=PSM --boost-between --csvOutDir=search_results/xisearch/FDR_test search_results/xisearch/ID2all+human3_linMod_filtered_0.csv</exec.appArgs>
+                <exec.vmArgs>-Xms1g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -41,9 +47,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CommandLine --inputlocale=en --outputlocale=en --linkfdr=5.0 --boost=link --boost-between --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,\nEtage 4, Raum 474\nGustav-Meyer-Allee 25\n13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/xitest/FDR_rpfdr5.0 --csvBaseName=hsa_test_Xi1.8.0 --xiconfig=/home/lfischer/xitest/hsa_test_Xi1.8.0.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/load_test/1_P02768.fasta /home/lfischer/xitest/hsa_test_Xi1.8.0.csv</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer/Dropbox/Projects/WrongFilter/26S/results</exec.workingdir>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.appArgs>--reportfactor=10000 --pepfdr=100 --psmfdr=2 --boost=PSM --boost-between --csvOutDir=search_results/xisearch/FDR_test search_results/xisearch/ID2all+human3_linMod_filtered_0.csv</exec.appArgs>
+                <exec.vmArgs>-Xms1g</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
     </actions>

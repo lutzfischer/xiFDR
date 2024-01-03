@@ -824,6 +824,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , scoredelta AS delta\n"
                     + " , s.precursor_intensity\n"
                     + " , s.elution_time_start as retentiontime\n"
+                    + " , validated\n"
                     + " \n"
                     + "FROM \n"
                     + "  (SELECT * FROM Spectrum_match WHERE Search_id = " + searchId + (topOnly ? " AND dynamic_rank = 't'":"")
@@ -890,6 +891,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     + " , s.elution_time_start \n"
                     + " , mp1.link_site_score \n"
                     + " , mp2.link_site_score \n"
+                    + " , validated \n"
                     + " ORDER BY sm.score DESC)  i \n"
                     + (searchfilter == null || searchfilter.isEmpty() ? "" : " WHERE ( " + searchfilter + " )");
 

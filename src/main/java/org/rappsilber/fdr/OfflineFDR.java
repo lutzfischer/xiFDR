@@ -968,7 +968,7 @@ public abstract class OfflineFDR {
                                         + "\nIgnore Groups:       " + isIgnoreGroupsSetting());
                                 FDRSettingsImpl s = new FDRSettingsImpl();
                                 s.setAll(settings);
-                                s.BoostingSteps = 4;
+                                //s.BoostingSteps = 4;
                                 s.PSMFDR = psmfdr / 1000000;
                                 s.PeptidePairFDR = pepfdr / 1000000;
                                 s.ProteinGroupFDR = pgfdr / 1000000;
@@ -3637,7 +3637,12 @@ public abstract class OfflineFDR {
                 if (what.endsWith("s")) {
                     what = what.substring(0, what.length() - 1);
                 }
-                if (what.contentEquals("pep")
+                
+                if (what.contentEquals("csm")
+                        || what.contentEquals("psm")
+                        || what.contentEquals("spectrum")) {
+                    maximizeWhat = FDRLevel.PSM;
+                } else if (what.contentEquals("pep")
                         || what.contentEquals("peptidepair")
                         || what.contentEquals("peppair")) {
                     maximizeWhat = FDRLevel.PEPTIDE_PAIR;
@@ -3649,6 +3654,8 @@ public abstract class OfflineFDR {
                         || what.contentEquals("proteinpair")
                         || what.contentEquals("ppi")) {
                     maximizeWhat = FDRLevel.PROTEINGROUPPAIR;
+                } else {
+                    throw new UnsupportedOperationException("Can't boost on " + what);
                 }
                 settings.doOptimize(maximizeWhat);
             } else if (arg.toLowerCase().equals("--boost-between")) {
@@ -4829,7 +4836,8 @@ public abstract class OfflineFDR {
     public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate, boolean twoStep) {
         if (twoStep
                 && (fdrSettings.boostDeltaScore() || fdrSettings.boostMinFragments() || fdrSettings.boostPepCoverage())
-                && (fdrSettings.boostPSMs() || fdrSettings.boostPeptidePairs() || fdrSettings.boostProteins() || fdrSettings.boostLinks())) {
+                && (fdrSettings.boostPSMs() || fdrSettings.boostPeptidePairs() || fdrSettings.boostProteins() || fdrSettings.boostLinks()) 
+                && level != FDRLevel.PSM) {
             FDRSettingsImpl step = new FDRSettingsImpl();
             step.setAll(fdrSettings);
             step.boostDeltaScore(false);
