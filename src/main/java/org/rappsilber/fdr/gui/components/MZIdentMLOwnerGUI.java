@@ -23,11 +23,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.invoke.MethodHandles;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -51,11 +49,11 @@ public class MZIdentMLOwnerGUI extends javax.swing.JPanel {
 
     
     public void setMZIdentMLOwner() {
-        txtmzIdentOwnerFirst.setText(LocalProperties.getProperty("mzIdenMLOwnerFirst", txtmzIdentOwnerFirst.getText()));
-        txtmzIdentOwnerLast.setText(LocalProperties.getProperty("mzIdenMLOwnerLast", txtmzIdentOwnerLast.getText()));
-        txtmzIdentOwnerEmail.setText(LocalProperties.getProperty("mzIdenMLOwnerEmail", txtmzIdentOwnerEmail.getText()));
-        txtmzIdentAddress.setText(LocalProperties.getProperty("mzIdenMLOwnerAddress", txtmzIdentAddress.getText()));
-        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty("mzIdenMLOwnerOrg", txtmzIdentOwnerOrg.getText()));
+        txtmzIdentOwnerFirst.setText(LocalProperties.getProperty(MZIdentMLOwner.propertyFirst, txtmzIdentOwnerFirst.getText()));
+        txtmzIdentOwnerLast.setText(LocalProperties.getProperty(MZIdentMLOwner.propertyLast, txtmzIdentOwnerLast.getText()));
+        txtmzIdentOwnerEmail.setText(LocalProperties.getProperty(MZIdentMLOwner.propertyEMail, txtmzIdentOwnerEmail.getText()));
+        txtmzIdentAddress.setText(LocalProperties.getProperty(MZIdentMLOwner.propertyAddress, txtmzIdentAddress.getText()));
+        txtmzIdentOwnerOrg.setText(LocalProperties.getProperty(MZIdentMLOwner.propertyOrg, txtmzIdentOwnerOrg.getText()));
     }
 
     public void setMZIdentMLOwner(MZIdentMLOwner owner) {
@@ -68,29 +66,29 @@ public class MZIdentMLOwnerGUI extends javax.swing.JPanel {
     
     public static MZIdentMLOwner getLastOwner() {
         return new MZIdentMLOwner(
-                LocalProperties.getProperty("mzIdenMLOwnerFirst", ""),
-                LocalProperties.getProperty("mzIdenMLOwnerLast", ""),
-                LocalProperties.getProperty("mzIdenMLOwnerEmail", ""),
-                LocalProperties.getProperty("mzIdenMLOwnerOrg", ""),
-                LocalProperties.getProperty("mzIdenMLOwnerAddress", ""));
+                LocalProperties.getProperty(MZIdentMLOwner.propertyFirst, ""),
+                LocalProperties.getProperty(MZIdentMLOwner.propertyLast, ""),
+                LocalProperties.getProperty(MZIdentMLOwner.propertyEMail, ""),
+                LocalProperties.getProperty(MZIdentMLOwner.propertyOrg, ""),
+                LocalProperties.getProperty(MZIdentMLOwner.propertyAddress, ""));
         
     }
 
     public static void saveDefaultOwner(MZIdentMLOwner owner) {
-        LocalProperties.setProperty("mzIdenMLOwnerFirst", owner.first);
-        LocalProperties.setProperty("mzIdenMLOwnerLast", owner.last);
-        LocalProperties.setProperty("mzIdenMLOwnerEmail", owner.email);
-        LocalProperties.setProperty("mzIdenMLOwnerAddress", owner.address);
-        LocalProperties.setProperty("mzIdenMLOwnerOrg", owner.org);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyFirst, owner.first);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyLast, owner.last);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyEMail, owner.email);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyAddress, owner.address);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyOrg, owner.org);
     }
 
 
     public static void resetDefaultOwner() {
-        LocalProperties.setProperty("mzIdenMLOwnerFirst", null);
-        LocalProperties.setProperty("mzIdenMLOwnerLast", null);
-        LocalProperties.setProperty("mzIdenMLOwnerEmail", null);
-        LocalProperties.setProperty("mzIdenMLOwnerAddress", null);
-        LocalProperties.setProperty("mzIdenMLOwnerOrg", null);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyFirst, null);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyLast, null);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyEMail, null);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyAddress, null);
+        LocalProperties.setProperty(MZIdentMLOwner.propertyOrg, null);
     }
 
     

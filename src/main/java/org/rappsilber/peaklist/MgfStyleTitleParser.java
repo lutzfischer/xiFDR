@@ -43,8 +43,8 @@ public class MgfStyleTitleParser {
     
     private File parsedFile;
     public String fileName;
-    HashMap<String,ArrayList<String>> parts2titles = new HashMap<String, ArrayList<String>>();
-    HashMap<Integer,ArrayList<String>> int2titles = new HashMap<Integer, ArrayList<String>>();
+    HashMap<String,HashSet<String>> parts2titles = new HashMap<String, HashSet<String>>();
+    HashMap<Integer,HashSet<String>> int2titles = new HashMap<Integer, HashSet<String>>();
     Pattern isNummeric = Pattern.compile("^[\\+\\-]?[0-9]+(:?\\.[0-9]+)?$");
     
     HashMap<String,ParseEnrtry> titlesToID = new HashMap<String, ParseEnrtry>();
@@ -57,16 +57,16 @@ public class MgfStyleTitleParser {
 
     private void registerTitleParts(String key, String title, ParseEnrtry entry) {
         titlesToID.put(title, entry);
-        ArrayList<String> titles = parts2titles.get(key);
+        HashSet<String> titles = parts2titles.get(key);
         if (titles == null) {
-            titles = new ArrayList<>();
+            titles = new HashSet<>();
             parts2titles.put(key, titles);
         }
         if (isNummeric.matcher(key).matches()) {
             Integer ikey =Integer.parseInt(key);
             titles = int2titles.get(ikey);
             if (titles == null) {
-                titles = new ArrayList<>();
+                titles = new HashSet<>();
                 int2titles.put(ikey, titles);
             }
         }
@@ -123,10 +123,10 @@ public class MgfStyleTitleParser {
                 }
                 
             } else if (line.startsWith(header)) {
-                title = line;
+                title = line.substring(header.length());
                 if (ignoreTitle!= null && ignoreTitle.matcher(line).matches())
                     continue;
-                String[] parts=line.split("\\b");
+                String[] parts=title.split("\\b");
                 for (String p : parts) {
                     if (p.trim().length()>0) {
                         titelParts.add(p);
@@ -135,7 +135,7 @@ public class MgfStyleTitleParser {
                             titelParts.add(pt);
                     }
                 }
-                parts=line.split("\\.");
+                parts=title.split("\\.");
                 for (String p : parts) {
                     if (p.trim().length()>0) {
                         titelParts.add(p);
@@ -144,7 +144,7 @@ public class MgfStyleTitleParser {
                             titelParts.add(pt);
                     }
                 }
-                parts=line.split("\\s+");
+                parts=title.split("\\s+");
                 for (String p : parts) {
                     if (p.trim().length()>0)
                         titelParts.add(p);
@@ -163,14 +163,14 @@ public class MgfStyleTitleParser {
     public ParseEnrtry findScanIndex(String run, String scan) {
         HashSet<String> runTitles = new HashSet<String>();
         HashSet<String> scanTitles = new HashSet<String>();
-        ArrayList<String> rt = parts2titles.get(run);
+        HashSet<String> rt = parts2titles.get(run);
         if (rt != null) {
-            runTitles.addAll(rt);
+            runTitles = rt;
         } else if (run.contains(".")) {
             run = run.substring(0,run.indexOf("."));
             rt = parts2titles.get(run);
             if (rt!=null)
-                runTitles.addAll(rt);
+                runTitles=rt;
             else
                 return null;
         }
@@ -178,20 +178,29 @@ public class MgfStyleTitleParser {
         if (runTitles.isEmpty())
             return null;
         
-        ArrayList<String> st = null;
+        HashSet<String> st = null;
         if (!isNummeric.matcher(scan).matches()) {
             st = parts2titles.get(scan);
         } else {
             st = int2titles.get(Integer.parseInt(scan));
         }
         if (st != null) {
-            HashSet<String> runTitlesScan=new HashSet<>(runTitles);
-            scanTitles.addAll(st);
+            String finalTitel = null;
+            for (String scantitle : st) {
+                if (runTitles.contains(scantitle)) {
+                    if (finalTitel == null)
+                        finalTitel = scantitle;
+                    else {
+                        finalTitel = null;
+                        break;
+                    }
+                                
+                }
+                    
+            }
 
-            runTitlesScan.retainAll(scanTitles);
-
-            if (runTitlesScan.size()==1) {
-                return titlesToID.get(runTitlesScan.iterator().next());
+            if (finalTitel != null) {
+                return titlesToID.get(finalTitel);
             }
 
         }

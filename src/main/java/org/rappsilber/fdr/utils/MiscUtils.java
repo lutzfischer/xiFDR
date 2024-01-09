@@ -94,6 +94,10 @@ public abstract class MiscUtils {
         // we don't want to round away any digits before the dot
         if (roundingFactor>-minDigits)
             roundingFactor=-minDigits;
+        if (roundingFactor<-10)
+            roundingFactor=-10;
+        if (roundingFactor>10)
+            roundingFactor=10;
 
         double normFactor = Math.pow(10, roundingFactor);
         //if (roundingFactor<0)

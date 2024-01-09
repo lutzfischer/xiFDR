@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.5" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <Properties>
+    <Property name="defaultCloseOperation" type="int" value="0"/>
+  </Properties>
+  <SyntheticProperties>
+    <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
+  </SyntheticProperties>
+  <Events>
+    <EventHandler event="windowClosing" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosing"/>
+  </Events>
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="lblPSM" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblProtPair" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblResPair" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblPepPair" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="spPepFrom" max="32767" attributes="0"/>
+                          <Component id="lblFrom" max="32767" attributes="0"/>
+                          <Component id="spPSMFrom" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spResFrom" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spProtFrom" alignment="0" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="spPepTo" max="32767" attributes="0"/>
+                          <Component id="lblTo" max="32767" attributes="0"/>
+                          <Component id="spPSMTo" alignment="1" max="32767" attributes="0"/>
+                          <Component id="spResTo" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spProtTo" alignment="0" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="lblStep" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spPSMSteps" alignment="0" max="32767" attributes="0"/>
+                          <Component id="spPepSteps" max="32767" attributes="0"/>
+                          <Component id="spResStep" alignment="1" max="32767" attributes="0"/>
+                          <Component id="spProtStep" alignment="1" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="lblCurrent" max="32767" attributes="0"/>
+                          <Component id="txtCurrentPSM" max="32767" attributes="0"/>
+                          <Component id="txtCurrentPep" alignment="1" max="32767" attributes="0"/>
+                          <Component id="txtCurrentRes" alignment="1" max="32767" attributes="0"/>
+                          <Component id="txtCurrentPPI" alignment="1" max="32767" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Group type="102" alignment="1" attributes="0">
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="btnRun" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="lblStep" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblCurrent" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="1" attributes="0">
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="lblFrom" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblTo" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="lblPSM" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="spPSMFrom" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="spPSMTo" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="spPSMSteps" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txtCurrentPSM" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="1" attributes="0">
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="lblPepPair" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="spPepFrom" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="103" alignment="1" groupAlignment="3" attributes="0">
+                      <Component id="spPepTo" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="spPepSteps" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="txtCurrentPep" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="lblResPair" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spResFrom" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spResTo" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spResStep" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="txtCurrentRes" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="lblProtPair" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spProtFrom" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spProtTo" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="spProtStep" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="txtCurrentPPI" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="btnRun" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Component class="javax.swing.JLabel" name="lblPSM">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="PSM"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblPepPair">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Peptide Pair"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblResPair">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Residue Pairs"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblProtPair">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Protein Pairs"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblFrom">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="From"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblTo">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="To"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblStep">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="Step Width"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnRun">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Run All"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnRunActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPSMFrom">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPSMTo">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPSMSteps">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPepFrom">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPepTo">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spPepSteps">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spResFrom">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spResTo">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spResStep">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="100.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spProtFrom">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="5.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spProtTo">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="20.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="spProtStep">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="5.0" maximum="100.0" minimum="0.01" numberType="java.lang.Double" stepSize="1.0" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblCurrent">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="Current"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtCurrentPSM">
+      <Properties>
+        <Property name="editable" type="boolean" value="false"/>
+        <Property name="horizontalAlignment" type="int" value="11"/>
+        <Property name="text" type="java.lang.String" value="100"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtCurrentPep">
+      <Properties>
+        <Property name="editable" type="boolean" value="false"/>
+        <Property name="horizontalAlignment" type="int" value="11"/>
+        <Property name="text" type="java.lang.String" value="100"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtCurrentRes">
+      <Properties>
+        <Property name="editable" type="boolean" value="false"/>
+        <Property name="horizontalAlignment" type="int" value="11"/>
+        <Property name="text" type="java.lang.String" value="100"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtCurrentPPI">
+      <Properties>
+        <Property name="editable" type="boolean" value="false"/>
+        <Property name="horizontalAlignment" type="int" value="11"/>
+        <Property name="text" type="java.lang.String" value="100"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Iterates of the given FDR-combinations and calculates each one."/>
+      </Properties>
+    </Component>
+  </SubComponents>
+</Form>

@@ -17,9 +17,11 @@ package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.TreeSet;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.MapUtils;
@@ -36,13 +38,28 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     protected int linkID = LINKCOUNT++;
     
     private double score = Double.POSITIVE_INFINITY;
+    private Double scoreTopN;
+    private int lastTopN = 0;
+    
     public boolean isInternal = false;
     private ProteinGroup pg1;
     private HashMap<Protein, IntArrayList> position1 = new HashMap<Protein, IntArrayList>(1);
     private ProteinGroup pg2;
     private HashMap<Protein, IntArrayList> position2 = new HashMap<Protein, IntArrayList>(1);;
     int hashcode = 5;
-    private HashSet<PeptidePair> support = new HashSet<PeptidePair>(1);
+    private TreeSet<PeptidePair> support = new TreeSet<PeptidePair>(new Comparator<PeptidePair>(){
+        @Override
+        public int compare(PeptidePair o1, PeptidePair o2) {
+            if (o1==o2)
+                return 0;
+            int ret = Double.compare(o2.getScore(), o1.getScore());
+            if (ret == 0) {
+                ret = o2.toString().compareTo(o1.toString());
+            }
+            return ret;
+        }
+    } );
+    
     private PeptidePair m_reference;
     public double m_fdr = -1;
     protected double m_PPIfdr = -1;
@@ -66,7 +83,8 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         isNonCovalent = pp.isNonCovalent();
         position1=new HashMap<Protein, IntArrayList>(peptide1.getPositions().size());
         for (Protein p : peptide1.getPositions().keySet()) {
-            IntArrayList peppos = peptide1.getPositions().get(p).clone();
+            Collection<Integer> cpos = (Collection<Integer>) peptide1.getPositions().get(p).clone();
+            IntArrayList peppos = new IntArrayList(cpos);
             peppos.addToAll(pepSite1-1);
             position1.put(p, peppos);
         }
@@ -83,7 +101,8 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         } else {
             position2=new HashMap<Protein, IntArrayList>(peptide2.getPositions().size());
             for (Protein p : peptide2.getPositions().keySet()) {
-                IntArrayList peppos = peptide2.getPositions().get(p).clone();
+                Collection<Integer> cpos = (Collection<Integer>) peptide2.getPositions().get(p).clone();
+                IntArrayList peppos = new IntArrayList(cpos);
                 peppos.addToAll(pepSite2-1);
                 position2.put(p, peppos);
             }
@@ -198,6 +217,33 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         return score;
     }
 
+    /**
+     * @return the score
+     */
+    public void setScore(double score) {
+        this.score = score;
+    }
+    
+    /**
+     * @return the score
+     */
+    public double getScore(int topN) {
+        if (topN == this.lastTopN)
+            return this.scoreTopN;
+        int i=0;
+        double score = Double.NEGATIVE_INFINITY;
+        for (PeptidePair pp : this.support) {
+            if (score != pp.getScore()) {
+                score = pp.getScore();
+                if (i++>topN)
+                    break;
+            }
+            score+= pp.getScore()*pp.getScore();
+        }
+        this.lastTopN = topN;
+        this.score=Math.sqrt(score);
+        return this.score;
+    }    
  
     public int compareTo(ProteinGroupLink o) {
         return Double.compare(o.getScore(), this.getScore());
@@ -244,7 +290,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     public String getFDRGroup() {
         if (fdrGroup == null) {
             if (isInternal) {
-                fdrGroup = "Internal";
+                fdrGroup = "Self";
             } else {
                 fdrGroup = "Between";
             }

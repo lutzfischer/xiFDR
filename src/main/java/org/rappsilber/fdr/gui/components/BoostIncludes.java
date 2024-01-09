@@ -48,6 +48,9 @@ public class BoostIncludes extends javax.swing.JPanel {
         ckMinFragments.setSelected(settings.boostMinFragments());
         ckPeptideCoverage.setSelected(settings.boostPepCoverage());
         ckDeltaScore.setSelected(settings.boostDeltaScore());
+        ckPeptideStubs.setSelected(settings.boostPeptideStubs());
+        ckPeptideDoublets.setSelected(settings.boostPeptideDoublets());
+        ckMinScore.setSelected(settings.boostMinScore());
 //        ckSubScores.setSelected(settings.boostSubScores());
     }
 
@@ -102,6 +105,8 @@ public class BoostIncludes extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        ckPeptideDoublets = new javax.swing.JCheckBox();
+        ckPeptideStubs = new javax.swing.JCheckBox();
         ckPSM = new javax.swing.JCheckBox();
         ckPepPair = new javax.swing.JCheckBox();
         ckProt = new javax.swing.JCheckBox();
@@ -111,6 +116,11 @@ public class BoostIncludes extends javax.swing.JPanel {
         ckPeptideCoverage = new javax.swing.JCheckBox();
         ckDeltaScore = new javax.swing.JCheckBox();
         ckMinFragments = new javax.swing.JCheckBox();
+        ckMinScore = new javax.swing.JCheckBox();
+
+        ckPeptideDoublets.setText("Peptide Doublets");
+
+        ckPeptideStubs.setText("Peptide Stubs");
 
         ckPSM.setText("PSM");
 
@@ -135,27 +145,31 @@ public class BoostIncludes extends javax.swing.JPanel {
 
         ckMinFragments.setText("Minimum Fragmnets");
 
+        ckMinScore.setText("Minimum Score");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(ckDeltaScore)
-                        .addComponent(ckPSM)
-                        .addComponent(ckPepPair)
-                        .addComponent(ckProt)
-                        .addComponent(ckLinks)
-                        .addComponent(ckPeptideCoverage)
-                        .addComponent(ckMinFragments))
-                    .addComponent(jLabel1))
-                .addContainerGap(76, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(ckMinScore)
+                    .addComponent(ckPeptideDoublets)
+                    .addComponent(ckPeptideStubs)
+                    .addComponent(ckDeltaScore)
+                    .addComponent(ckPSM)
+                    .addComponent(ckPepPair)
+                    .addComponent(ckProt)
+                    .addComponent(ckLinks)
+                    .addComponent(ckPeptideCoverage)
+                    .addComponent(ckMinFragments)
+                    .addComponent(jLabel1))
+                .addContainerGap(76, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -163,11 +177,17 @@ public class BoostIncludes extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckPeptideStubs)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckPeptideDoublets)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPeptideCoverage)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckMinFragments)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckDeltaScore)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckMinScore)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPSM)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -190,6 +210,9 @@ public class BoostIncludes extends javax.swing.JPanel {
         settings.boostProteins(ckProt.isSelected());
         settings.boostLinks(ckLinks.isSelected());
         settings.boostMinFragments(ckMinFragments.isSelected());
+        settings.boostPeptideStubs(ckPeptideStubs.isSelected());
+        settings.boostPeptideDoublets(ckPeptideDoublets.isSelected());
+        settings.boostMinScore(ckMinScore.isSelected());
         //settings.boostSubScores(ckSubScores.isSelected());
         fireActionPerformed(evt);
     }//GEN-LAST:event_jButton1ActionPerformed
@@ -199,9 +222,12 @@ public class BoostIncludes extends javax.swing.JPanel {
     private javax.swing.JCheckBox ckDeltaScore;
     private javax.swing.JCheckBox ckLinks;
     private javax.swing.JCheckBox ckMinFragments;
+    private javax.swing.JCheckBox ckMinScore;
     private javax.swing.JCheckBox ckPSM;
     private javax.swing.JCheckBox ckPepPair;
     private javax.swing.JCheckBox ckPeptideCoverage;
+    private javax.swing.JCheckBox ckPeptideDoublets;
+    private javax.swing.JCheckBox ckPeptideStubs;
     private javax.swing.JCheckBox ckProt;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;

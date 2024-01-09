@@ -23,9 +23,12 @@ import org.rappsilber.fdr.result.FDRResult;
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
 public class MaximisingStatus {
+        public double showMinScore;
         public double showDelta;
         public double showPepCoverage;
         public int    showMinFrags;
+        public int    showMinStubs;
+        public int    showMinDoublets;
         public double showPSMFDR;
         public double showPepFDR;
         public double showProtFDR;

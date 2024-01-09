@@ -74,10 +74,14 @@ public class SubGroupFdrInfo<T extends FDRSelfAdd> implements Iterable<T> {
     
     public String didntPassCheck = null;
     
-    public Iterator<T> iterator() {
+    public Iterator<T> filteredIterator() {
         return filteredResult.iterator();
     }
 
+    public Iterator<T> iterator() {
+        return results.iterator();
+    }
+    
     public boolean filteredContains(T e)  {
         return filteredResult.contains(e);
     }
