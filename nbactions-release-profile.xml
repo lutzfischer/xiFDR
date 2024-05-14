@@ -14,7 +14,7 @@
                 <exec.executable>java</exec.executable>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
                 <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</exec.vmArgs>
-                <exec.appArgs></exec.appArgs>
+                <exec.appArgs>--got-restarted</exec.appArgs>
             </properties>
         </action>
         <action>
@@ -32,7 +32,7 @@
                 <jpda.listen>true</jpda.listen>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
                 <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
-                <exec.appArgs></exec.appArgs>
+                <exec.appArgs>--got-restarted</exec.appArgs>
             </properties>
         </action>
         <action>
@@ -49,7 +49,7 @@
                 <exec.executable>java</exec.executable>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
                 <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</exec.vmArgs>
-                <exec.appArgs></exec.appArgs>
+                <exec.appArgs>--got-restarted</exec.appArgs>
             </properties>
         </action>
     </actions>

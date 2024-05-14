@@ -497,36 +497,14 @@ public class MZIdentMLExport {
         Measure intMeasure = null;
         Measure errorMeasure = null;
 
-//        if (outputFragmentation) {
-//            FragmentationTable fragTable = new FragmentationTable();
-//            List<Measure> measureList = fragTable.getMeasure();
-//            mzMeasure = new Measure();
-//            mzMeasure.setId(measureMzID);
-//            List<CvParam> cvParamList = mzMeasure.getCvParam();
-//            cvParamList.add(makeCvParam("MS:1001225", "product ion m/z", psiCV, "MS:1000040", "m/z", psiCV));
-//            intMeasure = new Measure();
-//            intMeasure.setId(measureIntID);
-//            cvParamList = intMeasure.getCvParam();
-//            cvParamList.add(makeCvParam("MS:1001226", "product ion intensity", psiCV, "MS:1000131", "number of counts", psiCV));
-//            errorMeasure = new Measure();
-//            errorMeasure.setId(measureErrorID);
-//            cvParamList = errorMeasure.getCvParam();
-//            cvParamList.add(makeCvParam("MS:1001227", "product ion m/z error", psiCV, "MS:1000040", "m/z", psiCV));
-//            measureList.add(mzMeasure);
-//            measureList.add(intMeasure);
-//            measureList.add(errorMeasure);
-//
-//            siList.setFragmentationTable(fragTable);
-//        }
+
 
         //List<SpectrumIdentificationResult> specIdentResults = siList.getSpectrumIdentificationResult();
         List<uk.ac.ebi.jmzidml.model.mzidml.Peptide> peptideList = sequenceCollection.getPeptide();
-//        spectraData = new SpectraData();
-//        spectraData.setId(spectraDataID);
 
         
-//        rappsilber.ms.crosslinker.CrossLinker cl = conf.getCrossLinker().get(0);
         HashMap<Integer,CvParam> xlMass2DonorModParam = new HashMap<Integer, CvParam> (conf.getCrossLinker().size());
+        HashMap<String,CvParam> xlMass2DonorModParamByName = new HashMap<String, CvParam> (conf.getCrossLinker().size());
         
         for (rappsilber.ms.crosslinker.CrossLinker cl : conf.getCrossLinker()) {
             double xlMass = cl.getCrossLinkedMass();
@@ -569,7 +547,8 @@ public class MZIdentMLExport {
                     }
                 }
             }
-            xlMass2DonorModParam.put((int)(xlMass*10000), XLDonorModParam);
+            xlMass2DonorModParam.put((int)(massNormalise(xlMass)*1000), XLDonorModParam);
+            xlMass2DonorModParamByName.put(cl.getName(), XLDonorModParam);
         }
         CvParam XLReceiverModParam = new CvParam();
         XLReceiverModParam.setName("unknown modification");
@@ -579,9 +558,6 @@ public class MZIdentMLExport {
         
         int sirCounter = 1; //Counter used to create unique ID for SpectrumIdentificationResult
         
-        // Iterate over all the spectra
-//        @SuppressWarnings("unchecked")
-//		Iterator<Spectrum> iter = iXTandemFile.getSpectraIterator();
         HashMap<String, ArrayList<PSM>> allSpectra = new HashMap<String, ArrayList<PSM>>();
 
         
@@ -735,7 +711,9 @@ public class MZIdentMLExport {
                         if (pi == 0 ) {
                             if (!psm.isLinear()) {
                                 if (!psm.getCrosslinker().replaceAll("[-\\s]","").contains("noncovalent")) {
-                                    CvParam  XLDonorModParam =  xlMass2DonorModParam.get((int)(psmXLMass*10000));
+                                    CvParam  XLDonorModParam =  xlMass2DonorModParam.get((int)(psmXLMass*1000));
+                                    if (XLDonorModParam == null)
+                                        XLDonorModParam =  xlMass2DonorModParamByName.get(xl_name);
                                     uk.ac.ebi.jmzidml.model.mzidml.Modification mod = getCrosslinkerDonorModification(XLDonorModParam, link, psmXLMass, fragmentIsMono);
                                     CvParam xlModParam = new CvParam();
                                     xlModParam.setAccession(crosslinkedDonorModAcc);
@@ -746,7 +724,9 @@ public class MZIdentMLExport {
                                     mzidPep.getModification().add(mod);
                                 }
                             } else if (psm.isLoop()) {
-                                CvParam  XLDonorModParam =  xlMass2DonorModParam.get((int)(psmXLMass*10000));
+                                CvParam  XLDonorModParam =  xlMass2DonorModParam.get((int)(psmXLMass*1000));
+                                if (XLDonorModParam == null)
+                                    XLDonorModParam =  xlMass2DonorModParamByName.get(xl_name);
                                 uk.ac.ebi.jmzidml.model.mzidml.Modification mod = getCrosslinkerDonorModification(XLDonorModParam, link, psmXLMass, fragmentIsMono);
                                 CvParam xlModParam = new CvParam();
                                 xlModParam.setAccession(crosslinkedDonorModAcc);
@@ -863,14 +843,14 @@ public class MZIdentMLExport {
                    //Parse protein details into DBSequence objects:
                     HashMap<org.rappsilber.fdr.entities.Protein, HashSet<Integer>> protPositions = pep.getPositions();
                     for (org.rappsilber.fdr.entities.Protein prot : protPositions.keySet())  {
-                        String protKey = prot.getAccession() + "_" + (prot.isDecoy() ? "decoy" : "target");
+                        String protKey =  (prot.isDecoy() ? "decoy" : "") + prot.getAccession();
                         String dbSeqId = "dbseq_" + protKey;
                         DBSequence dbSeq = foundProts.get(protKey);
                         if (dbSeq == null) {
                             dbSeq = new DBSequence();
                             foundProts.put(protKey, dbSeq);
                             dbSeq.setAccession(prot.getAccession());
-                            dbSeq.setName(prot.getName());
+                            dbSeq.setName(prot.isDecoy() ? "decoy" : prot.getName());
                             dbSeq.getCvParam().add(makeCvParam("MS:1001088", "protein description", psiCV,prot.getDescription()));
                             if (prot.getSize() >0)
                                 dbSeq.setLength(prot.getSize());
@@ -952,69 +932,13 @@ public class MZIdentMLExport {
                     }
                 }
 
-//                // Get the support data for each spectrum.
-//                SupportData supportData = iXTandemFile.getSupportData(spectrumNumber);
-//
-//                // Fill the peptide map: for each spectrum get the corressponding peptide list.
-//                //peptideMap.put(spectrumNumber, pepList);
-
-
-                /**
-                 * ***********************************************
-                 *  *** Complete SpectrumIdentificationResult ****
-                 * *********************************************
-                 */
-                //setting the sectrumID so that it conforms to the specifications of 
-                //the controlled vocabulary item MS:1000774 where spectrumID should start from 0. 
-                //The problem is that we don't know for sure from the X!Tandem file alone what is the 
-                //type of the spectrum file...below we have now a very simple check for whether
-                //the spectrum file submitted to X!Tandem had ids starting from 0 or from 1.
-                //For example,  int MZML format the spectrum id in xtandem output already starts from 0.
-                //int spectrumID = spectrumNumber;
-//                if (this.isMs2SpectrumIdStartingAtZero) {
-//                    spectrumID = (spectrum.getSpectrumId());
-//                } else {
-//                    //then we assume it was starting from 1:
-//                    spectrumID = (spectrum.getSpectrumId() - 1);
-//                }
-
-                //TODO add checks to find out what is the data format submitted to X!Tandem and to correct the spectrumID value accordingly
-
-//                String label = supportData.getFragIonSpectrumDescription();
                 specIdentRes.setSpectrumID(this.scanIDTranslation.getID(f));
                 specIdentRes.setId("SIR_" + sirCounter);
                 specIdentRes.setSpectraData(specData);
                 
                 specIdentRes.getCvParam().add(makeCvParam("MS:1000797", "peak list scans", psiCV,psm.getScan()+""));
-                        
-//                if (label != null && !label.equals("")) {
-//                    List<CvParam> sir_cvParamList = specIdentRes.getCvParam();
-//                    CvParam cvp = makeCvParam("MS:1000796", "spectrum title", psiCV, label);
-//                    sir_cvParamList.add(cvp);
-//
-//                }
 
-
-
-                //TO - currently only implements the case where the same peptide matches to different proteins
-
-
-                // Initialize the array lists
-                //ArrayList<double> mzValues;
-                //ArrayList<double> intensityValues;
-
-                // Get the spectrum fragment mz and intensity values
-                //mzValues = supportData.getXValuesFragIonMass2Charge();
-
-                //intensityValues = supportData.getYValuesFragIonMass2Charge();
-
-                // Fill the maps
-                //allMzValues.put(new Integer(spectrumNumber), mzValues);
-                // allIntensityValues.put(new Integer(spectrumNumber), intensityValues);
                 {
-//                    if (fdrResult.proteinGroupPairFDR.filteredContains(pgp)) {
-//                        passed = true;
-//                    }
                     
                     ProteinAmbiguityGroup pag1 = pg2Pag.get(psm.getProteinGroup1());
                     if (pag1==null) {
@@ -1295,7 +1219,7 @@ public class MZIdentMLExport {
         double mass = massNormalise(reportedMod.weightDiff);
         int loc = location;
 
-        CvParam modParam = new CvParam();
+        CvParam modParam = null;
 
         if (fragmentIsMono) {
             mzidMod.setMonoisotopicMassDelta(mass);
@@ -1337,23 +1261,17 @@ public class MZIdentMLExport {
 
             //Set the found details to modParam. If no unimod record was found, set the modification as "unknown" 
             if (unimod != null) {
-                modParam.setAccession("UNIMOD:" + unimod.getRecordId());
-                modParam.setCv(unimodCV);
-                modParam.setName(unimod.getTitle());
+                modParam = makeCvParam("UNIMOD:" + unimod.getRecordId(), unimod.getTitle(), unimodCV);
             } else {
                 //modification with mass not recognized:
-                modParam.setName("unknown modification");
-                modParam.setCv(psiCV);
-                modParam.setAccession("MS:1001460");
+                modParam = makeCvParam("MS:1001460", "unknown modification", psiCV);
             }
         } else {
-            modParam.setName(e.getName());
-            modParam.setCv(xlmodCV);
-            modParam.setAccession(e.getId());
+            modParam = makeCvParam(e.getId(), e.getName(), xlmodCV);
         }
     
-
-        mzidMod.getCvParam().add(modParam);
+        if (modParam != null)
+            mzidMod.getCvParam().add(modParam);
         return mzidMod;
     }
 
@@ -1608,28 +1526,13 @@ public class MZIdentMLExport {
         List<AnalysisSoftware> analysisSoftwares = analysisSoftwareList.getAnalysisSoftware();
         analysisSoftware = new AnalysisSoftware();
         analysisSoftware.setName("xi");
-        // analysisSoftware.setSoftwareName(makeCvParam("MS:1001476","xtandem",psiCV));
-
-//        Param tempParam = new Param();
-//        tempParam.setParam(makeCvParam("MS:0000000", "XiFDR", psiCV));
-//        analysisSoftware.setSoftwareName(tempParam);
 
         analysisSoftware.setId("xi_id");
         Param p = new Param();
+        // TODO need to ask for version/software - or get from cmd param
         p.setParam(makeCvParam("MS:1002544","xi",psiCV));
         analysisSoftware.setSoftwareName(p);
 
-        /* TO DO - need to work out how to use Param
-         CvParam cvParam = new CvParam();
-         cvParam.setName("xtandem");
-         cvParam.setCvRef(psiCvID);
-         cvParam.setAccession("MS:1001476");
-         ParamAlternative paramAlt = new ParamAlternative();
-         paramAlt.setCvParam(cvParam);
-
-         analysisSoftware.setSoftwareName(makeCvParam("MS:1001476","xtandem",psiCV));
-         analysisSoftware.setSoftwareName(paramAlt);
-         */
         analysisSoftwares.add(analysisSoftware);
 
         analysisSoftware = new AnalysisSoftware();
@@ -1637,26 +1540,10 @@ public class MZIdentMLExport {
         p = new Param();
         p.setParam(makeCvParam("MS:1002543","xiFDR",psiCV));
         analysisSoftware.setSoftwareName(p);
-        //analysisSoftware.setSoftwareName(makeCvParam("MS:1001476","xtandem",psiCV));
-
-//        tempParam = new Param();
-//        tempParam.setParam(makeCvParam("MS:0000000", "XiFDR", psiCV));
-//        analysisSoftware.setSoftwareName(tempParam);
 
         analysisSoftware.setId("xiFDR_id");
         analysisSoftware.setVersion(version);
 
-        /* TO DO - need to work out how to use Param
-         CvParam cvParam = new CvParam();
-         cvParam.setName("xtandem");
-         cvParam.setCvRef(psiCvID);
-         cvParam.setAccession("MS:1001476");
-         ParamAlternative paramAlt = new ParamAlternative();
-         paramAlt.setCvParam(cvParam);
-
-         analysisSoftware.setSoftwareName(makeCvParam("MS:1001476","xtandem",psiCV));
-         analysisSoftware.setSoftwareName(paramAlt);
-         */
         analysisSoftwares.add(analysisSoftware);
 
     }

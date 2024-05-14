@@ -3861,7 +3861,10 @@ public abstract class OfflineFDR {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
                 boolean filter = bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$");
                 settings.setFilterToUniquePSM(filter);
+            } else if (arg.contentEquals("--got-restarted")) {
+                System.out.println("got restarted");
             } else {
+                System.out.println(arg);
                 unknown.add(arg);
             }
 
