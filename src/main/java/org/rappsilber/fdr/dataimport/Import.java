@@ -1,5 +1,11 @@
+package org.rappsilber.fdr.dataimport;
+
+import java.util.ArrayList;
+import org.rappsilber.fdr.OfflineFDR;
+import org.rappsilber.fdr.entities.PSM;
+
 /*
- * Copyright 2020 Lutz Fischer <lfischer@staffmail.ed.ac.uk>.
+ * Copyright 2021 Lutz Fischer <lfischer@staffmail.ed.ac.uk>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +19,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.calculation;
-
-import org.rappsilber.fdr.entities.AbstractFDRElement;
-import org.rappsilber.fdr.result.SubGroupFdrInfo;
 
 /**
  *
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
-public interface CheckValid {
-
-    /**
-     * test whether a result for a subgroup should be considered valid
-     *
-     * @param <T>
-     * @param info
-     * @return null pass; otherwise reason
-     */
-    <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info);
-
-    <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info, int minTD, double factor);
+public interface Import {
+    ArrayList<PSM> read(OfflineFDR target);
     
 }

@@ -10,9 +10,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer</exec.workingdir>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx20g</exec.vmArgs>
+                <exec.appArgs></exec.appArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -25,10 +28,13 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
-                <exec.workingdir>/home/lfischer</exec.workingdir>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx20g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.appArgs></exec.appArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -41,9 +47,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath org.rappsilber.fdr.CommandLine</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer</exec.workingdir>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx20g</exec.vmArgs>
+                <exec.appArgs></exec.appArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
     </actions>

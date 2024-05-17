@@ -32,9 +32,9 @@
     </Component>
     <Component class="javax.swing.ButtonGroup" name="bgFDRSettingType">
     </Component>
-    <Component class="org.rappsilber.fdr.gui.components.FDRSettingsComplete" name="fdrSettingsComplete">
+    <Component class="org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete" name="fdrSettingsComplete">
     </Component>
-    <Component class="org.rappsilber.fdr.gui.components.FDRSettingsSimple" name="fdrSettingsSimple">
+    <Component class="org.rappsilber.fdr.gui.components.settings.FDRSettingsSimple" name="fdrSettingsSimple">
       <Properties>
         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
           <Border info="org.netbeans.modules.form.compat2.border.EtchedBorderInfo">
@@ -43,7 +43,7 @@
         </Property>
       </Properties>
     </Component>
-    <Component class="org.rappsilber.fdr.gui.components.FDRSettingsMedium" name="fdrSettingsMedium">
+    <Component class="org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium" name="fdrSettingsMedium">
     </Component>
     <Component class="javax.swing.JRadioButton" name="rbFDRSimple">
       <Properties>
@@ -55,6 +55,16 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="changFDRSettingsInterface"/>
       </Events>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.WriteToDB" name="writeDB">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
+    </Component>
+    <Component class="org.rappsilber.fdr.gui.components.WriteToDBXi2" name="writeToDBXi2">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
+      </AuxValues>
     </Component>
   </NonVisualComponents>
   <Properties>
@@ -1330,20 +1340,27 @@
                                   <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="fbFolder" max="32767" attributes="0"/>
-                                      <Group type="102" alignment="0" attributes="0">
-                                          <Component id="rbTSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace min="-2" pref="95" max="-2" attributes="0"/>
-                                          <Component id="ckPrePostAA" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                                      </Group>
-                                      <Group type="102" alignment="0" attributes="0">
-                                          <Component id="rbCSV" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace max="32767" attributes="0"/>
-                                          <Component id="btnCalcRanges" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace type="separate" max="-2" attributes="0"/>
-                                          <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
-                                      </Group>
                                       <Component id="lpCsvOutLocal" pref="757" max="32767" attributes="0"/>
+                                      <Group type="102" alignment="0" attributes="0">
+                                          <Group type="103" groupAlignment="0" attributes="0">
+                                              <Component id="rbTSV" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="rbCSV" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          </Group>
+                                          <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
+                                          <Group type="103" groupAlignment="0" attributes="0">
+                                              <Group type="102" attributes="0">
+                                                  <Component id="ckWriteAll" min="-2" max="-2" attributes="0"/>
+                                                  <EmptySpace max="32767" attributes="0"/>
+                                                  <Component id="btnCalcRanges" min="-2" max="-2" attributes="0"/>
+                                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                                  <Component id="btnWrite" min="-2" max="-2" attributes="0"/>
+                                              </Group>
+                                              <Group type="102" attributes="0">
+                                                  <Component id="ckPrePostAA" min="-2" max="-2" attributes="0"/>
+                                                  <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                                              </Group>
+                                          </Group>
+                                      </Group>
                                   </Group>
                                   <EmptySpace min="-2" pref="23" max="-2" attributes="0"/>
                               </Group>
@@ -1372,6 +1389,7 @@
                                       <Component id="rbCSV" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="btnWrite" alignment="3" min="-2" max="-2" attributes="0"/>
                                       <Component id="btnCalcRanges" alignment="3" min="-2" max="-2" attributes="0"/>
+                                      <Component id="ckWriteAll" alignment="3" min="-2" max="-2" attributes="0"/>
                                   </Group>
                                   <EmptySpace pref="243" max="32767" attributes="0"/>
                               </Group>
@@ -1468,6 +1486,11 @@
                             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCalcRangesActionPerformed"/>
                           </Events>
                         </Component>
+                        <Component class="javax.swing.JCheckBox" name="ckWriteAll">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="write out input CSMs"/>
+                          </Properties>
+                        </Component>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JPanel" name="jPanel14">
@@ -1513,7 +1536,7 @@
                                                       <Component id="txtmzIdentOwnerOrg" alignment="0" max="32767" attributes="0"/>
                                                       <Component id="cmbPeakListFormat" max="32767" attributes="0"/>
                                                   </Group>
-                                                  <EmptySpace type="unrelated" pref="350" max="32767" attributes="0"/>
+                                                  <EmptySpace type="unrelated" pref="365" max="32767" attributes="0"/>
                                                   <Component id="btnWriteMzIdentML" min="-2" max="-2" attributes="0"/>
                                               </Group>
                                           </Group>
@@ -1719,7 +1742,7 @@
                         <DimensionLayout dim="0">
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="1" attributes="0">
-                                  <EmptySpace pref="805" max="32767" attributes="0"/>
+                                  <EmptySpace pref="802" max="32767" attributes="0"/>
                                   <Component id="btnPeakListParse" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
@@ -1772,15 +1795,6 @@
                         </Component>
                       </SubComponents>
                     </Container>
-                    <Component class="org.rappsilber.fdr.gui.components.WriteToDB" name="writeDB">
-                      <Constraints>
-                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-                          <JTabbedPaneConstraints tabName="To Database">
-                            <Property name="tabTitle" type="java.lang.String" value="To Database"/>
-                          </JTabbedPaneConstraints>
-                        </Constraint>
-                      </Constraints>
-                    </Component>
                   </SubComponents>
                 </Container>
               </SubComponents>

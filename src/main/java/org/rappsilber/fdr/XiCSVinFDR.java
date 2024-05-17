@@ -19,22 +19,24 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
 import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
-import org.rappsilber.fdr.entities.DBPSM;
+import org.rappsilber.fdr.dataimport.Xi2Config;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
 import org.rappsilber.fdr.entities.Protein;
+import org.rappsilber.fdr.entities.ProteinGroup;
 import org.rappsilber.fdr.gui.FDRGUI;
 import org.rappsilber.fdr.gui.components.MZIdentMLOwnerGUI;
 import org.rappsilber.fdr.result.FDRResult;
@@ -42,13 +44,10 @@ import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.MZIdentMLExport;
 import org.rappsilber.fdr.utils.MZIdentMLOwner;
 import org.rappsilber.fdr.utils.MaximisingStatus;
-import org.rappsilber.fdr.utils.MaximizingUpdate;
-import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.UpdatableChar;
 import rappsilber.config.RunConfig;
 import rappsilber.config.RunConfigFile;
 import rappsilber.ms.sequence.AminoAcid;
-import rappsilber.ms.sequence.AminoModification;
 import rappsilber.ms.sequence.Sequence;
 
 /**
@@ -68,9 +67,35 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     boolean lastMzIDowner = false;
 
     private boolean markModifications;
+    private boolean writeMzID = false;
 
+    private void markVariableModifiedPSMs() {
+        HashSet<Peptide> var_mod_peps=new HashSet<>();
+        HashSet<AminoAcid> allvarmods = new HashSet<>();
+        for (AminoAcid aa :m_config.getVariableModifications()) 
+            allvarmods.add(aa);
+        for (AminoAcid aa : m_config.getLinearModifications()) 
+            allvarmods.add(aa);
+        
+        for (Peptide p :allPeptides) {
+            Sequence s = new Sequence(p.getSequence(), m_config);
+            for (AminoAcid aa : s) {
+                if (allvarmods.contains(aa)) {
+                    var_mod_peps.add(p);
+                    break;
+                }
+            }
+        }
+        
+        for (PSM psm : allPSMs) {
+            if (var_mod_peps.contains(psm.getPeptide1()) || var_mod_peps.contains(psm.getPeptide2()))
+                psm.addNegativeGrouping("VarMod");
+        }
+    }
 
-
+    private void setWriteMzID(boolean b) {
+        this.writeMzID = b;
+    }
 
     class XiSequence extends rappsilber.ms.sequence.Sequence {
         
@@ -113,126 +138,6 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }
     
 
-    /**
-     * adds a psm to the list folds up the scores to peptidespairs links
-     * proteinpairs and proteins
-     *
-     * @param psmID
-     * @param pepid1
-     * @param pepid2
-     * @param peplen1
-     * @param peplen2
-     * @param site1
-     * @param site2
-     * @param charge
-     * @param score
-     * @param proteinId1
-     * @param proteinId2
-     * @param pepPosition1
-     * @param pepPosition2
-     * @param scoreRation
-     * @return a peptide pair that is supported by the given match
-     */
-    @Override
-    public PSM addMatch(String psmID, org.rappsilber.fdr.entities.Peptide peptide1, org.rappsilber.fdr.entities.Peptide peptide2, int peplen1, int peplen2, int site1, int site2, int charge, double score, Protein proteinId1, Protein proteinId2, int pepPosition1, int pepPosition2, double peptide1score, double peptide2score, String isSpecialCase, String crosslinker, String run, String scan) {
-        org.rappsilber.fdr.entities.Peptide npepid1;
-        org.rappsilber.fdr.entities.Peptide npepid2;
-        int npeplen1;
-        int npeplen2;
-        int nsite1;
-        int nsite2;
-        Protein nproteinId1;
-        Protein nproteinId2;
-        int npepPosition1;
-        int npepPosition2;
-        int protcomp = proteinId1.compareDecoyUnAware(proteinId2);
-        int pepcomp = peptide1.compare(peptide2);
-        int sitecomp = (site1 - site2);
-        double pep1score = peptide1score;
-        double pep2score = peptide2score;
-        double npep1score;
-        double npep2score;
-
-        if (protcomp < 0 || (protcomp == 0 && pepcomp < 0) || (protcomp == 0 && pepcomp == 0 && site1 < site2)) {
-            npepid1 = peptide1;
-            npepid2 = peptide2;
-            npeplen1 = peplen1;
-            npeplen2 = peplen2;
-            nsite1 = (byte)site1;
-            nsite2 = (byte)site2;
-            nproteinId1 = proteinId1;
-            nproteinId2 = proteinId2;
-            npepPosition1 = pepPosition1;
-            npepPosition2 = pepPosition2;
-            npep1score = pep1score;
-            npep2score = pep2score;
-
-        } else {
-            npepid1 = peptide2;
-            npepid2 = peptide1;
-            npeplen1 = peplen2;
-            npeplen2 = peplen1;
-            nsite1 = (byte)site2;
-            nsite2 = (byte)site1;
-            nproteinId1 = proteinId2;
-            nproteinId2 = proteinId1;
-            npepPosition1 = pepPosition2;
-            npepPosition2 = pepPosition1;
-            npep1score = pep2score;
-            npep2score = pep1score;
-        }
-
-        if (!PSMScoreHighBetter) {
-            score = 10 - (10 * score);
-        }
-
-
-        DBPSM psm = new DBPSM(psmID, npepid1, npepid2, (byte)nsite1, (byte)nsite2, proteinId1.isDecoy(), proteinId2.isDecoy(), (byte)charge, score, npep1score, npep2score);
-        psm.setNegativeGrouping(isSpecialCase);
-        psm.setRun(registerRun(run));
-        psm.setScan(scan);
-        psm.setCrosslinker(crosslinker);
-        rappsilber.ms.sequence.Sequence ps1= new rappsilber.ms.sequence.Sequence(peptide1.getSequence(), m_config);
-        peptide1.mass = ps1.getWeight();
-        if (peptide2 != null && peptide2 != Peptide.NOPEPTIDE) {
-            rappsilber.ms.sequence.Sequence ps2= new rappsilber.ms.sequence.Sequence(peptide2.getSequence(), m_config);
-            peptide2.mass = ps2.getWeight();
-            Double xlmass = crossLinkerMass.get(crosslinker);
-            if (xlmass == null && crosslinker.contains("+"))
-                xlmass = crossLinkerMass.get(crosslinker.substring(0,crosslinker.indexOf("+")));
-            psm.setCalcMass(peptide1.mass + peptide2.mass + xlmass);
-        } else {
-            psm.setCalcMass(peptide1.mass);
-        }
-
-        
-                    String modLoockup = npepid1.getSequence();
-                    if (npepid1 != null)
-                        modLoockup+=npepid2.getSequence();
-                    Sequence m = new Sequence(modLoockup, m_config);
-                    for (AminoAcid aa : m) {
-                        if (aa instanceof AminoModification) {
-                            if (m_config.getVariableModifications().contains(aa)) {
-                                psm.setHasVarMods(true);
-                            }
-                            if (m_config.getFixedModifications().contains(aa)) {
-                                psm.setHasFixedMods(true);
-                            }
-                        }
-                    }
-                    if (psm.hasVarMods()) {
-//                        psm.setModified(true);
-//                        if (markModifications())
-//                            psm.addNegativeGrouping("Modified");
-                    }
-         
-
-        PSM regpsm = getAllPSMs().register(psm);
-
-        return regpsm;
-    }   
-
-
     public PSM addMatch(String psmID, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, String accession1, String description1, String accession2, String description2, int pepPosition1, int pepPosition2, double peptide1score, double peptide2score, String isSpecialCase, String crosslinker, String run, String scan) {
 
         long pepid1 = m_pepIDs.toIntValue(pepSeq1);
@@ -254,6 +159,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                 + "--xiconfig=             what xi config to use to turn find modifications\n"
                 + "--fasta=                fasta file searched"
                 + "--flagModifications     should modified peptide make their own sub-group\n"
+                + "--writemzid             also write out an mzIdentML result file\n"
                 + "--lastowner             instead of asking for an mzIdentML document owner\n"
                 + "                        reuse the last defined one\n"
                 + "--gui                   forward settings to gui\n";
@@ -287,6 +193,23 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     lastMzIDowner = true;
             }else if (arg.toLowerCase().startsWith("--flagmodifications")) {
                 setMarkModifications(true);
+            }else if (arg.toLowerCase().startsWith("--writemzid")) {
+                setWriteMzID(true);
+            } else if (arg.startsWith("--mzidfirst=")) {
+                mzid_owner.first=arg.substring(arg.indexOf("=")+1);
+                setWriteMzID(true);
+            } else if (arg.startsWith("--mzidlast=")) {
+                mzid_owner.last=arg.substring(arg.indexOf("=")+1);
+                setWriteMzID(true);
+            } else if (arg.startsWith("--mzidemail=")) {
+                mzid_owner.email=arg.substring(arg.indexOf("=")+1);
+                setWriteMzID(true);
+            } else if (arg.startsWith("--mzidorg=")) {
+                mzid_owner.org=arg.substring(arg.indexOf("=")+1);
+                setWriteMzID(true);
+            } else if (arg.startsWith("--mzidaddr=")) {
+                mzid_owner.address=arg.substring(arg.indexOf("=")+1).replace("\\n","\n");
+                setWriteMzID(true);
             }  else {
                unknown.add(arg);
             }
@@ -441,29 +364,40 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
         FDRResult res = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings, cu);
 
-        Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, ofdr.singleCalculation() + 
-                " " + (ofdr.getConfig() != null) + " " + (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0) + "\n");
+        //Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, ofdr.singleCalculation() + 
+        //        " " + (ofdr.getConfig() != null) + " " + (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0) + "\n");
         
-        if (ofdr.singleCalculation() && ofdr.getConfig() != null && (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0)) {
-            // we should be able to write out an mzIdentML
-            String path =ofdr.getCsvOutDirSetting();
-            String baseName = ofdr.getCsvOutBaseSetting();
-            String out = path + (path.endsWith(File.separator)?"":File.separator) + baseName + ".mzid";
-            try {
-                MZIdentMLOwner o = new MZIdentMLOwner();
-                
-                if (ofdr.lastMzIDowner) {
-                    o.readLast();
-                } else {
-                    o = MZIdentMLOwnerGUI.getSetOwner(o);
+        if (ofdr.writeMzID) {
+            if (ofdr.singleCalculation() && ofdr.getConfig() != null && (ofdr.searchedFastas != null && ofdr.searchedFastas.size()>0)) {
+                // we should be able to write out an mzIdentML
+                String path =ofdr.getCsvOutDirSetting();
+                String baseName = ofdr.getCsvOutBaseSetting();
+                String out = path + (path.endsWith(File.separator)?"":File.separator) + baseName + ".mzid";
+                MZIdentMLOwner o = ofdr.getOwner();
+                if (o.isEmpty()) {
+                    try {
+
+
+                        if (ofdr.lastMzIDowner) {
+                            o.readLast();
+                        } else {
+                            o = MZIdentMLOwnerGUI.getSetOwner(o);
+                        }
+                    } catch (Exception ex) {
+                        Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
                 Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Writing mzIdentML to " + out);
-                MZIdentMLExport mze = new MZIdentMLExport(ofdr, res, out, MZIdentMLOwnerGUI.getSetOwner(new MZIdentMLOwner()));
-            } catch (Exception ex) {
-                Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+                try {
+                    MZIdentMLExport mze = new MZIdentMLExport(ofdr, res, out, o);
 
+                } catch (Exception ex) {
+                    Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Error exporting mzIdnetML", ex);
+                }
+            } else 
+                System.err.println("could not write out mzIdentML");
+        }
+            
 
         System.exit(0);
 
@@ -493,20 +427,22 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
 
 
     @Override
-    public RunConfig getConfig(int searchid) {
+    public RunConfig getConfig(String searchid) {
         return m_config;
     }
 
     @Override
-    public IntArrayList getSearchIDs() {
-        return new IntArrayList(new int[]{0});
+    public ArrayList<String> getSearchIDs() {
+        ArrayList<String> ret = new ArrayList<>(1);
+        ret.add("");
+        return ret;
     }
 
     @Override
-    public int getFastas(int searchID, ArrayList<Integer> dbIDs, ArrayList<String> names) {
+    public int getFastas(String searchID, ArrayList<String> dbIDs, ArrayList<String> names) {
         int id =0;
         for (String f : searchedFastas) {
-            dbIDs.add(id++);
+            dbIDs.add((id++)+"");
             names.add(f);
         }
         return id;
@@ -623,7 +559,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                 } else if (!pa.isEmpty()) {
                     // it was seen before so it does not uniquely identifies any protein
                     // therefore we don't store this link
-                    parts2Proteins.put(p, "");
+                    parts2Proteins.put(p.toLowerCase(), "");
                 }
             }
         }
@@ -634,8 +570,25 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         boolean ret = super.readCSV(csv, filter); //To change body of generated methods, choose Tools | Templates.
         if (ret)
             matchFastas();
+        if (markModifications()) {
+            markVariableModifiedPSMs();
+        }
         return ret;
     }
 
+    @Override
+    public int getxiMajorVersion() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Xi2Config getXi2Config() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Xi2Config getXi2Config(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
 }

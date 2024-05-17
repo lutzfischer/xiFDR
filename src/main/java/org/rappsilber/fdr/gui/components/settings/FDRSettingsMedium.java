@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import javax.swing.AbstractButton;
 import javax.swing.DefaultComboBoxModel;
@@ -27,7 +27,8 @@ import javax.swing.event.ChangeListener;
 import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.OfflineFDR.FDRLevel;
-import static org.rappsilber.fdr.gui.components.FDRSettingsComplete.setSpinnerModel;
+import org.rappsilber.fdr.gui.components.FDRSpinnerModel;
+import static org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete.setSpinnerModel;
 import rappsilber.ms.statistics.utils.UpdateableDouble;
 
 /**

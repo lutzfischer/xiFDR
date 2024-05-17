@@ -151,22 +151,26 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     }
     
     
-    public void addFDRGroups(AbstractFDRElement e) {
+    public boolean addFDRGroups(AbstractFDRElement e) {
+        boolean changed = false;
         if (this.m_negativeGroups != null) {
             if (e.m_negativeGroups == null) {
                 this.m_negativeGroups = null;
             } else {
                 m_negativeGroups.retainAll(e.m_negativeGroups);
+                changed = true;
             }
         }
         if (e.hasPositiveGrouping()) {
             if (this.m_positiveGroups == null) {
                 this.m_positiveGroups = e.getPositiveGrouping();
+                changed = true;
             } else if (!this.m_positiveGroups.containsAll(e.getPositiveGrouping())) {
                 this.m_positiveGroups.addAll(e.getPositiveGrouping());
+                changed = true;
             }
         }
-        
+        return changed;
     }
 
     public abstract Collection<PeptidePair> getPeptidePairs();
@@ -213,6 +217,9 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     
     
     public double getEstimatedFDR() {
+        if (this.getLowerFDRTD() == null || this.getHigherFDRTD() == null) {
+            return Double.NaN;
+        }
         double lowerFDRScore = this.getLowerFDRTD().getScore();
         double higherFDRScore = this.getHigherFDRTD().getScore();
         double lowerFDR = this.getLowerFDRTD().getFDR();

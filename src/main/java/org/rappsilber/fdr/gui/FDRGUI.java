@@ -24,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -54,6 +55,7 @@ import org.rappsilber.config.LocalProperties;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.CSVinFDR;
+import org.rappsilber.fdr.DB2inFDR;
 import org.rappsilber.fdr.DBinFDR;
 import org.rappsilber.fdr.FDRSettings;
 import org.rappsilber.fdr.FDRSettingsImpl;
@@ -66,9 +68,10 @@ import org.rappsilber.fdr.XiInFDR;
 import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
+import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
-import org.rappsilber.fdr.gui.components.FDRSettingsPanel;
+import org.rappsilber.fdr.gui.components.settings.FDRSettingsPanel;
 import org.rappsilber.fdr.utils.MZIdentMLExport;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.fdr.utils.MaximizingUpdate;
@@ -221,6 +224,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
         getDBFDR.setFdrgui(this);
         writeDB.setFdrgui(this);
+        writeToDBXi2.setFdrgui(this);
         
         parseChageLog();
         try {
@@ -398,9 +402,13 @@ public class FDRGUI extends javax.swing.JFrame {
         
     }
 
-    public void setTitle(String title) {
-        super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ")" + title);
-
+    public void setTitle(final String title) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                FDRGUI.super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ") " + title);
+            }
+        });
     }
 
     public void prepareFDRCalculation() throws NumberFormatException {
@@ -478,7 +486,31 @@ public class FDRGUI extends javax.swing.JFrame {
      */
     public void setFdr(OfflineFDR m_fdr) {
         this.m_fdr = m_fdr;
-        ckGroupByCrossLinkerStubs.setEnabled(m_fdr.stubsFound());
+        final OfflineFDR cfdr = m_fdr;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ckGroupByCrossLinkerStubs.setEnabled(cfdr.stubsFound());
+                if (cfdr instanceof DBinFDR && cfdr.singleClassFDR) {
+                    if (tpResult.indexOfComponent(writeDB) == -1)
+                        tpResult.add("To Database", writeDB);
+
+                    if (tpResult.indexOfComponent(writeToDBXi2) != -1)
+                        tpResult.remove(writeToDBXi2);
+                } else if (cfdr instanceof DB2inFDR && cfdr.singleClassFDR) {
+                    if (tpResult.indexOfComponent(writeDB) != -1)
+                        tpResult.remove(writeDB);
+
+                    if (tpResult.indexOfComponent(writeToDBXi2) == -1)
+                        tpResult.add("To Database", writeToDBXi2);
+                } else {
+                    if (tpResult.indexOfComponent(writeDB) != -1)
+                        tpResult.remove(writeDB);
+                    if (tpResult.indexOfComponent(writeToDBXi2) != -1)
+                        tpResult.remove(writeToDBXi2);
+                }
+            }
+        });
     }
 
     /**
@@ -609,6 +641,9 @@ public class FDRGUI extends javax.swing.JFrame {
                             export.setForceExtension(extension);
                             export.setMZMLTemplate(template);
                             export.convertFile(f.getAbsolutePath());
+                            FileWriter fw = new FileWriter(f.getAbsolutePath() + ".summary.csv");
+                            fw.write(fdr.getSummary(m_result));
+                            fw.close();
                             
                             setStatus("done exporting mzIdentML");
                         } catch (Exception ex) {
@@ -671,9 +706,9 @@ public class FDRGUI extends javax.swing.JFrame {
                     String folder = getCsvOut().folder;
                     String basename = getCsvOut().basename;
                     if (getCsvOut().extension != null && !csvout.extension.isEmpty()) {
-                        ofdr.writeFiles(folder, basename,getCsvOut().extension, sep, getResult());
+                        ofdr.writeFiles(folder, basename,getCsvOut().extension, sep, getResult(), ckWriteAll.isSelected());
                     } else {
-                        ofdr.writeFiles(folder, basename, sep, getResult());
+                        ofdr.writeFiles(folder, basename, sep, getResult(), ckWriteAll.isSelected());
                     }
                     setStatus("finished writing: " + ofdr.summaryString(getResult()));
 
@@ -719,9 +754,9 @@ public class FDRGUI extends javax.swing.JFrame {
             setStatus("updating PSMs");
             int current = 0;
             int oldCurrent = -100;
-            int all = getResult().psmFDR.size();
+            int all = this.getFdr().getAllPSMs().size();
             int oldPerc = -1;
-            for (PSM p : getResult().psmFDR) {
+            for (PSM p : this.getFdr().getAllPSMs()) {
                 int percent = (int) (current++ *1000.0 /all);
                 if (percent>oldPerc&& current-oldCurrent>100) {
                     setStatus("updating PSMs ("+percent/10.0+"%)" );
@@ -837,6 +872,8 @@ public class FDRGUI extends javax.swing.JFrame {
     protected CSVinFDR innerBatchReadCSV(File config, File fasta,CsvCondition filter,OfflineFDR.Normalisation normalisation) throws IOException, ParseException {
         Iterator<CsvParser> csvs = csvSelect.iterator();
         CsvParser csv = csvs.next();
+        String forwardPattern = csvSelect.getForwardPattern();
+        String window_title = csv.getInputFile().getName();
 
         CSVinFDR ofdr = null;
         if (config != null && fasta != null) {
@@ -848,7 +885,10 @@ public class FDRGUI extends javax.swing.JFrame {
         }else {
             ofdr = new CSVinFDR();
         }
+        if (forwardPattern != null && !forwardPattern.isEmpty())
+            ofdr.setForwardPattern(forwardPattern);
         if (addCSV(ofdr, null, csv,filter)) {
+            setTitle(window_title);
 
             while (csvs.hasNext()) {
                 csv = csvs.next();
@@ -863,10 +903,15 @@ public class FDRGUI extends javax.swing.JFrame {
                 }else {
                     nextfdr = new CSVinFDR();
                 }
+                if (forwardPattern != null && !forwardPattern.isEmpty())
+                    nextfdr.setForwardPattern(forwardPattern);
 
 
                 if (!addCSV(nextfdr, ofdr, csv,filter)) {
                     return null;
+                } else {
+                    window_title += ";" + csv.getInputFile().getName();
+                    setTitle(window_title);
                 }
             }
             if (normalisation != OfflineFDR.Normalisation.None) {
@@ -884,6 +929,8 @@ public class FDRGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "No file selected", "no File Selected", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        
+        Protein.DECOY_PREFIX = csvSelect.getDecoyPrefix();
         final CsvCondition filter = csvSelect.getFilter();
         final File config=csvSelect.fbConfigIn.getFile();
         final File fasta=csvSelect.fbFastaIn.getFile();
@@ -896,7 +943,7 @@ public class FDRGUI extends javax.swing.JFrame {
             public void run() {
                 try {
 
-                    setStatus("Start");
+                    setStatus("Start reading");
                     setFdr(innerBatchReadCSV(config, fasta, filter, normalisation));
                     setEnableCalc(true);
                     setStatus("finished reading");
@@ -920,6 +967,7 @@ public class FDRGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "No file selected", "no File Selected", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        Protein.DECOY_PREFIX = csvSelect.getDecoyPrefix();
 
         setEnableRead(false);
         setEnableCalc(false);
@@ -938,6 +986,7 @@ public class FDRGUI extends javax.swing.JFrame {
                     CSVinFDR nextfdr = innerBatchReadCSV(config, fasta, filter, normalisation);
                     
                     getFdr().normaliseAndAddPsmList(nextfdr, normalisation);
+                    setFdr(getFdr());
                     
                     setEnableCalc(true);
                     setStatus("finished reading");
@@ -955,7 +1004,7 @@ public class FDRGUI extends javax.swing.JFrame {
         Thread t = new Thread(runnable);
         t.setName("Reading From CSV");
         t.start();
-
+        
 
     }
 
@@ -1248,6 +1297,7 @@ public class FDRGUI extends javax.swing.JFrame {
         txtSumLinks.setText(sumLinks + " [" + nice[0] + "%," + nice[1] + "%]");
         txtSumLinks.setToolTipText(fdrLevelSummary(result.proteinGroupLinkFDR));
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksBetweenDecoyUF-2*sumLinksBetweenDDUF)/(double)sumLinksBetweenTargetUF * 100, (sumLinksBetweenDecoyUF-2*sumLinksBetweenDDUF+1)/(double)sumLinksBetweenTargetUF * 100}, 1);
+        
         txtSumLinksBetween.setText((sumLinksBetweenTarget + sumLinksBetweenDecoy) + " (" + sumLinksBetweenTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksInternalDecoyUF-2*sumLinksInternalDDUF)/(double)sumLinksInternalTargetUF * 100, (sumLinksInternalDecoyUF-2*sumLinksInternalDDUF+1)/(double)sumLinksInternalTargetUF * 100}, 1);
         txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + " TT)  [" + nice[0] + "%," + nice[1] + "%]");
@@ -1272,6 +1322,7 @@ public class FDRGUI extends javax.swing.JFrame {
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsComplete);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsMedium);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsSimple);
+            fdrSettings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
             final FDRSettingsImpl settings = new FDRSettingsImpl(fdrSettings);
             
             getFdr().setMinDecoys(settings.getMinTD());
@@ -1355,6 +1406,7 @@ public class FDRGUI extends javax.swing.JFrame {
             public void run() {
                 btnWrite.setEnabled(enable);
                 writeDB.setEnableWrite(getFdr() instanceof DBinFDR && enable);
+                writeToDBXi2.setEnableWrite(getFdr() instanceof DB2inFDR && enable);
                 ckPrePostAA.setEnabled(getFdr() instanceof DBinFDR);
 
                 btnWriteMzIdentML.setEnabled(enable && ((isMzIdent) || getFdr() instanceof XiInFDR));
@@ -1396,6 +1448,7 @@ public class FDRGUI extends javax.swing.JFrame {
                         getFdrSettingsComplete().setMinPeptideStubFilter(state.showMinStubs);
                         getFdrSettingsComplete().setMinPeptideDoubletFilter(state.showMinDoublets);
                         getFdrSettingsComplete().setMinPeptideFragmentsFilter(state.showMinFrags);
+                        getFdrSettingsComplete().minScore(state.showMinScore);
                         getFdrSettingsComplete().setMinDeltaScoreFilter(state.showDelta);
                         getFdrSettingsComplete().setMinPeptideCoverageFilter(state.showPepCoverage);
                         getFdrSettingsComplete().setPeptidePairFDR(state.showPepFDR);
@@ -1562,10 +1615,12 @@ public class FDRGUI extends javax.swing.JFrame {
         cbCSVHeaders = new javax.swing.JComboBox();
         cbCSVHeaderOptional = new javax.swing.JComboBox();
         bgFDRSettingType = new javax.swing.ButtonGroup();
-        fdrSettingsComplete = new org.rappsilber.fdr.gui.components.FDRSettingsComplete();
-        fdrSettingsSimple = new org.rappsilber.fdr.gui.components.FDRSettingsSimple();
-        fdrSettingsMedium = new org.rappsilber.fdr.gui.components.FDRSettingsMedium();
+        fdrSettingsComplete = new org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete();
+        fdrSettingsSimple = new org.rappsilber.fdr.gui.components.settings.FDRSettingsSimple();
+        fdrSettingsMedium = new org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium();
         rbFDRSimple = new javax.swing.JRadioButton();
+        writeDB = new org.rappsilber.fdr.gui.components.WriteToDB();
+        writeToDBXi2 = new org.rappsilber.fdr.gui.components.WriteToDBXi2();
         jScrollPane6 = new javax.swing.JScrollPane();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
@@ -1667,6 +1722,7 @@ public class FDRGUI extends javax.swing.JFrame {
         lpCsvOutLocal = new org.rappsilber.gui.components.LocalPicker();
         jLabel28 = new javax.swing.JLabel();
         btnCalcRanges = new javax.swing.JButton();
+        ckWriteAll = new javax.swing.JCheckBox();
         jPanel14 = new javax.swing.JPanel();
         fbMzIdentMLOut = new org.rappsilber.gui.components.FileBrowser();
         btnWriteMzIdentML = new javax.swing.JButton();
@@ -1687,7 +1743,6 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookup = new javax.swing.JPanel();
         flPeakLists = new org.rappsilber.gui.components.FileList();
         btnPeakListParse = new javax.swing.JButton();
-        writeDB = new org.rappsilber.fdr.gui.components.WriteToDB();
         pLog = new javax.swing.JPanel();
         spLog = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
@@ -2447,6 +2502,8 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
+        ckWriteAll.setText("write out input CSMs");
+
         javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
         jPanel10.setLayout(jPanel10Layout);
         jPanel10Layout.setHorizontalGroup(
@@ -2459,18 +2516,22 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGap(26, 26, 26)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fbFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, 757, Short.MAX_VALUE)
                     .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addComponent(rbTSV)
-                        .addGap(95, 95, 95)
-                        .addComponent(ckPrePostAA)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addComponent(rbCSV)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnCalcRanges)
-                        .addGap(18, 18, 18)
-                        .addComponent(btnWrite))
-                    .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, 757, Short.MAX_VALUE))
+                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(rbTSV)
+                            .addComponent(rbCSV))
+                        .addGap(70, 70, 70)
+                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel10Layout.createSequentialGroup()
+                                .addComponent(ckWriteAll)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btnCalcRanges)
+                                .addGap(18, 18, 18)
+                                .addComponent(btnWrite))
+                            .addGroup(jPanel10Layout.createSequentialGroup()
+                                .addComponent(ckPrePostAA)
+                                .addGap(0, 0, Short.MAX_VALUE)))))
                 .addGap(23, 23, 23))
         );
         jPanel10Layout.setVerticalGroup(
@@ -2492,7 +2553,8 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(rbCSV)
                     .addComponent(btnWrite)
-                    .addComponent(btnCalcRanges))
+                    .addComponent(btnCalcRanges)
+                    .addComponent(ckWriteAll))
                 .addContainerGap(243, Short.MAX_VALUE))
         );
 
@@ -2591,7 +2653,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                     .addComponent(txtmzIdentOwnerEmail)
                                     .addComponent(txtmzIdentOwnerOrg)
                                     .addComponent(cmbPeakListFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 350, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 365, Short.MAX_VALUE)
                                 .addComponent(btnWriteMzIdentML)))))
                 .addContainerGap())
         );
@@ -2646,7 +2708,7 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookupLayout.setHorizontalGroup(
             pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pPeakListLookupLayout.createSequentialGroup()
-                .addContainerGap(805, Short.MAX_VALUE)
+                .addContainerGap(802, Short.MAX_VALUE)
                 .addComponent(btnPeakListParse)
                 .addContainerGap())
             .addGroup(pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2669,13 +2731,12 @@ public class FDRGUI extends javax.swing.JFrame {
         );
 
         tpResult.addTab("PeakListLookup", pPeakListLookup);
-        tpResult.addTab("To Database", writeDB);
 
         javax.swing.GroupLayout pResultLayout = new javax.swing.GroupLayout(pResult);
         pResult.setLayout(pResultLayout);
         pResultLayout.setHorizontalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 894, Short.MAX_VALUE)
         );
         pResultLayout.setVerticalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -3138,6 +3199,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox ckGroupByCrossLinkerStubs;
     private javax.swing.JCheckBox ckIgnoreGroups1;
     public javax.swing.JCheckBox ckPrePostAA;
+    private javax.swing.JCheckBox ckWriteAll;
     protected javax.swing.JComboBox<String> cmbMzMLScan2ID;
     public javax.swing.JComboBox cmbPeakListFormat;
     protected org.rappsilber.fdr.gui.components.CSVSelection csvSelect;
@@ -3147,9 +3209,9 @@ public class FDRGUI extends javax.swing.JFrame {
     private org.rappsilber.gui.components.FileBrowser fbFolder;
     private org.rappsilber.gui.components.FileBrowser fbMZIdentMLIn;
     private org.rappsilber.gui.components.FileBrowser fbMzIdentMLOut;
-    private org.rappsilber.fdr.gui.components.FDRSettingsComplete fdrSettingsComplete;
-    private org.rappsilber.fdr.gui.components.FDRSettingsMedium fdrSettingsMedium;
-    private org.rappsilber.fdr.gui.components.FDRSettingsSimple fdrSettingsSimple;
+    private org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete fdrSettingsComplete;
+    private org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium fdrSettingsMedium;
+    private org.rappsilber.fdr.gui.components.settings.FDRSettingsSimple fdrSettingsSimple;
     private org.rappsilber.gui.components.FileList flPeakLists;
     private org.rappsilber.fdr.gui.components.GetDBFDR getDBFDR;
     private javax.swing.JLabel jLabel1;
@@ -3263,7 +3325,8 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTextField txtmzIdentOwnerFirst;
     private javax.swing.JTextField txtmzIdentOwnerLast;
     private javax.swing.JTextField txtmzIdentOwnerOrg;
-    private org.rappsilber.fdr.gui.components.WriteToDB writeDB;
+    public org.rappsilber.fdr.gui.components.WriteToDB writeDB;
+    public org.rappsilber.fdr.gui.components.WriteToDBXi2 writeToDBXi2;
     // End of variables declaration//GEN-END:variables
 
     /**
@@ -3297,14 +3360,14 @@ public class FDRGUI extends javax.swing.JFrame {
     /**
      * @return the fdrSettingsComplete
      */
-    public org.rappsilber.fdr.gui.components.FDRSettingsComplete getFdrSettingsComplete() {
+    public org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete getFdrSettingsComplete() {
         return fdrSettingsComplete;
     }
 
     /**
      * @return the fdrSettingsComplete
      */
-    public org.rappsilber.fdr.gui.components.FDRSettingsMedium getFdrSettingsMedium() {
+    public org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium getFdrSettingsMedium() {
         return fdrSettingsMedium;
     }
 

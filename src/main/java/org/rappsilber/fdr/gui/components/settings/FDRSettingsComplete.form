@@ -113,7 +113,10 @@
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="spMaximizeSteps" max="32767" attributes="0"/>
                               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                              <Component id="ckBoostBetween" max="32767" attributes="0"/>
+                              <Component id="ckBoostBetween" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="ckSelfLinearModFilter" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -218,6 +221,7 @@
                   <Component id="jLabel23" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="spMaximizeSteps" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="ckBoostBetween" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="ckSelfLinearModFilter" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
@@ -519,7 +523,7 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
-        <Component class="org.rappsilber.fdr.gui.components.OtherFilter" name="otherFilter">
+        <Component class="org.rappsilber.fdr.gui.components.settings.OtherFilter" name="otherFilter">
         </Component>
       </SubComponents>
     </Container>
@@ -531,6 +535,12 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ckIgnoreValidityActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckSelfLinearModFilter">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="ec-filter"/>
+        <Property name="toolTipText" type="java.lang.String" value="Only Accept peptide-pairs/residue-pairs/proteins-pairs exclusivly involving proteins that &#xa;have been seen as part of a self link or by linear crosslinker modified peptides"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

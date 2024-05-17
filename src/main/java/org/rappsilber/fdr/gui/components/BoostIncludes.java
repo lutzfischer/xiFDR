@@ -50,6 +50,7 @@ public class BoostIncludes extends javax.swing.JPanel {
         ckDeltaScore.setSelected(settings.boostDeltaScore());
         ckPeptideStubs.setSelected(settings.boostPeptideStubs());
         ckPeptideDoublets.setSelected(settings.boostPeptideDoublets());
+        ckMinScore.setSelected(settings.boostMinScore());
 //        ckSubScores.setSelected(settings.boostSubScores());
     }
 
@@ -115,6 +116,7 @@ public class BoostIncludes extends javax.swing.JPanel {
         ckPeptideCoverage = new javax.swing.JCheckBox();
         ckDeltaScore = new javax.swing.JCheckBox();
         ckMinFragments = new javax.swing.JCheckBox();
+        ckMinScore = new javax.swing.JCheckBox();
 
         ckPeptideDoublets.setText("Peptide Doublets");
 
@@ -143,6 +145,8 @@ public class BoostIncludes extends javax.swing.JPanel {
 
         ckMinFragments.setText("Minimum Fragmnets");
 
+        ckMinScore.setText("Minimum Score");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -154,6 +158,7 @@ public class BoostIncludes extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(ckMinScore)
                     .addComponent(ckPeptideDoublets)
                     .addComponent(ckPeptideStubs)
                     .addComponent(ckDeltaScore)
@@ -182,6 +187,8 @@ public class BoostIncludes extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckDeltaScore)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ckMinScore)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPSM)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(ckPepPair)
@@ -205,6 +212,7 @@ public class BoostIncludes extends javax.swing.JPanel {
         settings.boostMinFragments(ckMinFragments.isSelected());
         settings.boostPeptideStubs(ckPeptideStubs.isSelected());
         settings.boostPeptideDoublets(ckPeptideDoublets.isSelected());
+        settings.boostMinScore(ckMinScore.isSelected());
         //settings.boostSubScores(ckSubScores.isSelected());
         fireActionPerformed(evt);
     }//GEN-LAST:event_jButton1ActionPerformed
@@ -214,6 +222,7 @@ public class BoostIncludes extends javax.swing.JPanel {
     private javax.swing.JCheckBox ckDeltaScore;
     private javax.swing.JCheckBox ckLinks;
     private javax.swing.JCheckBox ckMinFragments;
+    private javax.swing.JCheckBox ckMinScore;
     private javax.swing.JCheckBox ckPSM;
     private javax.swing.JCheckBox ckPepPair;
     private javax.swing.JCheckBox ckPeptideCoverage;

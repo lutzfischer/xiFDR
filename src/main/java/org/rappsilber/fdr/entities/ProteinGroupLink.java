@@ -50,7 +50,13 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
     private TreeSet<PeptidePair> support = new TreeSet<PeptidePair>(new Comparator<PeptidePair>(){
         @Override
         public int compare(PeptidePair o1, PeptidePair o2) {
-            return Double.compare(o2.getScore(), o1.getScore());
+            if (o1==o2)
+                return 0;
+            int ret = Double.compare(o2.getScore(), o1.getScore());
+            if (ret == 0) {
+                ret = o2.toString().compareTo(o1.toString());
+            }
+            return ret;
         }
     } );
     
@@ -225,9 +231,13 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         if (topN == this.lastTopN)
             return this.scoreTopN;
         int i=0;
+        double score = Double.NEGATIVE_INFINITY;
         for (PeptidePair pp : this.support) {
-            if (i++>topN)
-                break;
+            if (score != pp.getScore()) {
+                score = pp.getScore();
+                if (i++>topN)
+                    break;
+            }
             score+= pp.getScore()*pp.getScore();
         }
         this.lastTopN = topN;

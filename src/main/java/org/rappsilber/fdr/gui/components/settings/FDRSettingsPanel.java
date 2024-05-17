@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import org.rappsilber.fdr.FDRSettings;
 import java.awt.Component;
@@ -27,6 +27,8 @@ import javax.swing.JFrame;
 import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 import org.rappsilber.fdr.FDRSettingsImpl;
+import org.rappsilber.fdr.gui.components.BoostIncludes;
+import org.rappsilber.fdr.gui.components.FDRSpinnerModel;
 
 /**
  *
@@ -58,6 +60,9 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean boostPeptideStubs;
     private double minMinPeptideDoubpletFilter;
     private double minPeptideStubFilter;
+    private boolean filterBySelfAndMono = false;
+    private boolean boostMinScore;
+    private Double minScore = 0d;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -367,6 +372,39 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public void setMinPeptideDoubletFilter(double d) {
         this.minMinPeptideDoubpletFilter = d;
+    }
+
+    @Override
+    public boolean filterBySelfAndMono() {
+        return filterBySelfAndMono;
+    }
+
+    @Override
+    public void setfilterBySelfAndMono(boolean filter) {
+        filterBySelfAndMono = filter;
+    }
+
+    
+    
+    @Override
+    public boolean boostMinScore(){
+        return this.boostMinScore;
+    }
+
+    @Override
+    public void boostMinScore(boolean boost){
+        this.boostMinScore = boost;
+    }
+
+    
+    @Override
+    public Double minScore(){
+        return this.minScore;
+    }
+
+    @Override
+    public void minScore(Double minScore){
+        this.minScore = minScore;
     }
     
 }

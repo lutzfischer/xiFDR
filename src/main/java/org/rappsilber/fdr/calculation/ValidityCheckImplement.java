@@ -31,7 +31,11 @@ public class ValidityCheckImplement implements CheckValid {
         this.factor = factor;
         this.minTDCount = minTDCount;
     }
-    
+
+    public <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info) {
+        return checkValid(info, minTDCount, factor);
+    }
+
     /**
      * test whether a result for a subgroup should be considered valid
      *
@@ -40,7 +44,9 @@ public class ValidityCheckImplement implements CheckValid {
      * @return null pass; otherwise reason
      */
     @Override
-    public <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info) {
+    public <T extends AbstractFDRElement<T>> String checkValid(SubGroupFdrInfo<T> info, int minTDCount, double factor) {
+        if (info.targteFDR>=1)
+            return null;
         // make sure we have enough targets that we could theoretically thsi number of TD 
         if (info.resultTT * info.targteFDR < (double) minTDCount) {
             return "not enough TT";

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>run</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>--add-opens java.base/java.lang=ALL-UNNAMED -classpath %classpath org.rappsilber.fdr.CommandLine --linkfdr=5.0 --boost=link --csvOutDir=/home/lfischer/Dropbox/xisearch2/test/FDR_rpfdr5.0 --csvBaseName=XlinkHSA_TestData_Xi1.7.6.3 --xiconfig=/home/lfischer/Dropbox/xisearch2/test/XlinkHSA_TestData_Xi1.7.6.3.csv.config --fasta=/home/lfischer/Dropbox/xisearch2/test/HSA.fasta /home/lfischer/Dropbox/xisearch2/test/XlinkHSA_TestData_Xi1.7.6.3.csv</exec.args>
+                <exec.workingdir>/home/lfischer</exec.workingdir>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>debug</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} --add-opens java.base/java.lang=ALL-UNNAMED -classpath %classpath org.rappsilber.fdr.CommandLine --linkfdr=5.0 --boost=link --csvOutDir=/home/lfischer/Dropbox/xisearch2/test/FDR_rpfdr5.0 --csvBaseName=XlinkHSA_TestData_Xi1.7.6.3 --xiconfig=/home/lfischer/Dropbox/xisearch2/test/XlinkHSA_TestData_Xi1.7.6.3.csv.config --fasta=/home/lfischer/Dropbox/xisearch2/test/HSA.fasta /home/lfischer/Dropbox/xisearch2/test/XlinkHSA_TestData_Xi1.7.6.3.csv</exec.args>
+                <jpda.listen>true</jpda.listen>
+                <exec.workingdir>/home/lfischer</exec.workingdir>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>profile</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>--add-opens java.base/java.lang=ALL-UNNAMED -classpath %classpath org.rappsilber.fdr.CommandLine --linkfdr=5.0 --boost=link --csvOutDir=/home/lfischer/Dropbox/xisearch2/test/FDR_rpfdr5.0 --csvBaseName=XlinkHSA_TestData_Xi1.7.6.3 --xiconfig=/home/lfischer/Dropbox/xisearch2/test/XlinkHSA_TestData_Xi1.7.6.3.csv.config --fasta=/home/lfischer/Dropbox/xisearch2/test/HSA.fasta /home/lfischer/Dropbox/xisearch2/test/XlinkHSA_TestData_Xi1.7.6.3.csv</exec.args>
+                <exec.workingdir>/home/lfischer</exec.workingdir>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+    </actions>

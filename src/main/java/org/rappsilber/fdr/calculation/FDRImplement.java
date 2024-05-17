@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +32,6 @@ import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.utils.HashedArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.UpdateableInteger;
-import ucar.nc2.dt.point.decode.MP;
 
 /**
  *
@@ -180,7 +178,7 @@ public class FDRImplement implements FDR {
                 groupResult = filterByPEP(groupResult, fdr, info);
             }
 
-            String valid = this.valid.checkValid(info);
+            String valid = this.valid.checkValid(info, settings.getMinTD(), 0);
             if (valid != null) {
                 if ((!settings.ignoreValidityChecks())) {
                     Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Discarded group {0}->{1}({2})", new Object[]{group.get(0).getClass(), fdrgroup, group.get(0).getFDRGroup()});
@@ -231,7 +229,7 @@ public class FDRImplement implements FDR {
                 if (localFDR != null && localFDR) {
                     groupResult = filterByPEP(groupResult, fdr, collectedBetween);
                 }
-                if (settings.ignoreValidityChecks() || this.valid.checkValid(collectedBetween) == null) {
+                if (settings.ignoreValidityChecks() || this.valid.checkValid(collectedBetween, settings.getMinTD(), 0) == null) {
                     groupInfo.addGroup(collectedBetween);
                     //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
                     //            nextFDR.put(fdrgroup, prevFDR);
@@ -259,7 +257,7 @@ public class FDRImplement implements FDR {
                 if (localFDR != null && localFDR) {
                     groupResultwithin = filterByPEP(groupResultwithin, fdr, collectedOthers);
                 }
-                if (settings.ignoreValidityChecks() || valid.checkValid(collectedOthers) == null) {
+                if (settings.ignoreValidityChecks() || this.valid.checkValid(collectedOthers, settings.getMinTD(), 0) == null) {
                     groupInfo.addGroup(collectedOthers);
                     //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
                     //            nextFDR.put(fdrgroup, prevFDR);
@@ -295,7 +293,7 @@ public class FDRImplement implements FDR {
             if (localFDR != null && localFDR) {
                 allResult = filterByPEP(allResult, fdr, info);
             }
-            if (settings.ignoreValidityChecks() || valid.checkValid(info) == null) {
+            if (settings.ignoreValidityChecks() || valid.checkValid(info, settings.getMinTD(), 0) == null) {
                 groupInfo.addGroup(info);
                 groupInfo.setLinear(groupInfo.getLinear() + info.linear);
                 groupInfo.setWithin(groupInfo.getWithin() + info.within);
@@ -562,8 +560,7 @@ public class FDRImplement implements FDR {
                         }
 
                         info.higherFDR = prevFDR;
-                        info.worstAcceptedScore
-                                = info.lowerFDR = efdr;
+                        info.lowerFDR = efdr;
                         info.resultCount = i;
                         int lastFDRIndex = i;
 
@@ -621,7 +618,7 @@ public class FDRImplement implements FDR {
                                         group.get(li).setLowerFDR(currfdr);
                                     }
                                     lastFDRIndex = i - 1;
-                                }
+                                    }
 
                             }
                             for (int li = lastFDRIndex; li <= i && li >= 0; li++) {

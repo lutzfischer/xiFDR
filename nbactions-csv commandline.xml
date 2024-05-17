@@ -10,8 +10,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/temp/xi_test.csv --uniquePSMs=True</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.appArgs>--reportfactor=10000 --pepfdr=100 --psmfdr=2 --boost=PSM --boost-between --csvOutDir=search_results/xisearch/FDR_test search_results/xisearch/ID2all+human3_linMod_filtered_0.csv</exec.appArgs>
+                <exec.vmArgs>-Xms1g</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -24,9 +28,13 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/temp/xi_test.csv --uniquePSMs=True</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.appArgs>--reportfactor=10000 --pepfdr=100 --psmfdr=2 --boost=PSM --boost-between --csvOutDir=search_results/xisearch/FDR_test search_results/xisearch/ID2all+human3_linMod_filtered_0.csv</exec.appArgs>
+                <exec.vmArgs>-Xms1g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -39,8 +47,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/temp/xi_test.csv --uniquePSMs=True</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
+                <exec.appArgs>--reportfactor=10000 --pepfdr=100 --psmfdr=2 --boost=PSM --boost-between --csvOutDir=search_results/xisearch/FDR_test search_results/xisearch/ID2all+human3_linMod_filtered_0.csv</exec.appArgs>
+                <exec.vmArgs>-Xms1g</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
         </action>
     </actions>

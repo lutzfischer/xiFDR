@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -31,6 +31,7 @@ import javax.swing.event.ChangeListener;
 import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 import org.rappsilber.fdr.gui.CalculateRanges;
+import org.rappsilber.fdr.gui.components.FDRSpinnerModel;
 
 /**
  *
@@ -500,6 +501,28 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         this.otherFilter.twoStepBoost(stepped);
     }
 
+    @Override
+    public boolean filterBySelfAndMono() {
+        return this.ckSelfLinearModFilter.isSelected();
+    }
+
+    @Override
+    public void setfilterBySelfAndMono(boolean filter) {
+        this.ckSelfLinearModFilter.setSelected(filter);
+    }
+
+    
+    @Override
+    public Double minScore(){
+        return this.otherFilter.getMinScore();
+    }
+
+    @Override
+    public void minScore(Double minScore){
+        this.otherFilter.setMinScore(minScore);
+    }
+    
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -552,8 +575,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         tsLocalPPIFDR = new org.rappsilber.gui.components.TriStateCheckBox();
         ckMoreOptions = new javax.swing.JCheckBox();
         spOtherFilter = new javax.swing.JScrollPane();
-        otherFilter = new org.rappsilber.fdr.gui.components.OtherFilter();
+        otherFilter = new org.rappsilber.fdr.gui.components.settings.OtherFilter();
         ckIgnoreValidity = new javax.swing.JCheckBox();
+        ckSelfLinearModFilter = new javax.swing.JCheckBox();
 
         jLabel5.setText("PSM");
 
@@ -706,6 +730,9 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
             }
         });
 
+        ckSelfLinearModFilter.setText("ec-filter");
+        ckSelfLinearModFilter.setToolTipText("Only Accept peptide-pairs/residue-pairs/proteins-pairs exclusivly involving proteins that \nhave been seen as part of a self link or by linear crosslinker modified peptides");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -790,7 +817,10 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(spMaximizeSteps)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(ckBoostBetween, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))))
+                                .addComponent(ckBoostBetween)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(ckSelfLinearModFilter)
+                                .addContainerGap())))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -867,7 +897,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                     .addComponent(cbBoostWhat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel23)
                     .addComponent(spMaximizeSteps, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(ckBoostBetween))
+                    .addComponent(ckBoostBetween)
+                    .addComponent(ckSelfLinearModFilter))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnStopBoost)
@@ -927,6 +958,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JCheckBox ckIgnoreValidity;
     private javax.swing.JCheckBox ckMaximize;
     private javax.swing.JCheckBox ckMoreOptions;
+    private javax.swing.JCheckBox ckSelfLinearModFilter;
     private javax.swing.JCheckBox ckUniquePSM;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel18;
@@ -941,7 +973,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     public javax.swing.JLabel lblReportFactor;
-    private org.rappsilber.fdr.gui.components.OtherFilter otherFilter;
+    private org.rappsilber.fdr.gui.components.settings.OtherFilter otherFilter;
     private javax.swing.JSpinner spLinkFDR;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMaxLinkAmbiguity;
     private org.rappsilber.fdr.gui.components.SingleTextValueNumericSpinner spMaxProteinAmbiguity;

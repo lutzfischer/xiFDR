@@ -24,6 +24,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="ckMinScore" min="-2" max="-2" attributes="0"/>
                   <Component id="ckPeptideDoublets" min="-2" max="-2" attributes="0"/>
                   <Component id="ckPeptideStubs" min="-2" max="-2" attributes="0"/>
                   <Component id="ckDeltaScore" min="-2" max="-2" attributes="0"/>
@@ -54,6 +55,8 @@
               <Component id="ckMinFragments" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="ckDeltaScore" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="ckMinScore" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="ckPSM" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
@@ -126,6 +129,11 @@
     <Component class="javax.swing.JCheckBox" name="ckMinFragments">
       <Properties>
         <Property name="text" type="java.lang.String" value="Minimum Fragmnets"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="ckMinScore">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Minimum Score"/>
       </Properties>
     </Component>
   </SubComponents>

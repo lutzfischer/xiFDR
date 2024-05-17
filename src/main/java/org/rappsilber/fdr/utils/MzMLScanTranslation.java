@@ -7,7 +7,7 @@ package org.rappsilber.fdr.utils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.rappsilber.fdr.entities.DBPSM;
+import org.rappsilber.fdr.entities.PSM;
 
 /**
  *
@@ -33,7 +33,7 @@ public class MzMLScanTranslation implements PSMToMzIdentScanId{
     }
     
     @Override
-    public String getID(DBPSM psm) {
+    public String getID(PSM psm) {
         return template.replace(toReplace, ""+(Integer.parseInt(psm.getScan())+offset));
     }
     
