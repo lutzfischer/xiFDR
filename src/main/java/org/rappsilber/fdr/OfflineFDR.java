@@ -977,8 +977,8 @@ public abstract class OfflineFDR {
                                 if (settings.doOptimize() == null) {
                                     result = this.calculateFDR(s, true);
                                 } else {
-
-                                    MaximisingStatus m = this.maximise(s, settings.doOptimize(), settings.filterToUniquePSM(), new MaximizingUpdate() {
+                                                                     //s, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate
+                                    MaximisingStatus m = this.maximise(s, settings.doOptimize(), s.getBoostBetween(), new MaximizingUpdate() {
                                         @Override
                                         public void setStatus(MaximisingStatus state) {
                                             update.setStatus(state);

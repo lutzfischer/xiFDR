@@ -13,7 +13,7 @@
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
-                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</exec.vmArgs>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx12G --got-restarted</exec.vmArgs>
                 <exec.appArgs>--got-restarted</exec.appArgs>
             </properties>
         </action>
@@ -31,7 +31,7 @@
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
-                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx12G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.appArgs>--got-restarted</exec.appArgs>
             </properties>
         </action>
@@ -48,7 +48,7 @@
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
-                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</exec.vmArgs>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx12G --got-restarted</exec.vmArgs>
                 <exec.appArgs>--got-restarted</exec.appArgs>
             </properties>
         </action>
