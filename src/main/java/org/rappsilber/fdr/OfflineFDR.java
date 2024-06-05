@@ -3597,18 +3597,19 @@ public abstract class OfflineFDR {
 
     public String[] parseArgs(String[] argv, FDRSettings settings) {
         ArrayList<String> unknown = new ArrayList<String>();
-        int[] lengthgroups = new int[]{4};
+        FDRSettingsImpl defaults = new FDRSettingsImpl();
+        int[] lengthgroups = new int[]{0};
         double[] psmFDR = new double[]{1, 1, 1};
         double[] pepFDR = new double[]{1, 1, 1};
         double[] protFDR = new double[]{1, 1, 1};
         double[] linkFDR = new double[]{1, 1, 1};
         double[] ppiFDR = new double[]{1, 1, 1};
-        int maxLinkAmbiguity = 0;
-        int maxProteinGroupAmbiguity = 0;
-        int minPepPerLink = 1;
-        int minPepPerProtein = 1;
-        int minPepPerPPI = 1;
-        int minPepLength = 6;
+        int maxLinkAmbiguity = defaults.MaxLinkAmbiguity;
+        int maxProteinGroupAmbiguity = defaults.MaxProteinAmbiguity;
+        int minPepPerLink = defaults.MinLinkPepCount;
+        int minPepPerProtein = defaults.MinProteinPepCount;
+        int minPepPerPPI = defaults.MinPPIPepCount;
+        int minPepLength = defaults.MinPeptideLength;
         boolean ignoreGroups = false;
         boolean csvsummaryonly = false;
         boolean csvsinglesummary = false;
