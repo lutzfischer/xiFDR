@@ -13,7 +13,7 @@
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
-                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx10g</exec.vmArgs>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx6g</exec.vmArgs>
                 <exec.appArgs>--got-restarted</exec.appArgs>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
@@ -32,7 +32,7 @@
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
                 <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
-                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx10g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx6g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.appArgs>--got-restarted</exec.appArgs>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
@@ -50,7 +50,7 @@
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
-                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx10g</exec.vmArgs>
+                <exec.vmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Xmx6g</exec.vmArgs>
                 <exec.appArgs>--got-restarted</exec.appArgs>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
