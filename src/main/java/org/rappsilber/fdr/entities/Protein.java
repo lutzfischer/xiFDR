@@ -45,8 +45,12 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     //private boolean isAmbigious = true;
     private double m_fdr = -1;
     private int size = -1;
+    private Protein decoy_complement = null;
     
     public static String DECOY_PREFIX = null;
+    String zero = ""+(char)0;
+    private Pattern zerosplit = Pattern.compile(zero);
+    private Pattern spacesplit = Pattern.compile(" ");
     
     
     
@@ -121,12 +125,11 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         this.betweenSupport = between;
         
         if (description != null && description.length() == 0) {
-            String zero = ""+(char)0;
-            if (description.contains(zero)) {
-                this.name = description.split(zero)[1];
-                this.description = description.split(zero)[0];
+            if (description.indexOf(zero)>=0) {
+                this.name = zerosplit.split(description)[1];
+                this.description = zerosplit.split(description)[0];
             } else {
-                this.name = description.split(" ")[0];
+                this.name = spacesplit.split(description)[0];
             }
         }
         
@@ -315,6 +318,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
                 this.accession = accession.substring(decoy_prefix.length());
             }
         }
+        this.decoy_complement = null;        
     }
 
     /**
@@ -329,6 +333,8 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      */
     public void setName(String n) {
         name = n;
+        this.decoy_complement = null;
+
     }
     
     /**
@@ -336,6 +342,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      */
     public void setDescription(String d) {
         description = d;
+        this.decoy_complement = null;
     }
 
     /**
@@ -453,8 +460,10 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     }    
     
     public Protein decoyComplement() {
-        Protein p = new Protein(id, accession, name, description, !isDecoy, linearSupport, internalSupport, betweenSupport);
-        return p;
+        if (this.decoy_complement == null) {
+            this.decoy_complement = new Protein(id, accession, name, description, !isDecoy, linearSupport, internalSupport, betweenSupport);
+        }
+        return this.decoy_complement;
     }
     
     public int support() {

@@ -24,6 +24,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -178,6 +179,8 @@ public class CSVinFDR extends OfflineFDR {
         return readCSV(CsvParser.guessCsv(f, 50), null);
     }
     
+    
+    int convert_to_array_by_ref_warning_logged = 5;
     public String[] convert_to_array_by_ref(String values, String[] referenceArray, CsvParser fieldsplitter, long lineNumber){
         String[] descriptions1 = fieldsplitter.splitLine(values).toArray(new String[0]);
         if (!values.trim().isEmpty()) {
@@ -187,7 +190,13 @@ public class CSVinFDR extends OfflineFDR {
                     // probably some unquoted ";" in description - just ignore it
                     descriptions1 = new String[]{values};
                 } else {
-                    Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Don't know how to handle different numbers of protein accessions and descriptions", lineNumber);
+                    if (convert_to_array_by_ref_warning_logged>0) {
+                        String message = "Don't know how to handle different numbers of protein accessions, names and descriptions. Line:" + lineNumber;
+                        if (convert_to_array_by_ref_warning_logged == 1)
+                            message += " Warning no longer be reported for this file";
+                        Logger.getLogger(this.getClass().getName()).log(Level.WARNING, message);
+                        convert_to_array_by_ref_warning_logged --;
+                    }
                     descriptions1 = new String[referenceArray.length];
                     Arrays.fill(descriptions1, "");
                 }
@@ -853,6 +862,7 @@ public class CSVinFDR extends OfflineFDR {
         CsvParser csv = new CsvParser();
         if (ofdr.commandLineColumnMapping != null) {
             HashSet<String> definedMappings = new HashSet<String>();
+            HashMap<String,String> file2Expected = new HashMap();
             for (String[] map : ofdr.commandLineColumnMapping) {
                 definedMappings.add(map[0]);
                 for (int i = 1; i<map.length;i++) {

@@ -432,13 +432,15 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     
     public CsvParser getCsv() throws IOException {
         final TableModel tm = tblCSVColumns.getModel();
-
+        HashMap<String,String> file2Expected = new HashMap();
         CsvParser csv = new CsvParser();
         for (int r = 0; r < tm.getRowCount(); r++) {
             if (tm.getValueAt(r, 3) != missingColumn) {
+                file2Expected.put(tm.getValueAt(r, 3).toString(), tm.getValueAt(r, 0).toString());
                 csv.setAlternative(tm.getValueAt(r, 3).toString(), tm.getValueAt(r, 0).toString());
             }
         }
+        csv.renameHeader(file2Expected);
         String delimiter = getDelimiter();
         csv.setDelimiter(delimiter.charAt(0));
         csv.setQuote(getQuote());
