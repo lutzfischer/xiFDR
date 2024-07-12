@@ -507,7 +507,10 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     } else {
                         // did not find a decoy protein - so will try the target protein
                         fastaheader =  parts2Proteins.get(p.getAccession().toLowerCase());
-                        if (fastaheader != null) {
+                        if (fastaheader != null && fastaheader.isEmpty()) {
+                            fastaheader = p.getAccession();
+                        }
+                        if (fastaheader != null && proteinsToSequence.containsKey(fastaheader)) {
                             // only found target protein - assume same size
                             p.setSize(proteinsToSequence.get(fastaheader).length());
                         } else {
@@ -518,7 +521,11 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     
                 } else {
                     String fastaheader =  parts2Proteins.get(p.getAccession().toLowerCase());
-                    if (fastaheader != null) {
+                    if (fastaheader == null || fastaheader.isEmpty()) {
+                        fastaheader = p.getAccession();
+                    }
+                    
+                    if (fastaheader != null & proteinsToSequence.containsKey(fastaheader) ) {
                             p.setSequence(proteinsToSequence.get(fastaheader));
                     } else {
                         countEmptyTarget++;
@@ -544,6 +551,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             parts = protein.split("[\\.]");
             registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
             parts = protein.split("[\\|\\s\\t\\.]");
+            registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
+            parts = protein.split("[\\|\\s\\t\\.:]");
             registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
         }
     }
