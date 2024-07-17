@@ -59,7 +59,7 @@ public class CSVinFDR extends OfflineFDR {
         {"isdecoy", "is decoy", "reverse", "decoy"},
         {"isdecoy1", "is decoy 1", "is decoy1","reverse1", "decoy1", "protein 1 decoy", "decoy p1"},
         {"isdecoy2", "is decoy 2", "is decoy2", "reverse2", "decoy2", "protein 2 decoy", "decoy p2"},
-        {"score", "match score", "match score", "pep score"},
+        {"score", "match score", "match score", "MatchScore", "Match Score", "pep score"},
         {"peptide1 score", "pep1 score", "score peptide1", "score pep1", "pep 1 score", "p1 score"},
         {"peptide2 score", "pep2 score", "score peptide2", "score pep2", "pep 2 score", "p2 score"},
         {"run", "run name", "raw file", "filename/id"},
