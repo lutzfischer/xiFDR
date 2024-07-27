@@ -743,7 +743,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         pXiConfig.setPreferredSize(new java.awt.Dimension(300, 107));
 
         fbConfigIn.setDescription("Xi-Config");
-        fbConfigIn.setExtensions(new String[] {"config", "conf"});
+        fbConfigIn.setExtensions(new String[] {"config", "conf", "json"});
 
         jLabel12.setText("XiConfig");
 

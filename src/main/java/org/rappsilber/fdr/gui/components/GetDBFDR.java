@@ -31,7 +31,7 @@ import javax.swing.JOptionPane;
 import org.rappsilber.fdr.DB2inFDR;
 import org.rappsilber.fdr.DBinFDR;
 import org.rappsilber.fdr.OfflineFDR;
-import org.rappsilber.fdr.dataimport.Xi2Config;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.gui.FDRGUI;
 import org.rappsilber.utils.RArrayUtils;

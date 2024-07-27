@@ -150,7 +150,7 @@ public class DBImportXi2 implements Import{
     }
        
     private UUID resultset_id;
-    private HashMap<UUID, Xi2Config> configs = new HashMap<>();
+    private HashMap<UUID, Xi2Xi1Config> configs = new HashMap<>();
     private Xi2Score new_primary_score;
     private ArrayList<Xi2Score> scores;
     private ArrayList<XiDBPSM> dbPSMs = new ArrayList<>();
@@ -228,7 +228,7 @@ public class DBImportXi2 implements Import{
         while (rs.next()) {
             String config = rs.getString("config");
             UUID id = (UUID) rs.getObject("id");
-            configs.put(id, new Xi2Config(config));
+            configs.put(id, new Xi2Xi1Config(config));
         }
     }
     

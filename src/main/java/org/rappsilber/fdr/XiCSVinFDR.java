@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
-import org.rappsilber.fdr.dataimport.Xi2Config;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
 import org.rappsilber.fdr.entities.Protein;
@@ -176,7 +176,13 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             if (arg.toLowerCase().startsWith("--xiconfig=")) {
                 try {
                     confpath=arg.substring("--xiconfig=".length());
-                    setConfig(new RunConfigFile(confpath));
+                    // try to load as xi2 config
+                    try {
+                        setConfig(new Xi2Xi1Config(new File(confpath)));
+                    } catch (IOException ex) {
+                        setConfig(new RunConfigFile(confpath));
+                    }
+                    
                 } catch (IOException ex) {
                     Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Can't read config file:", ex);
                     System.exit(-1);
@@ -591,12 +597,12 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }
 
     @Override
-    public Xi2Config getXi2Config() {
+    public Xi2Xi1Config getXi2Config() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Xi2Config getXi2Config(String string) {
+    public Xi2Xi1Config getXi2Config(String string) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

@@ -7,7 +7,7 @@ package org.rappsilber.fdr;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import org.rappsilber.fdr.dataimport.Xi2Config;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import org.rappsilber.utils.IntArrayList;
 import rappsilber.config.DBRunConfig;
 import rappsilber.config.RunConfig;
@@ -26,9 +26,9 @@ public interface XiInFDR {
 
     RunConfig getConfig(String searchid);
     
-    Xi2Config getXi2Config();
+    Xi2Xi1Config getXi2Config();
     
-    Xi2Config getXi2Config(String searchid);
+    Xi2Xi1Config getXi2Config(String searchid);
 
     public ArrayList<String> getSearchIDs();
 

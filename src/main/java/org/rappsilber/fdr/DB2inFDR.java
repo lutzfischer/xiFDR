@@ -16,7 +16,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.rappsilber.config.LocalProperties;
-import org.rappsilber.fdr.dataimport.Xi2Config;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.Protein;
@@ -64,7 +63,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
  *
  * @author lfischer
  */
- public class DB2inFDR extends org.rappsilber.fdr.OfflineFDR {
+ public class DB2inFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR{
      public static final String summary_marker_long = "%leave_this_here_to_get_the_summary_added_to_the_notes%";
      public static String summary_marker = "%summarys%";
 
@@ -183,7 +182,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     private Sequence m_noSequence = new Sequence(new AminoAcid[0]);
     //private DBRunConfig m_conf;
     //private HashMap<Integer,DBRunConfig> m_configs;
-    HashMap<UUID, Xi2Config> m_configs = new HashMap<>();
+    Xi2Xi1Config m_config = new Xi2Xi1Config();
+    HashMap<UUID, Xi2Xi1Config> m_configs = new HashMap<>();
 
     private boolean m_writePrePostAA = false;
     public static DecimalFormat sixDigits = new DecimalFormat("###0.000000");
@@ -193,6 +193,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     Xi2ScoreList resultScores = new Xi2ScoreList();
 
     UUID[] resultSetIDSetting;
+    ArrayList<String> m_searchids = new ArrayList<>();
     String filterSetting = "";
     private ArrayList<String> sequenceDBs;
 
@@ -452,8 +453,9 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         return m_resultset_ids;
     }
 
-    public IntArrayList getSearchIDs() {
-        return new IntArrayList(0);
+    @Override
+    public ArrayList<String> getSearchIDs() {
+        return this.m_searchids;
     }
 
     /**
@@ -581,8 +583,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     }
     
     
-    public HashMap<UUID,Xi2Config> readconfig(UUID resultset_id) throws SQLException{
-        HashMap<UUID,Xi2Config> configs = new HashMap<UUID,Xi2Config>();
+    public HashMap<UUID,Xi2Xi1Config> readconfig(UUID resultset_id) throws SQLException{
+        HashMap<UUID,Xi2Xi1Config> configs = new HashMap<UUID,Xi2Xi1Config>();
         ensureConnection();
         Statement st = this.getDBConnection().createStatement(
                 ResultSet.TYPE_FORWARD_ONLY, 
@@ -593,10 +595,15 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 + " INNER JOIN "
                 + " ResultSearch rss ON rss.search_id = s.id "
                 + "WHERE rss.resultset_id = '" + resultset_id + "'");
+        
         while (rs.next()) {
             String config = Unescape.unescape(rs.getString("config"));
             UUID id = (UUID) rs.getObject("id");
-            configs.put(id, new Xi2Config(config.substring(1, config.length()-1)));
+            String sid = id.toString();
+            configs.put(id, new Xi2Xi1Config(config.substring(1, config.length()-1)));
+            if (!this.m_searchids.contains(sid)){
+                m_searchids.add(sid);
+            }
         }
         return configs;
     }
@@ -622,9 +629,12 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         if (!ensureConnection()) {
             return;
         }
-
         for (UUID resultset_id : resultset_ids) {
-            m_configs.putAll(readconfig(resultset_id));
+            HashMap<UUID, Xi2Xi1Config> confs = readconfig(resultset_id);
+            m_configs.putAll(confs);
+            for (Xi2Xi1Config conf :  confs.values()) {
+                this.m_config.add(conf);
+            }
         }
         HashMap<UUID, HashMap<Long, Protein>> search_proteins = new HashMap<>();
         for (UUID searchid : m_configs.keySet()) {
@@ -697,10 +707,12 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 if (subscoreDefs.get(resultset_id).get(sPepUniqueMatchedCons2)!=null)
                     cPepUniqueMatchedCons2 = subscoreDefs.get(resultset_id).get(sPepUniqueMatchedCons2).id;
 
-                if (subscoreDefs.get(resultset_id).get(sPepCoverage1)!=null)
+                if (subscoreDefs.get(resultset_id).get(sPepCoverage1)!=null) {
                     cPepCoverage1 = subscoreDefs.get(resultset_id).get(sPepCoverage1).id;
-                if (subscoreDefs.get(resultset_id).get(sPepCoverage2)!=null)
+                }
+                if (subscoreDefs.get(resultset_id).get(sPepCoverage2)!=null) {
                     cPepCoverage2 = subscoreDefs.get(resultset_id).get(sPepCoverage2).id;
+                }
                 if (subscoreDefs.get(resultset_id).get(sCleavCLPep1Fragmatched) != null)
                     cCleavCLPep1Fragmatched = subscoreDefs.get(resultset_id).get(sCleavCLPep1Fragmatched).id;
                 if (subscoreDefs.get(resultset_id).get(sCleavCLPep2Fragmatched) != null)
@@ -716,7 +728,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 cPrimaryScore = subscoreDefs.get(resultset_id).primaryScore.id;
                 
 
-                if (cPepCoverage2 <0 && !shownMinPepWarning) {
+                if (cPepCoverage2 == null && !shownMinPepWarning) {
                     shownMinPepWarning = true;
                     Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Warning - no relative peptide coverage for peptide 2 - bossting on minimum peptide coverage likely not helpfull");
                 }
@@ -982,7 +994,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         }
                         
                         UUID search_id = (UUID)rs.getObject("search_id");
-                        Xi2Config conf = m_configs.get(search_id);
+                        Xi2Xi1Config conf = m_configs.get(search_id);
                         String psmID = ipsmID.toString();
                         String pepSeq1 = rs.getString(pepSeq1Column);
                         String pepSeq2 = rs.getString(pepSeq2Column);
@@ -1058,7 +1070,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                                 long p2id = protein2ID[p];
                                 Protein prot2 = sprots.get(p2id);
 
-                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, prot2.getAccession(), prot2.getDescription(), p1, p2, prot1.getSequence(), prot2.getSequence(), peptide1score, peptide2score, spectrum_charge, conf.crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
+                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, prot2.getAccession(), prot2.getDescription(), p1, p2, prot1.getSequence(), prot2.getSequence(), peptide1score, peptide2score, spectrum_charge, conf.xi2crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
                             }
                         } else {
                             String a2 = "";
@@ -1074,7 +1086,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                                 HashMap<Long,Protein> sprots = search_proteins.get(search_id);
                                 Protein prot1 = sprots.get(p1id);
                                 
-                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, a2, d2, p1, p2, prot1.getSequence(), s2, peptide1score, peptide2score, spectrum_charge, conf.crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
+                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, a2, d2, p1, p2, prot1.getSequence(), s2, peptide1score, peptide2score, spectrum_charge, conf.xi2crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
                             }
                         }
 
@@ -1083,7 +1095,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         Float[] scorevalues = null;
                         if (subscores != null) {
                             scorevalues = subscores;
-                            if (cPepCoverage1 >= 0) {
+                            if (cPepCoverage1 != null && cPepCoverage1 >= 0) {
                                 if (cPepCoverage2 <0 || Double.isNaN(scorevalues[cPepCoverage2]))
                                     psm.addOtherInfo("minPepCoverage",
                                         scorevalues[cPepCoverage1]);
@@ -1152,7 +1164,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                             psm.addOtherInfo(subscoreDefs.get(resultset_id).get(p).name, scorevalues[p]);
                         }
                         
-                        Double xlModmassPre = conf.crosslinker.get(xl).mass;
+                        Double xlModmassPre = conf.xi2crosslinker.get(xl).mass;
                         Double xlModmass = xlmodmasses.get(xlModmassPre);
                         if (xlModmass == null) {
                             xlmodmasses.put(xlModmassPre,xlModmassPre);
@@ -1798,26 +1810,38 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     }
 
     private int getFastas(ArrayList<String> id, ArrayList<String> dbIDs, ArrayList<String> names) {
-//        int c = 0;
-//        ArrayList<String> i = new ArrayList<>();
-//        ArrayList<String> n = new ArrayList<String>();
-//        try {
-//            ensureConnectionAdmin();
-//            Statement s = m_db_connectionAdmin.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-//            ResultSet rs = s.executeQuery("SELECT  DISTINCT cs.file, cs.id FROM core_search_sequences css INNER JOIN core_sequence cs on css.sequence_id = cs.id WHERE search_id in (" + RArrayUtils.toString(m_, ",") + ");");
-//            while (rs.next()) {
-//                i.add(rs.getInt(2)+"");
-//                n.add(rs.getString(1));
-//                c++;
-//            }
-//        } catch (SQLException ex) {
-//            Logger.getLogger(DBinFDR.class.getName()).log(Level.SEVERE, null, ex);
-//            return -1;
-//        }
-//        dbIDs.addAll(i);
-//        names.addAll(n);
-//        return c;
-        throw new UnsupportedOperationException("not done yet");
+        int c = 0;
+        ArrayList<String> i = new ArrayList<>();
+        ArrayList<String> n = new ArrayList<String>();
+        try {
+            ensureConnectionAdmin();
+            Statement s = m_db_connectionAdmin.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            ResultSet rs = s.executeQuery(
+                    "SELECT  DISTINCT \n" +
+" f.file, f.id \n" +
+" FROM \n" +
+"	core_search_sequences css INNER JOIN \n" +
+"	core_sequence cs on css.sequence_id = cs.id INNER JOIN \n" +
+"	core_uploadedfile f on cs.file_id = f.id INNER JOIN \n" +
+"	(SELECT id, task_uuid from core_search UNION "
+                            + "SELECT id, task_uuid from core_fdr UNION "
+                            + "SELECT id, task_uuid from core_postprocessing) s ON css.search_id = s.id  " +
+" WHERE resultset_uuid in  ('" + RArrayUtils.toString(id, "','") + "');");
+            while (rs.next()) {
+                String name = rs.getString(1);
+                name=name.substring(name.lastIndexOf("/")+1);
+                i.add(rs.getInt(2)+"");
+                n.add(name);
+                c++;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(DBinFDR.class.getName()).log(Level.SEVERE, null, ex);
+            return -1;
+        }
+        dbIDs.addAll(i);
+        names.addAll(n);
+        return c;
+        //throw new UnsupportedOperationException("not done yet");
     }
 
     public int getFastas(String searchID, ArrayList<String> dbIDs, ArrayList<String> names) {
@@ -2173,18 +2197,18 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     }
 
     public RunConfig getConfig() {
-        return null;
+        return m_config;
     }
 
     public RunConfig getConfig(String searchid) {
-        return null;
+        return this.m_configs.get(UUID.fromString(searchid));
     }
 
-    public Xi2Config getXi2Config() {
+    public Xi2Xi1Config getXi2Config() {
         return this.m_configs.values().iterator().next();
     }
 
-    public Xi2Config getXi2Config(String search) {
+    public Xi2Xi1Config getXi2Config(String search) {
         return this.m_configs.get(search);
     }
 

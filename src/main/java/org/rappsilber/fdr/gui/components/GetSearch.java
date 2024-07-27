@@ -448,6 +448,7 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
             return;
         }
         final boolean showHidden = ckHidden.isSelected();
+        final boolean showFDR = ckIncludeFDR.isSelected();
         
         
         
@@ -461,11 +462,13 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
                     ResultSet rs = null;
                     try {
                         if (connAdmin != null) {
-                            String q = "SELECT resultset_uuid as id, name, notes, status, username as user_name, '' AS FASTA, '' as p"
+                            String q = "SELECT resultset_uuid as id, name, notes, status, username as user_name, process AS FASTA, '' as p"
                                     + " FROM "
-                                    + "   (SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id  FROM core_search"
+                                    + "   (SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id, 'search' as process  FROM core_search"
                                     + "   UNION"
-                                    + "   SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id  FROM core_postprocessing"
+                                    + "   SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id, 'postproc' as process  FROM core_postprocessing"
+                                    + (!showFDR ? "": "   UNION"
+                                    + "   SELECT resultset_uuid , name, notes, status, deleted, submit_date, owner_id, 'fdr' as process  FROM core_fdr")
                                     + "   ) cs inner join core_user as cu on cs.owner_id = cu.id "
                                     + (showHidden ? "": "WHERE (cs.deleted is null OR cs.deleted = false)")
                                     + " ORDER BY submit_date DESC;";
@@ -564,6 +567,7 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
         lblPasswd = new javax.swing.JLabel();
         txtPasswd = new javax.swing.JPasswordField();
         ckHidden = new javax.swing.JCheckBox();
+        ckIncludeFDR = new javax.swing.JCheckBox();
 
         jScrollPane1.setViewportView(lstSearches);
 
@@ -634,6 +638,8 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
             }
         });
 
+        ckIncludeFDR.setText("Include xi2FDR");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -650,21 +656,23 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
                         .addComponent(btnRefresh))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(cmbConnection, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(rbXi2)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(rbXi3)
                                 .addGap(18, 18, 18)
                                 .addComponent(rbXiCustom)
-                                .addGap(0, 0, Short.MAX_VALUE))
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(cmbConnection, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGap(18, 18, 18)
                                 .addComponent(lblUser)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(txtUser, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(lblPasswd)))
+                                .addComponent(lblPasswd))
+                            .addComponent(ckIncludeFDR))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(txtPasswd, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -679,7 +687,8 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
                     .addComponent(rbXi2)
                     .addComponent(rbXi3)
                     .addComponent(rbXiCustom)
-                    .addComponent(ckHidden))
+                    .addComponent(ckHidden)
+                    .addComponent(ckIncludeFDR))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cmbConnection, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -736,12 +745,14 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
         lblPasswd.setVisible(rbXiCustom.isSelected());
         txtUser.setVisible(rbXiCustom.isSelected());
         lblUser.setVisible(rbXiCustom.isSelected());
+        ckIncludeFDR.setVisible(rbXiCustom.isSelected() || rbXi2.isSelected());
     }//GEN-LAST:event_rbXiCustomActionPerformed
 
     private void rbXi2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbXi2ActionPerformed
         cmbConnection.setSelectedItem(xiSEARCH2);
         cmbConnectionActionPerformed(evt);
         rbXiCustomActionPerformed(evt);
+        ckIncludeFDR.setVisible(rbXiCustom.isSelected() || rbXi2.isSelected());
     }//GEN-LAST:event_rbXi2ActionPerformed
 
     private void cmbConnectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbConnectionActionPerformed
@@ -762,6 +773,7 @@ public class GetSearch extends javax.swing.JPanel implements DatabaseProvider  {
     private javax.swing.JButton btnRefresh;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JCheckBox ckHidden;
+    private javax.swing.JCheckBox ckIncludeFDR;
     private javax.swing.JComboBox cmbConnection;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;

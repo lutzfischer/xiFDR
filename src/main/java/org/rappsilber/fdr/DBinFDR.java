@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.rappsilber.config.LocalProperties;
-import org.rappsilber.fdr.dataimport.Xi2Config;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import rappsilber.config.DBRunConfig;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
@@ -2896,12 +2896,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     @Override
-    public Xi2Config getXi2Config() {
+    public Xi2Xi1Config getXi2Config() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Xi2Config getXi2Config(String string) {
+    public Xi2Xi1Config getXi2Config(String string) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
