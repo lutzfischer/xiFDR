@@ -1816,17 +1816,18 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         try {
             ensureConnectionAdmin();
             Statement s = m_db_connectionAdmin.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            ResultSet rs = s.executeQuery(
-                    "SELECT  DISTINCT \n" +
-" f.file, f.id \n" +
-" FROM \n" +
-"	core_search_sequences css INNER JOIN \n" +
-"	core_sequence cs on css.sequence_id = cs.id INNER JOIN \n" +
-"	core_uploadedfile f on cs.file_id = f.id INNER JOIN \n" +
-"	(SELECT id, task_uuid from core_search UNION "
-                            + "SELECT id, task_uuid from core_fdr UNION "
-                            + "SELECT id, task_uuid from core_postprocessing) s ON css.search_id = s.id  " +
-" WHERE resultset_uuid in  ('" + RArrayUtils.toString(id, "','") + "');");
+            String querry =                     "SELECT  DISTINCT \n" +
+            " f.file, f.id \n" +
+            " FROM \n" +
+            "	core_search_sequences css INNER JOIN \n" +
+            "	core_sequence cs on css.sequence_id = cs.id INNER JOIN \n" +
+            "	core_uploadedfile f on cs.file_id = f.id INNER JOIN \n" +
+            "	(SELECT id, task_uuid, resultset_uuid from core_search UNION "
+                                        + "SELECT id, task_uuid, resultset_uuid from core_fdr UNION "
+                                        + "SELECT id, task_uuid, resultset_uuid from core_postprocessing) s ON css.search_id = s.id  " +
+            " WHERE resultset_uuid in  ('" + RArrayUtils.toString(id, "','") + "');";
+
+            ResultSet rs = s.executeQuery(querry);
             while (rs.next()) {
                 String name = rs.getString(1);
                 name=name.substring(name.lastIndexOf("/")+1);
