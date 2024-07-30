@@ -178,8 +178,10 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     confpath=arg.substring("--xiconfig=".length());
                     // try to load as xi2 config
                     try {
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Try to parse config as xiSEARCH2 config");
                         setConfig(new Xi2Xi1Config(new File(confpath)));
                     } catch (IOException ex) {
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Try to parse config as xiSEARCH1 config");
                         setConfig(new RunConfigFile(confpath));
                     }
                     

@@ -390,7 +390,7 @@ public class Xi2Xi1Config extends AbstractRunConfig{
         try{
             loadFromString(sb.toString());
         } catch (ParseException |java.text.ParseException|ConfigurationParserException ex) {
-            Logger.getLogger(Xi2Xi1Config.class.getName()).log(Level.SEVERE, "Error converting xi2 config to xi1 config", ex);
+            throw new IOException("Error converting xi2 config to xi1 config",ex);
         }
 }
     
