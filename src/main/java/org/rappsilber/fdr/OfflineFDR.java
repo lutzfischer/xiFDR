@@ -4512,7 +4512,7 @@ public abstract class OfflineFDR {
         ret.add("PSMIDs");
         ret.add("Protein1");
         ret.add("Name1");
-        ret.add("Descriptions1");
+        ret.add("Description1");
         ret.add("isDecoy1");
         ret.add("Protein2");
         ret.add("Name2");

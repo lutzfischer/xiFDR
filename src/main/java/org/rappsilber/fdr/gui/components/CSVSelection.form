@@ -569,9 +569,10 @@
               <Properties>
                 <Property name="description" type="java.lang.String" value="Xi-Config"/>
                 <Property name="extensions" type="[Ljava.lang.String;" editor="org.netbeans.beaninfo.editors.StringArrayEditor">
-                  <StringArray count="2">
+                  <StringArray count="3">
                     <StringItem index="0" value="config"/>
                     <StringItem index="1" value="conf"/>
+                    <StringItem index="2" value="json"/>
                   </StringArray>
                 </Property>
               </Properties>

@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
-import org.rappsilber.fdr.dataimport.Xi2Config;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
 import org.rappsilber.fdr.entities.Protein;
@@ -176,7 +176,15 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             if (arg.toLowerCase().startsWith("--xiconfig=")) {
                 try {
                     confpath=arg.substring("--xiconfig=".length());
-                    setConfig(new RunConfigFile(confpath));
+                    // try to load as xi2 config
+                    try {
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Try to parse config as xiSEARCH2 config");
+                        setConfig(new Xi2Xi1Config(new File(confpath)));
+                    } catch (IOException ex) {
+                        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Try to parse config as xiSEARCH1 config");
+                        setConfig(new RunConfigFile(confpath));
+                    }
+                    
                 } catch (IOException ex) {
                     Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Can't read config file:", ex);
                     System.exit(-1);
@@ -507,7 +515,10 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     } else {
                         // did not find a decoy protein - so will try the target protein
                         fastaheader =  parts2Proteins.get(p.getAccession().toLowerCase());
-                        if (fastaheader != null) {
+                        if (fastaheader != null && fastaheader.isEmpty()) {
+                            fastaheader = p.getAccession();
+                        }
+                        if (fastaheader != null && proteinsToSequence.containsKey(fastaheader)) {
                             // only found target protein - assume same size
                             p.setSize(proteinsToSequence.get(fastaheader).length());
                         } else {
@@ -518,7 +529,11 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     
                 } else {
                     String fastaheader =  parts2Proteins.get(p.getAccession().toLowerCase());
-                    if (fastaheader != null) {
+                    if (fastaheader == null || fastaheader.isEmpty()) {
+                        fastaheader = p.getAccession();
+                    }
+                    
+                    if (fastaheader != null & proteinsToSequence.containsKey(fastaheader) ) {
                             p.setSequence(proteinsToSequence.get(fastaheader));
                     } else {
                         countEmptyTarget++;
@@ -544,6 +559,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
             parts = protein.split("[\\.]");
             registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
             parts = protein.split("[\\|\\s\\t\\.]");
+            registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
+            parts = protein.split("[\\|\\s\\t\\.:]");
             registerFastaHeaderParts(parts, searched, parts2Proteins, protein);
         }
     }
@@ -582,12 +599,12 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }
 
     @Override
-    public Xi2Config getXi2Config() {
+    public Xi2Xi1Config getXi2Config() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Xi2Config getXi2Config(String string) {
+    public Xi2Xi1Config getXi2Config(String string) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

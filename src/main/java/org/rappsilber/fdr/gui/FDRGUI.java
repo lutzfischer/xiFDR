@@ -85,6 +85,7 @@ import org.rappsilber.gui.logging.JTextAreaHandle;
 import org.rappsilber.peaklist.MgfStyleTitleParser;
 import org.rappsilber.utils.UpdateableInteger;
 import org.rappsilber.utils.XiFDRUtils;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import rappsilber.config.RunConfigFile;
 
 /**
@@ -878,7 +879,11 @@ public class FDRGUI extends javax.swing.JFrame {
         CSVinFDR ofdr = null;
         if (config != null && fasta != null) {
             ofdr = new XiCSVinFDR();
-            ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+            try {
+                ((XiCSVinFDR)ofdr).setConfig(new Xi2Xi1Config(csvSelect.fbConfigIn.getFile()));
+            } catch (Exception e){
+                ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+            }
             ArrayList<String> fastas = new ArrayList<>(1);
             fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
             ((XiCSVinFDR)ofdr).setFastas(fastas);
@@ -2736,7 +2741,7 @@ public class FDRGUI extends javax.swing.JFrame {
         pResult.setLayout(pResultLayout);
         pResultLayout.setHorizontalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 894, Short.MAX_VALUE)
+            .addComponent(tpResult, javax.swing.GroupLayout.Alignment.TRAILING)
         );
         pResultLayout.setVerticalGroup(
             pResultLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2854,7 +2859,6 @@ public class FDRGUI extends javax.swing.JFrame {
         jScrollPane6.setViewportView(jTabbedPane1);
 
         jSplitPane1.setDividerLocation(600);
-        jSplitPane1.setDividerSize(5);
 
         txtStatus.setEditable(false);
         txtStatus.setText("status");
