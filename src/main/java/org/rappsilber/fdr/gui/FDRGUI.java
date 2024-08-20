@@ -86,7 +86,9 @@ import org.rappsilber.peaklist.MgfStyleTitleParser;
 import org.rappsilber.utils.UpdateableInteger;
 import org.rappsilber.utils.XiFDRUtils;
 import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
+import org.rappsilber.utils.Version;
 import rappsilber.config.RunConfigFile;
+import rappsilber.utils.XiVersion;
 
 /**
  *
@@ -528,6 +530,7 @@ public class FDRGUI extends javax.swing.JFrame {
         this.m_result = m_result;
     }
 
+
     private class NeededOptionalComboBoxCellEditor extends DefaultCellEditor {
 
         EditorDelegate neededDelegate;
@@ -875,6 +878,7 @@ public class FDRGUI extends javax.swing.JFrame {
         CsvParser csv = csvs.next();
         String forwardPattern = csvSelect.getForwardPattern();
         String window_title = csv.getInputFile().getName();
+        Version v = csvSelect.getXiVersion();
 
         CSVinFDR ofdr = null;
         if (config != null && fasta != null) {
@@ -883,6 +887,9 @@ public class FDRGUI extends javax.swing.JFrame {
                 ((XiCSVinFDR)ofdr).setConfig(new Xi2Xi1Config(csvSelect.fbConfigIn.getFile()));
             } catch (Exception e){
                 ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+            }
+            if (v != null) {
+                ((XiCSVinFDR)ofdr).setXiVersion(csv.getInputFile().getAbsolutePath(), v);
             }
             ArrayList<String> fastas = new ArrayList<>(1);
             fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
@@ -905,6 +912,9 @@ public class FDRGUI extends javax.swing.JFrame {
                     ArrayList<String> fastas = new ArrayList<>(1);
                     fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
                     ((XiCSVinFDR)nextfdr).setFastas(fastas);
+                    if (v != null) {
+                        ((XiCSVinFDR)ofdr).setXiVersion(csv.getInputFile().getAbsolutePath(), v);
+                    }
                 }else {
                     nextfdr = new CSVinFDR();
                 }
@@ -1606,6 +1616,12 @@ public class FDRGUI extends javax.swing.JFrame {
         fbFolder.setFile(path);
         
     }
+    
+    
+    public void setXiVersion(String xiVersion) {
+        csvSelect.setXiVersion(xiVersion);
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

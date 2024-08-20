@@ -532,7 +532,13 @@
                               <Component id="txtForwardColumns" pref="128" max="32767" attributes="0"/>
                           </Group>
                           <Component id="fbFastaIn" max="32767" attributes="0"/>
-                          <Component id="fbConfigIn" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Component id="fbConfigIn" max="32767" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="txtXiVersion" min="-2" max="-2" attributes="0"/>
+                          </Group>
                       </Group>
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                   </Group>
@@ -545,6 +551,8 @@
                       <Group type="103" groupAlignment="2" attributes="0">
                           <Component id="fbConfigIn" alignment="2" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel12" alignment="2" min="-2" max="-2" attributes="0"/>
+                          <Component id="txtXiVersion" alignment="2" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel4" alignment="2" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="2" attributes="0">
@@ -582,7 +590,7 @@
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel12">
               <Properties>
-                <Property name="text" type="java.lang.String" value="XiConfig"/>
+                <Property name="text" type="java.lang.String" value="xi Config"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel13">
@@ -637,6 +645,16 @@
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;OfflineFDR.Normalisation&gt;"/>
               </AuxValues>
+            </Component>
+            <Component class="javax.swing.JTextField" name="txtXiVersion">
+              <Properties>
+                <Property name="toolTipText" type="java.lang.String" value="xi version to be written into the mzIdentML file"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel4">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="xi Version"/>
+              </Properties>
             </Component>
           </SubComponents>
         </Container>

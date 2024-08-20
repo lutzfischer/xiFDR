@@ -469,8 +469,9 @@ public class MZIdentMLExport {
         HashMap<ProteinGroup, ProteinAmbiguityGroup> pg2Pag = new HashMap<ProteinGroup, ProteinAmbiguityGroup>();
         List<ProteinAmbiguityGroup> pagList = proteinDetectionList.getProteinAmbiguityGroup();
         int pagID =0;
-
-        handleAnalysisSoftware(OfflineFDR.getXiFDRVersion().toString());
+        
+        if (OfflineFDR.getXiFDRVersion().toString() != null)
+            handleAnalysisSoftware(OfflineFDR.getXiFDRVersion().toString(), (XiInFDR)fdr);
         handleAuditCollection(owner.first, owner.last, owner.email, owner.address, owner.org);
         handleProvider();                //Performed after auditcollection, since contact is needed for provider
 
@@ -1521,7 +1522,7 @@ public class MZIdentMLExport {
      * </SoftwareName>
      *
      */
-    public void handleAnalysisSoftware(String version) {
+    public void handleAnalysisSoftware(String version, XiInFDR fdr) {
         analysisSoftwareList = new AnalysisSoftwareList();
         List<AnalysisSoftware> analysisSoftwares = analysisSoftwareList.getAnalysisSoftware();
         analysisSoftware = new AnalysisSoftware();
@@ -1532,6 +1533,7 @@ public class MZIdentMLExport {
         // TODO need to ask for version/software - or get from cmd param
         p.setParam(makeCvParam("MS:1002544","xi",psiCV));
         analysisSoftware.setSoftwareName(p);
+        analysisSoftware.setVersion(fdr.getXiVersion().toString());
 
         analysisSoftwares.add(analysisSoftware);
 

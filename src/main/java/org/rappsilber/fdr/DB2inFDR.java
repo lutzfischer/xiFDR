@@ -23,6 +23,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -54,6 +55,7 @@ import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
 import org.rappsilber.utils.Unescape;
+import org.rappsilber.utils.Version;
 import rappsilber.config.DBConnectionConfig;
 import rappsilber.config.RunConfig;
 import rappsilber.gui.components.db.DatabaseProvider;
@@ -66,6 +68,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
  public class DB2inFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR{
      public static final String summary_marker_long = "%leave_this_here_to_get_the_summary_added_to_the_notes%";
      public static String summary_marker = "%summarys%";
+    private HashMap<String, Version> m_xi_versions = new HashMap<>();
 
     public class Xi2Score {
         int id;
@@ -631,7 +634,13 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         }
         for (UUID resultset_id : resultset_ids) {
             HashMap<UUID, Xi2Xi1Config> confs = readconfig(resultset_id);
-            m_configs.putAll(confs);
+            for (Map.Entry<UUID, Xi2Xi1Config> confe : confs.entrySet()) {
+                m_configs.put(confe.getKey(), confe.getValue());
+                // TODO need to update ones we have versions in the DB
+                m_xi_versions.put(confe.getKey().toString(), new Version("2.0.beta"));
+            }
+                
+            
             for (Xi2Xi1Config conf :  confs.values()) {
                 this.m_config.add(conf);
             }
@@ -2193,6 +2202,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         pst.addBatch();
     }
     
+     @Override
     public int getxiMajorVersion() {
         return 2;
     }
@@ -2213,6 +2223,17 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         return this.m_configs.get(search);
     }
 
+    @Override
+    public Version getXiVersion() {
+        if (this.m_xi_versions.size()>0)
+            return this.m_xi_versions.values().iterator().next();
+        return null;
+    }
+
+    @Override
+    public Version getXiVersion(String search) {
+        return this.m_xi_versions.get(search);
+    }
 
 
 }

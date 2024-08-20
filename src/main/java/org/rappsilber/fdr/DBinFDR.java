@@ -56,6 +56,7 @@ import rappsilber.utils.CountOccurence;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
+import org.rappsilber.utils.Version;
 import rappsilber.config.DBConnectionConfig;
 import rappsilber.gui.components.db.DatabaseProvider;
 import rappsilber.ms.sequence.AminoModification;
@@ -112,6 +113,9 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     private String command_line_auto_validate = null;
     
     private Pattern subScoresToForward;
+    
+    private HashMap<String, Version> m_xi_versions = new HashMap<>();
+
 
     // reuse the last mzidentml owner infos
     boolean lastMzIDowner = false;
@@ -2892,20 +2896,44 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
     @Override
     public int getxiMajorVersion() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return 1;
     }
+
 
     @Override
-    public Xi2Xi1Config getXi2Config() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Version getXiVersion() {
+        if (this.m_xi_versions.size()>0)
+            return this.m_xi_versions.values().iterator().next();
+        return null;
     }
 
+    private Version read_version(String search_id) {
+        Connection con = getDBConnection();
+        Version v = null;
+        try {
+            Statement stm = con.createStatement();
+            ResultSet rs = stm.executeQuery("SELECT version from search s left outer join xiversion v on s.xiversion = v.id WHERE s.id = " + search_id);
+            if (rs.next()) {
+                v = new Version(rs.getString(1));
+            }
+            rs.close();
+            stm.close();
+        } catch (Exception e) {
+            v = new Version("1.unknown");
+        }
+        return v;
+    }
+    
     @Override
-    public Xi2Xi1Config getXi2Config(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    
-            
-    
+    public Version getXiVersion(String search) {
+        if (m_xi_versions == null) {
+            m_xi_versions = new HashMap<>();
+        }
+        Version ret = m_xi_versions.get(search);
+        if (ret == null) {
+            ret = read_version(search);
+            m_xi_versions.put(search, ret);
+        }
+        return ret;
+    }    
 }
