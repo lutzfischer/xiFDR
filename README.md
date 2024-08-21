@@ -258,6 +258,11 @@ We recommend leaving boosting on and selecting "between" if desired. For experim
 
 FDR calculations with boosting enabled can take some minutes to conclude.
 
+#### EC-filter
+Ticking the EC-filter box in the complete FDR view enables the EC-filter, which rescores residue pairs based on whether they occur between proteins that are identified with linear peptides or not. See [Fischer&Rappsilber 2024](https://www.embopress.org/doi/full/10.1038/s44320-024-00057-2) for more details.
+The EC-filter is mostly useful for searches involving a large number of proteins in the database (at least hundreds) of which a good portion is not expected to yield residue pairs.
+This typically means searches involving in situ/in cell/in lysate crosslinking.
+
 ### FDR suggestions & common mistakes
 
 The extreme flexibility of xiFDR requires some careful use. Here are some of our suggestions and ways to spot that the FDR calculation may not be giving sensible results. When in doubt, keep it simple! 
@@ -265,6 +270,7 @@ The extreme flexibility of xiFDR requires some careful use. Here are some of our
 #### Tips & tricks
 - For searches with cleavable crosslinkers such as DSSO, set prefilters (see below) on the number of peptide doublets and boost on that parameter
 - For searches with unspecific crosslinkers like SDA, include prefilters (or boost) on minimum number of fragments. Include also a prefilter on "fragment unique crosslinked matched conservative" and exclude consecutives. This ensures that only spectral matches with at least one fragment proving a crosslinked peptide pair are considered.
+- Sometimes, filtering for identifications supported by fragments with no neutral losses greatly cleans up the dataset (prefilter on "peptide1 uniqued matched non lossy"/"peptide2 uniqued matched non lossy")
 
 #### Watch out for:
 - The program warns if there aren't sufficient targets to estimate FDR accurately. If this warning refers to the level of analysis you are interested in, there is likely almost nothing in the data. Unless prefilters were set way too stringent.
