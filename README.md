@@ -160,7 +160,7 @@ Some column will get their value assigned/guessed from the top columns:
 When psmid is given run and scan number become optional.
 
 
-Some more that can be used by xiFDR's boost function to improve the results of the FDR calculation:
+Additional columns may be provided. These can be used by xiFDR's boost or filter function to improve the results of the FDR calculation:
 
 
 | column name | Description |
