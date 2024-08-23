@@ -186,7 +186,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     //private DBRunConfig m_conf;
     //private HashMap<Integer,DBRunConfig> m_configs;
     Xi2Xi1Config m_config = new Xi2Xi1Config();
-    HashMap<UUID, Xi2Xi1Config> m_configs = new HashMap<>();
+    HashMap<String, Xi2Xi1Config> m_configs = new HashMap<>();
 
     private boolean m_writePrePostAA = false;
     public static DecimalFormat sixDigits = new DecimalFormat("###0.000000");
@@ -635,7 +635,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         for (UUID resultset_id : resultset_ids) {
             HashMap<UUID, Xi2Xi1Config> confs = readconfig(resultset_id);
             for (Map.Entry<UUID, Xi2Xi1Config> confe : confs.entrySet()) {
-                m_configs.put(confe.getKey(), confe.getValue());
+                m_configs.put(confe.getKey().toString(), confe.getValue());
                 // TODO need to update ones we have versions in the DB
                 m_xi_versions.put(confe.getKey().toString(), new Version("2.0.beta"));
             }
@@ -645,8 +645,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                 this.m_config.add(conf);
             }
         }
-        HashMap<UUID, HashMap<Long, Protein>> search_proteins = new HashMap<>();
-        for (UUID searchid : m_configs.keySet()) {
+        HashMap<String, HashMap<Long, Protein>> search_proteins = new HashMap<>();
+        for (String searchid : m_configs.keySet()) {
             search_proteins.put(searchid, readProteinInfos(searchid));
         }
         
@@ -1285,7 +1285,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
     }
 
-    protected HashMap<Long, Protein> readProteinInfos(UUID search_id) throws SQLException {
+    protected HashMap<Long, Protein> readProteinInfos(String search_id) throws SQLException {
         Statement stm;
         ResultSet rs;
         ensureConnection();
@@ -1998,9 +1998,9 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
                 // link to search_ids
                 pst = this.m_db_connection.prepareStatement("INSERT INTO resultsearch (resultset_id , search_id) VALUES (? ,?)");
-                for (UUID search: this.m_configs.keySet()) {
+                for (String search: this.m_configs.keySet()) {
                     pst.setObject(1, id);
-                    pst.setObject(2, search);
+                    pst.setObject(2, UUID.fromString(search));
                     pst.addBatch();
                 }
                 pst.executeBatch();
@@ -2141,8 +2141,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         // search_id
         pst = this.m_db_connectionAdmin.prepareStatement("INSERT INTO core_fdr_searches (fdr_id, search_id)"
                 + " SELECT " + fdr_id + " as fdr_id , id as search_id from core_search WHERE resultset_uuid = ?");
-        for (UUID searchid : this.m_configs.keySet()) {
-            pst.setString(1, searchid.toString());
+        for (String searchid : this.m_configs.keySet()) {
+            pst.setString(1, searchid);
             pst.execute();
             //pst.addBatch();
         }
@@ -2215,6 +2215,10 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         return this.m_configs.get(UUID.fromString(searchid));
     }
 
+    public HashMap<String,? extends RunConfig> getConfigs() {
+        return this.m_configs;
+    }
+    
     public Xi2Xi1Config getXi2Config() {
         return this.m_configs.values().iterator().next();
     }
@@ -2235,5 +2239,26 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
         return this.m_xi_versions.get(search);
     }
 
+    public HashMap<String, Version> getXiVersions() {
+        return this.m_xi_versions;
+    }
 
+        @Override
+    public void add(OfflineFDR other) {
+        super.add(other);
+        if (other instanceof DB2inFDR) {
+            this.getSearchIDs().addAll(((XiInFDR)other).getSearchIDs());
+            for (Map.Entry<String, Xi2Xi1Config> e : ((DB2inFDR)other).m_configs.entrySet()) {
+                this.m_configs.put(e.getKey(), e.getValue());
+            }
+            this.getXiVersions().putAll(((XiInFDR)other).getXiVersions());
+        } else if (other instanceof DBinFDR || other instanceof XiCSVinFDR) {
+            this.getSearchIDs().addAll(((XiInFDR)other).getSearchIDs());
+            this.getXiVersions().putAll(((XiInFDR)other).getXiVersions());
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, 
+                    "Some trouble combining non xi2 database searches. "
+                            + "You Could try to read them in the other way around. "
+                            + "mzIdenML export might not work correctly.");
+        }
+    }
 }

@@ -253,6 +253,7 @@ public class CSVinFDR extends OfflineFDR {
         }
         m_filter.add(filter);
         CsvParser accessionParser = new CsvParser(';', '"');
+        String search_id = csv.getInputFile().getAbsolutePath();
             
 
         Integer crun = getColumn(csv,"run",true);
@@ -592,6 +593,8 @@ public class CSVinFDR extends OfflineFDR {
                 }
                 if (psm.getScore() < minscore)
                     minscore = psm.getScore();
+                
+                psm.setSearchID(search_id);
                 
             }
             if (minscore< 0)

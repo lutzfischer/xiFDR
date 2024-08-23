@@ -23,6 +23,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +59,7 @@ import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
 import org.rappsilber.utils.Version;
 import rappsilber.config.DBConnectionConfig;
+import rappsilber.config.RunConfig;
 import rappsilber.gui.components.db.DatabaseProvider;
 import rappsilber.ms.sequence.AminoModification;
 import rappsilber.ms.statistics.utils.UpdateableLong;
@@ -92,7 +94,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     private HashMap<Long, Sequence> m_proteinSequences = new HashMap<Long, Sequence>();
     private Sequence m_noSequence = new Sequence(new AminoAcid[0]);
     private DBRunConfig m_conf;
-    private HashMap<String,DBRunConfig> m_configs;
+    private HashMap<String,RunConfig> m_configs;
     private boolean m_writePrePostAA = false;
     public static DecimalFormat sixDigits = new DecimalFormat("###0.000000");
 
@@ -510,18 +512,18 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     @Override
-    public DBRunConfig getConfig(String searchid) {
+    public RunConfig getConfig(String searchid) {
         if (m_search_ids.size() == 1 && searchid.contentEquals(m_search_ids.get(0))) {
             return getConfig();
         }
         if (m_configs == null) {
             m_configs = new HashMap<>();
         }
-        DBRunConfig ret = m_configs.get(searchid);
+        RunConfig ret = m_configs.get(searchid);
         if (ret == null) {
             try {
                 ret = new DBRunConfig(getDBConnection());
-                ret.readConfig(searchid);
+                ((DBRunConfig)ret).readConfig(searchid);
                 m_configs.put(searchid, ret);
             } catch (SQLException ex) {
                 Logger.getLogger(DBinFDR.class.getName()).log(Level.SEVERE, null, ex);
@@ -533,8 +535,11 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     /**
      * @param m_conf the m_conf to set
      */
-    public void setConfig(DBRunConfig m_conf) {
-        this.m_conf = m_conf;
+    public void setConfig(RunConfig m_conf) {
+        if (m_conf instanceof DBRunConfig)
+            this.m_conf = (DBRunConfig)m_conf;
+        else
+            throw new UnsupportedOperationException("Can't assigne a non DBRunConfig here");
     }
 
     /**
@@ -1203,7 +1208,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     String modLoockup = pepSeq1;
                     if (pepSeq2 != null)
                         modLoockup+=pepSeq2;
-                    DBRunConfig psmconfig  =getConfig(psm.getSearchID());
+                    RunConfig psmconfig  =getConfig(psm.getSearchID());
                     Sequence m = new Sequence(modLoockup, psmconfig);
                     for (AminoAcid aa : m) {
                         if (aa instanceof AminoModification) {
@@ -1880,7 +1885,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     String modLoockup = pepSeq1;
                     if (pepSeq2 != null)
                         modLoockup+=pepSeq2;
-                    DBRunConfig psmconfig  =getConfig(psm.getSearchID());
+                    RunConfig psmconfig  =getConfig(psm.getSearchID());
                     Sequence m = new Sequence(modLoockup, psmconfig);
                     for (AminoAcid aa : m) {
                         if (aa instanceof AminoModification) {
@@ -2936,4 +2941,28 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
         }
         return ret;
     }    
+    
+    public HashMap<String, Version> getXiVersions() {
+        return this.m_xi_versions;
+    }
+
+    public HashMap<String,? extends RunConfig> getConfigs() {
+        return this.m_configs;
+    }
+    
+
+    @Override
+    public void add(OfflineFDR other) {
+        super.add(other);
+        if (other instanceof XiInFDR) {
+            this.getSearchIDs().addAll(((XiInFDR)other).getSearchIDs());
+            for (Map.Entry<String, ? extends RunConfig> e : ((XiInFDR)other).getConfigs().entrySet()) {
+                RunConfig c = e.getValue();
+                this.m_configs.put(e.getKey(), c);
+            }
+            this.getXiVersions().putAll(((XiInFDR)other).getXiVersions());
+        }
+    }
+
+        
 }

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -73,7 +74,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     private boolean markModifications;
     private boolean writeMzID = false;
     private ArrayList<String> m_search_ids = new ArrayList<>();
-    private HashMap<String, RunConfig> m_configs;
+    private HashMap<String, RunConfig> m_configs = new HashMap<>();
     private HashMap<String, Version> m_xi_versions = new HashMap<>();
 
     private void markVariableModifiedPSMs() {
@@ -515,6 +516,23 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         return ret;
     }
 
+    public HashMap<String, Version> getXiVersions() {
+        return this.m_xi_versions;
+    }
+
+    @Override
+    public HashMap<String, ? extends RunConfig> getConfigs() {
+        if (m_configs != null) {
+            return m_configs;
+        }
+        HashMap<String, RunConfig> ret = new HashMap<>();
+        for (String sid : getSearchIDs()) {
+            ret.put(sid,m_config);
+        }
+        return ret;
+    }
+
+    
     @Override
     public ArrayList<String> getSearchIDs() {
         return this.m_search_ids;
@@ -658,6 +676,9 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
 
 
     public boolean readCSV(File csv, Version xiVersion) throws FileNotFoundException, IOException, ParseException {
+        if (!this.m_search_ids.contains(csv.getAbsolutePath())) {
+            this.m_search_ids.add(csv.getAbsolutePath());
+        }
         boolean ret = this.readCSV(csv);
         if (xiVersion == null)
             xiVersion = parseVersion(csv.getAbsolutePath());
@@ -684,6 +705,13 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     
     @Override
     public boolean readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException {
+        String infile = csv.getInputFile().getAbsolutePath();
+        if (!this.m_search_ids.contains(infile)) {
+            this.m_search_ids.add(infile);
+        }
+        if (!this.m_configs.containsKey(infile) && this.getConfig() != null) {
+            this.m_configs.put(infile, this.getConfig());
+        }
         boolean ret = super.readCSV(csv, filter); //To change body of generated methods, choose Tools | Templates.
         if (ret)
             matchFastas();
@@ -707,4 +735,17 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    
+    @Override
+    public void add(OfflineFDR other) {
+        super.add(other);
+        if (other instanceof XiInFDR) {
+            this.getSearchIDs().addAll(((XiInFDR)other).getSearchIDs());
+            for (Map.Entry<String, ? extends RunConfig> e : ((XiInFDR)other).getConfigs().entrySet()) {
+                this.setConfig(e.getKey(), e.getValue());
+            }
+            this.getXiVersions().putAll(((XiInFDR)other).getXiVersions());
+        }
+    }
+    
 }
