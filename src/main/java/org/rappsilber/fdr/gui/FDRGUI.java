@@ -908,7 +908,11 @@ public class FDRGUI extends javax.swing.JFrame {
 
                 if (config != null && fasta != null) {
                     nextfdr = new XiCSVinFDR();
-                    ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+                    try {
+                        ((XiCSVinFDR)nextfdr).setConfig(new Xi2Xi1Config(csvSelect.fbConfigIn.getFile()));
+                    } catch (Exception e){
+                        ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+                    }
                     ArrayList<String> fastas = new ArrayList<>(1);
                     fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
                     ((XiCSVinFDR)nextfdr).setFastas(fastas);
