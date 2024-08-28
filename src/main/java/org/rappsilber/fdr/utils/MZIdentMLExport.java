@@ -590,7 +590,6 @@ public class MZIdentMLExport {
             // Get the next spectrum.
 //            Spectrum spectrum = iter.next();
             PSM f = psms.get(0);
-            boolean passed = result.psmFDR.filteredContains(f) || ( f.getPartOfUniquePSM() != null && f.getPartOfUniquePSM() == f && result.psmFDR.filteredContains(f.getPartOfUniquePSM()));
             int spectrumNumber = Integer.parseInt(f.getScan());//note: spectrum number seems to be a sequential index. For the spectrum number as found in xtandem file use spectrumId
             String run = f.getRun();
 
@@ -614,7 +613,9 @@ public class MZIdentMLExport {
             HashMap<String, SpectrumIdentificationItem> sIIMap = new HashMap<String, SpectrumIdentificationItem>();
             HashSet<org.rappsilber.fdr.entities.Peptide> allPeps = new HashSet<org.rappsilber.fdr.entities.Peptide>();
             HashMap<String,SpectraData> runData = new HashMap<String,SpectraData>();
+            boolean firstSpecPSM = true;
             for (PSM psm : psms) {
+                boolean passed = result.psmFDR.filteredContains(psm) || (psm.getPartOfUniquePSM() != null && psm.getPartOfUniquePSM() == psm && result.psmFDR.filteredContains(psm.getPartOfUniquePSM()));
                 xlModId++;
                 org.rappsilber.fdr.entities.PeptidePair peppair = psm.getPeptidePair();
                 
@@ -933,11 +934,15 @@ public class MZIdentMLExport {
                     }
                 }
 
-                specIdentRes.setSpectrumID(this.scanIDTranslation.getID(f));
-                specIdentRes.setId("SIR_" + sirCounter);
-                specIdentRes.setSpectraData(specData);
+                if (firstSpecPSM) {
+                    specIdentRes.setSpectrumID(this.scanIDTranslation.getID(f));
+                    specIdentRes.setId("SIR_" + sirCounter);
+                    specIdentRes.setSpectraData(specData);
+
+                    specIdentRes.getCvParam().add(makeCvParam("MS:1000797", "peak list scans", psiCV,psm.getScan()+""));
+                    firstSpecPSM = false;
+                }
                 
-                specIdentRes.getCvParam().add(makeCvParam("MS:1000797", "peak list scans", psiCV,psm.getScan()+""));
 
                 {
                     
