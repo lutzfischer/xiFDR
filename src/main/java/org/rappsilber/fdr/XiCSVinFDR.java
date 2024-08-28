@@ -27,8 +27,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
@@ -45,6 +48,8 @@ import org.rappsilber.fdr.utils.MZIdentMLExport;
 import org.rappsilber.fdr.utils.MZIdentMLOwner;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.utils.UpdatableChar;
+import org.rappsilber.utils.Version;
+import rappsilber.config.DBRunConfig;
 import rappsilber.config.RunConfig;
 import rappsilber.config.RunConfigFile;
 import rappsilber.ms.sequence.AminoAcid;
@@ -68,6 +73,9 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
 
     private boolean markModifications;
     private boolean writeMzID = false;
+    private ArrayList<String> m_search_ids = new ArrayList<>();
+    private HashMap<String, RunConfig> m_configs = new HashMap<>();
+    private HashMap<String, Version> m_xi_versions = new HashMap<>();
 
     private void markVariableModifiedPSMs() {
         HashSet<Peptide> var_mod_peps=new HashSet<>();
@@ -97,6 +105,50 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         this.writeMzID = b;
     }
 
+    private Version parseVersion(String in_file) {
+        // find the version string in the file name
+        Pattern p = Pattern.compile(".*(?:Xi|xiSEARCH)([0-9](?:\\.[0-9]+(?:\\.[0-9]+)).*)\\.(?-i)(?:csv|tsv|txt)(\\.gz)?$", Pattern.CASE_INSENSITIVE); 
+        Matcher m = p.matcher(in_file);
+        if (m.matches()) {
+            try {
+                return new Version(m.group(1));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private void addSearchID(String absolutePath) {
+        this.m_search_ids.add(absolutePath);
+    }
+
+    private void setConfig(String absolutePath, RunConfig conf) {
+        if (m_configs == null) {
+            m_configs = new HashMap<>();
+        }
+        for (rappsilber.ms.crosslinker.CrossLinker cl : conf.getCrossLinker()) {
+            crossLinkerMass.put(cl.getName(), cl.getCrossLinkedMass());
+        }
+        m_configs.put(absolutePath, conf);
+    }
+
+    @Override
+    public Version getXiVersion() {
+        if (this.m_xi_versions.size()>0)
+            return this.m_xi_versions.values().iterator().next();
+        return null;
+    }
+
+    @Override
+    public Version getXiVersion(String absPath) {
+        return m_xi_versions.get(absPath);
+    }
+
+    public void setXiVersion(String absolutePath, Version xiVersion) {
+        this.m_xi_versions.put(absolutePath, xiVersion);
+    }
+    
     class XiSequence extends rappsilber.ms.sequence.Sequence {
         
         public XiSequence(String sequence, RunConfig config) {
@@ -151,12 +203,17 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
     }    
     
     public String argList() {
-        return super.argList() + " --xiconfig=[path to config] --fasta=[path to fasta] --flagModifications --gui --lastowner";
+        return super.argList() + " --xiconfig=[path to config] --xiversion=[version] --fasta=[path to fasta] --flagModifications --gui --lastowner";
     }
     
     public String argDescription() {
         return super.argDescription() + "\n"
                 + "--xiconfig=             what xi config to use to turn find modifications\n"
+                + "                        can be used more themn ones and is applied to all\n"
+                + "                        input files listed after\n"
+                + "--xiversion=            what xiSEARCH version was used\n"
+                + "                        can be used more themn ones and is applied to all\n"
+                + "                        input files listed after)\n"
                 + "--fasta=                fasta file searched"
                 + "--flagModifications     should modified peptide make their own sub-group\n"
                 + "--writemzid             also write out an mzIdentML result file\n"
@@ -172,6 +229,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         argv = super.parseArgs(argv, settings);
         String confpath = null;
         boolean startGUI =  false;
+        String xiVersion = null;
         for (String arg : argv) {
             if (arg.toLowerCase().startsWith("--xiconfig=")) {
                 try {
@@ -192,6 +250,8 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                     Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.SEVERE, "Error parsing config file:", ex);
                     System.exit(-1);
                 }
+            } else if (arg.toLowerCase().startsWith("--xiversion=")) {
+                xiVersion = arg.substring(arg.indexOf("=") + 1);
             }else if (arg.toLowerCase().contentEquals("--gui")) {
                 startGUI = true;
             }else if (arg.toLowerCase().startsWith("--fasta=")) {
@@ -220,6 +280,12 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                 setWriteMzID(true);
             }  else {
                unknown.add(arg);
+               if (confpath != null) {
+                   setConfig(arg, getConfig());
+               }
+               if (xiVersion != null) {
+                   setXiVersion(arg, new Version(xiVersion));
+               }
             }
             
         }        
@@ -235,6 +301,7 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
                 fg.setXiConfig(confpath);
             }
             fg.setFDRSettings(settings);
+            fg.setXiVersion(xiVersion);
             
             String outdir = getCsvOutDirSetting();
             String basename = getCsvOutBaseSetting();
@@ -436,14 +503,39 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
 
     @Override
     public RunConfig getConfig(String searchid) {
-        return m_config;
+        if (m_search_ids.size() == 1 && searchid.contentEquals(m_search_ids.get(0))) {
+            return getConfig();
+        }
+        if (m_configs == null) {
+            m_configs = new HashMap<>();
+        }
+        RunConfig ret = m_configs.get(searchid);
+        if (ret == null) {
+            return m_config;
+        }
+        return ret;
+    }
+
+    public HashMap<String, Version> getXiVersions() {
+        return this.m_xi_versions;
     }
 
     @Override
-    public ArrayList<String> getSearchIDs() {
-        ArrayList<String> ret = new ArrayList<>(1);
-        ret.add("");
+    public HashMap<String, ? extends RunConfig> getConfigs() {
+        if (m_configs != null) {
+            return m_configs;
+        }
+        HashMap<String, RunConfig> ret = new HashMap<>();
+        for (String sid : getSearchIDs()) {
+            ret.put(sid,m_config);
+        }
         return ret;
+    }
+
+    
+    @Override
+    public ArrayList<String> getSearchIDs() {
+        return this.m_search_ids;
     }
 
     @Override
@@ -582,13 +674,58 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         }
     }
 
+
+    public boolean readCSV(File csv, Version xiVersion) throws FileNotFoundException, IOException, ParseException {
+        if (!this.m_search_ids.contains(csv.getAbsolutePath())) {
+            this.m_search_ids.add(csv.getAbsolutePath());
+        }
+        boolean ret = this.readCSV(csv);
+        if (xiVersion == null)
+            xiVersion = parseVersion(csv.getAbsolutePath());
+        this.addSearchID(csv.getAbsolutePath());
+        this.setXiVersion(csv.getAbsolutePath(), xiVersion);
+        return ret;
+    }
+
+    public boolean readCSV(CsvParser csv, CsvCondition filter, Version xiVersion, RunConfig conf) throws FileNotFoundException, IOException, ParseException {
+        boolean ret =  this.readCSV(csv, filter);
+        String in_file = csv.getInputFile().getAbsolutePath();
+        if (xiVersion == null)
+            xiVersion = parseVersion(in_file);
+        this.addSearchID(csv.getInputFile().getAbsolutePath());
+        this.setXiVersion(csv.getInputFile().getAbsolutePath(), xiVersion);
+        if (conf != null) {
+            this.setConfig(csv.getInputFile().getAbsolutePath(), conf);
+        } else if (getConfig(in_file) == null && getConfig() != null) {
+            setConfig(in_file, getConfig());
+        }
+        
+        return ret;
+    }
+    
     @Override
     public boolean readCSV(CsvParser csv, CsvCondition filter) throws FileNotFoundException, IOException, ParseException {
+        String infile = csv.getInputFile().getAbsolutePath();
+        if (!this.m_search_ids.contains(infile)) {
+            this.m_search_ids.add(infile);
+        }
+        if (!this.m_configs.containsKey(infile) && this.getConfig() != null) {
+            this.m_configs.put(infile, this.getConfig());
+        }
         boolean ret = super.readCSV(csv, filter); //To change body of generated methods, choose Tools | Templates.
         if (ret)
             matchFastas();
         if (markModifications()) {
             markVariableModifiedPSMs();
+        }
+        String absPath = csv.getInputFile().getAbsolutePath();
+        if (this.getConfig(absPath) == null) {
+            this.setConfig(absPath, this.getConfig());
+        }
+        Version xiVersion = this.getXiVersion(absPath);
+        if (xiVersion == null) {
+            xiVersion = parseVersion(absPath);
+            setXiVersion(absPath, xiVersion);
         }
         return ret;
     }
@@ -598,14 +735,17 @@ public class XiCSVinFDR extends CSVinFDR implements XiInFDR{
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    
     @Override
-    public Xi2Xi1Config getXi2Config() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void add(OfflineFDR other) {
+        super.add(other);
+        if (other instanceof XiInFDR) {
+            this.getSearchIDs().addAll(((XiInFDR)other).getSearchIDs());
+            for (Map.Entry<String, ? extends RunConfig> e : ((XiInFDR)other).getConfigs().entrySet()) {
+                this.setConfig(e.getKey(), e.getValue());
+            }
+            this.getXiVersions().putAll(((XiInFDR)other).getXiVersions());
+        }
     }
-
-    @Override
-    public Xi2Xi1Config getXi2Config(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
+    
 }

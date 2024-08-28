@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -51,6 +53,7 @@ import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.data.csv.gui.filter.ConditionList;
 import org.rappsilber.fdr.CSVinFDR;
 import org.rappsilber.fdr.OfflineFDR;
+import org.rappsilber.utils.Version;
 
 /**
  *
@@ -245,6 +248,60 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
             }
         }
     }
+    
+    public void guessXiVersion() {
+        Pattern p = Pattern.compile(".*(?:xi|xisearch)[\\-_]?([0-9]\\.[0-9]+.*).(?:csv|tsv|txt)(?:.gz)?$", Pattern.CASE_INSENSITIVE);
+        File[] files  =  fbCsvIn.getFiles();
+        Matcher m = p.matcher(files[0].getName());
+        Version v = null;
+        if (m.matches()) {
+            try {
+                v = new Version(m.group(1));
+                if (txtXiVersion.getText().trim().length()>0 && new Version(txtXiVersion.getText().trim()).compareTo(v) != 0) {
+                    txtXiVersion.setText("");
+                    return;
+                }
+            } catch (Exception e) {
+                txtXiVersion.setText("");
+                return;
+            }
+        }
+        if (files.length>1 && v != null) {
+            for (int f=1; f<files.length; f++) {
+                m = p.matcher(files[f].getName());
+                if (m.matches()) {
+                    try {
+                        Version v2 = new Version(m.group(1));
+                        if (v2.compareTo(v) != 0) {
+                            v = null;
+                            break;
+                        }
+                    } catch (Exception e) {
+                        v = null;
+                        break;
+                    }
+                } else {
+                    v = null;
+                    break;
+                }
+                
+            }
+        }
+        if (v!=null)
+            txtXiVersion.setText(v.toString());
+    }
+    
+    public Version getXiVersion(){
+        if (txtXiVersion.getText().trim().length() > 0)
+            return new Version(txtXiVersion.getText());
+        return null;
+    }
+    
+    public void setXiVersion(String xiVersion) {
+        if (xiVersion != null && xiVersion.trim().length()>0) {
+            txtXiVersion.setText(xiVersion);
+        }
+    }
 
     public void testInputFile() {
         File f = fbCsvIn.getFile();
@@ -266,6 +323,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 cbCSVQuote.setSelectedItem(csv.getQuote());
                 csv.close();
                 readColumns();
+                guessXiVersion();
 
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
@@ -597,6 +655,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         cbNormalize = new javax.swing.JComboBox<>();
+        txtXiVersion = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
         ckFilter = new javax.swing.JCheckBox();
         btnFilter = new javax.swing.JButton();
         localPicker1 = new org.rappsilber.gui.components.LocalPicker();
@@ -745,7 +805,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         fbConfigIn.setDescription("Xi-Config");
         fbConfigIn.setExtensions(new String[] {"config", "conf", "json"});
 
-        jLabel12.setText("XiConfig");
+        jLabel12.setText("xi Config");
 
         jLabel13.setText("FASTA");
 
@@ -762,6 +822,10 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         cbNormalize.setModel(new DefaultComboBoxModel<OfflineFDR.Normalisation>(OfflineFDR.Normalisation.values()));
         cbNormalize.setToolTipText("How to normalize the input data");
+
+        txtXiVersion.setToolTipText("xi version to be written into the mzIdentML file");
+
+        jLabel4.setText("xi Version");
 
         javax.swing.GroupLayout pXiConfigLayout = new javax.swing.GroupLayout(pXiConfig);
         pXiConfig.setLayout(pXiConfigLayout);
@@ -785,7 +849,12 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(txtForwardColumns, javax.swing.GroupLayout.DEFAULT_SIZE, 128, Short.MAX_VALUE))
                     .addComponent(fbFastaIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(fbConfigIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(pXiConfigLayout.createSequentialGroup()
+                        .addComponent(fbConfigIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtXiVersion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         pXiConfigLayout.setVerticalGroup(
@@ -794,7 +863,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 .addContainerGap()
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(fbConfigIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel12))
+                    .addComponent(jLabel12)
+                    .addComponent(txtXiVersion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(fbFastaIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1106,6 +1177,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JLabel jLabel27;
     private javax.swing.JLabel jLabel28;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JScrollPane jScrollPane2;
     private org.rappsilber.gui.components.LocalPicker localPicker1;
     private javax.swing.JPanel pAdditional;
@@ -1116,5 +1188,6 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     public javax.swing.JTable tblCSVColumns;
     private javax.swing.JTextField txtDecoyPrefix;
     private javax.swing.JTextField txtForwardColumns;
+    private javax.swing.JTextField txtXiVersion;
     // End of variables declaration//GEN-END:variables
 }

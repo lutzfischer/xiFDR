@@ -23,6 +23,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,7 +57,9 @@ import rappsilber.utils.CountOccurence;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.SelfAddHashSet;
+import org.rappsilber.utils.Version;
 import rappsilber.config.DBConnectionConfig;
+import rappsilber.config.RunConfig;
 import rappsilber.gui.components.db.DatabaseProvider;
 import rappsilber.ms.sequence.AminoModification;
 import rappsilber.ms.statistics.utils.UpdateableLong;
@@ -91,7 +94,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     private HashMap<Long, Sequence> m_proteinSequences = new HashMap<Long, Sequence>();
     private Sequence m_noSequence = new Sequence(new AminoAcid[0]);
     private DBRunConfig m_conf;
-    private HashMap<String,DBRunConfig> m_configs;
+    private HashMap<String,RunConfig> m_configs;
     private boolean m_writePrePostAA = false;
     public static DecimalFormat sixDigits = new DecimalFormat("###0.000000");
 
@@ -112,6 +115,9 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     private String command_line_auto_validate = null;
     
     private Pattern subScoresToForward;
+    
+    private HashMap<String, Version> m_xi_versions = new HashMap<>();
+
 
     // reuse the last mzidentml owner infos
     boolean lastMzIDowner = false;
@@ -506,18 +512,18 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     }
 
     @Override
-    public DBRunConfig getConfig(String searchid) {
+    public RunConfig getConfig(String searchid) {
         if (m_search_ids.size() == 1 && searchid.contentEquals(m_search_ids.get(0))) {
             return getConfig();
         }
         if (m_configs == null) {
             m_configs = new HashMap<>();
         }
-        DBRunConfig ret = m_configs.get(searchid);
+        RunConfig ret = m_configs.get(searchid);
         if (ret == null) {
             try {
                 ret = new DBRunConfig(getDBConnection());
-                ret.readConfig(searchid);
+                ((DBRunConfig)ret).readConfig(searchid);
                 m_configs.put(searchid, ret);
             } catch (SQLException ex) {
                 Logger.getLogger(DBinFDR.class.getName()).log(Level.SEVERE, null, ex);
@@ -529,8 +535,11 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
     /**
      * @param m_conf the m_conf to set
      */
-    public void setConfig(DBRunConfig m_conf) {
-        this.m_conf = m_conf;
+    public void setConfig(RunConfig m_conf) {
+        if (m_conf instanceof DBRunConfig)
+            this.m_conf = (DBRunConfig)m_conf;
+        else
+            throw new UnsupportedOperationException("Can't assigne a non DBRunConfig here");
     }
 
     /**
@@ -1199,7 +1208,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     String modLoockup = pepSeq1;
                     if (pepSeq2 != null)
                         modLoockup+=pepSeq2;
-                    DBRunConfig psmconfig  =getConfig(psm.getSearchID());
+                    RunConfig psmconfig  =getConfig(psm.getSearchID());
                     Sequence m = new Sequence(modLoockup, psmconfig);
                     for (AminoAcid aa : m) {
                         if (aa instanceof AminoModification) {
@@ -1876,7 +1885,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     String modLoockup = pepSeq1;
                     if (pepSeq2 != null)
                         modLoockup+=pepSeq2;
-                    DBRunConfig psmconfig  =getConfig(psm.getSearchID());
+                    RunConfig psmconfig  =getConfig(psm.getSearchID());
                     Sequence m = new Sequence(modLoockup, psmconfig);
                     for (AminoAcid aa : m) {
                         if (aa instanceof AminoModification) {
@@ -2892,20 +2901,68 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
     @Override
     public int getxiMajorVersion() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return 1;
     }
+
 
     @Override
-    public Xi2Xi1Config getXi2Config() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Version getXiVersion() {
+        if (this.m_xi_versions.size()>0)
+            return this.m_xi_versions.values().iterator().next();
+        return null;
     }
+
+    private Version read_version(String search_id) {
+        Connection con = getDBConnection();
+        Version v = null;
+        try {
+            Statement stm = con.createStatement();
+            ResultSet rs = stm.executeQuery("SELECT version from search s left outer join xiversion v on s.xiversion = v.id WHERE s.id = " + search_id);
+            if (rs.next()) {
+                v = new Version(rs.getString(1));
+            }
+            rs.close();
+            stm.close();
+        } catch (Exception e) {
+            v = new Version("1.unknown");
+        }
+        return v;
+    }
+    
+    @Override
+    public Version getXiVersion(String search) {
+        if (m_xi_versions == null) {
+            m_xi_versions = new HashMap<>();
+        }
+        Version ret = m_xi_versions.get(search);
+        if (ret == null) {
+            ret = read_version(search);
+            m_xi_versions.put(search, ret);
+        }
+        return ret;
+    }    
+    
+    public HashMap<String, Version> getXiVersions() {
+        return this.m_xi_versions;
+    }
+
+    public HashMap<String,? extends RunConfig> getConfigs() {
+        return this.m_configs;
+    }
+    
 
     @Override
-    public Xi2Xi1Config getXi2Config(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void add(OfflineFDR other) {
+        super.add(other);
+        if (other instanceof XiInFDR) {
+            this.getSearchIDs().addAll(((XiInFDR)other).getSearchIDs());
+            for (Map.Entry<String, ? extends RunConfig> e : ((XiInFDR)other).getConfigs().entrySet()) {
+                RunConfig c = e.getValue();
+                this.m_configs.put(e.getKey(), c);
+            }
+            this.getXiVersions().putAll(((XiInFDR)other).getXiVersions());
+        }
     }
 
-    
-            
-    
+        
 }
