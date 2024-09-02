@@ -210,8 +210,8 @@ public abstract class OfflineFDR {
      * = B instead of A.equals(B)
      */
     HashMap<String, String> foundRuns = new HashMap<>();
-    HashMap<String, Integer> runToInt = new HashMap<>();
-    ArrayList<String> runs = new ArrayList<>();
+    //HashMap<String, Integer> runToInt = new HashMap<>();
+    //ArrayList<String> runs = new ArrayList<>();
     protected Locale outputlocale = Locale.getDefault();
     protected NumberFormat numberFormat = NumberFormat.getNumberInstance(outputlocale);
     private boolean stopMaximizing = false;
@@ -617,6 +617,14 @@ public abstract class OfflineFDR {
 
     public void add(OfflineFDR other) {
         allPSMs.addAll(other.allPSMs);
+        this.foundRuns.putAll(other.foundRuns);
+        for (String run : other.foundRuns.keySet()) {
+            if (!this.foundRuns.containsKey(run)) {
+                this.foundRuns.put(run, run);
+                //runToInt.put(run, runToInt.size());
+            }
+        }
+        this.foundCrossLinker.putAll(other.foundCrossLinker);
         if (other.getClass().equals(this.getClass())) {
             singleClassFDR &=  other.singleClassFDR;
         } else {
@@ -886,8 +894,7 @@ public abstract class OfflineFDR {
         if (r == null) {
             r = run;
             foundRuns.put(run, run);
-            runToInt.put(run, runs.size());
-            runs.add(run);
+            //runToInt.put(run, runs.size());
         }
         return r;
     }
@@ -4184,7 +4191,7 @@ public abstract class OfflineFDR {
             "",
             "link id",
             "ppi id"}));
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
         return ret;
@@ -4216,7 +4223,7 @@ public abstract class OfflineFDR {
         ret.add("PEP");
         ret.add("");
         ret.add("ProteinFDR");
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
 
@@ -4259,7 +4266,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -4343,16 +4350,16 @@ public abstract class OfflineFDR {
         ret.add(l == null ? "" : i2s(l.getLinkID()));
         ret.add(ppi == null ? "" : i2s(ppi.getProteinGroupPairID()));
 
-        HashSet<String> linkRuns = new HashSet<>();
+        HashSet<String> pepRuns = new HashSet<>();
         HashMap<String, Double> runScore = new HashMap<>();
 
         for (PSM psm : pp.getAllPSMs()) {
             for (PSM upsm : psm.getRepresented()) {
-                psmToRun(upsm, linkRuns, runScore);
+                psmToRun(upsm, pepRuns, runScore);
             }
         }
 
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -4423,7 +4430,7 @@ public abstract class OfflineFDR {
         ret.add(d2s(l.getFDR()));
         ret.add(d2s(l.getEstimatedFDR()));
         ret.add(d2s(l.getPEP()));
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -4484,7 +4491,7 @@ public abstract class OfflineFDR {
         ret.add("ifdr");
         ret.add("PEP");
 
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
 
@@ -4535,6 +4542,9 @@ public abstract class OfflineFDR {
         ret.add("top link fdr");
         ret.add("top peptide fdr");
         ret.add("top psm_fdr");
+        for (String run : foundRuns.keySet()) {
+            ret.add(run);
+        }
         return ret;
     }
 
@@ -4550,6 +4560,9 @@ public abstract class OfflineFDR {
         double top_pepfdr = Double.MAX_VALUE;
         double top_psmfdr = Double.MAX_VALUE;
         HashSet<String> xl = new HashSet<>();
+        HashMap<String, Double> runScore = new HashMap<>();
+        HashSet<String> ppiRuns = new HashSet<>();
+        
         for (ProteinGroupLink l : pgp.getLinks()) {
             if (l.getFDR() < top_linkfdr) {
                 top_linkfdr = l.getFDR();
@@ -4564,6 +4577,11 @@ public abstract class OfflineFDR {
                     }
                 }
                 xl.add(pp.getCrosslinker());
+                for (PSM psm : pp.getAllPSMs()) {
+                    for (PSM upsm : psm.getRepresented()) {
+                        psmToRun(upsm, ppiRuns, runScore);
+                    }
+                }
             }
         }
         ArrayList<String> ret = new ArrayList<String>();
@@ -4597,6 +4615,16 @@ public abstract class OfflineFDR {
         ret.add(d2s(top_linkfdr));
         ret.add(d2s(top_pepfdr));
         ret.add(d2s(top_psmfdr));
+        
+        for (String r : foundRuns.keySet()) {
+            Double d = runScore.get(r);
+            if (d == null) {
+                ret.add("");
+            } else {
+                ret.add(d2s(d));
+            }
+        }
+        
         return ret;
     }
 
@@ -4618,7 +4646,7 @@ public abstract class OfflineFDR {
         ret.add("fdr");
         ret.add("ifdr");
         ret.add("PEP");
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
         return ret;
@@ -4674,7 +4702,7 @@ public abstract class OfflineFDR {
         ret.add(pg.getFDR() + "");
         ret.add(pg.getEstimatedFDR() + "");
         ret.add(pg.getPEP() + "");
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
