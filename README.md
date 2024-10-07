@@ -259,7 +259,7 @@ We recommend leaving boosting on and selecting "between" if desired. For experim
 FDR calculations with boosting enabled can take some minutes to conclude.
 
 #### EC-filter
-Ticking the EC-filter box in the complete FDR view enables the EC-filter, which rescores residue pairs based on whether they occur between proteins that are identified with linear peptides or not. See [Fischer&Rappsilber 2024](https://www.embopress.org/doi/full/10.1038/s44320-024-00057-2) for more details.
+Ticking the EC-filter box in the complete FDR view enables the EC-filter, which filters protein herteromeric residue pairs (between) based on whether they occur between proteins that are also identified with crosslinker modified linear peptides or with self links. See [Fischer&Rappsilber 2024](https://www.embopress.org/doi/full/10.1038/s44320-024-00057-2) for more details.
 The EC-filter is mostly useful for searches involving a large number of proteins in the database (at least hundreds) of which a good portion is not expected to yield residue pairs.
 This typically means searches involving in situ/in cell/in lysate crosslinking.
 
