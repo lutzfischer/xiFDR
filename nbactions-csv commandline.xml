@@ -12,8 +12,8 @@
             <properties>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
-                <exec.appArgs>--inputlocale=en --outputlocale=en --linkfdr=5.0 --writemzid --mzidlast=Fischer --mzidaddr="TIB Gebäude 17,  Etage 4, Raum 474 Gustav-Meyer-Allee 25 13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/temp/test/FDR_rpfdr5.0 --csvBaseName=test_Xi1.8.5 --xiconfig=/home/lfischer/temp/test/test_Xi1.8.5.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/P02768_HSA.FASTA /home/lfischer/temp/test/test_Xi1.8.5.csv --inputlocale=en --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,  Etage 4, Raum 474 Gustav-Meyer-Allee 25 13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de "--mzidorg=TU Berlin" --xiconfig=/home/lfischer/temp/test/test_Xi1.8.5.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/P02768_HSA.FASTA /home/lfischer/temp/test/test_Xi1.8.5.csv</exec.appArgs>
+                <exec.workingdir></exec.workingdir>
+                <exec.appArgs></exec.appArgs>
                 <exec.vmArgs>-Dfile.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx4G</exec.vmArgs>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
@@ -31,8 +31,8 @@
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
-                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
-                <exec.appArgs>--inputlocale=en --outputlocale=en --linkfdr=5.0 --writemzid --mzidlast=Fischer --mzidaddr="TIB Gebäude 17,  Etage 4, Raum 474 Gustav-Meyer-Allee 25 13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/temp/test/FDR_rpfdr5.0 --csvBaseName=test_Xi1.8.5 --xiconfig=/home/lfischer/temp/test/test_Xi1.8.5.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/P02768_HSA.FASTA /home/lfischer/temp/test/test_Xi1.8.5.csv --inputlocale=en --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,  Etage 4, Raum 474 Gustav-Meyer-Allee 25 13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de "--mzidorg=TU Berlin" --xiconfig=/home/lfischer/temp/test/test_Xi1.8.5.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/P02768_HSA.FASTA /home/lfischer/temp/test/test_Xi1.8.5.csv</exec.appArgs>
+                <exec.workingdir></exec.workingdir>
+                <exec.appArgs></exec.appArgs>
                 <exec.vmArgs>-Dfile.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx4G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
@@ -49,8 +49,8 @@
             <properties>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
-                <exec.workingdir>/home/lfischer/Dropbox/Projects/entrapment_compare/entrapment-control</exec.workingdir>
-                <exec.appArgs>--inputlocale=en --outputlocale=en --linkfdr=5.0 --writemzid --mzidlast=Fischer --mzidaddr="TIB Gebäude 17,  Etage 4, Raum 474 Gustav-Meyer-Allee 25 13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de --mzidorg="TU Berlin" --csvOutDir=/home/lfischer/temp/test/FDR_rpfdr5.0 --csvBaseName=test_Xi1.8.5 --xiconfig=/home/lfischer/temp/test/test_Xi1.8.5.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/P02768_HSA.FASTA /home/lfischer/temp/test/test_Xi1.8.5.csv --inputlocale=en --writemzid --mzidlast=Fischer "--mzidaddr=TIB Gebäude 17,  Etage 4, Raum 474 Gustav-Meyer-Allee 25 13355 Berlin" --mzidfirst=Lutz --mzidemail=lutz.fischer@tu-berlin.de "--mzidorg=TU Berlin" --xiconfig=/home/lfischer/temp/test/test_Xi1.8.5.config --fasta=/home/lfischer/Dropbox/xisearch2/xisearch2/tests/fixtures/P02768_HSA.FASTA /home/lfischer/temp/test/test_Xi1.8.5.csv</exec.appArgs>
+                <exec.workingdir></exec.workingdir>
+                <exec.appArgs></exec.appArgs>
                 <exec.vmArgs>-Dfile.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx4G</exec.vmArgs>
                 <exec.mainClass>org.rappsilber.fdr.CommandLine</exec.mainClass>
             </properties>
