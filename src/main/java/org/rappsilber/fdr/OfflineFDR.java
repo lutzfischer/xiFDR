@@ -3873,7 +3873,7 @@ public abstract class OfflineFDR {
 
             } else if (arg.contentEquals("--validitychecks")) {
                 String l = arg.substring(arg.indexOf("=") + 1).trim();
-                settings.ignoreValidityChecks(true);
+                settings.ignoreValidityChecks(false);
 
             } else if (arg.contentEquals("--validitymindecoy=")) {
                 String m = arg.substring(arg.indexOf("=") + 1).trim();
