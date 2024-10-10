@@ -1538,7 +1538,8 @@ public class MZIdentMLExport {
         // TODO need to ask for version/software - or get from cmd param
         p.setParam(makeCvParam("MS:1002544","xi",psiCV));
         analysisSoftware.setSoftwareName(p);
-        analysisSoftware.setVersion(fdr.getXiVersion().toString());
+        if (fdr.getXiVersion() != null)
+            analysisSoftware.setVersion(fdr.getXiVersion().toString());
 
         analysisSoftwares.add(analysisSoftware);
 

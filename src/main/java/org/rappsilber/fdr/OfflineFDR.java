@@ -3334,6 +3334,8 @@ public abstract class OfflineFDR {
                 + "--mzidemail"
                 + "--mzidorg"
                 + "--mzidaddr"
+                + "--validitycheck"
+                + "--validitymindecoy"
                 ;
 
     }
@@ -3390,6 +3392,10 @@ public abstract class OfflineFDR {
                 + "                         according to this locale\n"
                 + "--boost=(pep|link|prot)  boost results on the given level\n"
                 + "--boost-between          when boosting try to maximize betweens\n"
+                + "--validitycheck          only accept subgroups that pass the validity check\n"
+                + "--validitymindecoy=X     sub groups are considered invalid if "
+                + "                         not at least X(default: 2) TD macthes "
+                + "                         would be possible\n"
                 + "--single-step-boost      if certain columns are found these are\n"
                 + "                         used boosting as well. By default they\n"
                 + "                         get used in a second round of boosting\n"
@@ -3864,6 +3870,15 @@ public abstract class OfflineFDR {
             } else if (arg.startsWith("--outputlocale=")) {
                 String l = arg.substring(arg.indexOf("=") + 1).trim();
                 setOutputLocale(l);
+
+            } else if (arg.contentEquals("--validitychecks")) {
+                String l = arg.substring(arg.indexOf("=") + 1).trim();
+                settings.ignoreValidityChecks(false);
+
+            } else if (arg.contentEquals("--validitymindecoy=")) {
+                String m = arg.substring(arg.indexOf("=") + 1).trim();
+                settings.setMinTD(Integer.parseInt(m));
+                settings.ignoreValidityChecks(true);
 
             } else if (arg.startsWith("--uniquePSMs=")) {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
