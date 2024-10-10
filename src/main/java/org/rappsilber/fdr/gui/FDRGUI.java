@@ -1355,6 +1355,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 else { 
                     Thread ml = new Thread() {
                         public void run() {
+                            setStatus("Starting boost");
                             maximise(l, settings);
                             getFdrSettingsComplete().btnStopBoost.setEnabled(false);
                             fdrSettingsMedium.btnStopBoost.setEnabled(false);
@@ -1366,6 +1367,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 }
                             
             } else {
+                setStatus("Starting FDR calculation");
                 calculateFDR();
             }
         }

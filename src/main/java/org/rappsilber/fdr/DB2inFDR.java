@@ -1003,7 +1003,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         }
                         
                         UUID search_id = (UUID)rs.getObject("search_id");
-                        Xi2Xi1Config conf = m_configs.get(search_id);
+                        Xi2Xi1Config conf = m_configs.get(search_id.toString());
                         String psmID = ipsmID.toString();
                         String pepSeq1 = rs.getString(pepSeq1Column);
                         String pepSeq2 = rs.getString(pepSeq2Column);
@@ -1072,7 +1072,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                             for (int p = 0; p< protein1ID.length; p++) {
                                 int p1 = pepPosition1[p];
                                 long p1id = protein1ID[p];
-                                HashMap<Long,Protein> sprots = search_proteins.get(search_id);
+                                HashMap<Long,Protein> sprots = search_proteins.get(search_id.toString());
                                 Protein prot1 = sprots.get(p1id);
 
                                 int p2 = pepPosition2[p];
@@ -1092,7 +1092,7 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                                 int p1 = pepPosition1[p];
                                 long p1id = protein1ID[p];
 
-                                HashMap<Long,Protein> sprots = search_proteins.get(search_id);
+                                HashMap<Long,Protein> sprots = search_proteins.get(search_id.toString());
                                 Protein prot1 = sprots.get(p1id);
                                 
                                 psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, a2, d2, p1, p2, prot1.getSequence(), s2, peptide1score, peptide2score, spectrum_charge, conf.xi2crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
