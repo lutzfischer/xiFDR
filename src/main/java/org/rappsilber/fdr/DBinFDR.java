@@ -1034,13 +1034,7 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     double pmz = rs.getDouble(exp_mzColumn);
                     double f = 1;
                     if (pepSeq2 != null && !pepSeq2.isEmpty() && p1c + p2c > 0) {
-                        ////                    double max = Math.max(p1c,p2c);
-                        ////                    double min = Math.min(p1c,p2c);
-                        ////                    f = min/(p1c+p2c);
-                        ////                    score = score * f;
                         scoreRatio = (p1c) / (p1c + p2c + 1);
-                        //                    if (p1c <3 || p2c <3) 
-                        //                        continue;
                     }
                     
                     double peptide1score = score*scoreRatio;
@@ -1116,6 +1110,13 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     }
                     
                     psm.setRank(rank);
+                    if (p1c != null) {
+                        psm.addOtherInfo("peptide coverage1", p1c);
+                    }
+                    if (p2c != null) {
+                        psm.addOtherInfo("peptide coverage2", p1c);
+                    }
+                    
                     
                     Float[] scorevalues = null;
                     if (subscores != null) {

@@ -1075,13 +1075,13 @@ public class FDRGUI extends javax.swing.JFrame {
 //            ofdr.setCrosslinkedReceptorModAcc(txtCrossLinkedReceptorModCvParam.getText());
 //            ofdr.setCrosslinkedSIIAcc(txtCrossLinkedPepCvParam.getText());
             ofdr.setPSMScore(cbMZMatchScoreName.getSelectedItem().toString());
-
+            final boolean passthresholdonly = ckPassThresholdOnly.isSelected();
             Runnable runnable = new Runnable() {
                 public void run() {
                     try {
                         setStatus("Read from " + mzIdentIn.getName());
                         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + mzIdentIn.getAbsolutePath());
-                        ofdr.readMzIdentML(mzIdentIn);
+                        ofdr.readMzIdentML(mzIdentIn, passthresholdonly);
                         setEnableCalc(true);
                         setStatus("finished reading");
                     } catch (Exception ex) {
@@ -1664,6 +1664,7 @@ public class FDRGUI extends javax.swing.JFrame {
         rbMZHighBetter = new javax.swing.JRadioButton();
         rbMZLowBetter = new javax.swing.JRadioButton();
         cbMZMatchScoreName = new javax.swing.JComboBox();
+        ckPassThresholdOnly = new javax.swing.JCheckBox();
         spExtraLong = new javax.swing.JPanel();
         pDatabseSize = new javax.swing.JPanel();
         spDecoyDBProt = new javax.swing.JSpinner();
@@ -1904,6 +1905,8 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
+        ckPassThresholdOnly.setText("Passing CSMs Only");
+
         javax.swing.GroupLayout pMZIdentMLInputLayout = new javax.swing.GroupLayout(pMZIdentMLInput);
         pMZIdentMLInput.setLayout(pMZIdentMLInputLayout);
         pMZIdentMLInputLayout.setHorizontalGroup(
@@ -1918,14 +1921,16 @@ public class FDRGUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnReadMZIdent))
                     .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
-                        .addComponent(jLabel22)
-                        .addGap(239, 239, 239)
+                        .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel22)
+                            .addComponent(ckPassThresholdOnly))
+                        .addGap(210, 210, 210)
                         .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
                                 .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(rbMZLowBetter)
                                     .addComponent(rbMZHighBetter))
-                                .addGap(88, 433, Short.MAX_VALUE))
+                                .addGap(88, 441, Short.MAX_VALUE))
                             .addComponent(cbMZMatchScoreName, javax.swing.GroupLayout.Alignment.TRAILING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
@@ -1939,7 +1944,9 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGap(1, 1, 1)
                 .addComponent(rbMZHighBetter)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(rbMZLowBetter)
+                .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(rbMZLowBetter)
+                    .addComponent(ckPassThresholdOnly))
                 .addGap(18, 18, 18)
                 .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -3224,6 +3231,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox ckDefineGroups;
     private javax.swing.JCheckBox ckGroupByCrossLinkerStubs;
     private javax.swing.JCheckBox ckIgnoreGroups1;
+    private javax.swing.JCheckBox ckPassThresholdOnly;
     public javax.swing.JCheckBox ckPrePostAA;
     private javax.swing.JCheckBox ckWriteAll;
     protected javax.swing.JComboBox<String> cmbMzMLScan2ID;

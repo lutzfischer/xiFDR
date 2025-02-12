@@ -19,7 +19,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -234,6 +237,8 @@ public abstract class OfflineFDR {
      * group psms-by runs
      */
     private boolean groupPSMsByRun = false;
+    
+    private Charset csvcharset = Charset.forName("UTF-8");
 
     private FDRSettings settings;
 
@@ -1877,8 +1882,15 @@ public abstract class OfflineFDR {
         PrintWriter xiviewOut = null;
         
         if (writeAll) {
+            
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write input to " + outName);
-            psmOut = new PrintWriter(outName);
+            try {
+                psmOut = new PrintWriter(outName, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+                
             String header = csvFormater.valuesToString(getPSMHeader()) + seperator + "passed";
             psmOut.println(header);
             for (PSM psm : this.allPSMs) {
@@ -1898,14 +1910,19 @@ public abstract class OfflineFDR {
         
         if (!csvSummaryOnly) {
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write CSM-results to " + outName);
-            xiviewOut = new PrintWriter(xiviewName);
-            xiviewOut.println(getXiViewHeader());
-            psmOut = new PrintWriter(outName);
             String header = csvFormater.valuesToString(getPSMHeader());
-            psmOut.println(header);
-            psmLinearOut = new PrintWriter(outNameLinear);
-            psmLinearOut.println(header);
-            psmNAPSOut = new PrintWriter(outNameNAPS);
+            try {
+                xiviewOut = new PrintWriter(xiviewName, csvcharset.name());
+                xiviewOut.println(getXiViewHeader());
+                psmOut = new PrintWriter(outName, csvcharset.name());
+                psmOut.println(header);
+                psmLinearOut = new PrintWriter(outNameLinear, csvcharset.name());
+                psmLinearOut.println(header);
+                psmNAPSOut = new PrintWriter(outNameNAPS, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
             psmNAPSOut.println(header);
         } else {
             psmOut = NullOutputStream.NULLPRINTWRITER;
@@ -2042,12 +2059,23 @@ public abstract class OfflineFDR {
             outName = path + "/" + baseName + "_PeptidePairs" + extension;
             outNameNAPS = path + "/" + baseName + "_NAPs_PeptidePairs" + extension;
             Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write peptide pairs results to " + outName);
-            pepsOut = new PrintWriter(outName);
+            try {
+                pepsOut = new PrintWriter(outName, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
             String xlPepsHeader = csvFormater.valuesToString(getXLPepsHeader());
             pepsOut.println(xlPepsHeader);
 
             if (psmLinearT+psmLinearD > 0 ) {
-                pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + extension);
+                try {
+                    pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + extension, csvcharset.name());
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                    return;
+                }
+
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write linear peptide results to " + pepsLinearOut);
                 String linearPepsHeader = csvFormater.valuesToString(getLinearPepsHeader());
                 pepsLinearOut.println(linearPepsHeader);
@@ -2055,7 +2083,13 @@ public abstract class OfflineFDR {
                 
             if (psmNonCovTT+psmNonCovTD+psmNonCovDD > 0 ) {
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write non covalent peptide pair results to " + outName);
-                pepsNonCovOut = new PrintWriter(outNameNAPS);
+                try {
+                    pepsNonCovOut = new PrintWriter(outNameNAPS, csvcharset.name());
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                    return;
+                }
+
                 pepsNonCovOut.println(xlPepsHeader);
             }
             
@@ -2155,7 +2189,13 @@ public abstract class OfflineFDR {
 
         PrintWriter linksOut = null;
         if (!csvSummaryOnly) {
-            linksOut = new PrintWriter(path + "/" + baseName + "_Links" + extension);
+            try{
+                linksOut = new PrintWriter(path + "/" + baseName + "_Links" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
             String header = csvFormater.valuesToString(getLinkOutputHeader());
             linksOut.println(header);
         } else {
@@ -2221,7 +2261,13 @@ public abstract class OfflineFDR {
         // write out a table of all proteinpairs
         PrintWriter ppiOut = null;
         if (!csvSummaryOnly) {
-            ppiOut = new PrintWriter(path + "/" + baseName + "_ppi" + extension);
+            try {
+                ppiOut = new PrintWriter(path + "/" + baseName + "_ppi" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
             String header = csvFormater.valuesToString(getPPIOutputHeader());
             ppiOut.println(header);
         } else {
@@ -2283,7 +2329,14 @@ public abstract class OfflineFDR {
         // write out a table of all proteinpairs
         PrintWriter pgOut = null;
         if (!csvSummaryOnly) {
-            pgOut = new PrintWriter(path + "/" + baseName + "_proteingroups" + extension);
+            try{
+                pgOut = new PrintWriter(path + "/" + baseName + "_proteingroups" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
+            
             pgOut.println(csvFormater.valuesToString(getProteinGroupOutputHeader()));
         } else {
             pgOut = NullOutputStream.NULLPRINTWRITER;
@@ -2313,13 +2366,25 @@ public abstract class OfflineFDR {
         PrintWriter summaryOut = null;
         if (singleSummary) {
             if (singleSummaryOut == null) {
-                singleSummaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension);
+                try {
+                    singleSummaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension, csvcharset.name());
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                    return;
+                }
+
             }
 
             summaryOut = singleSummaryOut;
             summaryOut.println("SummaryFile:" + baseName + "_summary" + extension);
         } else {
-            summaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension);
+            try {
+                summaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
         }
 
         summaryOut.println("------------------------------------------------");
@@ -2885,7 +2950,7 @@ public abstract class OfflineFDR {
         summaryOut.println("\"peptide pair\"" + seperator + " " +
                 (result.peptidePairFDR.getTargetFDR() > 1 ? "unrestricted" : "" + result.peptidePairFDR.getTargetFDR()));
         summaryOut.println("\"protein group\"" + seperator + " " +
-                (result.proteinGroupFDR.getTargetFDR() > 1 ? "unrestricted" : "" + result.proteinGroupLinkFDR.getTargetFDR()) +
+                (result.proteinGroupFDR.getTargetFDR() > 1 ? "unrestricted" : "" + result.proteinGroupFDR.getTargetFDR()) +
                 (minPep ? seperator + getMinPepPerProteinGroup() : ""));
         summaryOut.println("Residue Pair" + seperator + " " +
                 (result.proteinGroupLinkFDR.getTargetFDR() > 1? "unrestricted" : "" + result.proteinGroupLinkFDR.getTargetFDR()) +
@@ -3452,11 +3517,18 @@ public abstract class OfflineFDR {
         this.outputlocale = locale;
         this.numberFormat = NumberFormat.getInstance(locale);
         numberFormat = NumberFormat.getNumberInstance(locale);
+        String envsetting = System.getenv("XIFDR_PRECISION");
+        int maxDigits = (int)(envsetting == null ? 6.0 : Double.parseDouble(envsetting));
+        numberFormat.setMaximumFractionDigits(maxDigits);
         // make sure we are not writing 1234 as 1,234
         numberFormat.setGroupingUsed(false);
         DecimalFormat fformat = (DecimalFormat) numberFormat;
         fformat.setGroupingUsed(false);
-//        DecimalFormatSymbols symbols=fformat.getDecimalFormatSymbols();
+        DecimalFormatSymbols symbols=fformat.getDecimalFormatSymbols();
+        // prevent some odd unicode errors
+        symbols.setNaN("NaN");
+        symbols.setInfinity("inf");
+        fformat.setDecimalFormatSymbols(symbols);
 //        fformat.setMaximumFractionDigits(6);
 //        localNumberDecimalSeparator= ""+symbols.getDecimalSeparator();
     }
@@ -3685,6 +3757,8 @@ public abstract class OfflineFDR {
             } else if (arg.toLowerCase().equals("--single-step-boost")) {
                 settings.twoStepOptimization(false);
 
+            } else if (arg.toLowerCase().equals("--csvcharset=")) {
+                this.csvcharset = Charset.forName(arg.substring(arg.indexOf("=")+1));
             } else if (arg.toLowerCase().equals("--filter-consecutives") || arg.toLowerCase().equals("-C")) {
                 settings.setFilterConsecutivePeptides(true);
 
@@ -5101,10 +5175,15 @@ public abstract class OfflineFDR {
             }
             
             double maxscore = maxscore = -Double.MAX_VALUE;
-            for (PSM psm : allPSMs) {
-                if (maxscore < psm.getScore()) {
-                    maxscore = psm.getScore();
+            if (settings.boostMinScore()) {
+                for (PSM psm : allPSMs) {
+                    double psmScore = psm.getScore();
+                    if (maxscore < psmScore && !Double.isInfinite(psmScore)) {
+                        maxscore = psmScore;
+                    }
                 }
+            } else {
+                maxscore = settings.minScore();
             }
 
             final MaximizeLevelInfo minScore = new MaximizeLevelInfo(maxscore-settings.minScore(), settings.boostMinScore(), Math.min(steps,3));

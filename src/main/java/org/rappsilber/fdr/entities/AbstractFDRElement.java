@@ -223,7 +223,7 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
         double lowerFDRScore = this.getLowerFDRTD().getScore();
         double higherFDRScore = this.getHigherFDRTD().getScore();
         double lowerFDR = this.getLowerFDRTD().getFDR();
-        double higherFDR = this.getHigherFDRTD().getFDR();
+        double higherFDR = Math.max(this.getHigherFDRTD().getFDR(), lowerFDR);
         double stepScore = lowerFDRScore - higherFDRScore;
         double myStepScore = lowerFDRScore - getScore();
         if (stepScore == 0) {

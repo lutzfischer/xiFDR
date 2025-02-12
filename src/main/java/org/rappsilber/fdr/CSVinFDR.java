@@ -421,14 +421,27 @@ public class CSVinFDR extends OfflineFDR {
                 
 
                 // how to split up the score
-                double scoreRatio = csv.getDouble(cscoreratio);
+                
+                double scoreRatio = (4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
+                scoreRatio = csv.getDouble(cscoreratio, scoreRatio);
                 Double peptide1score = csv.getDouble(cPepScore1);
-                Double peptide2score = csv.getDouble(cPepScore2, 0.0);
-
-                if (Double.isNaN(peptide1score) && ! Double.isNaN(scoreRatio)) {
-                    double ratio =(4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
-                    peptide1score=score*ratio;
-                    peptide2score=score*(1-ratio);
+                Double peptide2score = csv.getDouble(cPepScore2);
+                
+                if (Double.isNaN(peptide1score) && Double.isNaN(csv.getDouble(cscoreratio))) {
+                    Double p1c = csv.getDouble(cPep1Coverage);
+                    Double p2c = csv.getDouble(cPep2Coverage);
+                    if (p1c != null && p2c != null && p1c + p2c > 0) {
+                        scoreRatio = (p1c) / (p1c + p2c + 1);
+                    } else {
+                        scoreRatio =(4.0/5.0+(peplen1/(peplen1+peplen2)))/2;
+                    }
+                    
+                }
+                if (Double.isNaN(peptide1score)) {
+                    peptide1score=score*scoreRatio;
+                }
+                if (Double.isNaN(peptide2score)) {
+                    peptide2score=score*(1-scoreRatio);
                 }
                 // split field by semicolon - but look out for quoted ";"
                 String[] accessions1 = accessionParser.splitLine(saccession1).toArray(new String[0]);
@@ -529,8 +542,10 @@ public class CSVinFDR extends OfflineFDR {
                     double s = csv.getDouble(cRetentionTime);
                     psm.addOtherInfo("RetentionTime", s);
                 }
-                if (cDelta != null)
+                if (cDelta != null) {
                     psm.setDeltaScore(csv.getDouble(cDelta));
+                    psm.addOtherInfo("ScoreDivDelta", score/csv.getDouble(cDelta));
+                }
                 
                 if (cPepStubs != null) {
                     double s = csv.getDouble(cPepStubs);
@@ -544,7 +559,6 @@ public class CSVinFDR extends OfflineFDR {
                 if (cPepDoublets != null) {
                     psm.addOtherInfo("PeptidesWithDoublets", csv.getInteger(cPepDoublets));
                     psm.peptidesWithDoublets = csv.getInteger(cPepDoublets);
-                    
                 }
                 
                 if (cPepMinCoverage != null) {
@@ -564,7 +578,7 @@ public class CSVinFDR extends OfflineFDR {
                     }
                     
                 }
-                
+
                 if (cPep1Frags != null) 
                     psm.addOtherInfo("P1Fragments", csv.getDouble(cPep1Frags));
                     
@@ -595,6 +609,8 @@ public class CSVinFDR extends OfflineFDR {
                     minscore = psm.getScore();
                 
                 psm.setSearchID(search_id);
+                psm.addOtherInfo("peptide1 score", peptide1score);
+                psm.addOtherInfo("peptide2 score", peptide1score);
                 
             }
             if (minscore< 0)

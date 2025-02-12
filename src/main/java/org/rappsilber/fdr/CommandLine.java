@@ -71,6 +71,14 @@ public class CommandLine {
             newargs.add("--add-opens");
             newargs.add("java.base/java.util=ALL-UNNAMED");
         }
+        if (java_ver >= 16 && addopenutil) {
+            newargs.add("--add-opens");
+            newargs.add("java.base/java.util=ALL-UNNAMED");
+        }
+        if (addopenutil && java_ver>= 9) {
+            newargs.add("--add-opens");
+            newargs.add("java.base/sun.reflect.annotation=ALL-UNNAMED");
+        }
         newargs.add("-cp");
         newargs.add(System.getProperty("java.class.path"));
         newargs.addAll(vmArgs);

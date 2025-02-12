@@ -124,7 +124,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         this.internalSupport = internal;
         this.betweenSupport = between;
         
-        if (description != null && description.length() == 0) {
+        if (description != null && description.length() > 0) {
             if (description.indexOf(zero)>=0) {
                 this.name = zerosplit.split(description)[1];
                 this.description = zerosplit.split(description)[0];
@@ -342,6 +342,12 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      */
     public void setDescription(String d) {
         description = d;
+        if (description != null && description.length() > 0) {
+            if (description.indexOf(zero)>=0) {
+                this.name = zerosplit.split(description)[1];
+                this.description = zerosplit.split(description)[0];
+            }
+        }
         this.decoy_complement = null;
     }
 

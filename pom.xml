@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rappsilberlab</groupId>
     <artifactId>xiFDR</artifactId>
-    <version>2.3.5</version>
+    <version>2.3.6.beta4</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>rappsilber</groupId>
             <artifactId>xiSEARCH</artifactId>
-            <version>1.8.5</version>
+            <version>1.8.7</version>
         </dependency>
     </dependencies>
     <build>
@@ -130,7 +130,7 @@
 				</descriptorRefs>
 			</configuration>
 		</plugin>
-                <plugin>
+                <!--plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>2.10.2</version>
@@ -140,12 +140,12 @@
                             <goals>
                                 <goal>jar</goal>
                             </goals>
-                            <configuration> <!-- add this to disable checking -->
+                            <configuration> 
                                 <additionalparam>-Xdoclint:none</additionalparam>
                             </configuration>
                         </execution>
                     </executions>
-                </plugin>                		
+                </plugin-->                		
 	</plugins>
       <resources>
         <resource>
@@ -170,5 +170,5 @@
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
     <description>Application for FDR estimation cross-linking massspectrometry data </description>
-    <name>xiFDR-2.3.5</name>
+    <name>xiFDR-2.3.6</name>
 </project>

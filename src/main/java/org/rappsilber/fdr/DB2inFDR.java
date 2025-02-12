@@ -1094,8 +1094,10 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
                                 HashMap<Long,Protein> sprots = search_proteins.get(search_id.toString());
                                 Protein prot1 = sprots.get(p1id);
-                                
-                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, a2, d2, p1, p2, prot1.getSequence(), s2, peptide1score, peptide2score, spectrum_charge, conf.xi2crosslinker.get(xl).name, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
+                                String crosslinkername = "";
+                                if (conf.xi2crosslinker.size() >0)
+                                    crosslinkername  = conf.xi2crosslinker.get(xl).name;
+                                psm = setUpDBPSM(psmID, run, scan, pep1ID, pep2ID, pepSeq1, pepSeq2, peplen1, peplen2, site1, site2, isDecoy1, isDecoy2, charge, score, p1id, prot1.getAccession(), prot1.getDescription(), p2id, a2, d2, p1, p2, prot1.getSequence(), s2, peptide1score, peptide2score, spectrum_charge, crosslinkername, pmz, calc_mass, pep1mass, pep2mass, search_id.toString(), scan_id);
                             }
                         }
 
@@ -1132,7 +1134,8 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
 
                         }
 
-
+                        psm.addOtherInfo("peptide coverage1", p1c);
+                        psm.addOtherInfo("peptide coverage2", p1c);
                         psm.addOtherInfo("P1Fragments",p1c);
                         psm.addOtherInfo("P2Fragments",p2c);
                         psm.addOtherInfo("MinFragments",pminc);
@@ -1172,9 +1175,12 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
                         for (Integer p : scoresForwarded) {
                             psm.addOtherInfo(subscoreDefs.get(resultset_id).get(p).name, scorevalues[p]);
                         }
-                        
-                        Double xlModmassPre = conf.xi2crosslinker.get(xl).mass;
-                        Double xlModmass = xlmodmasses.get(xlModmassPre);
+                        Double xlModmassPre = 0d;
+                        Double xlModmass = 0d;
+                        if (conf.xi2crosslinker.size() > 0) {
+                            xlModmassPre = conf.xi2crosslinker.get(xl).mass;
+                            xlModmass = xlmodmasses.get(xlModmassPre);
+                        }
                         if (xlModmass == null) {
                             xlmodmasses.put(xlModmassPre,xlModmassPre);
                             xlModmass = xlModmassPre;
@@ -2216,7 +2222,10 @@ import rappsilber.ms.statistics.utils.UpdateableLong;
     }
 
     public RunConfig getConfig(String searchid) {
-        return this.m_configs.get(UUID.fromString(searchid));
+        RunConfig rc = this.m_configs.get(UUID.fromString(searchid));
+        if (rc == null)
+            rc = this.m_configs.get(searchid);        
+        return rc;
     }
 
     public HashMap<String,? extends RunConfig> getConfigs() {

@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import org.rappsilber.fdr.entities.FDRSelfAdd;
+import org.rappsilber.fdr.entities.PSM;
+import org.rappsilber.fdr.entities.PeptidePair;
+import org.rappsilber.fdr.entities.ProteinGroup;
+import org.rappsilber.fdr.entities.ProteinGroupLink;
+import org.rappsilber.fdr.entities.ProteinGroupPair;
 import org.rappsilber.fdr.utils.HashedArrayList;
 
 /**
@@ -33,6 +38,60 @@ public class FDRResultLevel<T extends FDRSelfAdd>  implements Iterable<T> {
     private int within;
     private int between;
     private int linear;
+    
+    public PSM contains_psm_id(String id) {
+        T f = groups.values().iterator().next().results.iterator().next();
+        if (f instanceof PSM) {
+            for (SubGroupFdrInfo<T>  sg : groups.values()) {
+                for (T e: sg.results) {
+                    if (((PSM)e).getPsmID().contentEquals(id))
+                        return (PSM)e;
+                }
+                
+            }
+            return null;
+        }else if (f instanceof PeptidePair) {
+            for (SubGroupFdrInfo<T>  sg : groups.values()) {
+                for (T e: sg.results) {
+                    for (PSM p : ((PeptidePair) e).getAllPSMs())
+                        if (p.getPsmID().contentEquals(id))
+                            return p;
+                }
+            }
+            return null;
+        }else if (f instanceof ProteinGroup) {
+            for (SubGroupFdrInfo<T>  sg : groups.values()) {
+                for (T e: sg.results) {
+                    for (PeptidePair pp : ((ProteinGroup) e).getPeptidePairs())
+                        for (PSM p : pp.getAllPSMs())
+                            if (p.getPsmID().contentEquals(id))
+                                return p;
+                }
+            }
+            return null;
+        }else if (f instanceof ProteinGroupLink) {
+            for (SubGroupFdrInfo<T>  sg : groups.values()) {
+                for (T e: sg.results) {
+                    for (PeptidePair pp : ((ProteinGroupLink) e).getPeptidePairs())
+                        for (PSM p : pp.getAllPSMs())
+                            if (p.getPsmID().contentEquals(id))
+                                return p;
+                }
+            }
+            return null;
+        }else if (f instanceof ProteinGroupPair) {
+            for (SubGroupFdrInfo<T>  sg : groups.values()) {
+                for (T e: sg.results) {
+                    for (PeptidePair pp : ((ProteinGroupPair) e).getPeptidePairs())
+                        for (PSM p : pp.getAllPSMs())
+                            if (p.getPsmID().contentEquals(id))
+                                return p;
+                }
+            }
+            return null;
+        }        
+        return null;
+    }
 
     public int getInputCount() {
         int c=0;
