@@ -1023,8 +1023,12 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
 
 
 
-                    double p1c = rs.getDouble(scoreP1CoverageColumn);
-                    double p2c = rs.getDouble(scoreP2CoverageColumn);
+                    Double p1c = rs.getDouble(scoreP1CoverageColumn);
+                    if (rs.wasNull())
+                        p1c = null;
+                    Double p2c = rs.getDouble(scoreP2CoverageColumn);
+                    if (rs.wasNull())
+                        p2c = null;
                     double pminc = p1c;
                     
                     if (pepSeq2 != null && !pepSeq2.isEmpty()) {
@@ -1110,12 +1114,10 @@ public class DBinFDR extends org.rappsilber.fdr.OfflineFDR implements XiInFDR {
                     }
                     
                     psm.setRank(rank);
-                    if (p1c != null) {
+                    if (p1c != null)
                         psm.addOtherInfo("peptide coverage1", p1c);
-                    }
-                    if (p2c != null) {
-                        psm.addOtherInfo("peptide coverage2", p1c);
-                    }
+                    if (p2c != null)
+                        psm.addOtherInfo("peptide coverage2", p2c);
                     
                     
                     Float[] scorevalues = null;
