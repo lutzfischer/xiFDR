@@ -36,6 +36,7 @@ import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Protein;
+import org.rappsilber.fdr.result.FDRResult;
 import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.utils.AutoIncrementValueMap;
@@ -860,6 +861,14 @@ public class CSVinFDR extends OfflineFDR {
     public static void main (String[] argv) throws SQLException, FileNotFoundException {
         
         CSVinFDR ofdr = new CSVinFDR();
+        runCSVFDR(ofdr, argv);
+
+        System.exit(0);
+
+        
+    }
+
+    protected static FDRResult  runCSVFDR(CSVinFDR ofdr, String[] argv) throws FileNotFoundException {
         FDRSettings settings = new FDRSettingsImpl();
                 
         String[] files = ofdr.parseArgs(argv, settings);
@@ -923,14 +932,19 @@ public class CSVinFDR extends OfflineFDR {
             }
             if (ofdr.delimiter == null || ofdr.quote == null) {
                 try {
-                    csv.guessDelimQuote(new File(f), 50, delimChar, quoteChar);
+                    if (ofdr.getDelimiter() != null ) {
+                        csv.guessQuote(new File(f), 50, delimChar.value, quoteChar);
+                    } else if (ofdr.getQuote()!= null ) {
+                        csv.guessDelim(new File(f), 50, delimChar, quoteChar.value);
+                    } else {
+                        csv.guessDelimQuote(new File(f), 50, delimChar, quoteChar);
+                    }
                 } catch (IOException ex) {
                     Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "error while quessing csv-definitions", ex);
                 }
             }
             csv.setDelimiter(delimChar.value);
             csv.setQuote(quoteChar.value);
-            Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "setting up csv input");
             try {
                 
                 csv.openFile(new File(f), true);
@@ -941,7 +955,7 @@ public class CSVinFDR extends OfflineFDR {
             
             Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Read datafrom CSV");
             try {
-                if (!ofdr.readCSV(csv,null)) {
+                if (!ofdr.readCSV(csv, (CsvCondition)null)) {
                     Logger.getLogger(CSVinFDR.class.getName()).log(Level.SEVERE, "Could not read file: " + f);
                     System.exit(-1);
                 }
@@ -954,7 +968,6 @@ public class CSVinFDR extends OfflineFDR {
             }
         }
         
-        Logger.getLogger(CSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
         final CalculateWriteUpdate cu = new CalculateWriteUpdate() {
             @Override
             public void setStatus(MaximisingStatus state) {
@@ -986,14 +999,15 @@ public class CSVinFDR extends OfflineFDR {
             
             
         };
+
+        FDRResult res = null;
+        Logger.getLogger(XiCSVinFDR.class.getName()).log(Level.INFO, "Calculate FDR");
         if (((DecimalFormat)ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator() == ',') {
-            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";", settings, cu);
-        } else 
-            ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings, cu);
-
-        System.exit(0);
-
-        
+            res = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ";", settings, cu);
+        } else { 
+            res = ofdr.calculateWriteFDR(ofdr.getCsvOutDirSetting(), ofdr.getCsvOutBaseSetting(), ",", settings, cu); 
+        }
+        return res;
     }
 
     /**

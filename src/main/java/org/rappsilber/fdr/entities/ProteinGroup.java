@@ -163,6 +163,27 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return score;
     }
 
+    public void setScore(double s) {
+        this.score = s;
+    }
+    /**
+     * @return the score
+     */
+    @Override
+    public double getScore(int topN) {
+        int i = 0;
+        double score = Double.NEGATIVE_INFINITY;
+        for (Protein p : this.groupproteins) {
+            if (score != p.getScore()) {
+                score = p.getScore();
+                if (i++>topN)
+                    break;
+            }
+            score+= p.getScore()*p.getScore();
+        }
+        return score;
+    }    
+     
     @Override
     public int hashCode() {
         return hashcode;

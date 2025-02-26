@@ -73,6 +73,7 @@ public class FDRSettingsImpl implements FDRSettings {
     private double minMinPeptideDoubpletFilter;
     private double minPeptideStubFilter;
     private double minScore = 0d;
+    private Integer scoreTopNAggregate = null;
 
     public FDRSettingsImpl() {
     }
@@ -347,6 +348,7 @@ public class FDRSettingsImpl implements FDRSettings {
         to.setfilterBySelfAndMono(from.filterBySelfAndMono());
         to.boostMinScore(from.boostMinScore());
         to.minScore(from.minScore());
+        to.setScoreTopNAggregate(from.getScoreTopNAggregate());
     }
 
     public boolean combineScoreAndDelta() {
@@ -642,6 +644,16 @@ public class FDRSettingsImpl implements FDRSettings {
     public void setfilterBySelfAndMono(boolean filter) {
         filterBySelfAndMono = filter;
         boostMinScore(filter);
+    }
+
+    @Override
+    public Integer getScoreTopNAggregate() {
+        return this.scoreTopNAggregate;
+    }
+
+    @Override
+    public void setScoreTopNAggregate(Integer n) {
+        this.scoreTopNAggregate = n;
     }
     
     

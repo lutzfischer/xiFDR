@@ -618,7 +618,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     public void ignoreValidityChecks(boolean ignore) {
         this.ignoreValidityChecks = ignore;
     }
-    
+
     
     
 }

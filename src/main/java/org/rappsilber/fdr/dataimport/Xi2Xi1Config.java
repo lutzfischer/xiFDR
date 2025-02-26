@@ -55,6 +55,7 @@ public class Xi2Xi1Config extends AbstractRunConfig{
     }
     HashMap<String, CrossLinker> default_xl_xi1 = new HashMap<>();
     HashMap<String, Xi2Crosslinker> default_xl_xi2 = new HashMap<>();
+    public boolean isModX = true;
     {   
         AminoAcid[]  KSTY = new AminoAcid[]{AminoAcid.K, AminoAcid.S, AminoAcid.T, AminoAcid.Y};
         AminoAcid[]  DE = new AminoAcid[]{AminoAcid.D, AminoAcid.E};
@@ -153,8 +154,8 @@ public class Xi2Xi1Config extends AbstractRunConfig{
             }
         }
         
-        public CrossLinker toXi1Crosslinker() throws java.text.ParseException, ConfigurationParserException {
-            StringBuilder sb = new StringBuilder("NAME:");
+        public String toXi1Crosslinker() throws java.text.ParseException, ConfigurationParserException {
+            StringBuilder sb = new StringBuilder("crosslinker:AsymetricSingleAminoAcidRestrictedCrossLinker:NAME:");
             sb.append(this.name);
             sb.append(";FIRSTLINKEDAMINOACIDS:");
             boolean first = true;
@@ -177,7 +178,8 @@ public class Xi2Xi1Config extends AbstractRunConfig{
                 }
             }
             sb.append(";MASS:").append(this.mass);
-            return AsymetricSingleAminoAcidRestrictedCrossLinker.parseArgs(sb.toString(), DUMMYCONFIG);
+            return sb.toString();
+            //return AsymetricSingleAminoAcidRestrictedCrossLinker.parseArgs(sb.toString(), DUMMYCONFIG);
         }
         
     }
@@ -219,8 +221,8 @@ public class Xi2Xi1Config extends AbstractRunConfig{
             
         }
         
-        public List<AminoModification> toxi1Mod() throws java.text.ParseException {
-            StringBuilder sb = new StringBuilder("SYMBOLEXT:");
+        public String toxi1Mod() throws java.text.ParseException {
+            StringBuilder sb = new StringBuilder("modifcation::variable:SYMBOLEXT:");
             sb.append(symbol);
             sb.append(";MODIFIED:");
             boolean first  =true;
@@ -234,7 +236,8 @@ public class Xi2Xi1Config extends AbstractRunConfig{
             }
                     
             sb.append(";DELTAMASS:").append(this.mass);
-            return AminoModification.parseArgs(sb.toString(), DUMMYCONFIG);
+            return sb.toString();
+            //return AminoModification.parseArgs(sb.toString(), DUMMYCONFIG);
         }
         
         
@@ -263,6 +266,10 @@ public class Xi2Xi1Config extends AbstractRunConfig{
         JSONParser prsr = new JSONParser();
         Map json = (Map)prsr.parse(config);
         Object xls = parseListSetting(json.get("crosslinker"));
+        Object mod_peptide_syntax = json.get("mod_peptide_syntax");
+        if (mod_peptide_syntax == null || mod_peptide_syntax.toString().contentEquals("modX")) {
+            this.isModX = true;
+        }
         List crosslinker;
         if (xls instanceof List)
             crosslinker = (List) xls;
@@ -281,7 +288,7 @@ public class Xi2Xi1Config extends AbstractRunConfig{
                 xl = default_xl_xi2.get(name);
             }
             this.xi2crosslinker.add(xl);                
-            this.addCrossLinker(xl.toXi1Crosslinker());
+            this.evaluateConfigLine(xl.toXi1Crosslinker());
             //this.addCrossLinker( new AsymetricSingleAminoAcidRestrictedCrossLinker(xl.name,xl.mass,xl.mass,PrimaryLinkableAminoAcids, SecondaryLinkableAminoAcids));
         }
 
@@ -290,9 +297,7 @@ public class Xi2Xi1Config extends AbstractRunConfig{
             Map m = (Map)mo;                
             Xi2Modification mod = new Xi2Modification(m);
             this.xi2modifications.add(mod);
-            for (AminoModification am : mod.toxi1Mod()) {
-                this.addKnownModification(am);
-            }
+            this.evaluateConfigLine(mod.toxi1Mod());
         }
         // tolerances
         this.setPrecoursorTolerance(new ToleranceUnit(json.get("ms1_tol").toString()));
@@ -429,11 +434,7 @@ public class Xi2Xi1Config extends AbstractRunConfig{
             }
             addNewMod.add(mo);
             try {
-                List<AminoModification> ams = mo.toxi1Mod();
-                ret.getKnownModifications().addAll(ams);
-                for (AminoModification am:ams) {
-                    ret.addKnownModification(am);
-                }
+                this.evaluateConfigLine(mo.toxi1Mod());
             } catch (java.text.ParseException ex) {
                 Logger.getLogger(Xi2Xi1Config.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -448,7 +449,8 @@ public class Xi2Xi1Config extends AbstractRunConfig{
             }
             addNewXL.add(co);
             try {
-                ret.addCrossLinker(co.toXi1Crosslinker());
+                ret.evaluateConfigLine(co.toXi1Crosslinker());
+                //ret.addCrossLinker(co.toXi1Crosslinker());
             } catch (java.text.ParseException ex) {
                 Logger.getLogger(Xi2Xi1Config.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ConfigurationParserException ex) {

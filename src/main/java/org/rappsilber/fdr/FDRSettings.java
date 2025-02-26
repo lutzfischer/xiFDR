@@ -200,4 +200,7 @@ public interface FDRSettings {
     public void setGroupByCrosslinkerStubs(boolean group);
     public boolean getGroupByCrosslinkerStubs();
     
+    public Integer getScoreTopNAggregate();
+    public void setScoreTopNAggregate(Integer n);
+    
 }

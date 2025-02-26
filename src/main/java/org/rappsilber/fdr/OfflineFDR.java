@@ -1457,6 +1457,13 @@ public abstract class OfflineFDR {
         if (settings.getMinProteinPepCount() > 1) {
             filterListByPeptideSuport(pepProteinGroups, settings.getMinProteinPepCount());
         }
+        if (settings.getScoreTopNAggregate() != null){
+            Integer topN = settings.getScoreTopNAggregate(); 
+            for (ProteinGroup pg : pepProteinGroups) {
+                pg.setScore(pg.getScore(topN));
+            }
+        }
+        
         //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
         FDRSettingsImpl pgsettings = new FDRSettingsImpl(settings);
         pgsettings.setMinTD(Math.max(10, pgsettings.getMinTD()));
@@ -1475,7 +1482,7 @@ public abstract class OfflineFDR {
     }
 
     public void calculateLinkFDR(boolean ignoreGroups, boolean setElementFDR, FDRSettings settings, FDRResult result) {
-        int topN = 0;
+        Integer topN = settings.getScoreTopNAggregate();
 
         if (result.proteinGroupLinkFDR != null) {
             for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
@@ -1539,7 +1546,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        if (topN > 0) {
+        if (topN != null) {
             for (ProteinGroupLink l : pepLinks) {
                 l.setScore(l.getScore(topN));
             }
@@ -1598,7 +1605,7 @@ public abstract class OfflineFDR {
         boolean directional = settings.isPPIDirectional();
         int maxAmbiguity = settings.getMaxProteinAmbiguity();
         int minPepCount = settings.getMinPPIPepCount();
-        int topN = 0;
+        Integer topN = settings.getScoreTopNAggregate();
 
         FDRResultLevel<ProteinGroupPair> GroupedFDRs = new FDRResultLevel<ProteinGroupPair>();
         GroupedFDRs.isDirectional = directional;
@@ -1661,7 +1668,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        if (topN > 0) {
+        if (topN != null) {
             for (ProteinGroupPair ppi : linkPPIs) {
                 ppi.setScore(ppi.getScore(topN));
             }

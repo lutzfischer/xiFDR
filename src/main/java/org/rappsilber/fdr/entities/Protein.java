@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.rappsilber.fdr.utils.FDRGroupNames;
+import org.rappsilber.utils.DoubleArrayList;
 
 /**
  * Represents a single protein. 
@@ -37,6 +38,8 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     private HashSet<Peptide> peps = new HashSet<Peptide>();
     private HashSet<PeptidePair> peppairs = new HashSet<PeptidePair>();
     private double score = 0;
+    private DoubleArrayList scores = new DoubleArrayList(2);
+    private boolean scoresSorted = true;
     private boolean isDecoy;
     private boolean linearSupport = false;
     private boolean internalSupport = false;
@@ -174,6 +177,9 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         if (o == this)
             return;
         this.score = Math.sqrt(this.score*this.score + o.score*o.score);
+        scores.add(o.score);
+        scoresSorted = false;
+        this.scoresSorted = false;
         peps.addAll(o.peps);
         linearSupport |= o.linearSupport;
         internalSupport |= o.internalSupport;
@@ -203,6 +209,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         peppairs.add(pp);
         
         this.score = Math.sqrt(this.score*this.score + score*score);
+        scoresSorted = false;
         this.internalSupport |= pp.isInternal();
         this.betweenSupport |= !(pp.isInternal() || pp.isLinear);
         this.linearSupport |= pp.isLinear;
@@ -222,7 +229,26 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         return score;
     }
 
-
+    @Override
+    public double getScore(int topN) {
+        if (!scoresSorted) {
+            java.util.Collections.sort(scores);
+            scoresSorted = true;
+        }
+        
+        int i = 0;
+        double score = 0;
+        double lastScore = Double.NaN;
+        for (double s : this.scores) {
+            if (lastScore != s) {
+                lastScore = s;
+                if (i++>topN)
+                    break;
+            }
+            score+= s;
+        }
+        return score;
+    }    
 
     public int compare(Protein p) {
         if (p.equals(this)) {

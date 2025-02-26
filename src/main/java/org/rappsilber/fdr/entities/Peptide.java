@@ -172,6 +172,14 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      * @return 
      */
     @Override
+    public double getScore(int topN) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }    
+    /**
+     * Currently not considered for peptides outside peptide pairs
+     * @return 
+     */
+    @Override
     public String getFDRGroup() {
         throw new UnsupportedOperationException("Not supported yet.");
     }

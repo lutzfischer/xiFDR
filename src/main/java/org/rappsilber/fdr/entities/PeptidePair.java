@@ -183,6 +183,8 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
      * is this a cross-link of consecutive peptides
      */
     private Boolean isConsecutive;
+    private int lastTopN;
+    private double scoreTopN;
 
     /**
      * constructor
@@ -509,6 +511,21 @@ public class PeptidePair extends AbstractFDRElement<PeptidePair> {//implements C
         return score;
     }
 
+    public double getScore(int topN) {
+        if (topN == this.lastTopN)
+            return this.scoreTopN;
+        int i=0;
+        this.scoreTopN = 0d;
+        for (PSM pp : this.getTopPSMs()) {
+            if (i++>topN)
+                break;
+            scoreTopN+= pp.getScore()*pp.getScore();
+        }
+        this.lastTopN = topN;
+        this.scoreTopN=Math.sqrt(scoreTopN);
+        return this.scoreTopN;
+    }        
+    
     /**
      * whether the first peptide is decoy
      *

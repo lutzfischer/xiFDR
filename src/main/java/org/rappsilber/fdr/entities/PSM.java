@@ -469,6 +469,14 @@ public class PSM extends AbstractFDRElement<PSM> {
         return score==null?origScore:score;
     }
 
+    /**
+     * @return the score
+     */
+    @Override
+    public double getScore(int topN) {
+        return getScore();
+    }
+
     
     /**
      * @return the score

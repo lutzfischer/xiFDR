@@ -23,6 +23,11 @@ import org.rappsilber.utils.SelfAdd;
  */
 public interface FDRSelfAdd<T> extends SelfAdd<T> { //, Comparable<T> {
     /**
+     * The score of the match, but only consider the topN scores.
+     * @return 
+     */
+    double getScore(int topN);
+    /**
      * The score of the match
      * @return 
      */

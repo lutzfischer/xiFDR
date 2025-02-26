@@ -205,6 +205,7 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
 
     }
 
+    @Override
     public double getScore() {
         if (score != Double.POSITIVE_INFINITY) {
             return score;
@@ -231,18 +232,15 @@ public class ProteinGroupLink extends AbstractFDRElement<ProteinGroupLink> { //i
         if (topN == this.lastTopN)
             return this.scoreTopN;
         int i=0;
-        double score = Double.NEGATIVE_INFINITY;
+        this.scoreTopN = 0d;
         for (PeptidePair pp : this.support) {
-            if (score != pp.getScore()) {
-                score = pp.getScore();
-                if (i++>topN)
-                    break;
-            }
-            score+= pp.getScore()*pp.getScore();
+            if (i++>topN)
+                break;
+            scoreTopN+= pp.getScore()*pp.getScore();
         }
         this.lastTopN = topN;
-        this.score=Math.sqrt(score);
-        return this.score;
+        this.scoreTopN=Math.sqrt(scoreTopN);
+        return this.scoreTopN;
     }    
  
     public int compareTo(ProteinGroupLink o) {

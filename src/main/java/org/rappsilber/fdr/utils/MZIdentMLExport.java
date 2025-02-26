@@ -84,6 +84,7 @@ import uk.ac.ebi.jmzidml.model.utils.MzIdentMLVersion;
 //import uk.ac.liv.unimod.ModT;
 
 import org.rappsilber.fdr.OfflineFDR;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 //import org.rappsilber.fdr.entities.DBPSM;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
@@ -160,7 +161,7 @@ public class MZIdentMLExport {
     /**
      * Used to identify members of non-covalent PSMs
      */
-    private static String noncovalentSIIAcc = "MS:XXXXXXX";
+    private static String noncovalentSIIAcc = "MS:1003331";
     private static String noncovalentSIIName = "noncovalently associated peptides spectrum identification item";
     /**
      * Used to identify modifications, that span several peptides.
@@ -1148,7 +1149,12 @@ public class MZIdentMLExport {
 
         //Parse the modifications
         rappsilber.config.RunConfig conf = ((XiInFDR)fdr).getConfig();
-        rappsilber.ms.sequence.Sequence seq = new rappsilber.ms.sequence.Sequence(fdrPep.getSequence(), conf);
+        rappsilber.ms.sequence.Sequence seq = null;
+        if (conf instanceof Xi2Xi1Config && ((Xi2Xi1Config) conf).isModX) {
+            seq = new rappsilber.ms.sequence.Sequence(fdrPep.getSequence(), conf, true);
+        } else {
+            seq = new rappsilber.ms.sequence.Sequence(fdrPep.getSequence(), conf);
+        }
         rappsilber.ms.sequence.AminoAcid[] aaseq = seq.toArray();
 
         for (int a = 0; a < aaseq.length; a++) {
@@ -1940,6 +1946,8 @@ public class MZIdentMLExport {
             }
 
             cvParamList.add(makeCvParam("MS:1002494", "cross-linking search", psiCV));
+            cvParamList.add(makeCvParam("MS:1003330", "noncovalently associated peptides search", psiCV));
+            cvParamList.add(makeCvParam("MS:1003343", "FDR applied separately to self crosslinks and protein heteromeric crosslinks", psiCV, "true"));
             if (conf != null) {
                 ArrayList<Method> fragm = conf.getFragmentMethods();
 //                new String[] {"MS:1001108", "param: a ion"},
@@ -2498,16 +2506,20 @@ public class MZIdentMLExport {
     
     
     
-            
-            
     public void writeMzidFile(String outputfile) {
             
         try {
-            FileWriter writer = new FileWriter(outputfile);
-
+            FileWriter fwriter = new FileWriter(outputfile);
             MzIdentMLMarshaller m = new MzIdentMLMarshaller(MzIdentMLVersion.Version_1_2);
 
-            //StreamReplaceWriter writer = new StreamReplaceWriter(fwriter, "xmlns=\"http://psidev.info/psi/pi/mzIdentML/1.1\"", "");
+            StreamReplaceWriter writer = 
+                    new StreamReplaceWriter(fwriter, 
+                            new String[]{"/mzIdentML/1.2",
+                            "<MzIdentML id=\"12345\" version=\"1.2.0\"",
+                            "mzIdentML1.2.0.xsd"}, 
+                            new String[]{"/mzIdentML/1.3",
+                            "<MzIdentML id=\"12345\" version=\"1.3.0\"",
+                            "mzIdentML1.3.0.xsd"});
 
 
             writer.write(m.createXmlHeader());
@@ -2516,7 +2528,8 @@ public class MZIdentMLExport {
             // I replaced all 1.1 with 1.2 in the start tag - I am not sure if really all need to be replaced
             writer.write(m.createMzIdentMLStartTag("12345") + "\n");
 
-            
+            writer.setForwardOnly(true);
+
 //            // XML header
 //            writer.write(m.createXmlHeader() + "\n");
 //

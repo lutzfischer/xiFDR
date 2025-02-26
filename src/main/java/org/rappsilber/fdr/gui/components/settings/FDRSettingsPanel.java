@@ -63,6 +63,7 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean filterBySelfAndMono = false;
     private boolean boostMinScore;
     private Double minScore = 0d;
+    private Integer scoreTopNAggregate;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -405,6 +406,16 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public void minScore(Double minScore){
         this.minScore = minScore;
+    }
+
+    @Override
+    public Integer getScoreTopNAggregate() {
+        return this.scoreTopNAggregate;
+    }
+
+    @Override
+    public void setScoreTopNAggregate(Integer n) {
+        this.scoreTopNAggregate = n;
     }
     
 }
