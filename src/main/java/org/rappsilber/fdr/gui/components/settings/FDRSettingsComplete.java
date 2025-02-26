@@ -578,6 +578,7 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         otherFilter = new org.rappsilber.fdr.gui.components.settings.OtherFilter();
         ckIgnoreValidity = new javax.swing.JCheckBox();
         ckSelfLinearModFilter = new javax.swing.JCheckBox();
+        btnReset = new javax.swing.JButton();
 
         jLabel5.setText("PSM");
 
@@ -733,6 +734,13 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         ckSelfLinearModFilter.setText("ec-filter");
         ckSelfLinearModFilter.setToolTipText("Only Accept peptide-pairs/residue-pairs/proteins-pairs exclusivly involving proteins that \nhave been seen as part of a self link or by linear crosslinker modified peptides");
 
+        btnReset.setText("Reset Settings");
+        btnReset.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnResetActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -805,22 +813,24 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                                 .addGap(12, 12, 12)
                                 .addComponent(cbBoostWhat, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addComponent(btnStopBoost))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jLabel23)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(70, 70, 70)
-                                .addComponent(btnBoostIgnores)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(btnCalc))
-                            .addGroup(layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jLabel23)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(spMaximizeSteps)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(ckBoostBetween)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(ckSelfLinearModFilter)
-                                .addContainerGap())))))
+                                .addContainerGap())
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(42, 42, 42)
+                                .addComponent(btnReset)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnBoostIgnores)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btnCalc))))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -903,7 +913,8 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnStopBoost)
                     .addComponent(btnCalc)
-                    .addComponent(btnBoostIgnores))
+                    .addComponent(btnBoostIgnores)
+                    .addComponent(btnReset))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -947,9 +958,14 @@ public class FDRSettingsComplete extends FDRSettingsPanel {
         //spMinTDChance.setEnabled(!ckIgnoreValidity.isSelected());
     }//GEN-LAST:event_ckIgnoreValidityActionPerformed
 
+    private void btnResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnResetActionPerformed
+        FDRSettingsImpl.transferSettings(new FDRSettingsImpl(), this);
+    }//GEN-LAST:event_btnResetActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBoostIgnores;
     private javax.swing.JButton btnCalc;
+    private javax.swing.JButton btnReset;
     public javax.swing.JButton btnStopBoost;
     private org.rappsilber.fdr.gui.components.FDRLevelComboBox cbBoostWhat;
     private javax.swing.JCheckBox ckBoostBetween;
