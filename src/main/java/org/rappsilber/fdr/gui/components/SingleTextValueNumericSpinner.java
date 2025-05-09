@@ -62,7 +62,7 @@ public class SingleTextValueNumericSpinner extends javax.swing.JSpinner {
             this.stepSize = stepSize;
         }
         public <T>AmbiguitySpinnerModel() {
-            this(Integer.valueOf(0), new Integer(0), null, Integer.valueOf(1));
+            this(0, 0, null, 1);
         }
         
         public Object getValue() {

@@ -34,16 +34,18 @@ public class StreamReplaceWriter extends Writer{
     /**
      * the search-term
      */
-    private String search;
+    private String[] search;
     /**
      * String that should replace every occurrence of the search term
      */
-    private String replace;
+    private String[] replace;
     /**
      * Buffer that keeps enough of the data to make sure that we can replace every 
      * occurrence of search with replace
      */
     private StringBuffer sb = new StringBuffer();
+    private int maxLength = 0;
+    private boolean forwardOnly = false;
 
     /**
      * 
@@ -54,12 +56,27 @@ public class StreamReplaceWriter extends Writer{
      */
     public StreamReplaceWriter(Writer innerWriter, String search, String replace) {
         this.innerWriter = innerWriter;
+        this.search = new String[]{search};
+        this.replace = new String[]{replace};
+        maxLength = search.length();
+    }
+
+    public StreamReplaceWriter(Writer innerWriter, String[] search, String[] replace) {
+        this.innerWriter = innerWriter;
         this.search = search;
         this.replace = replace;
-    }
-    
+        for (String s : search){
+            if (s.length() > maxLength)
+                maxLength = s.length();
+        }
+    }    
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
+        
+        if (isForwardOnly()) {
+            innerWriter.write(cbuf, off, len);
+            return;
+        }
         
         char[] out = new char[len];
         System.arraycopy(cbuf, off, out, 0, len);
@@ -67,13 +84,17 @@ public class StreamReplaceWriter extends Writer{
         int pos = 0;
         int writeOut =-1;
         //replace every occurence of search with replace
-        while ((pos = sb.indexOf(search)) >=0) {
-            sb.replace(pos, pos+search.length(), replace);
-            pos = pos+replace.length()-1;
-            writeOut = pos;
+        for (int s = 0; s< this.search.length; s++) {
+            String search = this.search[s];
+            String replace = this.replace[s];
+            while ((pos = sb.indexOf(search)) >=0) {
+                sb.replace(pos, pos+search.length(), replace);
+                pos = pos+replace.length()-1;
+                writeOut = pos;
+            }
         }
         // we can write everything out that was replaced or is more then search-length away from the end
-        writeOut = Math.max(writeOut, sb.length()-search.length());
+        writeOut = Math.max(writeOut, sb.length()-maxLength);
         
         // write out everything that we can
         if (writeOut >0) {
@@ -84,7 +105,7 @@ public class StreamReplaceWriter extends Writer{
         
         
     }
-
+    
     /**
      * Forwards the flush to the inner writer
      * We cant really write out everything in our buffer - as we don't know yet
@@ -104,8 +125,25 @@ public class StreamReplaceWriter extends Writer{
         innerWriter.close();
     }
 
-    
-    
+    /**
+     * @return the forwardOnly
+     */
+    public boolean isForwardOnly() {
+        return forwardOnly;
+    }
+
+    /**
+     * @param forwardOnly the forwardOnly to set
+     */
+    public void setForwardOnly(boolean forwardOnly) throws IOException {
+        if (forwardOnly) {
+            // flush out buffer
+            innerWriter.write(sb.toString());
+            sb.setLength(0);
+        }
+        this.forwardOnly = forwardOnly;
+    }
+
     
     
 }

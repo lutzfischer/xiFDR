@@ -83,18 +83,22 @@
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="1" attributes="0">
-                          <Group type="102" alignment="1" attributes="0">
-                              <Component id="ckSmartMatch" min="-2" pref="229" max="-2" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Component id="ckSmartMatch" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="txtDecoyPrefix" min="-2" pref="59" max="-2" attributes="0"/>
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
-                          <Group type="102" alignment="1" attributes="0">
+                          <Group type="102" attributes="0">
                               <Component id="jLabel27" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="cbCSVQuote" linkSize="5" max="32767" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jLabel28" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="localPicker1" pref="91" max="32767" attributes="0"/>
+                              <Component id="localPicker1" pref="0" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
@@ -155,6 +159,8 @@
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="rbCSVLowBetter" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="ckSmartMatch" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="txtDecoyPrefix" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
@@ -482,7 +488,7 @@
     </Component>
     <Component class="javax.swing.JCheckBox" name="ckSmartMatch">
       <Properties>
-        <Property name="text" type="java.lang.String" value="intelligent column matching"/>
+        <Property name="text" type="java.lang.String" value="tolerant column matching"/>
         <Property name="toolTipText" type="java.lang.String" value="Needs Manual control:tries to select the best header by string distance"/>
       </Properties>
       <Events>
@@ -507,21 +513,34 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="jLabel12" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel13" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
                               <Component id="ckCSVMarkModifications" max="32767" attributes="0"/>
-                              <EmptySpace min="0" pref="522" max="32767" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="cbNormalize" pref="209" max="32767" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Component id="txtForwardColumns" pref="128" max="32767" attributes="0"/>
                           </Group>
                           <Component id="fbFastaIn" max="32767" attributes="0"/>
-                          <Component id="fbConfigIn" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Component id="fbConfigIn" max="32767" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="txtXiVersion" min="-2" pref="64" max="-2" attributes="0"/>
+                          </Group>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -532,6 +551,8 @@
                       <Group type="103" groupAlignment="2" attributes="0">
                           <Component id="fbConfigIn" alignment="2" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel12" alignment="2" min="-2" max="-2" attributes="0"/>
+                          <Component id="txtXiVersion" alignment="2" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel4" alignment="2" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="2" attributes="0">
@@ -539,7 +560,13 @@
                           <Component id="jLabel13" alignment="2" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="ckCSVMarkModifications" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="ckCSVMarkModifications" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="txtForwardColumns" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="cbNormalize" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
                       <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
@@ -550,9 +577,10 @@
               <Properties>
                 <Property name="description" type="java.lang.String" value="Xi-Config"/>
                 <Property name="extensions" type="[Ljava.lang.String;" editor="org.netbeans.beaninfo.editors.StringArrayEditor">
-                  <StringArray count="2">
+                  <StringArray count="3">
                     <StringItem index="0" value="config"/>
                     <StringItem index="1" value="conf"/>
+                    <StringItem index="2" value="json"/>
                   </StringArray>
                 </Property>
               </Properties>
@@ -562,7 +590,7 @@
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel12">
               <Properties>
-                <Property name="text" type="java.lang.String" value="XiConfig"/>
+                <Property name="text" type="java.lang.String" value="xi Config"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel13">
@@ -591,6 +619,42 @@
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="1"/>
               </AuxValues>
+            </Component>
+            <Component class="javax.swing.JTextField" name="txtForwardColumns">
+              <Properties>
+                <Property name="toolTipText" type="java.lang.String" value="A Regular Expression defining what addtional columns should be forwarded to the PSM-file"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel1">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Forward Columns"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel2">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Normalize"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JComboBox" name="cbNormalize">
+              <Properties>
+                <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection code="new DefaultComboBoxModel&lt;OfflineFDR.Normalisation&gt;(OfflineFDR.Normalisation.values())" type="code"/>
+                </Property>
+                <Property name="toolTipText" type="java.lang.String" value="How to normalize the input data"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;OfflineFDR.Normalisation&gt;"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JTextField" name="txtXiVersion">
+              <Properties>
+                <Property name="toolTipText" type="java.lang.String" value="xi version to be written into the mzIdentML file"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel4">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="xi Version"/>
+              </Properties>
             </Component>
           </SubComponents>
         </Container>
@@ -629,6 +693,19 @@
     <Component class="javax.swing.JLabel" name="jLabel28">
       <Properties>
         <Property name="text" type="java.lang.String" value="Language"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="txtDecoyPrefix">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="auto"/>
+        <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.form.editors.StringEditor">
+          <SerializedValue value="-84,-19,0,5,116,1,-88,60,104,116,109,108,62,60,98,111,100,121,62,60,112,62,73,110,32,111,114,100,101,114,32,116,111,32,97,99,99,117,114,97,116,101,108,121,32,109,97,116,99,104,32,100,101,99,111,121,32,112,114,111,116,101,105,110,115,32,116,111,32,116,104,101,105,114,32,99,111,114,114,101,115,112,111,110,100,105,110,103,32,116,97,114,103,101,116,32,112,114,111,116,101,105,110,115,44,32,60,98,114,47,62,105,116,39,115,32,105,109,112,111,114,116,97,110,116,32,116,111,32,114,101,109,111,118,101,32,97,110,121,32,112,114,101,102,105,120,32,105,110,99,108,117,100,101,100,32,105,110,32,116,104,101,32,97,99,99,101,115,115,105,111,110,32,110,117,109,98,101,114,115,32,102,111,114,32,116,104,101,32,100,101,99,111,121,115,46,60,98,114,47,62,32,10,70,97,105,108,105,110,103,32,116,111,32,100,111,32,115,111,32,99,97,110,32,112,114,101,118,101,110,116,32,112,114,111,112,101,114,32,97,115,115,105,103,110,109,101,110,116,32,111,102,32,116,97,114,103,101,116,45,100,101,99,111,121,32,109,97,116,99,104,101,115,32,97,115,32,115,101,108,102,45,108,105,110,107,115,44,32,114,101,115,117,108,116,105,110,103,32,105,110,32,102,97,108,115,101,32,70,68,82,32,101,115,116,105,109,97,116,101,115,46,-64,-128,60,98,114,47,62,60,47,112,62,60,112,62,10,66,121,32,100,101,102,97,117,108,116,32,82,69,86,95,44,32,82,69,86,69,82,83,69,95,44,32,68,69,67,79,89,95,44,32,68,69,67,79,89,58,44,32,82,65,78,68,79,77,95,44,32,97,110,100,32,82,65,78,95,32,97,114,101,32,114,101,99,111,103,110,105,115,101,100,46,60,47,112,62,60,47,98,111,100,121,62,60,47,104,116,109,108,62"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel3">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="decoy prefix:"/>
       </Properties>
     </Component>
   </SubComponents>

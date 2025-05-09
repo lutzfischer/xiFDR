@@ -24,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -54,6 +55,7 @@ import org.rappsilber.config.LocalProperties;
 import org.rappsilber.data.csv.CsvParser;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.fdr.CSVinFDR;
+import org.rappsilber.fdr.DB2inFDR;
 import org.rappsilber.fdr.DBinFDR;
 import org.rappsilber.fdr.FDRSettings;
 import org.rappsilber.fdr.FDRSettingsImpl;
@@ -66,9 +68,10 @@ import org.rappsilber.fdr.XiInFDR;
 import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
+import org.rappsilber.fdr.entities.Protein;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
 import org.rappsilber.fdr.entities.ProteinGroupPair;
-import org.rappsilber.fdr.gui.components.FDRSettingsPanel;
+import org.rappsilber.fdr.gui.components.settings.FDRSettingsPanel;
 import org.rappsilber.fdr.utils.MZIdentMLExport;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.fdr.utils.MaximizingUpdate;
@@ -82,7 +85,10 @@ import org.rappsilber.gui.logging.JTextAreaHandle;
 import org.rappsilber.peaklist.MgfStyleTitleParser;
 import org.rappsilber.utils.UpdateableInteger;
 import org.rappsilber.utils.XiFDRUtils;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
+import org.rappsilber.utils.Version;
 import rappsilber.config.RunConfigFile;
+import rappsilber.utils.XiVersion;
 
 /**
  *
@@ -187,20 +193,11 @@ public class FDRGUI extends javax.swing.JFrame {
         fdrSettingsMedium.addStopMaximizingListener(stopMaximizingAl);
         fdrSettingsSimple.addStopMaximizingListener(stopMaximizingAl);
 
-        // preset minimum peptide-length
-        fdrSettingsComplete.setMinPeptideLength(6);
-        fdrSettingsMedium.setMinPeptideLength(6);
-        fdrSettingsSimple.setMinPeptideLength(6);
-        
-        fdrSettingsComplete.setReportFactor(100000);
-        fdrSettingsMedium.setReportFactor(100000);
-        fdrSettingsSimple.setReportFactor(100000);
-
         ActionListener calcListener = new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 if (e.getActionCommand().contentEquals("boost")) {
-                    fdrSettingsComplete.btnStopBoost.setEnabled(true);
+                    getFdrSettingsComplete().btnStopBoost.setEnabled(true);
                     fdrSettingsSimple.btnStopBoost.setEnabled(true);
                     fdrSettingsMedium.btnStopBoost.setEnabled(true);
                 }
@@ -230,6 +227,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
         getDBFDR.setFdrgui(this);
         writeDB.setFdrgui(this);
+        writeToDBXi2.setFdrgui(this);
         
         parseChageLog();
         try {
@@ -376,13 +374,13 @@ public class FDRGUI extends javax.swing.JFrame {
                 }
                 setting = true;
                 String filename = fbFolder.getText();
-                csvout =  XiFDRUtils.splitFilename(filename);
-                if (csvout.tsv)
+                setCsvOut(XiFDRUtils.splitFilename(filename));
+                if (getCsvOut().tsv)
                     rbTSV.setSelected(true);
-                if (csvout.tsv)
+                if (getCsvOut().tsv)
                     rbCSV.setSelected(true);
 
-                fbFolder.setFile(csvout.folder + File.separator + csvout.basename + csvout.extension);
+                fbFolder.setFile(getCsvOut().folder + File.separator + getCsvOut().basename + getCsvOut().extension);
                 setting = false;
 
             }
@@ -407,15 +405,18 @@ public class FDRGUI extends javax.swing.JFrame {
         
     }
 
-    public void setTitle(String title) {
-        super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ")" + title);
-
+    public void setTitle(final String title) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                FDRGUI.super.setTitle("xiFDR (" + OfflineFDR.getXiFDRVersion() + ") " + title);
+            }
+        });
     }
 
     public void prepareFDRCalculation() throws NumberFormatException {
         ProteinGroupLink.MIN_DISTANCE_FOR_LONG = ((Number) spDistanceGroup.getValue()).intValue();
-        getFdr().setMaximumLinkAmbiguity(fdrSettings.getMaxLinkAmbiguity());
-        getFdr().setMaximumProteinAmbiguity(fdrSettings.getMaxProteinAmbiguity());
+        getFdr().setSettings(fdrSettings);
         getFdr().setMinimumPeptideLength(fdrSettings.getMinPeptideLength());
         getFdr().setGroupPPIByHasInternal(cbGroupPPIBySelf.isSelected());
         getFdr().setGroupLinksByHasInternal(cbGroupLinksBySelf.isSelected());
@@ -446,7 +447,6 @@ public class FDRGUI extends javax.swing.JFrame {
         getFdr().setMinPepPerProteinGroupPair(fdrSettings.getMinPPIPepCount());
 
         getFdr().setMinDecoys(fdrSettings.getMinTD());
-        getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
 
         int lengthSteps = tblPepLength.getRowCount();
         int[] pepLength = new int[lengthSteps];
@@ -489,7 +489,31 @@ public class FDRGUI extends javax.swing.JFrame {
      */
     public void setFdr(OfflineFDR m_fdr) {
         this.m_fdr = m_fdr;
-        ckGroupByCrossLinkerStubs.setEnabled(m_fdr.stubsFound());
+        final OfflineFDR cfdr = m_fdr;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ckGroupByCrossLinkerStubs.setEnabled(cfdr.stubsFound());
+                if (cfdr instanceof DBinFDR && cfdr.singleClassFDR) {
+                    if (tpResult.indexOfComponent(writeDB) == -1)
+                        tpResult.add("To Database", writeDB);
+
+                    if (tpResult.indexOfComponent(writeToDBXi2) != -1)
+                        tpResult.remove(writeToDBXi2);
+                } else if (cfdr instanceof DB2inFDR && cfdr.singleClassFDR) {
+                    if (tpResult.indexOfComponent(writeDB) != -1)
+                        tpResult.remove(writeDB);
+
+                    if (tpResult.indexOfComponent(writeToDBXi2) == -1)
+                        tpResult.add("To Database", writeToDBXi2);
+                } else {
+                    if (tpResult.indexOfComponent(writeDB) != -1)
+                        tpResult.remove(writeDB);
+                    if (tpResult.indexOfComponent(writeToDBXi2) != -1)
+                        tpResult.remove(writeToDBXi2);
+                }
+            }
+        });
     }
 
     /**
@@ -505,6 +529,7 @@ public class FDRGUI extends javax.swing.JFrame {
     public void setResult(FDRResult m_result) {
         this.m_result = m_result;
     }
+
 
     private class NeededOptionalComboBoxCellEditor extends DefaultCellEditor {
 
@@ -594,28 +619,59 @@ public class FDRGUI extends javax.swing.JFrame {
         }
                 
         try {
-            File f = getMzIdentMLOutput();
+            final File f = getMzIdentMLOutput();
+            if (f == null) {
+                setStatus("No output file selected");
+                return;
+            }
+            final OfflineFDR fdr = getFdr();
+            final FDRResult res = getResult();
+            final MZIdentMLOwner mzo = new MZIdentMLOwner(getMzIdentMLOwnerFirst(), getMzIdentMLOwnerLast(), getMzIdentMLOwnerEmail(), getMzIdentMLOwnerOrg(), getMzIdentMLOwnerAdress());
+            final String extension = cmbPeakListFormat.getSelectedItem().toString();
+            final String template  = cmbMzMLScan2ID.getSelectedItem().toString();
             // if (f.canWrite())
-            if ( getFdr() instanceof MZIdentXLFDR) {
+            if ( fdr instanceof MZIdentXLFDR) {
+                setStatus("Writing mzIdenML");
                 writeMZIdentML();
+                setStatus("done writing mzIdentML");
             } else if (getFdr()instanceof XiInFDR) {
-                MZIdentMLExport export =  new MZIdentMLExport(getFdr(), getResult(), new MZIdentMLOwner(getMzIdentMLOwnerFirst(), getMzIdentMLOwnerLast(), getMzIdentMLOwnerEmail(), getMzIdentMLOwnerOrg(), getMzIdentMLOwnerAdress()));
-                export.setForceExtension(cmbPeakListFormat.getSelectedItem().toString());
-                export.setMZMLTemplate(cmbMzMLScan2ID.getSelectedItem().toString());
-                export.convertFile(f.getAbsolutePath());
+                setEnableWrite(false);
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        
+                        try {
+                            setStatus("Exporting mzIdenML");
+                            MZIdentMLExport export = new MZIdentMLExport(fdr, res, mzo);
+                            export.setForceExtension(extension);
+                            export.setMZMLTemplate(template);
+                            export.convertFile(f.getAbsolutePath());
+                            FileWriter fw = new FileWriter(f.getAbsolutePath() + ".summary.csv");
+                            fw.write(fdr.getSummary(m_result));
+                            fw.close();
+                            
+                            setStatus("done exporting mzIdentML");
+                        } catch (Exception ex) {
+                            setStatus("Error exporting mzIdentML");
+                            Logger.getLogger(FDRGUI.class.getName()).log(Level.SEVERE, "Error writing mzIdentML", ex);
+                        } finally {
+                            setEnableWrite(true);
+                        }
+                    }
+                };
+                Thread t = new Thread(runnable);
+                t.setName(t.getName() + " Writing mzIdentML");
+                t.start();
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error while writing the xml-file:" + ex + "\n" + RArrayUtils.toString(ex.getStackTrace(), "\n"));
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error while writing the xml-file", ex);
             setStatus("error:" + ex);
-            
-            
         }
     }    
     
     protected void writeMZIdentML() {
         try {
-            File f = getMzIdentMLOutput();
+            final File f = getMzIdentMLOutput();
             // if (f.canWrite())
             if (getFdr() instanceof MZIdentXLFDR) {
                 ((MZIdentXLFDR) getFdr()).writeMZIdentML(f.getAbsolutePath(), getResult());
@@ -641,7 +697,7 @@ public class FDRGUI extends javax.swing.JFrame {
         setEnableWrite(false);
         final boolean prepostaa = ckPrePostAA.isSelected();
         
-        final String sep = rbTSV.isSelected() ? "\t" : (((DecimalFormat) ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator()==','? ";" : ",");
+        final String sep = getSeparator(ofdr);
         
 
         Runnable runnable = new Runnable() {
@@ -651,12 +707,12 @@ public class FDRGUI extends javax.swing.JFrame {
                     setStatus("start writing");
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, "start writing");
                     //                    ofdr.writeFiles(txtFolder.getText(), txtBaseName.getText(), 0.05, 0.05, 0.05, 0.05, new int[]{4, 9});
-                    String folder = csvout.folder;
-                    String basename = csvout.basename;
-                    if (csvout.extension != null && !csvout.extension.isEmpty()) {
-                        ofdr.writeFiles(folder, basename,csvout.extension, sep, getResult());
+                    String folder = getCsvOut().folder;
+                    String basename = getCsvOut().basename;
+                    if (getCsvOut().extension != null && !csvout.extension.isEmpty()) {
+                        ofdr.writeFiles(folder, basename,getCsvOut().extension, sep, getResult(), ckWriteAll.isSelected());
                     } else {
-                        ofdr.writeFiles(folder, basename, sep, getResult());
+                        ofdr.writeFiles(folder, basename, sep, getResult(), ckWriteAll.isSelected());
                     }
                     setStatus("finished writing: " + ofdr.summaryString(getResult()));
 
@@ -678,6 +734,11 @@ public class FDRGUI extends javax.swing.JFrame {
         t.start();
     }
 
+    protected String getSeparator(final OfflineFDR ofdr) {
+        final String sep = rbTSV.isSelected() ? "\t" : (((DecimalFormat) ofdr.getNumberFormat()).getDecimalFormatSymbols().getDecimalSeparator()==','? ";" : ",");
+        return sep;
+    }
+
     
     protected void parseSuppliedMGF() throws IOException {
         UpdateableInteger ambiguousPeakListEntry = new UpdateableInteger(0);
@@ -697,9 +758,9 @@ public class FDRGUI extends javax.swing.JFrame {
             setStatus("updating PSMs");
             int current = 0;
             int oldCurrent = -100;
-            int all = getResult().psmFDR.size();
+            int all = this.getFdr().getAllPSMs().size();
             int oldPerc = -1;
-            for (PSM p : getResult().psmFDR) {
+            for (PSM p : this.getFdr().getAllPSMs()) {
                 int percent = (int) (current++ *1000.0 /all);
                 if (percent>oldPerc&& current-oldCurrent>100) {
                     setStatus("updating PSMs ("+percent/10.0+"%)" );
@@ -811,6 +872,75 @@ public class FDRGUI extends javax.swing.JFrame {
 //        }
 //
 //    }
+    
+    protected CSVinFDR innerBatchReadCSV(File config, File fasta,CsvCondition filter,OfflineFDR.Normalisation normalisation) throws IOException, ParseException {
+        Iterator<CsvParser> csvs = csvSelect.iterator();
+        CsvParser csv = csvs.next();
+        String forwardPattern = csvSelect.getForwardPattern();
+        String window_title = csv.getInputFile().getName();
+        Version v = csvSelect.getXiVersion();
+
+        CSVinFDR ofdr = null;
+        if (config != null && fasta != null) {
+            ofdr = new XiCSVinFDR();
+            try {
+                ((XiCSVinFDR)ofdr).setConfig(new Xi2Xi1Config(csvSelect.fbConfigIn.getFile()));
+            } catch (Exception e){
+                ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+            }
+            if (v != null) {
+                ((XiCSVinFDR)ofdr).setXiVersion(csv.getInputFile().getAbsolutePath(), v);
+            }
+            ArrayList<String> fastas = new ArrayList<>(1);
+            fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
+            ((XiCSVinFDR)ofdr).setFastas(fastas);
+        }else {
+            ofdr = new CSVinFDR();
+        }
+        if (forwardPattern != null && !forwardPattern.isEmpty())
+            ofdr.setForwardPattern(forwardPattern);
+        if (addCSV(ofdr, null, csv,filter)) {
+            setTitle(window_title);
+
+            while (csvs.hasNext()) {
+                csv = csvs.next();
+                CSVinFDR nextfdr = null;
+
+                if (config != null && fasta != null) {
+                    nextfdr = new XiCSVinFDR();
+                    try {
+                        ((XiCSVinFDR)nextfdr).setConfig(new Xi2Xi1Config(csvSelect.fbConfigIn.getFile()));
+                    } catch (Exception e){
+                        ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
+                    }
+                    ArrayList<String> fastas = new ArrayList<>(1);
+                    fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
+                    ((XiCSVinFDR)nextfdr).setFastas(fastas);
+                    if (v != null) {
+                        ((XiCSVinFDR)ofdr).setXiVersion(csv.getInputFile().getAbsolutePath(), v);
+                    }
+                }else {
+                    nextfdr = new CSVinFDR();
+                }
+                if (forwardPattern != null && !forwardPattern.isEmpty())
+                    nextfdr.setForwardPattern(forwardPattern);
+
+
+                if (!addCSV(nextfdr, ofdr, csv,filter)) {
+                    return null;
+                } else {
+                    window_title += ";" + csv.getInputFile().getName();
+                    setTitle(window_title);
+                }
+            }
+            if (normalisation != OfflineFDR.Normalisation.None) {
+                ofdr.normalizePSMs(normalisation);
+            }
+            return ofdr;
+        }
+        return null;
+    }
+    
     public void readAllCSV() {
 
 
@@ -818,9 +948,12 @@ public class FDRGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "No file selected", "no File Selected", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        
+        Protein.DECOY_PREFIX = csvSelect.getDecoyPrefix();
         final CsvCondition filter = csvSelect.getFilter();
         final File config=csvSelect.fbConfigIn.getFile();
         final File fasta=csvSelect.fbFastaIn.getFile();
+        final OfflineFDR.Normalisation normalisation = csvSelect.doNormalize();
         setEnableRead(false);
         setEnableCalc(false);
         setEnableWrite(false);
@@ -829,40 +962,8 @@ public class FDRGUI extends javax.swing.JFrame {
             public void run() {
                 try {
 
-                    setStatus("Start");
-                    Iterator<CsvParser> csvs = csvSelect.iterator();
-                    CsvParser csv = csvs.next();
-
-                    CSVinFDR ofdr = null;
-                    if (config != null && fasta != null) {
-                        ofdr = new XiCSVinFDR();
-                        ((XiCSVinFDR)ofdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
-                        ArrayList<String> fastas = new ArrayList<>(1);
-                        fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
-                        ((XiCSVinFDR)ofdr).setFastas(fastas);
-                    }else {
-                        ofdr = new CSVinFDR();
-                    }        
-                    addCSV(ofdr, null, csv,filter);
-                    setFdr(ofdr);
-
-                    while (csvs.hasNext()) {
-                        csv = csvs.next();
-                        CSVinFDR nextfdr = null;
-                        
-                        if (config != null && fasta != null) {
-                            nextfdr = new XiCSVinFDR();
-                            ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(csvSelect.fbConfigIn.getFile()));
-                            ArrayList<String> fastas = new ArrayList<>(1);
-                            fastas.add(csvSelect.fbFastaIn.getFile().getAbsolutePath());
-                            ((XiCSVinFDR)nextfdr).setFastas(fastas);
-                        }else {
-                            nextfdr = new CSVinFDR();
-                        }        
-
-
-                        addCSV(nextfdr, ofdr, csv,filter);
-                    }
+                    setStatus("Start reading");
+                    setFdr(innerBatchReadCSV(config, fasta, filter, normalisation));
                     setEnableCalc(true);
                     setStatus("finished reading");
                 } catch (Exception ex) {
@@ -885,6 +986,7 @@ public class FDRGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "No file selected", "no File Selected", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        Protein.DECOY_PREFIX = csvSelect.getDecoyPrefix();
 
         setEnableRead(false);
         setEnableCalc(false);
@@ -892,6 +994,7 @@ public class FDRGUI extends javax.swing.JFrame {
         final CsvCondition filter = csvSelect.getFilter();
         final File config=csvSelect.fbConfigIn.getFile();
         final File fasta=csvSelect.fbFastaIn.getFile();
+        final OfflineFDR.Normalisation normalisation = csvSelect.doNormalize();
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -899,19 +1002,11 @@ public class FDRGUI extends javax.swing.JFrame {
 
                     setStatus("Start");
 
-                    for (CsvParser csv : csvSelect) {
-                        CSVinFDR nextfdr = null;
-                        if (config != null && fasta != null) {
-                            nextfdr = new XiCSVinFDR();
-                            ((XiCSVinFDR)nextfdr).setConfig(new RunConfigFile(config));
-                            ArrayList<String> fastas = new ArrayList<>(1);
-                            fastas.add(fasta.getAbsolutePath());
-                            ((XiCSVinFDR)nextfdr).setFastas(fastas);
-                        }else {
-                            nextfdr = new CSVinFDR();
-                        }        
-                        addCSV(nextfdr, (CSVinFDR) getFdr(), csv,filter);
-                    }
+                    CSVinFDR nextfdr = innerBatchReadCSV(config, fasta, filter, normalisation);
+                    
+                    getFdr().normaliseAndAddPsmList(nextfdr, normalisation);
+                    setFdr(getFdr());
+                    
                     setEnableCalc(true);
                     setStatus("finished reading");
 
@@ -928,20 +1023,28 @@ public class FDRGUI extends javax.swing.JFrame {
         Thread t = new Thread(runnable);
         t.setName("Reading From CSV");
         t.start();
-
+        
 
     }
 
-    protected void addCSV(final CSVinFDR ofdr, final CSVinFDR addto, final CsvParser csv, CsvCondition filter) throws IOException, ParseException {
+    protected boolean addCSV(final CSVinFDR ofdr, final CSVinFDR addto, final CsvParser csv, CsvCondition filter) throws IOException, ParseException {
         ofdr.setPSMScoreHighBetter(csvSelect.higherIsBetter());
 
         setStatus("Read from " + csv.getInputFile().getName());
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + csv.getInputFile().getAbsolutePath());
-        ofdr.readCSV(csv, filter);
+        if (addto == null) {
+            PSM.resetAdditionalColumnNames();
+        }
+        if (!ofdr.readCSV(csv, filter)) {
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Could not read from " + csv.getInputFile().getAbsolutePath());
+            setStatus("Error reading from " + csv.getInputFile().getName());            
+            return false;
+        }
         if (addto != null) {
-            addto.normaliseAndAddPsmList(ofdr);
+            addto.add(ofdr);
             addto.addSource(ofdr.getSources(), ofdr.getFilter());
         }
+        return true;
     }
 
     public void readMZIdentML() {
@@ -972,13 +1075,13 @@ public class FDRGUI extends javax.swing.JFrame {
 //            ofdr.setCrosslinkedReceptorModAcc(txtCrossLinkedReceptorModCvParam.getText());
 //            ofdr.setCrosslinkedSIIAcc(txtCrossLinkedPepCvParam.getText());
             ofdr.setPSMScore(cbMZMatchScoreName.getSelectedItem().toString());
-
+            final boolean passthresholdonly = ckPassThresholdOnly.isSelected();
             Runnable runnable = new Runnable() {
                 public void run() {
                     try {
                         setStatus("Read from " + mzIdentIn.getName());
                         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "read from " + mzIdentIn.getAbsolutePath());
-                        ofdr.readMzIdentML(mzIdentIn);
+                        ofdr.readMzIdentML(mzIdentIn, passthresholdonly);
                         setEnableCalc(true);
                         setStatus("finished reading");
                     } catch (Exception ex) {
@@ -1004,16 +1107,16 @@ public class FDRGUI extends javax.swing.JFrame {
         setEnableWrite(false);
         setEnableRead(false);
         final Double saftyfactor = (Double) fdrSettings.getReportFactor();
-
+        ofdr.setSettings(fdrSettings);
         prepareFDRCalculation();
 
         Runnable runnable = new Runnable() {
-            final Double psmfdr = (Double) fdrSettings.getPSMFDR();
-            final Double pepfdr = (Double) fdrSettings.getPeptidePairFDR();
-            final Double protfdr = (Double) fdrSettings.getProteinGroupFDR();
-            final Double linkfdr = (Double) fdrSettings.getProteinGroupLinkFDR();
-            final Double ppifdr = (Double) fdrSettings.getProteinGroupPairFDR();
-            final boolean filterToUniquePSM = fdrSettings.filterToUniquePSM();
+            final Double psmfdr = (Double) getFdrSettings().getPSMFDR();
+            final Double pepfdr = (Double) getFdrSettings().getPeptidePairFDR();
+            final Double protfdr = (Double) getFdrSettings().getProteinGroupFDR();
+            final Double linkfdr = (Double) getFdrSettings().getProteinGroupLinkFDR();
+            final Double ppifdr = (Double) getFdrSettings().getProteinGroupPairFDR();
+            final boolean filterToUniquePSM = getFdrSettings().filterToUniquePSM();
 
             public void run() {
                 try {
@@ -1074,7 +1177,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int targetLinearPSM = 0;
         int decoyXLPSM = 0;
         int decoyLinearPSM = 0;
-        for (PSM psm : getResult().psmFDR) {
+        for (PSM psm : getResult().psmFDR.filteredResults()) {
             if (psm.isLinear()) {
                 sumLinearPSM++;
                 if (!psm.isDecoy()) {
@@ -1097,7 +1200,7 @@ public class FDRGUI extends javax.swing.JFrame {
         int targetLinearPepPairs = 0;
         int decoyXLPepPairs = 0;
         int decoyLinearPepPairs = 0;
-        for (PeptidePair pp : result.peptidePairFDR) {
+        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
             if (pp.isLinear()) {
                 sumLinearPepPairs++;
                 if (!pp.isDecoy()) {
@@ -1115,15 +1218,23 @@ public class FDRGUI extends javax.swing.JFrame {
 
         int sumLinksBetweenDecoy = 0;
         int sumLinksInternalDecoy = 0;
+        int sumLinksBetweenDD = 0;
+        int sumLinksInternalDD = 0;
         int sumLinksInternalTarget = 0;
         int sumLinksBetweenTarget = 0;
         int sumLinks = getResult().proteinGroupLinkFDR.getResultCount();
-        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR) {
+        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR.filteredResults()) {
             if (l.isDecoy()) {
                 if (l.isInternal) {
                     sumLinksInternalDecoy++;
+                    if (l.isDD()) {
+                        sumLinksInternalDD++;
+                    }
                 } else {
                     sumLinksBetweenDecoy++;
+                    if (l.isDD()) {
+                        sumLinksBetweenDD++;
+                    }
                 }
             } else if (l.isInternal) {
                 sumLinksInternalTarget++;
@@ -1133,17 +1244,52 @@ public class FDRGUI extends javax.swing.JFrame {
 
         }
 
+        int sumLinksBetweenDecoyUF = 0;
+        int sumLinksInternalDecoyUF = 0;
+        int sumLinksBetweenDDUF = 0;
+        int sumLinksInternalDDUF = 0;
+        int sumLinksInternalTargetUF = 0;
+        int sumLinksBetweenTargetUF = 0;
+        for (ProteinGroupLink l : getResult().proteinGroupLinkFDR) {
+            if (l.isDecoy()) {
+                if (l.isInternal) {
+                    sumLinksInternalDecoyUF++;
+                    if (l.isDD()) {
+                        sumLinksInternalDDUF++;
+                    }
+                } else {
+                    sumLinksBetweenDecoyUF++;
+                    if (l.isDD()) {
+                        sumLinksBetweenDDUF++;
+                    }
+                }
+            } else if (l.isInternal) {
+                sumLinksInternalTargetUF++;
+            } else {
+                sumLinksBetweenTargetUF++;
+            }
+
+        }
+
+        
+        
         int sumProteinGroupPairs = getResult().proteinGroupPairFDR.getResultCount();
         int sumProteinGroupPairsBetweenDecoy = 0;
         int sumProteinGroupPairsInternalDecoy = 0;
+        int sumProteinGroupPairsBetweenDD = 0;
+        int sumProteinGroupPairsInternalDD = 0;
         int sumProteinGroupPairsInternalTarget = 0;
         int sumProteinGroupPairsBetweenTarget = 0;
-        for (ProteinGroupPair pgl : getResult().proteinGroupPairFDR) {
+        for (ProteinGroupPair pgl : getResult().proteinGroupPairFDR.filteredResults()) {
             if (pgl.isDecoy()) {
                 if (pgl.isInternal()) {
                     sumProteinGroupPairsInternalDecoy++;
+                    if (pgl.isDD())
+                        sumProteinGroupPairsInternalDD++;
                 } else {
                     sumProteinGroupPairsBetweenDecoy++;
+                    if (pgl.isDD())
+                        sumProteinGroupPairsBetweenDD++;
                 }
             } else if (pgl.isInternal()) {
                 sumProteinGroupPairsInternalTarget++;
@@ -1169,8 +1315,11 @@ public class FDRGUI extends javax.swing.JFrame {
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupLinkFDR.getHigherFDR() * 100, result.proteinGroupLinkFDR.getLowerFDR() * 100}, 1);
         txtSumLinks.setText(sumLinks + " [" + nice[0] + "%," + nice[1] + "%]");
         txtSumLinks.setToolTipText(fdrLevelSummary(result.proteinGroupLinkFDR));
-        txtSumLinksBetween.setText((sumLinksBetweenTarget + sumLinksBetweenDecoy) + " (" + sumLinksBetweenTarget + " Target)");
-        txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + ")");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksBetweenDecoyUF-2*sumLinksBetweenDDUF)/(double)sumLinksBetweenTargetUF * 100, (sumLinksBetweenDecoyUF-2*sumLinksBetweenDDUF+1)/(double)sumLinksBetweenTargetUF * 100}, 1);
+        
+        txtSumLinksBetween.setText((sumLinksBetweenTarget + sumLinksBetweenDecoy) + " (" + sumLinksBetweenTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumLinksInternalDecoyUF-2*sumLinksInternalDDUF)/(double)sumLinksInternalTargetUF * 100, (sumLinksInternalDecoyUF-2*sumLinksInternalDDUF+1)/(double)sumLinksInternalTargetUF * 100}, 1);
+        txtSumLinksInternal.setText((sumLinksInternalDecoy + sumLinksInternalTarget) + " (" + sumLinksInternalTarget + " TT)  [" + nice[0] + "%," + nice[1] + "%]");
 
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupFDR.getHigherFDR() * 100, result.proteinGroupFDR.getLowerFDR() * 100}, 1);
         txtSumProtGroups.setText(Integer.toString(getResult().proteinGroupFDR.getResultCount()) + " [" + nice[0] + "%," + nice[1] + "%]");
@@ -1179,8 +1328,10 @@ public class FDRGUI extends javax.swing.JFrame {
         nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{result.proteinGroupPairFDR.getHigherFDR() * 100, result.proteinGroupPairFDR.getLowerFDR() * 100}, 1);
         txtSumProtGroupPairs.setText(sumProteinGroupPairs + " [" + nice[0] + "%," + nice[1] + "%]");
         txtSumProtGroupPairs.setToolTipText(fdrLevelSummary(result.proteinGroupPairFDR));
-        txtSumProtGroupPairsBetween.setText((sumProteinGroupPairsBetweenTarget + sumProteinGroupPairsBetweenDecoy) + " (" + sumProteinGroupPairsBetweenTarget + " Target)");
-        txtSumProtGroupPairsInternal.setText((sumProteinGroupPairsInternalDecoy + sumProteinGroupPairsInternalTarget) + " (" + sumProteinGroupPairsInternalTarget + " Target)");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumProteinGroupPairsBetweenDecoy-2*sumProteinGroupPairsBetweenDD)/(double)sumProteinGroupPairsBetweenTarget * 100, (sumProteinGroupPairsBetweenDecoy-2*sumProteinGroupPairsBetweenDD+1)/(double)sumProteinGroupPairsBetweenTarget * 100}, 1);
+        txtSumProtGroupPairsBetween.setText((sumProteinGroupPairsBetweenTarget + sumProteinGroupPairsBetweenDecoy) + " (" + sumProteinGroupPairsBetweenTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
+        nice = MiscUtils.arrayToStringWithDifferenceOrientedFormat(new double[]{(sumProteinGroupPairsInternalDecoy-2*sumProteinGroupPairsInternalDD)/(double)sumProteinGroupPairsInternalTarget * 100, (sumProteinGroupPairsInternalDecoy-2*sumProteinGroupPairsInternalDD+1)/(double)sumProteinGroupPairsInternalTarget * 100}, 1);
+        txtSumProtGroupPairsInternal.setText((sumProteinGroupPairsInternalDecoy + sumProteinGroupPairsInternalTarget) + " (" + sumProteinGroupPairsInternalTarget + " TT) [" + nice[0] + "%," + nice[1] + "%]");
 
 // Logger.getLogger(this.getClass().getName()).log(Level.INFO, "finished writing");
     }
@@ -1190,21 +1341,23 @@ public class FDRGUI extends javax.swing.JFrame {
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsComplete);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsMedium);
             FDRSettingsImpl.transferSettings(fdrSettings, fdrSettingsSimple);
-            
-            getFdr().setGroupByProteinPair(fdrSettings.isGroupByPSMCount());
-            getFdr().setMinDecoys(fdrSettings.getMinTD());
-            
             fdrSettings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
+            final FDRSettingsImpl settings = new FDRSettingsImpl(fdrSettings);
+            
+            getFdr().setMinDecoys(settings.getMinTD());
+            
+            settings.setGroupByCrosslinkerStubs(ckGroupByCrossLinkerStubs.isEnabled() && ckGroupByCrossLinkerStubs.isSelected());
                     
             if (fdrSettings.doOptimize() != null) {
-                final OfflineFDR.FDRLevel l = fdrSettings.doOptimize();
-                if (l == OfflineFDR.FDRLevel.PSM)
+                final OfflineFDR.FDRLevel l = settings.doOptimize();
+                if (l == OfflineFDR.FDRLevel.PSM && !(settings.boostMinFragments() || settings.boostDeltaScore() || settings.boostPepCoverage()))
                     JOptionPane.showMessageDialog(this, "Boosting of that Level currently not supported!");
                 else { 
                     Thread ml = new Thread() {
                         public void run() {
-                            maximise(l, fdrSettings.getBoostBetween());
-                            fdrSettingsComplete.btnStopBoost.setEnabled(false);
+                            setStatus("Starting boost");
+                            maximise(l, settings);
+                            getFdrSettingsComplete().btnStopBoost.setEnabled(false);
                             fdrSettingsMedium.btnStopBoost.setEnabled(false);
                             fdrSettingsSimple.btnStopBoost.setEnabled(false);
                             
@@ -1214,6 +1367,7 @@ public class FDRGUI extends javax.swing.JFrame {
                 }
                             
             } else {
+                setStatus("Starting FDR calculation");
                 calculateFDR();
             }
         }
@@ -1244,7 +1398,7 @@ public class FDRGUI extends javax.swing.JFrame {
             public void run() {
                 csvSelect.setEnabled(enable);
                 csvSelect.setEnableAdd(enable && m_fdr != null);
-                btnReadMZIdent.setEnabled(enable && ((JPanel) fdrSettings).isEnabled());
+                btnReadMZIdent.setEnabled(enable && ((JPanel) getFdrSettings()).isEnabled());
                 getDBFDR.setEnableRead(enable);
                 getDBFDR.setEnableAdd(enable && getFdr() != null);
             }
@@ -1255,12 +1409,13 @@ public class FDRGUI extends javax.swing.JFrame {
     public void setEnableCalc(final boolean enable) {
         Runnable setModel = new Runnable() {
             public void run() {
-                ((JPanel) fdrSettings).setEnabled(enable);
+                ((JPanel) getFdrSettings()).setEnabled(enable);
 //                btnMaxLink.setEnabled(enable);
 //                btnMaxPPI.setEnabled(enable);
-                fdrSettingsComplete.setEnabled(enable);
+                getFdrSettingsComplete().setEnabled(enable);
                 fdrSettingsMedium.setEnabled(enable);
                 fdrSettingsSimple.setEnabled(enable);
+                btnCalcRanges.setEnabled(enable);
             }
         };
         javax.swing.SwingUtilities.invokeLater(setModel);
@@ -1272,6 +1427,7 @@ public class FDRGUI extends javax.swing.JFrame {
             public void run() {
                 btnWrite.setEnabled(enable);
                 writeDB.setEnableWrite(getFdr() instanceof DBinFDR && enable);
+                writeToDBXi2.setEnableWrite(getFdr() instanceof DB2inFDR && enable);
                 ckPrePostAA.setEnabled(getFdr() instanceof DBinFDR);
 
                 btnWriteMzIdentML.setEnabled(enable && ((isMzIdent) || getFdr() instanceof XiInFDR));
@@ -1296,26 +1452,31 @@ public class FDRGUI extends javax.swing.JFrame {
         txtSumProtGroups.setText("");
     }
 
-    public void maximise(OfflineFDR.FDRLevel level, boolean between) {
+    public void maximise(OfflineFDR.FDRLevel level, FDRSettings settings) {
         clearResults();
         prepareFDRCalculation();
        
         setEnableRead(false);
         setEnableCalc(false);
         setEnableWrite(false);
+        m_fdr.setIgnoreGroupsSetting(ckIgnoreGroups1.isSelected());
         
-        final MaximisingStatus result = m_fdr.maximise(fdrSettings, level, between, new MaximizingUpdate() {
+        final MaximisingStatus result = m_fdr.maximise(settings, level, settings.getBoostBetween(), new MaximizingUpdate() {
             @Override
             public void setStatus(final MaximisingStatus state) {
                 javax.swing.SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        fdrSettingsComplete.setMinDeltaScoreFilter(state.showDelta);
-                        fdrSettingsComplete.setMinPeptideCoverageFilter(state.showPepCoverage);
-                        fdrSettingsComplete.setPeptidePairFDR(state.showPepFDR);
-                        fdrSettingsComplete.setPSMFDR(state.showPSMFDR);
-                        fdrSettingsComplete.setPeptidePairFDR(state.showPepFDR);
-                        fdrSettingsComplete.setProteinGroupFDR(state.showProtFDR);
-                        fdrSettingsComplete.setProteinGroupLinkFDR(state.showLinkFDR);
+                        getFdrSettingsComplete().setMinPeptideStubFilter(state.showMinStubs);
+                        getFdrSettingsComplete().setMinPeptideDoubletFilter(state.showMinDoublets);
+                        getFdrSettingsComplete().setMinPeptideFragmentsFilter(state.showMinFrags);
+                        getFdrSettingsComplete().minScore(state.showMinScore);
+                        getFdrSettingsComplete().setMinDeltaScoreFilter(state.showDelta);
+                        getFdrSettingsComplete().setMinPeptideCoverageFilter(state.showPepCoverage);
+                        getFdrSettingsComplete().setPeptidePairFDR(state.showPepFDR);
+                        getFdrSettingsComplete().setPSMFDR(state.showPSMFDR);
+                        getFdrSettingsComplete().setPeptidePairFDR(state.showPepFDR);
+                        getFdrSettingsComplete().setProteinGroupFDR(state.showProtFDR);
+                        getFdrSettingsComplete().setProteinGroupLinkFDR(state.showLinkFDR);
 
                         fdrSettingsMedium.setPeptidePairFDR(state.showPepFDR);
                         fdrSettingsMedium.setPSMFDR(state.showPSMFDR);
@@ -1414,7 +1575,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
                 fdrSettingsSimple.setAll(settings);
                 fdrSettingsMedium.setAll(settings);
-                fdrSettingsComplete.setAll(settings);
+                getFdrSettingsComplete().setAll(settings);
             }
         });
     }
@@ -1451,9 +1612,22 @@ public class FDRGUI extends javax.swing.JFrame {
         });
     }
     
+    public void setCSVOutFile() {
+        setCSVOutFile(fbFolder.getFile().getAbsolutePath());
+        setCsvOut(XiFDRUtils.splitFilename(fbFolder.getFile().getAbsolutePath()));
+
+    }
+    
     public void setCSVOutFile(String path) {
         fbFolder.setFile(path);
+        
     }
+    
+    
+    public void setXiVersion(String xiVersion) {
+        csvSelect.setXiVersion(xiVersion);
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -1468,10 +1642,12 @@ public class FDRGUI extends javax.swing.JFrame {
         cbCSVHeaders = new javax.swing.JComboBox();
         cbCSVHeaderOptional = new javax.swing.JComboBox();
         bgFDRSettingType = new javax.swing.ButtonGroup();
-        fdrSettingsComplete = new org.rappsilber.fdr.gui.components.FDRSettingsComplete();
-        fdrSettingsSimple = new org.rappsilber.fdr.gui.components.FDRSettingsSimple();
-        fdrSettingsMedium = new org.rappsilber.fdr.gui.components.FDRSettingsMedium();
+        fdrSettingsComplete = new org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete();
+        fdrSettingsSimple = new org.rappsilber.fdr.gui.components.settings.FDRSettingsSimple();
+        fdrSettingsMedium = new org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium();
         rbFDRSimple = new javax.swing.JRadioButton();
+        writeDB = new org.rappsilber.fdr.gui.components.WriteToDB();
+        writeToDBXi2 = new org.rappsilber.fdr.gui.components.WriteToDBXi2();
         jScrollPane6 = new javax.swing.JScrollPane();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
@@ -1488,6 +1664,7 @@ public class FDRGUI extends javax.swing.JFrame {
         rbMZHighBetter = new javax.swing.JRadioButton();
         rbMZLowBetter = new javax.swing.JRadioButton();
         cbMZMatchScoreName = new javax.swing.JComboBox();
+        ckPassThresholdOnly = new javax.swing.JCheckBox();
         spExtraLong = new javax.swing.JPanel();
         pDatabseSize = new javax.swing.JPanel();
         spDecoyDBProt = new javax.swing.JSpinner();
@@ -1572,6 +1749,8 @@ public class FDRGUI extends javax.swing.JFrame {
         ckPrePostAA = new javax.swing.JCheckBox();
         lpCsvOutLocal = new org.rappsilber.gui.components.LocalPicker();
         jLabel28 = new javax.swing.JLabel();
+        btnCalcRanges = new javax.swing.JButton();
+        ckWriteAll = new javax.swing.JCheckBox();
         jPanel14 = new javax.swing.JPanel();
         fbMzIdentMLOut = new org.rappsilber.gui.components.FileBrowser();
         btnWriteMzIdentML = new javax.swing.JButton();
@@ -1592,7 +1771,6 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookup = new javax.swing.JPanel();
         flPeakLists = new org.rappsilber.gui.components.FileList();
         btnPeakListParse = new javax.swing.JButton();
-        writeDB = new org.rappsilber.fdr.gui.components.WriteToDB();
         pLog = new javax.swing.JPanel();
         spLog = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
@@ -1650,7 +1828,7 @@ public class FDRGUI extends javax.swing.JFrame {
             pDatabaseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pDatabaseLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(getDBFDR, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(getDBFDR, javax.swing.GroupLayout.DEFAULT_SIZE, 853, Short.MAX_VALUE)
                 .addContainerGap())
         );
         pDatabaseLayout.setVerticalGroup(
@@ -1727,6 +1905,8 @@ public class FDRGUI extends javax.swing.JFrame {
             }
         });
 
+        ckPassThresholdOnly.setText("Passing CSMs Only");
+
         javax.swing.GroupLayout pMZIdentMLInputLayout = new javax.swing.GroupLayout(pMZIdentMLInput);
         pMZIdentMLInput.setLayout(pMZIdentMLInputLayout);
         pMZIdentMLInputLayout.setHorizontalGroup(
@@ -1741,14 +1921,16 @@ public class FDRGUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnReadMZIdent))
                     .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
-                        .addComponent(jLabel22)
-                        .addGap(239, 239, 239)
+                        .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel22)
+                            .addComponent(ckPassThresholdOnly))
+                        .addGap(210, 210, 210)
                         .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pMZIdentMLInputLayout.createSequentialGroup()
                                 .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(rbMZLowBetter)
                                     .addComponent(rbMZHighBetter))
-                                .addGap(88, 437, Short.MAX_VALUE))
+                                .addGap(88, 441, Short.MAX_VALUE))
                             .addComponent(cbMZMatchScoreName, javax.swing.GroupLayout.Alignment.TRAILING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
@@ -1762,7 +1944,9 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGap(1, 1, 1)
                 .addComponent(rbMZHighBetter)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(rbMZLowBetter)
+                .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(rbMZLowBetter)
+                    .addComponent(ckPassThresholdOnly))
                 .addGap(18, 18, 18)
                 .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(pMZIdentMLInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -2161,7 +2345,7 @@ public class FDRGUI extends javax.swing.JFrame {
 
         jPanel21.setLayout(new java.awt.GridLayout(1, 0, 10, 0));
 
-        jLabel16.setText("Links");
+        jLabel16.setText("Residue Pairs");
         jPanel21.add(jLabel16);
 
         txtSumLinks.setMaximumSize(null);
@@ -2344,6 +2528,16 @@ public class FDRGUI extends javax.swing.JFrame {
 
         jLabel28.setText("Language");
 
+        btnCalcRanges.setText("Calculate Ranges");
+        btnCalcRanges.setEnabled(false);
+        btnCalcRanges.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCalcRangesActionPerformed(evt);
+            }
+        });
+
+        ckWriteAll.setText("write out input CSMs");
+
         javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
         jPanel10.setLayout(jPanel10Layout);
         jPanel10Layout.setHorizontalGroup(
@@ -2356,16 +2550,22 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addGap(26, 26, 26)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fbFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, 757, Short.MAX_VALUE)
                     .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addComponent(rbTSV)
-                        .addGap(95, 95, 95)
-                        .addComponent(ckPrePostAA)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addComponent(rbCSV)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 538, Short.MAX_VALUE)
-                        .addComponent(btnWrite))
-                    .addComponent(lpCsvOutLocal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(rbTSV)
+                            .addComponent(rbCSV))
+                        .addGap(70, 70, 70)
+                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel10Layout.createSequentialGroup()
+                                .addComponent(ckWriteAll)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btnCalcRanges)
+                                .addGap(18, 18, 18)
+                                .addComponent(btnWrite))
+                            .addGroup(jPanel10Layout.createSequentialGroup()
+                                .addComponent(ckPrePostAA)
+                                .addGap(0, 0, Short.MAX_VALUE)))))
                 .addGap(23, 23, 23))
         );
         jPanel10Layout.setVerticalGroup(
@@ -2386,7 +2586,9 @@ public class FDRGUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(rbCSV)
-                    .addComponent(btnWrite))
+                    .addComponent(btnWrite)
+                    .addComponent(btnCalcRanges)
+                    .addComponent(ckWriteAll))
                 .addContainerGap(243, Short.MAX_VALUE))
         );
 
@@ -2485,7 +2687,7 @@ public class FDRGUI extends javax.swing.JFrame {
                                     .addComponent(txtmzIdentOwnerEmail)
                                     .addComponent(txtmzIdentOwnerOrg)
                                     .addComponent(cmbPeakListFormat, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 350, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 365, Short.MAX_VALUE)
                                 .addComponent(btnWriteMzIdentML)))))
                 .addContainerGap())
         );
@@ -2540,7 +2742,7 @@ public class FDRGUI extends javax.swing.JFrame {
         pPeakListLookupLayout.setHorizontalGroup(
             pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pPeakListLookupLayout.createSequentialGroup()
-                .addContainerGap(805, Short.MAX_VALUE)
+                .addContainerGap(802, Short.MAX_VALUE)
                 .addComponent(btnPeakListParse)
                 .addContainerGap())
             .addGroup(pPeakListLookupLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2563,7 +2765,6 @@ public class FDRGUI extends javax.swing.JFrame {
         );
 
         tpResult.addTab("PeakListLookup", pPeakListLookup);
-        tpResult.addTab("To Database", writeDB);
 
         javax.swing.GroupLayout pResultLayout = new javax.swing.GroupLayout(pResult);
         pResult.setLayout(pResultLayout);
@@ -2687,7 +2888,6 @@ public class FDRGUI extends javax.swing.JFrame {
         jScrollPane6.setViewportView(jTabbedPane1);
 
         jSplitPane1.setDividerLocation(600);
-        jSplitPane1.setDividerSize(5);
 
         txtStatus.setEditable(false);
         txtStatus.setText("status");
@@ -2750,11 +2950,11 @@ public class FDRGUI extends javax.swing.JFrame {
 
     private void btnWriteMzIdentMLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnWriteMzIdentMLActionPerformed
         exportMZIdentML();
-        LocalProperties.setProperty("mzIdenMLOwnerFirst", txtmzIdentOwnerFirst.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerLast", txtmzIdentOwnerLast.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerEmail", txtmzIdentOwnerEmail.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerAddress", txtmzIdentAdress.getText());
-        LocalProperties.setProperty("mzIdenMLOwnerOrg", txtmzIdentOwnerOrg.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyFirst, txtmzIdentOwnerFirst.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyLast, txtmzIdentOwnerLast.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyEMail, txtmzIdentOwnerEmail.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyAddress, txtmzIdentAdress.getText());
+        LocalProperties.setProperty(MZIdentMLOwner.propertyOrg, txtmzIdentOwnerOrg.getText());
 
     }//GEN-LAST:event_btnWriteMzIdentMLActionPerformed
 
@@ -2946,6 +3146,15 @@ public class FDRGUI extends javax.swing.JFrame {
         changeFDRSettings(evt);
     }//GEN-LAST:event_rbFDRMediumActionPerformed
 
+    private void btnCalcRangesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCalcRangesActionPerformed
+        if (fbFolder.getFile() != null) {
+            CalculateRanges cr = new CalculateRanges(this);
+            cr.setVisible(true);
+        } else {
+            setStatus("No output file defined");
+        }
+    }//GEN-LAST:event_btnCalcRangesActionPerformed
+
 //    private void fdrSpinnerMaximumCheck(JSpinner sp, double max) {                                   
 //        SpinnerModel sm = sp.getModel();
 //        Double fdr = (Double) sm.getValue();
@@ -3000,6 +3209,7 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.ButtonGroup bgFDRSettingType;
     private javax.swing.ButtonGroup bgScoreDirectionMzIdentML;
     private javax.swing.ButtonGroup bgSeparator;
+    private javax.swing.JButton btnCalcRanges;
     private javax.swing.JButton btnLinkInfo;
     private javax.swing.JButton btnPPIInfo;
     private javax.swing.JButton btnPSMInfo;
@@ -3021,7 +3231,9 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox ckDefineGroups;
     private javax.swing.JCheckBox ckGroupByCrossLinkerStubs;
     private javax.swing.JCheckBox ckIgnoreGroups1;
+    private javax.swing.JCheckBox ckPassThresholdOnly;
     public javax.swing.JCheckBox ckPrePostAA;
+    private javax.swing.JCheckBox ckWriteAll;
     protected javax.swing.JComboBox<String> cmbMzMLScan2ID;
     public javax.swing.JComboBox cmbPeakListFormat;
     protected org.rappsilber.fdr.gui.components.CSVSelection csvSelect;
@@ -3031,9 +3243,9 @@ public class FDRGUI extends javax.swing.JFrame {
     private org.rappsilber.gui.components.FileBrowser fbFolder;
     private org.rappsilber.gui.components.FileBrowser fbMZIdentMLIn;
     private org.rappsilber.gui.components.FileBrowser fbMzIdentMLOut;
-    private org.rappsilber.fdr.gui.components.FDRSettingsComplete fdrSettingsComplete;
-    private org.rappsilber.fdr.gui.components.FDRSettingsMedium fdrSettingsMedium;
-    private org.rappsilber.fdr.gui.components.FDRSettingsSimple fdrSettingsSimple;
+    private org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete fdrSettingsComplete;
+    private org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium fdrSettingsMedium;
+    private org.rappsilber.fdr.gui.components.settings.FDRSettingsSimple fdrSettingsSimple;
     private org.rappsilber.gui.components.FileList flPeakLists;
     private org.rappsilber.fdr.gui.components.GetDBFDR getDBFDR;
     private javax.swing.JLabel jLabel1;
@@ -3127,19 +3339,19 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTextArea txtLog;
     private javax.swing.JTextField txtStatus;
     private javax.swing.JTextField txtSumInput;
-    private javax.swing.JTextField txtSumLinks;
-    private javax.swing.JTextField txtSumLinksBetween;
-    private javax.swing.JTextField txtSumLinksInternal;
-    private javax.swing.JTextField txtSumPSM;
-    private javax.swing.JTextField txtSumPSMLinear;
-    private javax.swing.JTextField txtSumPSMXL;
-    private javax.swing.JTextField txtSumPepPairs;
-    private javax.swing.JTextField txtSumPepPairsLinear;
-    private javax.swing.JTextField txtSumPepPairsXL;
-    private javax.swing.JTextField txtSumProtGroupPairs;
-    private javax.swing.JTextField txtSumProtGroupPairsBetween;
-    private javax.swing.JTextField txtSumProtGroupPairsInternal;
-    private javax.swing.JTextField txtSumProtGroups;
+    public javax.swing.JTextField txtSumLinks;
+    public javax.swing.JTextField txtSumLinksBetween;
+    public javax.swing.JTextField txtSumLinksInternal;
+    public javax.swing.JTextField txtSumPSM;
+    public javax.swing.JTextField txtSumPSMLinear;
+    public javax.swing.JTextField txtSumPSMXL;
+    public javax.swing.JTextField txtSumPepPairs;
+    public javax.swing.JTextField txtSumPepPairsLinear;
+    public javax.swing.JTextField txtSumPepPairsXL;
+    public javax.swing.JTextField txtSumProtGroupPairs;
+    public javax.swing.JTextField txtSumProtGroupPairsBetween;
+    public javax.swing.JTextField txtSumProtGroupPairsInternal;
+    public javax.swing.JTextField txtSumProtGroups;
     private javax.swing.JTextField txtXiFDRVersion;
     private javax.swing.JTextArea txtchangelog;
     private javax.swing.JTextArea txtmzIdentAdress;
@@ -3147,6 +3359,50 @@ public class FDRGUI extends javax.swing.JFrame {
     private javax.swing.JTextField txtmzIdentOwnerFirst;
     private javax.swing.JTextField txtmzIdentOwnerLast;
     private javax.swing.JTextField txtmzIdentOwnerOrg;
-    private org.rappsilber.fdr.gui.components.WriteToDB writeDB;
+    public org.rappsilber.fdr.gui.components.WriteToDB writeDB;
+    public org.rappsilber.fdr.gui.components.WriteToDBXi2 writeToDBXi2;
     // End of variables declaration//GEN-END:variables
+
+    /**
+     * @return the fdrSettings
+     */
+    public FDRSettingsPanel getFdrSettings() {
+        return fdrSettings;
+    }
+
+    /**
+     * @param fdrSettings the fdrSettings to set
+     */
+    public void setFdrSettings(FDRSettingsPanel fdrSettings) {
+        this.fdrSettings = fdrSettings;
+    }
+
+    /**
+     * @return the csvout
+     */
+    public XiFDRUtils.FDRCSVOUT getCsvOut() {
+        return csvout;
+    }
+
+    /**
+     * @param csvout the csvout to set
+     */
+    public void setCsvOut(XiFDRUtils.FDRCSVOUT csvout) {
+        this.csvout = csvout;
+    }
+
+    /**
+     * @return the fdrSettingsComplete
+     */
+    public org.rappsilber.fdr.gui.components.settings.FDRSettingsComplete getFdrSettingsComplete() {
+        return fdrSettingsComplete;
+    }
+
+    /**
+     * @return the fdrSettingsComplete
+     */
+    public org.rappsilber.fdr.gui.components.settings.FDRSettingsMedium getFdrSettingsMedium() {
+        return fdrSettingsMedium;
+    }
+
 }

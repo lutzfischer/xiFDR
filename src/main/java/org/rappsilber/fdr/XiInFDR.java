@@ -7,7 +7,10 @@ package org.rappsilber.fdr;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import org.rappsilber.fdr.dataimport.Xi2Xi1Config;
 import org.rappsilber.utils.IntArrayList;
+import org.rappsilber.utils.Version;
 import rappsilber.config.DBRunConfig;
 import rappsilber.config.RunConfig;
 
@@ -16,16 +19,24 @@ import rappsilber.config.RunConfig;
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
 public interface XiInFDR {
-
+    int getxiMajorVersion();
+    
     /**
      * @return the m_conf
      */
     RunConfig getConfig();
 
-    RunConfig getConfig(int searchid);
+    HashMap<String,? extends RunConfig> getConfigs();
+    
+    RunConfig getConfig(String searchid);
+    
+    Version getXiVersion();
+    
+    Version getXiVersion(String searchid);
+    HashMap<String,Version> getXiVersions();
 
-    public IntArrayList getSearchIDs();
+    public ArrayList<String> getSearchIDs();
 
 
-    int getFastas(int searchID, ArrayList<Integer> dbIDs, ArrayList<String> names);
+    int getFastas(String searchID, ArrayList<String> dbIDs, ArrayList<String> names);
 }

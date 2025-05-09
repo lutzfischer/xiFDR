@@ -5,7 +5,6 @@
  */
 package org.rappsilber.fdr.utils;
 
-import org.rappsilber.fdr.entities.DBPSM;
 import org.rappsilber.fdr.entities.PSM;
 
 /**
@@ -13,5 +12,5 @@ import org.rappsilber.fdr.entities.PSM;
  * @author Lutz Fischer <lfischer@staffmail.ed.ac.uk>
  */
 public interface PSMToMzIdentScanId {
-    String getID(DBPSM psm);
+    String getID(PSM psm);
 }

@@ -17,7 +17,9 @@ package org.rappsilber.fdr.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.TreeSet;
 import org.rappsilber.fdr.utils.FDRGroupNames;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
@@ -37,9 +39,17 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
     
     protected int proteinGroupPairID = PROTEINGROUPPAIRCOUNT++;
     private HashSet<ProteinGroupLink> links = new HashSet<ProteinGroupLink>();
+    private TreeSet<ProteinGroupLink> sortedLinks = new TreeSet<>(new Comparator<ProteinGroupLink>() {
+        @Override
+        public int compare(ProteinGroupLink o1, ProteinGroupLink o2) {
+            return Double.compare(o2.getScore(), o1.getScore());
+        }
+    });
     private ProteinGroup protein1;
     private ProteinGroup protein2;
     private double score;
+    private Double scoreTopN;
+    private int lastTopN = 0;
     int hashcode;
     /** first peptide comes from a decoy sequence */
     private boolean isDecoy1;
@@ -86,7 +96,7 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
 
     public void setFDRGroup() {
         if (protein1 == protein2 || protein1.hasOverlap(protein2))
-            fdrGroup = "Internal";
+            fdrGroup = "Self";
         else 
             fdrGroup = "Between";
 
@@ -116,6 +126,7 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         isNonCovalent = l.isNonCovalent();
         this.m_positiveGroups = l.getPositiveGrouping();
         this.m_negativeGroups = l.getNegativeGrouping();
+        this.sortedLinks.add(l);
     }
 
     @Override
@@ -151,8 +162,9 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         if (pp == this)
             return;
         this.links.addAll(pp.links);
+        this.sortedLinks.addAll(pp.links);
         this.score = Math.sqrt(this.score * this.score + pp.score * pp.score);
-        
+        this.lastTopN=0;
         addFDRGroups(pp);
         
     }
@@ -185,6 +197,30 @@ public class ProteinGroupPair extends AbstractFDRElement<ProteinGroupPair> { //i
         return score;
     }
 
+    /**
+     * @return the score
+     */
+    public void setScore(double score) {
+        this.score = score;
+    }
+    
+    /**
+     * @return the score
+     */
+    public double getScore(int topN) {
+        if (topN == this.lastTopN)
+            return this.scoreTopN;
+        int i=0;
+        for (ProteinGroupLink l : this.sortedLinks) {
+            if (i++>topN)
+                break;
+            score+= l.getScore()*l.getScore();
+        }
+        this.lastTopN = topN;
+        this.score=Math.sqrt(score);
+        return this.score;
+    }
+    
 //    /**
 //     * @return the fdrGroup
 //     */

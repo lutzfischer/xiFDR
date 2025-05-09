@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -50,6 +52,8 @@ import org.rappsilber.data.csv.ColumnAlternatives;
 import org.rappsilber.data.csv.condition.CsvCondition;
 import org.rappsilber.data.csv.gui.filter.ConditionList;
 import org.rappsilber.fdr.CSVinFDR;
+import org.rappsilber.fdr.OfflineFDR;
+import org.rappsilber.utils.Version;
 
 /**
  *
@@ -133,7 +137,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         }
     }
     
-    
+    public OfflineFDR.Normalisation doNormalize() {
+        return cbNormalize.getItemAt(cbNormalize.getSelectedIndex());
+    }
     /**
      * Creates new form CSVSelection
      */
@@ -159,53 +165,52 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         cbCSVHeaders.setModel(new DefaultComboBoxModel(csvColumns));
         cbCSVHeaderOptional.setModel(new DefaultComboBoxModel(csvColumnsOptional));
 
-        TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(3);
-        columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
-        resetColumnMappings();
         //spAdditional.setVisible(false);
         
         tblCSVColumns.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {"run",  new Boolean(true), "raw file name that the spectrum derived from", ""},
-                {"scan",  new Boolean(true), "scan number within that run", null},
-                {"psmid",  new Boolean(true), "a unique ID for the PSM - if not given will be defined based on run and scan", null},
-                {"peak list file",  new Boolean(true), "the name of the actual peak file containing the spectrum (needed for mzML export)", null},
-                {"peak list index",  new Boolean(true), "an index for the spectrum within the file(needed for mzML export)", null},
-                {"rank",  new Boolean(true), "The rank of the PSM (e.g. 1=best match for a spectrum ;2 second best ...)", null},
+                {"run",  Boolean.TRUE, "raw file name that the spectrum derived from", ""},
+                {"scan",  Boolean.TRUE, "scan number within that run", null},
+                {"psmid",  Boolean.TRUE, "a unique ID for the PSM - if not given will be defined based on run and scan", null},
+                {"peak list file",  Boolean.TRUE, "the name of the actual peak file containing the spectrum (needed for mzML export)", null},
+                {"peak list index",  Boolean.TRUE, "an index for the spectrum within the file(needed for mzML export)", null},
+                {"rank",  Boolean.TRUE, "The rank of the PSM (e.g. 1=best match for a spectrum ;2 second best ...)", null},
                 {"peptide1", null, "sequence of the first peptide", null},
                 {"peptide2", null, "sequence of the second peptide", null},
-                {"peptide length 1",  new Boolean(true), "length (in amino acids) of the first peptide", null},
-                {"peptide length 2",  new Boolean(true), "length (in amino acids) of the second peptide", null},
+                {"peptide length 1",  Boolean.TRUE, "length (in amino acids) of the first peptide", null},
+                {"peptide length 2",  Boolean.TRUE, "length (in amino acids) of the second peptide", null},
                 {"peptide link 1", null, "which residue of the first peptide does the cross-linker attach to", null},
                 {"peptide link 2", null, "which residue of the second peptide does the cross-linker attach to", null},
                 {"is decoy 1", null, "is the first peptide from the decoy database", null},
                 {"is decoy 2", null, "is the second peptide from the decoy database", null},
                 {"precursor charge", null, "charge state of the precursor ion", null},
-                {"score",  new Boolean(true), "score of the spectrum match", null},
-                {"score ratio",  new Boolean(true), "if there is a joined score given for the match how to separate the score for cases where each peptide individually has to be considered (only affects protein fdr)", null},
-                {"peptide1 score",  new Boolean(true), "a score for the first peptide", null},
-                {"peptide2 score",  new Boolean(true), "a score for the second peptide", null},
+                {"score",  Boolean.TRUE, "score of the spectrum match", null},
+                {"score ratio",  Boolean.TRUE, "if there is a joined score given for the match how to separate the score for cases where each peptide individually has to be considered (only affects protein fdr)", null},
+                {"peptide1 score",  Boolean.TRUE, "a score for the first peptide", null},
+                {"peptide2 score",  Boolean.TRUE, "a score for the second peptide", null},
                 {"accession1", null, "protein accession number(s) for the source of the first peptide", null},
                 {"accession2", null, "protein accession number(s) for the source of the second peptide", null},
-                {"description1",  new Boolean(true), "description of the first protein", null},
-                {"description2",  new Boolean(true), "description of the second protein", null},
+                {"name1",  Boolean.TRUE, "name of the first protein", null},
+                {"name2",  Boolean.TRUE, "name of the second protein", null},
+                {"description1",  Boolean.TRUE, "description of the first protein", null},
+                {"description2",  Boolean.TRUE, "description of the second protein", null},
                 {"peptide position 1", null, "position(s) of the first peptide in the protein(s)", null},
                 {"peptide position 2", null, "position(s) of the second peptide in the protein(s)", null},
-                {"crosslinker",  new Boolean(true), "name of the cross-linker involved in this PSM", null},
-                {"crossLinkerModMass",  new Boolean(true), "mass difference between the sum of the non-cross-linked peptides and teh cross-linked peptides", null},
-                {"experimental mz",  new Boolean(true), "experimental precursor M/Z", null},
-                {"calculated mass",  new Boolean(true), "calculated mass of the precursor", null},
-                {"negative grouping",  new Boolean(true), "if some matches have an inherently higher chance to be false positive then they can be flaged here", null},
-                {"positive grouping",  new Boolean(true), "if some matches have an inherently lower chance to be false positive then they can be flaged here", null},
-                {"info",  new Boolean(true), "arbitrary info field to be forwarded to the results table", null},
-                {"delta score",  new Boolean(true), "the delta score of the match", null},
-                {"peptide coverage1",  new Boolean(true), "how well is peptide explained", null},
-                {"peptide coverage2",  new Boolean(true), "how well is peptide 2 explained", null},
-                {"minimum peptide coverage",  new Boolean(true), "how well is the wors explained peptide explained", null},
-                {"peptide1 fragments",  new Boolean(true), "How many fragments where assigned to peptide 1", null},
-                {"peptide2 fragments",  new Boolean(true), "How many fragments where assigned to peptide 2", null},
-                {"peptides with stubs",  new Boolean(true), "For how many peptides was an cross-linker stub identified", null},
-                {"peptides with doublets",  new Boolean(true), "For how many peptides was an doublet of cross-linker stubs identified", null}
+                {"crosslinker",  Boolean.TRUE, "name of the cross-linker involved in this PSM", null},
+                {"crossLinkerModMass",  Boolean.TRUE, "mass difference between the sum of the non-cross-linked peptides and teh cross-linked peptides", null},
+                {"experimental mz",  Boolean.TRUE, "experimental precursor M/Z", null},
+                {"calculated mass",  Boolean.TRUE, "calculated mass of the precursor", null},
+                {"negative grouping",  Boolean.TRUE, "if some matches have an inherently higher chance to be false positive then they can be flaged here", null},
+                {"positive grouping",  Boolean.TRUE, "if some matches have an inherently lower chance to be false positive then they can be flaged here", null},
+                {"info",  Boolean.TRUE, "arbitrary info field to be forwarded to the results table", null},
+                {"delta score",  Boolean.TRUE, "the delta score of the match", null},
+                {"peptide coverage1",  Boolean.TRUE, "how well is peptide explained", null},
+                {"peptide coverage2",  Boolean.TRUE, "how well is peptide 2 explained", null},
+                {"minimum peptide coverage",  Boolean.TRUE, "how well is the wors explained peptide explained", null},
+                {"peptide1 fragments",  Boolean.TRUE, "How many fragments where assigned to peptide 1", null},
+                {"peptide2 fragments",  Boolean.TRUE, "How many fragments where assigned to peptide 2", null},
+                {"peptides with stubs",  Boolean.TRUE, "For how many peptides was an cross-linker stub identified", null},
+                {"peptides with doublets",  Boolean.TRUE, "For how many peptides was an doublet of cross-linker stubs identified", null}
             },
             new String [] {
                 "Column", "Optional", "Description", "Name in CSV"
@@ -226,6 +231,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 return canEdit [columnIndex];
             }
         });        
+        TableColumn columnNamesColumn = tblCSVColumns.getColumnModel().getColumn(3);
+        columnNamesColumn.setCellEditor(new NeededOptionalComboBoxCellEditor(cbCSVHeaders, cbCSVHeaderOptional));
+        resetColumnMappings();
+
+        
     }
 
     public void resetColumnMappings() {
@@ -236,6 +246,60 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
             } else {
                 tblCSVColumns.getModel().setValueAt(missingColumn, r, 3);
             }
+        }
+    }
+    
+    public void guessXiVersion() {
+        Pattern p = Pattern.compile(".*(?:xi|xisearch)[\\-_]?([0-9]\\.[0-9]+.*).(?:csv|tsv|txt)(?:.gz)?$", Pattern.CASE_INSENSITIVE);
+        File[] files  =  fbCsvIn.getFiles();
+        Matcher m = p.matcher(files[0].getName());
+        Version v = null;
+        if (m.matches()) {
+            try {
+                v = new Version(m.group(1));
+                if (txtXiVersion.getText().trim().length()>0 && new Version(txtXiVersion.getText().trim()).compareTo(v) != 0) {
+                    txtXiVersion.setText("");
+                    return;
+                }
+            } catch (Exception e) {
+                txtXiVersion.setText("");
+                return;
+            }
+        }
+        if (files.length>1 && v != null) {
+            for (int f=1; f<files.length; f++) {
+                m = p.matcher(files[f].getName());
+                if (m.matches()) {
+                    try {
+                        Version v2 = new Version(m.group(1));
+                        if (v2.compareTo(v) != 0) {
+                            v = null;
+                            break;
+                        }
+                    } catch (Exception e) {
+                        v = null;
+                        break;
+                    }
+                } else {
+                    v = null;
+                    break;
+                }
+                
+            }
+        }
+        if (v!=null)
+            txtXiVersion.setText(v.toString());
+    }
+    
+    public Version getXiVersion(){
+        if (txtXiVersion.getText().trim().length() > 0)
+            return new Version(txtXiVersion.getText());
+        return null;
+    }
+    
+    public void setXiVersion(String xiVersion) {
+        if (xiVersion != null && xiVersion.trim().length()>0) {
+            txtXiVersion.setText(xiVersion);
         }
     }
 
@@ -259,6 +323,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 cbCSVQuote.setSelectedItem(csv.getQuote());
                 csv.close();
                 readColumns();
+                guessXiVersion();
 
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
@@ -354,6 +419,14 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     public File[] getFiles() {
         return fbCsvIn.getFiles();
     }
+    
+    public String getForwardPattern() {
+        if (!txtForwardColumns.getText().trim().isEmpty()) {
+            return txtForwardColumns.getText().trim();
+        } else {
+            return null;
+        }
+    }
 
     public void doActionPerformed() {
         ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "file selected",Calendar.getInstance().getTimeInMillis(), 0);
@@ -417,13 +490,15 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     
     public CsvParser getCsv() throws IOException {
         final TableModel tm = tblCSVColumns.getModel();
-
+        HashMap<String,String> file2Expected = new HashMap();
         CsvParser csv = new CsvParser();
         for (int r = 0; r < tm.getRowCount(); r++) {
             if (tm.getValueAt(r, 3) != missingColumn) {
+                file2Expected.put(tm.getValueAt(r, 3).toString(), tm.getValueAt(r, 0).toString());
                 csv.setAlternative(tm.getValueAt(r, 3).toString(), tm.getValueAt(r, 0).toString());
             }
         }
+        csv.renameHeader(file2Expected);
         String delimiter = getDelimiter();
         csv.setDelimiter(delimiter.charAt(0));
         csv.setQuote(getQuote());
@@ -509,7 +584,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         return null;
     }
     
-    public void setEnable(boolean enabled) {
+    public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         btnReadCsv.setEnabled(enabled);
     }
@@ -528,6 +603,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     
     public void setInputFile(String path) {
         fbCsvIn.setFile(path);
+        testInputFile();
+        ckFilter.setEnabled(true);
         
     }
 
@@ -574,10 +651,18 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         jLabel13 = new javax.swing.JLabel();
         fbFastaIn = new org.rappsilber.gui.components.FileBrowser();
         ckCSVMarkModifications = new javax.swing.JCheckBox();
+        txtForwardColumns = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        cbNormalize = new javax.swing.JComboBox<>();
+        txtXiVersion = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
         ckFilter = new javax.swing.JCheckBox();
         btnFilter = new javax.swing.JButton();
         localPicker1 = new org.rappsilber.gui.components.LocalPicker();
         jLabel28 = new javax.swing.JLabel();
+        txtDecoyPrefix = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
 
         cbCSVHeaders.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
@@ -707,7 +792,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
             }
         });
 
-        ckSmartMatch.setText("intelligent column matching");
+        ckSmartMatch.setText("tolerant column matching");
         ckSmartMatch.setToolTipText("Needs Manual control:tries to select the best header by string distance");
         ckSmartMatch.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -718,9 +803,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         pXiConfig.setPreferredSize(new java.awt.Dimension(300, 107));
 
         fbConfigIn.setDescription("Xi-Config");
-        fbConfigIn.setExtensions(new String[] {"config", "conf"});
+        fbConfigIn.setExtensions(new String[] {"config", "conf", "json"});
 
-        jLabel12.setText("XiConfig");
+        jLabel12.setText("xi Config");
 
         jLabel13.setText("FASTA");
 
@@ -728,6 +813,19 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         fbFastaIn.setExtensions(new String[] {"fasta", "txt"});
 
         ckCSVMarkModifications.setText("Flag Modifications");
+
+        txtForwardColumns.setToolTipText("A Regular Expression defining what addtional columns should be forwarded to the PSM-file");
+
+        jLabel1.setText("Forward Columns");
+
+        jLabel2.setText("Normalize");
+
+        cbNormalize.setModel(new DefaultComboBoxModel<OfflineFDR.Normalisation>(OfflineFDR.Normalisation.values()));
+        cbNormalize.setToolTipText("How to normalize the input data");
+
+        txtXiVersion.setToolTipText("xi version to be written into the mzIdentML file");
+
+        jLabel4.setText("xi Version");
 
         javax.swing.GroupLayout pXiConfigLayout = new javax.swing.GroupLayout(pXiConfig);
         pXiConfig.setLayout(pXiConfigLayout);
@@ -742,9 +840,21 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pXiConfigLayout.createSequentialGroup()
                         .addComponent(ckCSVMarkModifications, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 522, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(cbNormalize, 0, 209, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtForwardColumns, javax.swing.GroupLayout.DEFAULT_SIZE, 128, Short.MAX_VALUE))
                     .addComponent(fbFastaIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(fbConfigIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(pXiConfigLayout.createSequentialGroup()
+                        .addComponent(fbConfigIn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtXiVersion, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         pXiConfigLayout.setVerticalGroup(
@@ -753,13 +863,20 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                 .addContainerGap()
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(fbConfigIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel12))
+                    .addComponent(jLabel12)
+                    .addComponent(txtXiVersion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(fbFastaIn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel13))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(ckCSVMarkModifications)
+                .addGroup(pXiConfigLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(ckCSVMarkModifications)
+                    .addComponent(txtForwardColumns, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1)
+                    .addComponent(cbNormalize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -790,6 +907,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
 
         jLabel28.setText("Language");
 
+        txtDecoyPrefix.setText("auto");
+        txtDecoyPrefix.setToolTipText("<html><body><p>In order to accurately match decoy proteins to their corresponding target proteins, <br/>it's important to remove any prefix included in the accession numbers for the decoys.<br/> \nFailing to do so can prevent proper assignment of target-decoy matches as self-links, resulting in false FDR estimates.\u0000<br/></p><p>\nBy default REV_, REVERSE_, DECOY_, DECOY:, RANDOM_, and RAN_ are recognised.</p></body></html>");
+
+        jLabel3.setText("decoy prefix:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -816,7 +938,11 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(ckSmartMatch, javax.swing.GroupLayout.PREFERRED_SIZE, 229, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(ckSmartMatch)
+                                .addGap(18, 18, 18)
+                                .addComponent(jLabel3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtDecoyPrefix, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel27)
@@ -825,7 +951,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel28)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(localPicker1, javax.swing.GroupLayout.DEFAULT_SIZE, 91, Short.MAX_VALUE)))
+                                .addComponent(localPicker1, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(rbCSVHighBetter)
@@ -875,7 +1001,9 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
                     .addComponent(ckFilter)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(rbCSVLowBetter)
-                        .addComponent(ckSmartMatch)))
+                        .addComponent(ckSmartMatch)
+                        .addComponent(txtDecoyPrefix, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel3)))
                 .addGap(18, 18, 18)
                 .addComponent(spAdditional, javax.swing.GroupLayout.DEFAULT_SIZE, 105, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -979,6 +1107,14 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
         }
         return true;
     }
+    
+    public String getDecoyPrefix() {
+        String prefix = txtDecoyPrefix.getText();
+        if (prefix != null && prefix.trim().toLowerCase().contentEquals("auto")) {
+            prefix = null;
+        }
+        return prefix;
+    }
 
     private void btnAddCSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddCSVActionPerformed
             if (!testInput()) return;
@@ -1023,6 +1159,7 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JComboBox cbCSVHeaderOptional;
     private javax.swing.JComboBox cbCSVHeaders;
     private javax.swing.JComboBox cbCSVQuote;
+    private javax.swing.JComboBox<OfflineFDR.Normalisation> cbNormalize;
     private javax.swing.JCheckBox ckCSVHasHeader;
     public javax.swing.JCheckBox ckCSVMarkModifications;
     private javax.swing.JCheckBox ckFilter;
@@ -1031,12 +1168,16 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private org.rappsilber.gui.components.FileBrowser fbCsvIn;
     public org.rappsilber.gui.components.FileBrowser fbFastaIn;
     private org.rappsilber.data.csv.gui.filter.ConditionList filter;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
     private javax.swing.JLabel jLabel28;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JScrollPane jScrollPane2;
     private org.rappsilber.gui.components.LocalPicker localPicker1;
     private javax.swing.JPanel pAdditional;
@@ -1045,5 +1186,8 @@ public class CSVSelection extends javax.swing.JPanel implements Iterable<CsvPars
     private javax.swing.JRadioButton rbCSVLowBetter;
     public javax.swing.JScrollPane spAdditional;
     public javax.swing.JTable tblCSVColumns;
+    private javax.swing.JTextField txtDecoyPrefix;
+    private javax.swing.JTextField txtForwardColumns;
+    private javax.swing.JTextField txtXiVersion;
     // End of variables declaration//GEN-END:variables
 }

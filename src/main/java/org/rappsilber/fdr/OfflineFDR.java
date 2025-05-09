@@ -18,20 +18,27 @@ package org.rappsilber.fdr;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.RandomAccess;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.rappsilber.data.csv.CSVRandomAccess;
+import org.rappsilber.fdr.calculation.CheckValid;
+import org.rappsilber.fdr.calculation.FDR;
+import org.rappsilber.fdr.calculation.FDRImplement;
+import org.rappsilber.fdr.calculation.ValidityCheckImplement;
 import org.rappsilber.fdr.entities.DirectionalPeptidePair;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.Peptide;
@@ -51,7 +58,9 @@ import org.rappsilber.fdr.result.SubGroupFdrInfo;
 import org.rappsilber.fdr.entities.AbstractFDRElement;
 import org.rappsilber.fdr.entities.FDRSelfAdd;
 import org.rappsilber.fdr.filter.DeltaScorePercentFilter;
+import org.rappsilber.fdr.utils.CalculateWriteUpdate;
 import org.rappsilber.fdr.utils.HashedArrayList;
+import org.rappsilber.fdr.utils.MZIdentMLOwner;
 import org.rappsilber.fdr.utils.MaximisingStatus;
 import org.rappsilber.fdr.utils.MaximizeLevelInfo;
 import org.rappsilber.fdr.utils.MaximizeLevelInfoInteger;
@@ -60,13 +69,13 @@ import org.rappsilber.fdr.utils.MiscUtils;
 import org.rappsilber.utils.AutoIncrementValueMap;
 import org.rappsilber.utils.CountOccurence;
 import org.rappsilber.utils.DoubleArrayList;
-import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 import org.rappsilber.utils.NullOutputStream;
 import org.rappsilber.utils.SelfAddHashSet;
 import org.rappsilber.utils.UpdateableInteger;
 import org.rappsilber.utils.Version;
 import org.rappsilber.utils.statistic.StreamingStatsEstimator;
+import rappsilber.ms.sequence.AminoAcid;
 import rappsilber.utils.MyArrayUtils;
 
 /**
@@ -75,6 +84,9 @@ import rappsilber.utils.MyArrayUtils;
  */
 public abstract class OfflineFDR {
 
+    public static enum Normalisation {
+        None, FDR_Based, Auto_Score, Decoy_Scores, All_Scores
+    }
     /**
      * store all psm
      */
@@ -83,7 +95,7 @@ public abstract class OfflineFDR {
     /**
      * psms that passed some form of prefilter
      */
-    protected ArrayList<PSM> prefilteredPSMs = null;
+    private ArrayList<PSM> prefilteredPSMs = null;
 
     /**
      * store all peptide pairs
@@ -92,7 +104,7 @@ public abstract class OfflineFDR {
     /**
      * store all Proteins
      */
-    SelfAddHashSet<Protein> allProteins = new SelfAddHashSet<Protein>();
+    protected SelfAddHashSet<Protein> allProteins = new SelfAddHashSet<Protein>();
     /**
      * turn peptide-sequences into unique integer ids
      */
@@ -111,12 +123,14 @@ public abstract class OfflineFDR {
      */
     HashMap<String, Integer> protpairToID = new HashMap<>();
 
-    private boolean psm_directional = false;
-    private boolean peptides_directional = false;
-    private boolean links_directional = false;
-    private boolean ppi_directional = false;
+//    private boolean psm_directional = false;
+//    private boolean peptides_directional = false;
+//    private boolean links_directional = false;
+//    private boolean ppi_directional = false;
     protected int m_maximum_summed_peplength = Integer.MAX_VALUE;
-    protected FDRLevel maximizeWhat = null;
+
+    private CheckValid check = new ValidityCheckImplement(0, 2);
+    private FDR calc = new FDRImplement(check);
 
     /**
      * is a higher score better than a lower score?
@@ -159,11 +173,15 @@ public abstract class OfflineFDR {
     public int m_minPepLength = 0;
 
     public int commandlineFDRDigits = 2;
-    private boolean uniquePSMs = true;
     
+    public boolean singleClassFDR = true;
+    
+    /** owner of a (optionally) created MZIdenML files */
+    MZIdentMLOwner mzid_owner  = new MZIdentMLOwner("", "", "", "", "");
+
     /**
-     * do we have PSMs with crosslinker-stubs. 
-     * Basically do we have a ms2 cleavable crosslinker search.
+     * do we have PSMs with crosslinker-stubs. Basically do we have a ms2
+     * cleavable crosslinker search.
      */
     private boolean stubsFound = false;
     /**
@@ -176,34 +194,7 @@ public abstract class OfflineFDR {
     /**
      * indicates, whether the psms went through a score normalisation
      */
-    private boolean isNormalized = false;
-
-    Boolean isNormalizedByDecoy = null;
-    /**
-     * what is the combinatorial limit of ambiguity, that is accepted for a
-     * link.
-     * <br/>0 indicates no limit
-     */
-    protected int m_maximumLinkAmbiguity = 0;
-    /**
-     * If a ProteinGroup contains more then the given number of proteins, then
-     * this group is ignored.
-     * <br/>0 indicates that there is no limit.
-     * <br/>0 indicates no limit
-     */
-    protected int m_maximumProteinAmbiguity = 0;
-    /**
-     * If a ProteinGroupPair spans more then the given number of proteins the
-     * pair is ignored
-     * <br/>0 indicates that there is no limit.
-     * <br/>0 indicates no limit
-     */
-    protected int m_maximumProteinPairAmbiguity = 0;
-
-    /**
-     * group matches by protein pairs
-     */
-    private boolean groupByProteinPair = false;
+    private Normalisation isNormalized = Normalisation.None;
 
     /**
      * how many decoys does a fdr group need to have to be reported as result
@@ -222,22 +213,19 @@ public abstract class OfflineFDR {
      * = B instead of A.equals(B)
      */
     HashMap<String, String> foundRuns = new HashMap<>();
-    HashMap<String, Integer> runToInt = new HashMap<>();
-    ArrayList<String> runs = new ArrayList<>();
-    private Locale outputlocale = Locale.getDefault();
-    private NumberFormat numberFormat = NumberFormat.getNumberInstance(outputlocale);
-//    private String localNumberGroupingSeperator;
-//    private String localNumberDecimalSeparator;
-//    private String quoteDoubles;
+    //HashMap<String, Integer> runToInt = new HashMap<>();
+    //ArrayList<String> runs = new ArrayList<>();
+    protected Locale outputlocale = Locale.getDefault();
+    protected NumberFormat numberFormat = NumberFormat.getNumberInstance(outputlocale);
     private boolean stopMaximizing = false;
 
     private ArrayList<String> extraColumns = new ArrayList<>();
     /**
-     * group between links by both proteins beeing observed with self-links
+     * group between links by both proteins being observed with self-links
      */
     private boolean groupLinksByHasInternal = false;
     /**
-     * group between PPIs by both proteins beeing observed with self-links
+     * group between PPIs by both proteins being observed with self-links
      */
     private boolean groupPPIByHasInternal = false;
     /**
@@ -249,6 +237,8 @@ public abstract class OfflineFDR {
      * group psms-by runs
      */
     private boolean groupPSMsByRun = false;
+    
+    private Charset csvcharset = Charset.forName("UTF-8");
 
     private FDRSettings settings;
 
@@ -256,14 +246,14 @@ public abstract class OfflineFDR {
      * @return the uniquePSMs
      */
     public boolean filterUniquePSMs() {
-        return uniquePSMs;
+        return settings.filterToUniquePSM();
     }
 
     /**
      * @param uniquePSMs the uniquePSMs to set
      */
     public void setFilterUniquePSMs(boolean uniquePSMs) {
-        this.uniquePSMs = uniquePSMs;
+        this.settings.setFilterToUniquePSM(uniquePSMs);
     }
 
 //    protected HashMap<FDRLevel,HashMap<Integer,SubGroupFdrInfo>> GroupedFDRs = new HashMap<FDRLevel, HashMap<Integer, SubGroupFdrInfo>>();
@@ -289,34 +279,88 @@ public abstract class OfflineFDR {
     }
 
     public OfflineFDR() {
-
+        setOutputLocale(outputlocale);
     }
 
     public OfflineFDR(int[] peptideLengthGroups) {
+        this();
         PeptidePair.setLenghtGroup(peptideLengthGroups);
     }
 
-    public void normalizePSMs() {
-        int count = allPSMs.size();
+    public void normalizePSMs(Normalisation how) {
+        switch (how) {
+            case FDR_Based:
+                normalizePSMsToFDR();
+                break;
+            case Auto_Score:
+                normalizePSMs();
+                break;
+            case All_Scores:
+                normalisePSMsAll();
+                break;
+            case Decoy_Scores:
+                normalisePSMsByDecoy();
+                break;
+        }
+    }
+
+    public boolean canDecoyNormlise() {
         int decoy = 0;
+        int count = allPSMs.size();
         for (PSM p : allPSMs) {
             if (p.isDecoy()) {
                 decoy++;
             }
-            if (decoy > count / 5) {
-                normalizePSMsByDecoy();
-                return;
+            if (decoy > count / 5 && decoy > 1000) {
+                return true;
             }
         }
-        normalizePSMsAll();
+        return false;
+
     }
 
-    public void coNormalizePSMs(OfflineFDR newData) {
-        if (!this.isNormalized()) {
-            this.normalizePSMsToFDR();
+    public void normalizePSMs() {
+        if (canDecoyNormlise()) {
+            normalisePSMsByDecoy();
+            this.setNormalised(Normalisation.Decoy_Scores);
+            return;
+        }
+        this.setNormalised(Normalisation.All_Scores);
+        normalisePSMsAll();
+    }
+
+    public void coNormalizePSMs(OfflineFDR newData, Normalisation how) {
+        if (how == Normalisation.Auto_Score) {
+            if (canDecoyNormlise() && newData.canDecoyNormlise()) {
+                how = Normalisation.Decoy_Scores;
+            } else {
+                how = Normalisation.All_Scores;
+            }
+        }
+        if (this.isNormalized() != how) {
+            this.normalizePSMs(how);
         }
 
-        newData.normalizePSMsToFDR();
+        if (newData.isNormalized() != how) {
+            newData.normalizePSMs(how);
+        }
+
+        // if we shift by score we need to adapt the offset
+        if (how == Normalisation.Decoy_Scores || how == Normalisation.All_Scores) {
+            double shift = 0;
+            OfflineFDR toShift = this;
+            if (newData.psmNormOffset < psmNormOffset) {
+                toShift = newData;
+                shift = psmNormOffset - newData.psmNormOffset;
+                newData.psmNormOffset = psmNormOffset;
+            } else {
+                shift = newData.psmNormOffset - psmNormOffset;
+                psmNormOffset = newData.psmNormOffset;
+            }
+            for (PSM psm : toShift.getAllPSMs()) {
+                psm.setScore(psm.getScore() + shift);
+            }
+        }
 
     }
 
@@ -356,81 +400,125 @@ public abstract class OfflineFDR {
         return sse.dumpCSV();
     }
 
+    /**
+     * normalizes scores by FDR. For that we do a linear interpolation between
+     * the FDRs of TD-matches.
+     */
     public void normalizePSMsToFDR() {
         // get all psms
         ArrayList<PSM> scorePSMs = new ArrayList<>(allPSMs);
         scorePSMs.sort(new Comparator<PSM>() {
             @Override
             public int compare(PSM o1, PSM o2) {
-                return Double.compare(o1.getScore(), o2.getScore());
+                return Double.compare(o2.getScore(), o1.getScore());
             }
         });
         int size = scorePSMs.size();
-
+        ArrayList<Double> fdrs = new ArrayList<>();
+        ArrayList<Integer> positions = new ArrayList<>();
+        // only accept unique PSMs
         HashSet<String> keys = new HashSet<>(scorePSMs.size() / 2);
 
-        boolean[] consider = new boolean[size];
-        int tt = 0;
-        int td = 0;
-        int dd = 0;
-        PSM lastTD = scorePSMs.get(size - 1);
-        // do some counts and link the better PSM
-        for (int p = size - 1; p >= 0; p--) {
-            PSM e = scorePSMs.get(p);
-            e.setLowerTD(lastTD);
-            if (!keys.contains(e.getNonDirectionalUnifyingKey())) {
-                keys.add(e.getNonDirectionalUnifyingKey());
-                if (e.isTT()) {
+        double FDR = 0;
+        fdrs.add(0d);
+        positions.add(0);
+        PSM psm = scorePSMs.get(0);
+
+        double tt = (psm.isTT() ? 1 : 0);
+        double td = (psm.isTD() ? 1 : 0);
+        double dd = (psm.isDD() ? 1 : 0);
+
+        int lastPos = 0;
+        for (int p = 1; p < size; p++) {
+            psm = scorePSMs.get(p);
+            // only considere the first encounter of a peptide-pair linksite and charge state combination
+            if (!keys.contains(psm.getNonDirectionalUnifyingKey())) {
+                keys.add(psm.getNonDirectionalUnifyingKey());
+                
+                if (psm.isTT()) {
                     tt++;
-                } else if (e.isTD()) {
+                }
+                
+                if (psm.isTD()) {
                     td++;
-                    lastTD = e;
-                } else {
+                    
+                    // we found a td
+                    if (td < dd) {
+                        FDR = 0;
+                    } else {
+                        FDR = (td - dd) / tt;
+                    }
+                    
+                    // is it lower then a previous FDRs
+                    while (FDR < fdrs.get(fdrs.size() - 1)) {
+                        positions.remove(fdrs.size() - 1);
+                        fdrs.remove(fdrs.size() - 1);
+                    }
+                    psm.setFDR(FDR);
+                    positions.add(p);
+                    fdrs.add(FDR);
+                    lastPos = p;
+                }
+                if (psm.isDD()) {
                     dd++;
                 }
-                consider[p] = true;
-            } else {
-                consider[p] = false;
             }
         }
+        
+        if (lastPos < scorePSMs.size() - 1) {
+            if (td < dd) {
+                FDR = 0;
+            } else {
+                FDR = (td - dd) / tt;
+            }
+            while (FDR < fdrs.get(fdrs.size() - 1)) {
+                positions.remove(fdrs.size() - 1);
+                fdrs.remove(fdrs.size() - 1);
+            }
+            positions.add(scorePSMs.size() - 1);
+            fdrs.add(FDR);
+        }
 
-        double fdr = (td - dd) / (double) tt;
-        lastTD = scorePSMs.get(0);
-        lastTD.setFDR(fdr);
-        // calculate FDR and link the higher
-        for (int p = 0; p < size; p++) {
-            PSM e = scorePSMs.get(p);
-            e.setHigherTD(lastTD);
+        int lowerFDRentry = 0;
+        int higherFDRentry = 1;
+        int lowerFDRpos = positions.get(0);
+        int higherFDRpos = positions.get(1);
 
-            // turn the FDR into a score
-            //e.setScore(10*(1-e.getEstimatedFDR()));
-            if (consider[p]) {
-                keys.add(e.getNonDirectionalUnifyingKey());
-                if (e.isTT()) {
-                    tt--;
-                } else if (e.isTD()) {
-                    e.setFDR(fdr);
-                    td--;
-                    lastTD = e;
-                } else {
-                    dd--;
+        PSM l = scorePSMs.get(0);
+        l.setFDR(0);
+        PSM h = scorePSMs.get(higherFDRpos);
+
+        for (int p = 0; p < scorePSMs.size(); p++) {
+
+            if (p == higherFDRpos) {
+                lowerFDRpos = higherFDRpos;
+                if (p < scorePSMs.size() - 1) {
+                    higherFDRentry++;
+                    higherFDRpos = positions.get(higherFDRentry);
+                    l = h;
+                    h = scorePSMs.get(higherFDRpos);
                 }
             }
-            double newfdr = (td - dd) / (double) tt;
-            if (newfdr < fdr) {
-                fdr = newfdr;
-            }
+
+            PSM e = scorePSMs.get(p);
+
+            e.setLowerFDRTD(l);
+            e.setHigherFDRTD(h);
         }
+        double[] newScores = new double[scorePSMs.size()];
         for (int p = 0; p < size; p++) {
             PSM e = scorePSMs.get(p);
             // turn the FDR into a score
-            e.setScore(10 * (1 - e.getEstimatedFDR()));
+            newScores[p] = 10 * (1 - e.getEstimatedFDR());
+        }
+        for (int p = 0; p < size; p++) {
+            scorePSMs.get(p).setScore(newScores[p]);
         }
 
-        setOveralNormalized();
+        setNormalised(Normalisation.FDR_Based);
     }
 
-    public void normalizePSMsByDecoy() {
+    public void normalisePSMsByDecoy() {
         if (allPSMs.size() == 0) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Supposedly no PSMs here");
         }
@@ -458,10 +546,10 @@ public abstract class OfflineFDR {
             p.setScore((p.getScore() - mode) / mad + offset);
         }
 
-        setDecoyNormalized();
+        setNormalised(Normalisation.Decoy_Scores);
     }
 
-    public void normalizePSMsAll() {
+    public void normalisePSMsAll() {
         if (allPSMs.size() == 0) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Supposedly no PSMs here");
         }
@@ -483,7 +571,7 @@ public abstract class OfflineFDR {
             p.setScore((p.getScore() - mode) / mad + offset);
         }
 
-        setOveralNormalized();
+        setNormalised(Normalisation.All_Scores);
     }
 
     /**
@@ -527,9 +615,26 @@ public abstract class OfflineFDR {
      * @param psms list of psms
      * @param offset the offset applied to this list
      */
-    public void normaliseAndAddPsmList(OfflineFDR other) {
-        coNormalizePSMs(this);
+    public void normaliseAndAddPsmList(OfflineFDR other, Normalisation how) {
+        coNormalizePSMs(other, how);
         allPSMs.addAll(other.allPSMs);
+    }
+
+    public void add(OfflineFDR other) {
+        allPSMs.addAll(other.allPSMs);
+        this.foundRuns.putAll(other.foundRuns);
+        for (String run : other.foundRuns.keySet()) {
+            if (!this.foundRuns.containsKey(run)) {
+                this.foundRuns.put(run, run);
+                //runToInt.put(run, runToInt.size());
+            }
+        }
+        this.foundCrossLinker.putAll(other.foundCrossLinker);
+        if (other.getClass().equals(this.getClass())) {
+            singleClassFDR &=  other.singleClassFDR;
+        } else {
+            this.singleClassFDR = false;
+        }
     }
 
     protected void levelSummary(PrintWriter summaryOut, String pepheader, FDRResultLevel level, String seperator) {
@@ -546,15 +651,15 @@ public abstract class OfflineFDR {
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + (((SubGroupFdrInfo) level.getGroup(fg)).inputCount));
         }
-        summaryOut.print("\n\"TT\"");
+        summaryOut.print("\n\"Input TT\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).TT);
         }
-        summaryOut.print("\n\"TD\"");
+        summaryOut.print("\n\"Input TD\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).TD);
         }
-        summaryOut.print("\n\"DD\"");
+        summaryOut.print("\n\"Input DD\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).DD);
         }
@@ -562,27 +667,23 @@ public abstract class OfflineFDR {
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).results.size());
         }
-        summaryOut.print("\n\"TT\"");
+        summaryOut.print("\n\"FDR TT\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).resultTT);
         }
-        summaryOut.print("\n\"TD\"");
+        summaryOut.print("\n\"FDR TD\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).resultTD);
         }
-        summaryOut.print("\n\"DD\"");
+        summaryOut.print("\n\"FDR DD\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).resultDD);
         }
-        summaryOut.print("\n\"last fdr > " + target_fdr + "\"");
-        for (String fg : fdrGroups) {
-            summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).firstPassingFDR);
-        }
-        summaryOut.print("\n\"higher fdr (> " + target_fdr + ")\"");
+        summaryOut.print("\n\"higher fdr\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).higherFDR);
         }
-        summaryOut.print("\n\"lower fdr (<= " + target_fdr + ")\"");
+        summaryOut.print("\n\"lower fdr\"");
         for (String fg : fdrGroups) {
             summaryOut.print(seperator + ((SubGroupFdrInfo) level.getGroup(fg)).lowerFDR);
         }
@@ -597,56 +698,56 @@ public abstract class OfflineFDR {
      * @return the peptides_directional
      */
     public boolean isPeptides_directional() {
-        return peptides_directional;
+        return settings.isPeptidePairDirectional();
     }
 
     /**
      * @param peptides_directional the peptides_directional to set
      */
     public void setPeptides_directional(boolean peptides_directional) {
-        this.peptides_directional = peptides_directional;
+        settings.setPeptidePairDirectional(peptides_directional);
     }
 
     /**
      * @return the links_directional
      */
     public boolean isLinks_directional() {
-        return links_directional;
+        return settings.isLinkDirectional();
     }
 
     /**
      * @param links_directional the links_directional to set
      */
     public void setLinks_directional(boolean links_directional) {
-        this.links_directional = links_directional;
+        settings.setLinkDirectional(links_directional);
     }
 
     /**
      * @return the ppi_directional
      */
     public boolean isPpi_directional() {
-        return ppi_directional;
+        return settings.isPPIDirectional();
     }
 
     /**
      * @param ppi_directional the ppi_directional to set
      */
     public void setPpi_directional(boolean ppi_directional) {
-        this.ppi_directional = ppi_directional;
+        settings.setPPIDirectional(ppi_directional);
     }
 
     /**
      * @return the psm_directional
      */
     public boolean isPsm_directional() {
-        return psm_directional;
+        return settings.isPSMDirectional();
     }
 
     /**
      * @param psm_directional the psm_directional to set
      */
     public void setPsm_directional(boolean psm_directional) {
-        this.psm_directional = psm_directional;
+        this.settings.setPSMDirectional(psm_directional);
     }
 
     public static String getLongVersionString() {
@@ -729,8 +830,9 @@ public abstract class OfflineFDR {
         //double nScoreRatio = scoreRation;
         double npeptide1Score;
         double npeptide2Score;
-
-        if (protcomp < 0 || (protcomp == 0 && pepcomp < 0) || (protcomp == 0 && pepcomp == 0 && site1 < site2)) {
+        
+        // switching peptides for psms can mess up a lot - so disabled for now
+        //if (protcomp < 0 || (protcomp == 0 && pepcomp < 0) || (protcomp == 0 && pepcomp == 0 && site1 < site2)) {
             npepid1 = peptide1;
             npepid2 = peptide2;
             npeplen1 = peplen1;
@@ -744,26 +846,27 @@ public abstract class OfflineFDR {
             npeptide1Score = peptide1Score;
             npeptide2Score = peptide2Score;
 
-        } else {
-            npepid1 = peptide2;
-            npepid2 = peptide1;
-            npeplen1 = peplen2;
-            npeplen2 = peplen1;
-            nsite1 = site2;
-            nsite2 = site1;
-            nproteinId1 = proteinId2;
-            nproteinId2 = proteinId1;
-            npepPosition1 = pepPosition2;
-            npepPosition2 = pepPosition1;
-            npeptide1Score = peptide2Score;
-            npeptide2Score = peptide1Score;
-        }
+//        } else {
+//            
+//            npepid1 = peptide2;
+//            npepid2 = peptide1;
+//            npeplen1 = peplen2;
+//            npeplen2 = peplen1;
+//            nsite1 = site2;
+//            nsite2 = site1;
+//            nproteinId1 = proteinId2;
+//            nproteinId2 = proteinId1;
+//            npepPosition1 = pepPosition2;
+//            npepPosition2 = pepPosition1;
+//            npeptide1Score = peptide2Score;
+//            npeptide2Score = peptide1Score;
+//        }
 
         if (!PSMScoreHighBetter) {
             score = 10 - (10 * score);
         }
 
-        PSM psm = new PSM(psmID, npepid1, npepid2, (byte) nsite1, (byte) nsite2, nproteinId1.isDecoy(), nproteinId2.isDecoy(), (byte) charge, score, npeptide1Score, npeptide2Score);
+        PSM psm = new PSM(psmID, npepid1, npepid2, (short) nsite1, (short) nsite2, nproteinId1.isDecoy(), nproteinId2.isDecoy(), (byte) charge, score, npeptide1Score, npeptide2Score);
         psm.setNegativeGrouping(isSpecialCase);
 
         psm.setRun(registerRun(run));
@@ -796,31 +899,32 @@ public abstract class OfflineFDR {
         if (r == null) {
             r = run;
             foundRuns.put(run, run);
-            runToInt.put(run, runs.size());
-            runs.add(run);
+            //runToInt.put(run, runs.size());
         }
         return r;
     }
 
     /**
-     * returns if a calculateWrite will only do a single calculation or a range of FDR calculations
-     * @return 
+     * returns if a calculateWrite will only do a single calculation or a range
+     * of FDR calculations
+     *
+     * @return
      */
     public boolean singleCalculation() {
-        return getPsmFDRSetting()[0]==getPsmFDRSetting()[1]   &&
-                getPeptidePairFDRSetting()[0]==getPeptidePairFDRSetting()[1]   &&
-                getProteinGroupFDRSetting()[0]==getProteinGroupFDRSetting()[1]  &&
-                getLinkFDRSetting()[0]==getLinkFDRSetting()[1]  && 
-                getPpiFDRSetting()[0]==getPpiFDRSetting()[1]  ;
-    }
-    
-    
-    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, FDRSettings settings) throws FileNotFoundException {
-        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits, settings);
+        return getPsmFDRSetting()[0] == getPsmFDRSetting()[1]
+                && getPeptidePairFDRSetting()[0] == getPeptidePairFDRSetting()[1]
+                && getProteinGroupFDRSetting()[0] == getProteinGroupFDRSetting()[1]
+                && getLinkFDRSetting()[0] == getLinkFDRSetting()[1]
+                && getPpiFDRSetting()[0] == getPpiFDRSetting()[1];
     }
 
-    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits, FDRSettings settings) throws FileNotFoundException {
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, FDRSettings settings, CalculateWriteUpdate update) throws FileNotFoundException {
+        return calculateWriteFDR(path, baseName, seperator, commandlineFDRDigits, settings, update);
+    }
+
+    public FDRResult calculateWriteFDR(String path, String baseName, String seperator, int minDigits, FDRSettings settings, final CalculateWriteUpdate update) throws FileNotFoundException {
         FDRResult result = null;
+        setSettings(settings);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "PATH: " + path);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "BaseName: " + baseName);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Seperator: " + seperator);
@@ -839,13 +943,16 @@ public abstract class OfflineFDR {
                 for (double pgfdr = Math.round(getProteinGroupFDRSetting()[0] * 1000000); pgfdr <= Math.round(getProteinGroupFDRSetting()[1] * 1000000); pgfdr += Math.round(getProteinGroupFDRSetting()[2] * 1000000)) {
                     for (double pglfdr = Math.round(getLinkFDRSetting()[0] * 1000000); pglfdr <= Math.round(getLinkFDRSetting()[1] * 1000000); pglfdr += Math.round(getLinkFDRSetting()[2] * 1000000)) {
                         for (double pgpfdr = Math.round(getPpiFDRSetting()[0] * 1000000); pgpfdr <= Math.round(getPpiFDRSetting()[1] * 1000000); pgpfdr += Math.round(getPpiFDRSetting()[2] * 1000000)) {
-
+                            if (update.stopped()) {
+                                return result;
+                            }
+                            update.setCurrent(psmfdr / 1000000, pepfdr / 1000000, pgfdr / 1000000, pglfdr / 1000000, pgpfdr / 1000000);
                             String fdr_basename;
                             if (getPsmFDRSetting()[0] == getPsmFDRSetting()[1]
                                     && getPeptidePairFDRSetting()[0] == getPeptidePairFDRSetting()[1]
                                     && getProteinGroupFDRSetting()[0] == getProteinGroupFDRSetting()[1]
                                     && getLinkFDRSetting()[0] == getLinkFDRSetting()[1]
-                                    && getPpiFDRSetting()[0] == getPpiFDRSetting()[0]) {
+                                    && getPpiFDRSetting()[0] == getPpiFDRSetting()[1]) {
                                 fdr_basename = baseName;
 
                             } else {
@@ -873,31 +980,33 @@ public abstract class OfflineFDR {
                                         + "\nIgnore Groups:       " + isIgnoreGroupsSetting());
                                 FDRSettingsImpl s = new FDRSettingsImpl();
                                 s.setAll(settings);
-                                s.BoostingSteps = 4;
+                                //s.BoostingSteps = 4;
                                 s.PSMFDR = psmfdr / 1000000;
                                 s.PeptidePairFDR = pepfdr / 1000000;
                                 s.ProteinGroupFDR = pgfdr / 1000000;
                                 s.ProteinGroupLinkFDR = pglfdr / 1000000;
                                 s.ProteinGroupPairFDR = pgpfdr / 1000000;
-                                if (maximizeWhat == null) {
+                                if (settings.doOptimize() == null) {
                                     result = this.calculateFDR(s, true);
                                 } else {
-
-                                    MaximisingStatus m = this.maximise(s, maximizeWhat, uniquePSMs, new MaximizingUpdate() {
+                                                                     //s, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate
+                                    MaximisingStatus m = this.maximise(s, settings.doOptimize(), s.getBoostBetween(), new MaximizingUpdate() {
                                         @Override
                                         public void setStatus(MaximisingStatus state) {
-
+                                            update.setStatus(state);
                                         }
 
                                         @Override
                                         public void setStatusText(String text) {
+                                            update.setStatusText(text);
                                             System.err.println(text);
                                         }
 
                                         @Override
                                         public void reportError(String text, Exception ex) {
                                             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, text, ex);
-                                            System.exit(-1);
+                                            update.reportError(text, ex);
+                                            return;
                                         }
                                     });
                                     result = m.result;
@@ -909,7 +1018,7 @@ public abstract class OfflineFDR {
 
                                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Result-summary:" + summaryString(result));
 
-                                writeFiles(path, fdr_basename, seperator, result);
+                                writeFiles(path, fdr_basename, seperator, result, false);
                             } else {
                                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, fdr_basename + "skipped");
 
@@ -924,6 +1033,7 @@ public abstract class OfflineFDR {
             }
 
         }
+        update.setComplete();
         return result;
     }
 
@@ -936,15 +1046,16 @@ public abstract class OfflineFDR {
         GroupedFDRsS.isDirectional = false;
         reset();
         result.uniquePSMs = settings.filterToUniquePSM();
+        double minScore = settings.minScore();
 
         protpairToID = new HashMap<>();
         protpairToSize = new HashMap<>();
         Collection<PSM> inputPSM;
         ArrayList<PSM> allPSM = null;
-        if (prefilteredPSMs == null) {
+        if (getPrefilteredPSMs() == null) {
             allPSM = new ArrayList<>(getAllPSMs());
         } else {
-            allPSM = new ArrayList<>(prefilteredPSMs);
+            allPSM = new ArrayList<>(getPrefilteredPSMs());
         }
 
         if (settings.getMinPeptideFragmentsFilter() > 0) {
@@ -968,36 +1079,44 @@ public abstract class OfflineFDR {
             }
         }
 
-        if (m_maximumProteinAmbiguity > 0 && m_minPepLength == 0) {
+        if (settings.getMaxProteinAmbiguity() > 0 && settings.getMinPeptideLength() == 0) {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
-                if (p.getScore() > 0 && p.getPeptide1().getProteins().size() <= m_maximumProteinAmbiguity
-                        && p.getPeptide2().getProteins().size() <= m_maximumProteinAmbiguity) {
+                if (p.getScore() >= minScore && p.getPeptide1().getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && p.getPeptide2().getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && (p.peptidesWithStubs >= settings.getMinPeptideStubFilter())
+                        && (p.peptidesWithDoublets >= settings.getMinPeptideDoubletFilter())
+                        ) {
                     inputPSM.add(p);
                 }
             }
-        } else if (m_maximumProteinAmbiguity > 0 && m_minPepLength > 0) {
+        } else if (settings.getMaxProteinAmbiguity() > 0 && settings.getMinPeptideLength() > 0) {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
                 Peptide pep1 = p.getPeptide1();
                 Peptide pep2 = p.getPeptide2();
 
-                if (p.getScore() > 0 && pep1.getProteins().size() <= m_maximumProteinAmbiguity
-                        && pep2.getProteins().size() <= m_maximumProteinAmbiguity
-                        && (pep1 == Peptide.NOPEPTIDE || pep1.length() >= m_minPepLength || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
-                        && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= m_minPepLength || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
+                if (p.getScore() >= minScore && pep1.getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && pep2.getProteins().size() <= settings.getMaxProteinAmbiguity()
+                        && (p.peptidesWithStubs >= settings.getMinPeptideStubFilter())
+                        && (p.peptidesWithDoublets >= settings.getMinPeptideDoubletFilter())
+                        && (pep1 == Peptide.NOPEPTIDE || pep1.length() >= settings.getMinPeptideLength() || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
+                        && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= settings.getMinPeptideLength() || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
                     inputPSM.add(p);
                 }
             }
-        } else if (m_minPepLength > 0) {
+        } else if (settings.getMinPeptideLength() > 0) {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
-                if (p.getScore() > 0) {
+                if (p.getScore() >= minScore
+                        && (p.peptidesWithStubs >= settings.getMinPeptideStubFilter())
+                        && (p.peptidesWithDoublets >= settings.getMinPeptideDoubletFilter())
+                    ) {
                     Peptide pep1 = p.getPeptide1();
                     Peptide pep2 = p.getPeptide2();
 
-                    if ((pep1 == Peptide.NOPEPTIDE || pep1.length() >= m_minPepLength || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
-                            && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= m_minPepLength || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
+                    if ((pep1 == Peptide.NOPEPTIDE || pep1.length() >= settings.getMinPeptideLength() || (pep1.length() == 1 && pep1.getSequence().startsWith("X")))
+                            && (pep2 == Peptide.NOPEPTIDE || pep2.length() >= settings.getMinPeptideLength() || (pep2.length() == 1 && pep2.getSequence().startsWith("X")))) {
                         inputPSM.add(p);
                     }
                 }
@@ -1005,7 +1124,10 @@ public abstract class OfflineFDR {
         } else {
             inputPSM = new ArrayList<PSM>(allPSM.size());
             for (PSM p : allPSM) {
-                if (p.getScore() > 0) {
+                if (p.getScore() >= minScore
+                        && (p.peptidesWithStubs >= settings.getMinPeptideStubFilter())
+                        && (p.peptidesWithDoublets >= settings.getMinPeptideDoubletFilter())
+                        ) {
                     inputPSM.add(p);
                 }
             }
@@ -1037,35 +1159,44 @@ public abstract class OfflineFDR {
 //            pp.setFDRGroup(pp.getFDRGroup()+" z"+pp.getCharge());
 //        }
         result.input = inputPSM;
-        result.minPeptideLength = m_minPepLength;
-        result.maximumProteinAmbiguity = m_maximumProteinAmbiguity;
-        result.maximumLinkAmbiguity = m_maximumLinkAmbiguity;
+        result.minPeptideLength = settings.getMinPeptideLength();
+        result.maximumProteinAmbiguity = settings.getMaxProteinAmbiguity();
+        result.maximumLinkAmbiguity = settings.getMaxLinkAmbiguity();
 
         if (settings.getGroupByCrosslinkerStubs()) {
             for (PSM p : inputPSM) {
                 int gr = 0;
-                if ((Double)p.getOtherInfo("PeptidesWithStubs") >1)
-                    gr=1;
-                if ((Double)p.getOtherInfo("PeptidesWithDoublets") >0)
+                if (p.peptidesWithStubs > 1) {
+                    gr = 1;
+                }
+                if (p.peptidesWithDoublets > 0) {
                     gr++;
-                if (gr==0) {
-                    p.addNegativeGrouping("low stub support");
-                } else if (gr>1){
+                }
+                if (gr == 0) {
+                    p.addNegativeGrouping("no stub support");
+                } else if (gr > 1) {
                     p.addPositiveGrouping("high stub support");
                 }
             }
         } else {
             for (PSM p : inputPSM) {
-                if (p.getNegativeGrouping()!=null)
-                    p.getNegativeGrouping().remove("low stub support");
-                if (p.getPositiveGrouping()!=null)
+                if (p.getNegativeGrouping() != null) {
+                    p.getNegativeGrouping().remove("no stub support");
+                    if (p.getNegativeGrouping().size() == 0) {
+                        p.setNegativeGrouping(null);
+                    }
+                }
+                if (p.getPositiveGrouping() != null) {
                     p.getPositiveGrouping().remove("high stub support");
+                    if (p.getPositiveGrouping().size() == 0) {
+                        p.setPositiveGrouping(null);
+                    }
+                }
             }
         }
-        
-        fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
-        
-        
+
+        this.calc.fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
+
         if (groupByHasInternal) {
 
             HashSet<ProteinGroup> internal = new HashSet<>();
@@ -1085,17 +1216,16 @@ public abstract class OfflineFDR {
                     pp.setFDRGroup(pp.getFDRGroup() + " int_support");
                 }
             }
-            fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
+            calc.fdr(settings.getPSMFDR(), settings, inputPSM, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.psmLocalFDR(), settings.isGroupByPSMCount());
             GroupedFDRs = GroupedFDRsS;
         }
-        
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
                 result.excludedGroups.add("PSM -> " + rl.fdrGroup + "(" + rl.didntPassCheck + ")");
             }
         }
-        
+
         result.psmFDR = GroupedFDRs;
 
 //        return GroupedFDRs;
@@ -1187,11 +1317,11 @@ public abstract class OfflineFDR {
 
         SelfAddHashSet<PeptidePair> psmPeps = new SelfAddHashSet<PeptidePair>();
         if (!GroupedFDRs.isDirectional) {
-            for (PSM psm : psms) {
-                PeptidePair pp = psmPeps.register(psm.getPeptidePair());
+            for (PSM psm : psms.filteredResults()) {
+                psmPeps.register(psm.getPeptidePair());
             }
         } else {
-            for (PSM psm : psms) {
+            for (PSM psm : psms.filteredResults()) {
                 DirectionalPeptidePair dpp = new DirectionalPeptidePair(psm);
                 psmPeps.register(dpp);
             }
@@ -1216,17 +1346,48 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getPeptidePairFDR(), settings, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.peppairLocalFDR(), settings.isGroupByPSMCount());
+        this.calc.fdr(settings.getPeptidePairFDR(), settings, psmPeps, GroupedFDRs, targetPepDBSize, decoyPepDBSize, 1, ignoreGroups, setElementFDR, settings.peppairLocalFDR(), settings.isGroupByPSMCount());
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
-                result.excludedGroups.add("PeptidePair -> " + rl.fdrGroup+ "(" + rl.didntPassCheck + ")");
+                result.excludedGroups.add("PeptidePair -> " + rl.fdrGroup + "(" + rl.didntPassCheck + ")");
             }
         }
 
         result.peptidePairFDR = GroupedFDRs;
     }
 
+    public HashSet<ProteinGroup> getProteinGroupsWithMISupport(FDRResult result){
+        HashSet<Peptide> var_mod_peps=new HashSet<>();
+        HashSet<AminoAcid> allvarmods = new HashSet<>();
+        Collection<PSM> no_cross_pep = allPSMs;
+        HashSet<ProteinGroup> modSupportedProtGroup = new HashSet<>();
+        ArrayList<PSM> cross_pep = new ArrayList<>();
+        
+        Iterator<String> xlIter = foundCrossLinker.keySet().iterator();
+        
+        
+        for (String xl : foundCrossLinker.keySet()) {
+            if (xl.trim().length()>0) {
+                String xlmod = xl.toLowerCase();
+                ArrayList<PSM> no_cross_pept_current = new ArrayList<>();
+                for (PSM p :no_cross_pep) {
+                    if ((p.isLinear() && p.getPeptide1().getSequence().contains(xlmod)) || p.isInternal()) {
+                        p.setHasXLMods(true);
+                        cross_pep.add(p);
+                        p.getProteinGroup1().setXLModSupport(true);
+                        modSupportedProtGroup.add(p.getProteinGroup1());
+                        modSupportedProtGroup.add(p.getProteinGroup1().decoyComplement());
+                    } else {
+                        no_cross_pept_current.add(p);
+                    }
+                }
+                no_cross_pep = no_cross_pept_current;
+            }
+        }
+        return modSupportedProtGroup;
+    }
+    
     public void calculateProteinGroupFDR(boolean ignoreGroups, boolean setElementFDR, FDRSettings settings, FDRResult result) {
 
         FDRResultLevel<PeptidePair> peps = result.peptidePairFDR;
@@ -1236,6 +1397,7 @@ public abstract class OfflineFDR {
 //        protFDRGroupsInput = new HashMap<Integer, Integer>();
 //        nextFdrProteinGroup = new HashMap<Integer, Double>();
 //        countFdrProteinGroup = new HashMap<Integer, Integer>();
+
         SelfAddHashSet<ProteinGroup> pepProteinGroups = new SelfAddHashSet<ProteinGroup>();
 //        joinSubFDRInfos(GroupedFDRs, true);
 //        SubGroupFdrInfo<PeptidePair> joined = peps.get(-1);
@@ -1243,24 +1405,23 @@ public abstract class OfflineFDR {
 
         int maxAmbiguity = settings.getMaxProteinAmbiguity();
         if (maxAmbiguity == 0) {
-            for (PeptidePair pp : peps) {
+            for (PeptidePair pp : peps.filteredResults()) {
                 Peptide p = pp.getPeptide1();
                 if (p != Peptide.NOPEPTIDE) {
                     ProteinGroup pg = p.getProteinGroup();
-                    pg.addPeptidePair(pp);
-                    pepProteinGroups.register(pg);
+                        pg.addPeptidePair(pp);
+                        pepProteinGroups.register(pg);
                 }
                 p = pp.getPeptide2();
 
                 if (p != Peptide.NOPEPTIDE) {
                     ProteinGroup pg = p.getProteinGroup();
-                    pg.addPeptidePair(pp);
-                    pepProteinGroups.register(pg);
+                        pg.addPeptidePair(pp);
+                        pepProteinGroups.register(pg);
                 }
-
             }
         } else {
-            for (PeptidePair pp : peps) {
+            for (PeptidePair pp : peps.filteredResults()) {
 
                 Peptide p = pp.getPeptide1();
                 if (p != Peptide.NOPEPTIDE) {
@@ -1276,15 +1437,14 @@ public abstract class OfflineFDR {
                     if (pg.size() <= maxAmbiguity) {
                         pg.addPeptidePair(pp);
                         pepProteinGroups.register(pg);
-                    }
+                    } 
                 }
             }
         }
-
-//        double tCountMod = targetProtDBSize;
-//        tCountMod = -0.5 - Math.sqrt(1 + 8 * tCountMod) / 2;
-//        double dCountMod = decoyProtDBSize;
-//        dCountMod = dCountMod / tCountMod;
+        if (settings.filterBySelfAndMono()) {
+            pepProteinGroups.retainAll(getProteinGroupsWithMISupport(result));
+            ignoreGroups = true;
+        }
         for (ProteinGroup pg : pepProteinGroups) {
             fdrgroups.add(pg.getFDRGroup());
         }
@@ -1297,8 +1457,18 @@ public abstract class OfflineFDR {
         if (settings.getMinProteinPepCount() > 1) {
             filterListByPeptideSuport(pepProteinGroups, settings.getMinProteinPepCount());
         }
+        if (settings.getScoreTopNAggregate() != null){
+            Integer topN = settings.getScoreTopNAggregate(); 
+            for (ProteinGroup pg : pepProteinGroups) {
+                pg.setScore(pg.getScore(topN));
+            }
+        }
+        
         //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
-        fdr(settings.getProteinGroupFDR(), settings, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, settings.getMinProteinPepCount(), ignoreGroups, setElementFDR, settings.protLocalFDR(), false);
+        FDRSettingsImpl pgsettings = new FDRSettingsImpl(settings);
+        pgsettings.setMinTD(Math.max(10, pgsettings.getMinTD()));
+        pgsettings.ignoreValidityChecks(false);
+        this.calc.fdr(settings.getProteinGroupFDR(), pgsettings, pepProteinGroups, GroupedFDRs, targetProtDBSize, decoyProtDBSize, settings.getMinProteinPepCount(), ignoreGroups, setElementFDR, settings.protLocalFDR(), false);
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
@@ -1312,6 +1482,7 @@ public abstract class OfflineFDR {
     }
 
     public void calculateLinkFDR(boolean ignoreGroups, boolean setElementFDR, FDRSettings settings, FDRResult result) {
+        Integer topN = settings.getScoreTopNAggregate();
 
         if (result.proteinGroupLinkFDR != null) {
             for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
@@ -1331,7 +1502,7 @@ public abstract class OfflineFDR {
         int maxAmbiguity = settings.getMaxLinkAmbiguity();
         if (settings.isLinkDirectional()) {
             if (maxAmbiguity == 0) {
-                for (PeptidePair pp : result.peptidePairFDR) {
+                for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
 
                     if (!(pp.isLinear() || pp.isNonCovalent()) || pp.isLoop()) {
                         ProteinGroupDirectionalLink dl = new ProteinGroupDirectionalLink(pp);
@@ -1341,7 +1512,7 @@ public abstract class OfflineFDR {
                 }
             } else {
 
-                for (PeptidePair pp : result.peptidePairFDR) {
+                for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
 
                     if (!(pp.isLinear() || pp.isNonCovalent()) || pp.isLoop()) {
                         ProteinGroupDirectionalLink dl = new ProteinGroupDirectionalLink(pp);
@@ -1356,32 +1527,34 @@ public abstract class OfflineFDR {
 
         } else {
             if (maxAmbiguity == 0) {
-                for (PeptidePair pp : result.peptidePairFDR) {
-
+                int inpeps = 0;
+                for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
                     if (!(pp.isLinear() || pp.isNonCovalent())) {
                         pp.setFdrLink(pepLinks.register(pp.getLink()));
                     }
-
                 }
+                Logger.getLogger(this.getClass().getName()).log(Level.FINER, "Peps forwarded to links:{0}", inpeps);
             } else {
-
-                for (PeptidePair pp : result.peptidePairFDR) {
-
+                for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
                     if (!(pp.isLinear() || pp.isNonCovalent()) || pp.isLoop()) {
                         ProteinGroupLink l = pp.getLink();
                         if (l.getAmbiguity() <= maxAmbiguity) {
                             pp.setFdrLink(pepLinks.register(pp.getLink()));
                         }
                     }
-
                 }
-
             }
         }
 
-        fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
-        if (groupLinksByHasInternal) {
+        if (topN != null) {
+            for (ProteinGroupLink l : pepLinks) {
+                l.setScore(l.getScore(topN));
+            }
+        }
 
+        this.calc.fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
+
+        if (groupLinksByHasInternal) {
             HashSet<ProteinGroup> internal = new HashSet<>();
             for (ProteinGroupLink pgl : GroupedFDRs) {
                 if (pgl.isInternal()) {
@@ -1401,7 +1574,7 @@ public abstract class OfflineFDR {
             }
             FDRResultLevel<ProteinGroupLink> GroupedFDRs2 = new FDRResultLevel<ProteinGroupLink>();
             GroupedFDRs2.isDirectional = settings.isLinkDirectional();
-            fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs2, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
+            this.calc.fdr(settings.getProteinGroupLinkFDR(), settings, pepLinks, GroupedFDRs2, targetLinkDBSize, decoyLinkDBSize, settings.getMinLinkPepCount(), ignoreGroups, setElementFDR, settings.linkLocalFDR(), settings.isGroupByPSMCount());
             GroupedFDRs = GroupedFDRs2;
         }
 
@@ -1432,6 +1605,7 @@ public abstract class OfflineFDR {
         boolean directional = settings.isPPIDirectional();
         int maxAmbiguity = settings.getMaxProteinAmbiguity();
         int minPepCount = settings.getMinPPIPepCount();
+        Integer topN = settings.getScoreTopNAggregate();
 
         FDRResultLevel<ProteinGroupPair> GroupedFDRs = new FDRResultLevel<ProteinGroupPair>();
         GroupedFDRs.isDirectional = directional;
@@ -1440,12 +1614,12 @@ public abstract class OfflineFDR {
 
         if (maxAmbiguity == 0) {
             if (directional) {
-                for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
+                for (ProteinGroupLink l : result.proteinGroupLinkFDR.filteredResults()) {
                     ProteinGroupDirectionalPair dpp = new ProteinGroupDirectionalPair(l);
                     l.setFdrPPI(linkPPIs.register(dpp));
                 }
             } else {
-                for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
+                for (ProteinGroupLink l : result.proteinGroupLinkFDR.filteredResults()) {
                     l.setFdrPPI(linkPPIs.register(l.getProteinGroupPair()));
                 }
 
@@ -1454,7 +1628,7 @@ public abstract class OfflineFDR {
         } else {
 
             if (directional) {
-                for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
+                for (ProteinGroupLink l : result.proteinGroupLinkFDR.filteredResults()) {
 
                     if (l.getProteins().size() - 1 <= maxAmbiguity) {
                         ProteinGroupDirectionalPair dpp = new ProteinGroupDirectionalPair(l);
@@ -1463,7 +1637,7 @@ public abstract class OfflineFDR {
 
                 }
             } else {
-                for (ProteinGroupLink l : result.proteinGroupLinkFDR) {
+                for (ProteinGroupLink l : result.proteinGroupLinkFDR.filteredResults()) {
 
                     if (l.getProteins().size() - 1 <= maxAmbiguity) {
                         linkPPIs.register(l.getProteinGroupPair());
@@ -1494,7 +1668,13 @@ public abstract class OfflineFDR {
             }
         }
 
-        fdr(settings.getProteinGroupPairFDR(), settings, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, settings.ppiLocalFDR(), false);
+        if (topN != null) {
+            for (ProteinGroupPair ppi : linkPPIs) {
+                ppi.setScore(ppi.getScore(topN));
+            }
+        }
+
+        this.calc.fdr(settings.getProteinGroupPairFDR(), settings, linkPPIs, GroupedFDRs, targetProtDBSize, decoyProtDBSize, minPepCount, ignoreGroups, setElementFDR, settings.ppiLocalFDR(), false);
 
         for (SubGroupFdrInfo rl : GroupedFDRs.getGroups()) {
             if (rl.didntPassCheck != null) {
@@ -1522,21 +1702,26 @@ public abstract class OfflineFDR {
         long start = System.currentTimeMillis();
         HashedArrayList<PeptidePair> keep = new HashedArrayList<PeptidePair>();
         int count = 0;
+        int countPeps = 0;
         int total = result.proteinGroupLinkFDR.size();
         for (ProteinGroupLink l : result.proteinGroupLinkFDR.filteredResults()) {
             count++;
+            countPeps+=l.getPeptidePairs().size();
             if (count % 10000 == 0 && System.currentTimeMillis() - start > 5000) {
-                System.err.println((count * 100f / total) + "% filterFDRPeptidePairsByFDRProteinGroupLinks");
+                Logger.getLogger(this.getClass().getName()).log(Level.FINEST, (count * 100f / total) + "% filterFDRPeptidePairsByFDRProteinGroupLinks (" +count + " links, "+ countPeps + " pep-pairs)");
                 start = System.currentTimeMillis();
             }
             keep.addAll(l.getPeptidePairs());
         }
+        // keep all linear and non-covalent peptide pairs - as these can not be affected by the residues and protein pairs
         for (PeptidePair pp : result.peptidePairFDR) {
-            if (pp.isLinear()) {
+            if (pp.isLinear() || pp.isNonCovalent()) {
                 keep.add(pp);
             }
         }
+        Logger.getLogger(this.getClass().getName()).log(Level.FINER, count + " links result in "+ countPeps + " PepPairs)");
 
+        
         result.peptidePairFDR.retainAll(keep);
     }
 
@@ -1545,44 +1730,32 @@ public abstract class OfflineFDR {
 //        SubGroupFdrInfo<PeptidePair> pps = joinSubFDRInfos(result.peptidePairFDR, true) ;
 
         HashedArrayList<PeptidePair> keep = new HashedArrayList<PeptidePair>();
-
-        for (ProteinGroup pg : result.proteinGroupFDR.filteredResults()) {
-            keep.addAll(pg.getPeptidePairs());
+        // turn proteinsgroups into a hashset of hashed accessionlists
+        HashSet<HashSet<String>> accessionSet = new HashSet<>(result.proteinGroupFDR.size());
+        for (ProteinGroup pg : result.proteinGroupFDR) {
+            accessionSet.add(pg.accessionsSet());
         }
-//        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
-//            
-//            Peptide pep1 = pp.getPeptide1();
-//            ProteinGroup pg1 = result.proteinGroupFDR.filteredGet(pep1.getProteinGroup());
-//            // don't throw out decoys peptides where the target protein was found
-//            if (pg1==null && pep1.isDecoy()) {
-//                pg1 = result.proteinGroupFDR.filteredGet(pep1.getProteinGroup().decoyComplement());
-//            }
-//            Peptide pep2 = pp.getPeptide1();
-//            ProteinGroup pg2 = result.proteinGroupFDR.filteredGet(pep2.getProteinGroup());
-//            // don't throw out decoys peptides where the target protein was found
-//            if (pg2==null && pep2.isDecoy()) {
-//                pg2 = result.proteinGroupFDR.filteredGet(pep2.getProteinGroup().decoyComplement());
-//            }
-//            
-//            int fc = 0;
-//            if (pg1 != null) {
-//                pp.setFdrProteinGroup(pg1);
-//                fc=1;
-//            }
-//            if (pg2 != null) {
-//                pp.setFdrProteinGroup(pg2);
-//                fc++;
-//            }
-//            if (fc == 2 || (fc == 1 && pp.isLinear()))
-//                keep.add(pp);
-//
+        
+        for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
+            if (accessionSet.contains(pp.getPeptide1().getProteinGroup().accessionsSet()))
+                if (!(pp.isLinear() || pp.isLoop())) {
+                    if (accessionSet.contains(pp.getPeptide2().getProteinGroup().accessionsSet())) {
+                        pp.setFdrProteinGroup(result.proteinGroupFDR.filteredGet(pp.getPeptide1().getProteinGroup()));
+                        pp.setFdrProteinGroup(result.proteinGroupFDR.filteredGet(pp.getPeptide2().getProteinGroup()));
+                        keep.add(pp);
+                    }
+                } else {
+                    pp.setFdrProteinGroup(result.proteinGroupFDR.filteredGet(pp.getPeptide1().getProteinGroup()));
+                    keep.add(pp);
+                }
+        }
+//        for (ProteinGroup pg : result.proteinGroupFDR.filteredResults()) {
+//            keep.addAll(pg.getPeptidePairs());
 //        }
         result.peptidePairFDR.retainAll(keep);
     }
 
     public void filterFDRProteinGroupsByFDRPeptidePairs(FDRResult result) {
-//        SubGroupFdrInfo<ProteinGroup> pgs = joinSubFDRInfos(result.proteinGroupFDR, true) ;
-//        SubGroupFdrInfo<PeptidePair> pps = joinSubFDRInfos(result.peptidePairFDR, true) ;
         HashedArrayList<ProteinGroup> keep = new HashedArrayList<ProteinGroup>();
 
         for (PeptidePair pp : result.peptidePairFDR.filteredResults()) {
@@ -1590,14 +1763,6 @@ public abstract class OfflineFDR {
             keep.add(pp.getProteinGroup2());
         }
 
-//        for (ProteinGroup pg : result.proteinGroupFDR) {
-//            for (PeptidePair pp : pg.getPeptidePairs()) {
-//                if (result.peptidePairFDR.filteredContains(pp)) {
-//                    keep.add(pg);
-//                    break;
-//                }
-//            }
-//        }
         result.proteinGroupFDR.retainAll(keep);
     }
 
@@ -1610,13 +1775,11 @@ public abstract class OfflineFDR {
             keep.addAll(pp.getAllPSMs());
         }
 
-//        for (PSM psm : result.psmFDR) {
-//
-//            if (result.peptidePairFDR.filteredContains(psm.getPeptidePair())) {
-//                keep.add(psm);
-//            }
-//        }
         result.psmFDR.retainAll(keep);
+    }
+
+    public void setSettings(FDRSettings settings) {
+        this.settings = new FDRSettingsImpl(settings);
     }
 
     public FDRResult calculateFDR(FDRSettings settings, boolean setElementFDR) {
@@ -1624,8 +1787,8 @@ public abstract class OfflineFDR {
         this.settings = settings;
         boolean ignoreGroups = this.ignoreGroupsSetting;
         result.reportFactor = settings.getReportFactor();
-        reset();
-        result.excludedGroups  =new ArrayList<>();
+        //reset();
+        result.excludedGroups = new ArrayList<>();
 
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Input PSM :" + getAllPSMs().size() + "\n calculation psm-fdr");
         calculatePSMFDR(setElementFDR, ignoreGroups, result, settings);
@@ -1657,12 +1820,12 @@ public abstract class OfflineFDR {
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "fdr psms :" + result.psmFDR.getResultCount() + "\n filtering ProteinGroups by peptide pairs");
         filterFDRProteinGroupsByFDRPeptidePairs(result);
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "fdr protein groups :" + result.proteinGroupFDR.getResultCount());
-        
+
         if (!result.excludedGroups.isEmpty()) {
             if (settings.ignoreValidityChecks()) {
-                Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "For some subgroups the FDR calculation is likely unreliable:\n"+ MyArrayUtils.toString(result.excludedGroups, ";\n"));
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "For some subgroups the FDR calculation is likely unreliable:\n" + MyArrayUtils.toString(result.excludedGroups, ";\n"));
             } else {
-                Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Some FDR groups where ignored as being unreliable:\n"+ MyArrayUtils.toString(result.excludedGroups, ";\n"));
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Some FDR groups where ignored as being unreliable:\n" + MyArrayUtils.toString(result.excludedGroups, ";\n"));
             }
         }
 
@@ -1691,24 +1854,24 @@ public abstract class OfflineFDR {
         return getAllPSMs();
     }
 
-    public void writeFiles(String path, String baseName, String seperator, FDRResult result) throws FileNotFoundException {
+    public void writeFiles(String path, String baseName, String seperator, FDRResult result, boolean writeAll) throws FileNotFoundException {
         if (seperator.equals(",") || seperator.equals(";")) {
-            writeFiles(path, baseName, ".csv", seperator, result);
+            writeFiles(path, baseName, ".csv", seperator, result, writeAll);
         } else {
-            writeFiles(path, baseName, ".tsv", seperator, result);
+            writeFiles(path, baseName, ".tsv", seperator, result, writeAll);
         }
     }
 
-    public void writeFiles(String path, String baseName, String fileextension, String seperator, FDRResult result) throws FileNotFoundException {
+    public void writeFiles(String path, String baseName, String fileextension, String seperator, FDRResult result, boolean writeAll) throws FileNotFoundException {
         CSVRandomAccess csvFormater = new CSVRandomAccess(seperator.charAt(0), '"');
         csvFormater.setLocale(outputlocale);
         File folder = new File(path);
-        int n=0;
+        int n = 0;
         if (!folder.exists()) {
             folder.mkdirs();
-        } else if (!folder.isDirectory()){
-            while (folder.exists() && folder.isDirectory()){
-                folder = new File(path+ "_" + (++n));
+        } else if (!folder.isDirectory()) {
+            while (folder.exists() && folder.isDirectory()) {
+                folder = new File(path + "_" + (++n));
             }
             path = folder.getAbsolutePath();
         }
@@ -1717,19 +1880,61 @@ public abstract class OfflineFDR {
 
         CountOccurence<String> fdrPSMGroupCounts = new CountOccurence<String>();
 
+        String outNameNAPS = path + "/" + baseName + "_NAPs_PSM" + extension;
+        PrintWriter psmNAPSOut = null;
         String outNameLinear = path + "/" + baseName + "_Linear_PSM" + extension;
         PrintWriter psmLinearOut = null;
-        String outName = path + "/" + baseName + "_PSM" + extension;
+        String outName = path + "/" + baseName + "_INPUT" + extension;
         PrintWriter psmOut = null;
-        if (!csvSummaryOnly) {
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write PSM-results to " + outName);
-            psmOut = new PrintWriter(outName);
-            String header = csvFormater.valuesToString(getPSMHeader());
+        PrintWriter xiviewOut = null;
+        
+        if (writeAll) {
+            
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write input to " + outName);
+            try {
+                psmOut = new PrintWriter(outName, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+                
+            String header = csvFormater.valuesToString(getPSMHeader()) + seperator + "passed";
             psmOut.println(header);
-            psmLinearOut = new PrintWriter(outNameLinear);
-            psmLinearOut.println(header);
+            for (PSM psm : this.allPSMs) {
+                
+                psmOut.print(csvFormater.valuesToString(getPSMOutputLine(psm)));
+                if (result.psmFDR.filteredContains(psm))
+                     psmOut.println(seperator + "+");
+                else
+                     psmOut.println(seperator);
+            }
+            psmOut.close();
+            psmOut = null;
+        }
+        
+        outName = path + "/" + baseName + "_CSM" + extension;
+        String xiviewName = path + "/" + baseName + "_xiVIEW" + extension;
+        
+        if (!csvSummaryOnly) {
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write CSM-results to " + outName);
+            String header = csvFormater.valuesToString(getPSMHeader());
+            try {
+                xiviewOut = new PrintWriter(xiviewName, csvcharset.name());
+                xiviewOut.println(getXiViewHeader());
+                psmOut = new PrintWriter(outName, csvcharset.name());
+                psmOut.println(header);
+                psmLinearOut = new PrintWriter(outNameLinear, csvcharset.name());
+                psmLinearOut.println(header);
+                psmNAPSOut = new PrintWriter(outNameNAPS, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+            psmNAPSOut.println(header);
         } else {
             psmOut = NullOutputStream.NULLPRINTWRITER;
+            psmLinearOut = NullOutputStream.NULLPRINTWRITER;
+            psmNAPSOut = NullOutputStream.NULLPRINTWRITER;
         }
 
         ArrayList<PSM> psms = new ArrayList<PSM>(result.psmFDR.getResultCount());
@@ -1746,6 +1951,9 @@ public abstract class OfflineFDR {
 //        if (!isPSMScoreHighBetter())
 //            java.util.Collections.reverse(fdrPSM);
         int psmCount = 0;
+        int psmNonCovTT = 0;
+        int psmNonCovTD = 0;
+        int psmNonCovDD = 0;
         int psmInternalTT = 0;
         int psmInternalTD = 0;
         int psmInternalDD = 0;
@@ -1758,20 +1966,34 @@ public abstract class OfflineFDR {
 
         for (PSM pp : psms) {
             fdrPSMGroupCounts.add(pp.getFDRGroup());
-            String line = csvFormater.valuesToString(getPSMOutputLine(pp));
+            
             if (!csvSummaryOnly) {
+                String line = csvFormater.valuesToString(getPSMOutputLine(pp));
+
                 if (pp.isLinear()) {
                     psmLinearOut.println(line);
+                } else if (pp.isNonCovalent()) {
+                    psmNAPSOut.println(line);
                 } else {
+                    String xiViewline = csvFormater.valuesToString(getXiViewOutputLine(pp));
+                    xiviewOut.println(xiViewline);
                     psmOut.println(line);
                 }
             }
 
-            if (pp.getPeptide1() == Peptide.NOPEPTIDE || pp.getPeptide2() == Peptide.NOPEPTIDE) {
+            if (pp.isLinear()) {
                 if (pp.isTT()) {
                     psmLinearT++;
                 } else if (pp.isTD()) {
                     psmLinearD++;
+                }
+            } else if (pp.isNonCovalent()) {
+                if (pp.isTT()) {
+                    psmNonCovTT++;
+                } else if (pp.isTD()) {
+                    psmNonCovTD++;
+                } else {
+                    psmNonCovDD++;
                 }
             } else if (pp.isInternal()) {
                 if (pp.isTT()) {
@@ -1797,6 +2019,16 @@ public abstract class OfflineFDR {
             psmOut.close();
             psmLinearOut.flush();
             psmLinearOut.close();
+            psmNAPSOut.flush();
+            psmNAPSOut.close();
+            // if we had no linears we just delete the linear file again
+            if (psmLinearT+psmLinearD == 0) {
+                new File(outNameLinear).delete();
+            }
+            // same for NAPS
+            if (psmNonCovTT+psmNonCovTD+psmNonCovDD == 0) {
+                new File(outNameNAPS).delete();
+            }
         }
 
         ArrayList<PeptidePair> peps = new ArrayList<PeptidePair>(result.peptidePairFDR.getResultCount());
@@ -1816,6 +2048,9 @@ public abstract class OfflineFDR {
         int pepInternalTT = 0;
         int pepInternalTD = 0;
         int pepInternalDD = 0;
+        int pepNonCovTT = 0;
+        int pepNonCovTD = 0;
+        int pepNonCovDD = 0;
         int pepBetweenTT = 0;
         int pepBetweenTD = 0;
         int pepBetweenDD = 0;
@@ -1826,18 +2061,45 @@ public abstract class OfflineFDR {
 
         PrintWriter pepsOut = null;
         PrintWriter pepsLinearOut = null;
+        PrintWriter pepsNonCovOut = null;
         if (!csvSummaryOnly) {
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write PeptidePairs-results to " + path + "/" + baseName + "_PSM" + extension);
             outName = path + "/" + baseName + "_PeptidePairs" + extension;
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write linear PeptidePairs-results to " + outName);
-            pepsOut = new PrintWriter(outName);
+            outNameNAPS = path + "/" + baseName + "_NAPs_PeptidePairs" + extension;
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write peptide pairs results to " + outName);
+            try {
+                pepsOut = new PrintWriter(outName, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
             String xlPepsHeader = csvFormater.valuesToString(getXLPepsHeader());
             pepsOut.println(xlPepsHeader);
 
-            pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + getXiFDRVersion() + extension);
-            String linearPepsHeader = csvFormater.valuesToString(getLinearPepsHeader());
-            pepsLinearOut.println(linearPepsHeader);
+            if (psmLinearT+psmLinearD > 0 ) {
+                try {
+                    pepsLinearOut = new PrintWriter(path + "/" + baseName + "_Linear_Peptides" + extension, csvcharset.name());
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                    return;
+                }
 
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write linear peptide results to " + pepsLinearOut);
+                String linearPepsHeader = csvFormater.valuesToString(getLinearPepsHeader());
+                pepsLinearOut.println(linearPepsHeader);
+            }
+                
+            if (psmNonCovTT+psmNonCovTD+psmNonCovDD > 0 ) {
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Write non covalent peptide pair results to " + outName);
+                try {
+                    pepsNonCovOut = new PrintWriter(outNameNAPS, csvcharset.name());
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                    return;
+                }
+
+                pepsNonCovOut.println(xlPepsHeader);
+            }
+            
         } else {
             pepsOut = NullOutputStream.NULLPRINTWRITER;
             pepsLinearOut = pepsOut;
@@ -1861,12 +2123,21 @@ public abstract class OfflineFDR {
             } else {
                 if (!csvSummaryOnly) {
                     String line = csvFormater.valuesToString(getXlPepeptideOutputLine(pp));
-                    pepsOut.println(line);
-//                    } catch (NullPointerException npe) {
-//                        throw new Error();
-//                    }
+                    if (pp.isNonCovalent()) {
+                        pepsNonCovOut.println(line);
+                    } else {
+                        pepsOut.println(line);
+                    }
                 }
-                if (pp.isInternal()) {
+                if (pp.isNonCovalent()) {
+                    if (pp.isTT()) {
+                        pepNonCovTT++;
+                    } else if (pp.isTD()) {
+                        pepNonCovTD++;
+                    } else {
+                        pepNonCovDD++;
+                    }
+                } else if (pp.isInternal()) {
                     if (pp.isTT()) {
                         pepInternalTT++;
                     } else if (pp.isTD()) {
@@ -1890,8 +2161,14 @@ public abstract class OfflineFDR {
         if (!csvSummaryOnly) {
             pepsOut.flush();
             pepsOut.close();
-            pepsLinearOut.flush();
-            pepsLinearOut.close();
+            if (pepsLinearOut != null) {
+                pepsLinearOut.flush();
+                pepsLinearOut.close();
+            }
+            if (pepsNonCovOut != null) {
+                pepsNonCovOut.flush();
+                pepsNonCovOut.close();
+            }
         }
 
         CountOccurence<String> fdrLinkGroupCounts = new CountOccurence<String>();
@@ -1919,7 +2196,13 @@ public abstract class OfflineFDR {
 
         PrintWriter linksOut = null;
         if (!csvSummaryOnly) {
-            linksOut = new PrintWriter(path + "/" + baseName + "_Links" + extension);
+            try{
+                linksOut = new PrintWriter(path + "/" + baseName + "_Links" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
             String header = csvFormater.valuesToString(getLinkOutputHeader());
             linksOut.println(header);
         } else {
@@ -1985,7 +2268,13 @@ public abstract class OfflineFDR {
         // write out a table of all proteinpairs
         PrintWriter ppiOut = null;
         if (!csvSummaryOnly) {
-            ppiOut = new PrintWriter(path + "/" + baseName + "_ppi" + extension);
+            try {
+                ppiOut = new PrintWriter(path + "/" + baseName + "_ppi" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
             String header = csvFormater.valuesToString(getPPIOutputHeader());
             ppiOut.println(header);
         } else {
@@ -2047,7 +2336,14 @@ public abstract class OfflineFDR {
         // write out a table of all proteinpairs
         PrintWriter pgOut = null;
         if (!csvSummaryOnly) {
-            pgOut = new PrintWriter(path + "/" + baseName + "_proteingroups" + extension);
+            try{
+                pgOut = new PrintWriter(path + "/" + baseName + "_proteingroups" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
+            
             pgOut.println(csvFormater.valuesToString(getProteinGroupOutputHeader()));
         } else {
             pgOut = NullOutputStream.NULLPRINTWRITER;
@@ -2077,67 +2373,81 @@ public abstract class OfflineFDR {
         PrintWriter summaryOut = null;
         if (singleSummary) {
             if (singleSummaryOut == null) {
-                singleSummaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension);
+                try {
+                    singleSummaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension, csvcharset.name());
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                    return;
+                }
+
             }
 
             summaryOut = singleSummaryOut;
             summaryOut.println("SummaryFile:" + baseName + "_summary" + extension);
         } else {
-            summaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension);
+            try {
+                summaryOut = new PrintWriter(path + "/" + baseName + "_summary" + extension, csvcharset.name());
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Encoding error ", ex);
+                return;
+            }
+
         }
 
+        summaryOut.println("------------------------------------------------");
         summaryOut.println("xiFDR Version:" + seperator + OfflineFDR.xiFDRVersion);
         summaryOut.println("Source:" + seperator + csvFormater.quoteValue(getSource()));
-        summaryOut.println(",\"Target FDRs:\"" + seperator + "Minimum supporting peptides" + seperator + "Directional");
-        summaryOut.println("psm" + seperator + " " + result.psmFDR.getTargetFDR() + seperator + seperator + isPsm_directional());
-        summaryOut.println("\"peptide pair\"" + seperator + " " + result.peptidePairFDR.getTargetFDR() + seperator + seperator + isPeptides_directional());
-        summaryOut.println("\"protein group\"" + seperator + " " + result.proteinGroupFDR.getTargetFDR() + seperator + getMinPepPerProteinGroup());
-        summaryOut.println("Link" + seperator + " " + result.proteinGroupLinkFDR.getTargetFDR() + seperator + getMinPepPerProteinGroupLink() + seperator + this.isLinks_directional());
-        summaryOut.println("\"Protein Group Pair\"" + seperator + " " + result.proteinGroupPairFDR.getTargetFDR() + seperator + getMinPepPerProteinGroupPair() + seperator + this.isPpi_directional());
-        summaryOut.println("\n\"max next level fdr factor (report-factor):\"" + seperator + result.reportFactor);
+        summaryOut.println("----------------FDR Filter----------------------");
+        writeOutBasicFDRSettings(summaryOut, seperator, result, false);
+        summaryOut.println("\n\n---------------- Filter applied prior FDR----------------------");
+        //summaryOut.println("\n\"max next level fdr factor (report-factor):\"" + seperator + result.reportFactor);
         summaryOut.println("\"minimum peptide length\"" + seperator + "" + (m_minPepLength <= 1 ? "unlimited" : m_minPepLength));
         if (result.uniquePSMs) {
-            summaryOut.println("\"unique PSMs\"");
-        }
-
-        if (settings.getMinPeptideCoverageFilter() > 0) {
-            summaryOut.println("\"minimum peptide coverage\"" + seperator + settings.getMinPeptideCoverageFilter());
+            summaryOut.println("\"unique PSMs\",, \"(only best scoring CSM/PSM for each peptide + link + charge + modification combination is kept for FDR calculation)\"");
         } else {
             summaryOut.println();
         }
 
-        if (settings.getMinDeltaScoreFilter() > 0) {
-            summaryOut.println("\"delta/score >\"" + seperator + settings.getMinDeltaScoreFilter());
+        summaryOut.println("\"minimum peptide coverage >=\"" + seperator + settings.getMinPeptideCoverageFilter());
+        summaryOut.println("\"delta/score >=\"" + seperator + settings.getMinDeltaScoreFilter());
+        summaryOut.println("\"minimum fragments per peptide >=\"" + seperator + settings.getMinPeptideFragmentsFilter());
+        
+        if (settings.getMinPeptideStubFilter() > 0) {
+            summaryOut.println("\"minimum peptide stubs >=\"" + seperator + settings.getMinPeptideStubFilter() + ",\"(peptides seen with at least one crosslinker stub)\"");
         } else {
             summaryOut.println();
         }
+        if (settings.getMinPeptideDoubletFilter()> 0) {
+            summaryOut.println("\"minimum peptide stubs >=\"" + seperator + settings.getMinPeptideDoubletFilter() + ",\"(peptides seen with at least one pair of crosslinker stub)\"");
+        } else {
+            summaryOut.println();
+        }
+        summaryOut.println("\"ignore potentially consecutive peptides:\"," + seperator + settings.filterConsecutivePeptides());
 
         summaryOut.println("\n\"Accepted ambiguity:\"");
-        summaryOut.println("\"Links for one peptide pair\"" + seperator + "" + (m_maximumLinkAmbiguity == 0 ? "unlimited" : m_maximumLinkAmbiguity));
-        summaryOut.println("\"Protein pairs for one peptide pair\"" + seperator + "" + (m_maximumProteinAmbiguity == 0 ? "unlimited" : m_maximumProteinAmbiguity));
+        summaryOut.println("\"Links for one peptide pair\"" + seperator + "" + (settings.getMaxLinkAmbiguity() == 0 ? "unlimited" : settings.getMaxLinkAmbiguity()));
+        summaryOut.println("\"Protein pairs for one peptide pair\"" + seperator + "" + (settings.getMaxProteinAmbiguity() == 0 ? "unlimited" : settings.getMaxProteinAmbiguity()));
         summaryOut.println();
-
-        if (ignoreGroupsSetting) {
-            summaryOut.println("\"Groups Where Ignored \"");
-        } else {
-            summaryOut.println("\"Length-Group:\",\"" + RArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator) + "\"");
-        }
-        summaryOut.println();
-
+        summaryOut.println("----------------FDR Filter----------------------");
+        writeOutBasicFDRSettings(summaryOut, seperator, result, true);
+        summaryOut.println("----------------Summary of final FDR result ----------------------");
 //        summaryOut.println("Input PSMs" +seperator + "fdr PSM" +seperator + "fdr peptide pairs" +seperator + "fdr links" +seperator + "fdr ppi");
-        summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Internal TT\""
-                + seperator + "\"Internal TD\"" + seperator + "\"Internal DD\""
+        summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Self TT\""
+                + seperator + "\"Self TD\"" + seperator + "\"Self DD\""
                 + seperator + "\"Between TT\"" + seperator + "\"Between TD\"" + seperator + "\"Between DD\""
+                + seperator + "\"Non-Covalent TT\"" + seperator + "\"Non-Covalent TD\"" + seperator + "\"Non-Covalent DD\""
                 + seperator + "\"Linear T\"" + seperator + "\"Linear D\"");
 
         summaryOut.println("\"Input PSMs\"" + seperator + "" + getAllPSMs().size());
 
-        summaryOut.println("\"fdr PSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
+        summaryOut.println("\"fdr CSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
                 + seperator + psmBetweenTT + seperator + psmBetweenTD + seperator + psmBetweenDD
+                + seperator + psmNonCovTT + seperator + psmNonCovTD + seperator + psmNonCovDD
                 + seperator + psmLinearT + seperator + psmLinearD);
 
         summaryOut.println("\"fdr Peptide Pairs\"" + seperator + pepCount + seperator + pepInternalTT + seperator + pepInternalTD + seperator + pepInternalDD
                 + seperator + pepBetweenTT + seperator + pepBetweenTD + seperator + pepBetweenDD
+                + seperator + pepNonCovTT + seperator + pepNonCovTD + seperator + pepNonCovDD
                 + seperator + pepLinearT + seperator + pepLinearD);
 
         summaryOut.println("\"fdr Link\"" + seperator + linkCount + seperator + linkInternalTT + seperator + linkInternalTD + seperator + linkInternalDD
@@ -2148,8 +2458,59 @@ public abstract class OfflineFDR {
 
         summaryOut.println("\"fdr Protein Groups\"" + seperator + proteinCount + seperator + seperator + seperator
                 + seperator + seperator + seperator
+                + seperator + seperator + seperator
                 + seperator + proteinGroupT + seperator + proteinGroupD);
 
+        summaryOut.println();
+        summaryOut.println();
+        summaryOut.println();
+        summaryOut.println("---------------- FDR process settings----------------------");
+        if (ignoreGroupsSetting) {
+            summaryOut.println("\"Groups Where Ignored \"");
+        } else {
+            summaryOut.println("\"Length-Group:\"" + seperator + "\"" + RArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator) + "\"");
+        }
+        summaryOut.println();
+        if (settings.doOptimize() != null) {
+            summaryOut.println("\"Boost\"" + seperator + "\"" + settings.doOptimize().m_shortname + "\"," );
+            summaryOut.println("\"Primary objective\"" + seperator + (settings.getBoostBetween() ? "\"between\"" : "\"total number\""));
+            summaryOut.println("\"Boost steps\":" + seperator + "" + settings.getBoostingSteps());
+            summaryOut.println("\"Boost Include\"" + seperator + "\""
+                    + (settings.boostDeltaScore() ? "delta score;" : "")
+                    + (settings.boostMinFragments() ? "Min Fragments;" : "")
+                    + (settings.boostPepCoverage() ? "min Coverage;" : "")
+                    + (settings.boostPSMs() ? "PSMs;" : "")
+                    + (settings.boostPeptidePairs() ? "Peptide Pairs;" : "")
+                    + (settings.boostProteins() ? "Protein Groups;" : "")
+                    + (settings.boostLinks() ? "Residue Pairs;" : "")
+                    + "\""
+            );
+            if (settings.twoStepOptimization()) {
+                summaryOut.println("\"Boost prefilter independent of FDR filter\"");
+            } else {
+                summaryOut.println("\"Boost prefilter and FDR filter together\"");
+            }
+        }
+        summaryOut.println();
+
+
+        
+
+        summaryOut.println("\n\n\n\"----------------Detailed summary for each FDR level----------------------\"");
+        summaryOut.println("\"Per level for each group following information are provided:\"");
+        summaryOut.println("Input, \"Number of matches that where considered as input (e.g. the total PSM or the number peptide pairs that passed the PSM-level FDR)\"");
+        summaryOut.println("Input TT, \"Number of target target matches (or just target in case of linear matches)\"");
+        summaryOut.println("Input TD, \"Number of target decoy matches - independent of order (or just decoy in case of linear matches)\"");
+        summaryOut.println("Input DD, \"Number of decoy decoy matches\"");
+        summaryOut.println("passing FDR, \"Number of matches passing the FDR (on this level - final number can be smaller do to higher level filter)\"");
+        summaryOut.println("\"FDR TT\", \"Number of target target matches passing the level FDR - disregarding higher level FDR filter\"");
+        summaryOut.println("\"FDR TD\", \"Number of target decoy matches passing the level FDR - disregarding higher level FDR filter\"");
+        summaryOut.println("\"FDR DD\", \"Number of decoy decoy matches passing the level FDR - disregarding higher level FDR filter\"");
+        summaryOut.println("\"lower FDR\", \"The next FDR < target FDR, that could be calculated (to give an idea of the precision of the FDR calculation)\"");
+        summaryOut.println("\"higher FDR\", \"The next FDR > targetFDR, that could be calculated (to give an idea of the precision of the FDR calculation)\"");
+        summaryOut.println("\"final\", \"The number of matches passing this *AND* the higher level FDR filter\"");
+        
+        summaryOut.println("\n\"--------------------------------------\"");
 //        summaryOut.println("\n\"linear fdr psm\"" + seperator + "" + (psmLinearT + psmLinearD) + "\n\"linear fdr peptide pairs\"" + seperator + "" + (pepLinearT + pepLinearD) + "\n\nfdr protein groups" + seperator + "" + fdrProteinGroups.size());
         String header = "Petide Spectrum Matches detailed summary";
 //        HashMap<Integer,String> groups = new HashMap<Integer,String>();
@@ -2159,6 +2520,7 @@ public abstract class OfflineFDR {
         FDRResultLevel level = result.psmFDR;
         levelSummary(summaryOut, header, level, seperator);
 
+        summaryOut.println("\"--------------------------------------\"");
         header = "Petide Pairs detailed summary";
 //        groups.clear();
 //        for (Integer k : result.peptidePairFDR.getGroupIDs()) {
@@ -2167,6 +2529,7 @@ public abstract class OfflineFDR {
         level = result.peptidePairFDR;
         levelSummary(summaryOut, header, level, seperator);
 
+        summaryOut.println("\"--------------------------------------\"");
         header = "Protein groups detailed summary";
 //        groups.clear();
 //        for (Integer k : result.proteinGroupFDR.getGroupIDs()) {
@@ -2175,10 +2538,12 @@ public abstract class OfflineFDR {
         level = result.proteinGroupFDR;
         levelSummary(summaryOut, header, level, seperator);
 
+        summaryOut.println("\"--------------------------------------\"");
         header = "Protein group links detailed summary";
         level = result.proteinGroupLinkFDR;
         levelSummary(summaryOut, header, level, seperator);
 
+        summaryOut.println("\"--------------------------------------\"");
         header = "Protein group pairs detailed summary";
 
         level = result.proteinGroupPairFDR;
@@ -2191,126 +2556,429 @@ public abstract class OfflineFDR {
 
     }
 
-    protected void peptidePairsToProteinGroups(ArrayList<PeptidePair> forwardPeps, SelfAddHashSet<ProteinGroup> pepProteinGroups) {
-        // do we care about ambiguity
-        if (m_maximumProteinAmbiguity > 0) {
-            // yes we do
-            // PeptidePairs to Protein groups
-            peploop:
-            for (PeptidePair pp : forwardPeps) {
-                ArrayList<ProteinGroup> groups = new ArrayList<ProteinGroup>(2);
-                for (Peptide p : pp.getPeptides()) {
-                    ProteinGroup pg = p.getProteinGroup();
+    public String getSummary(FDRResult result) {
+        int n = 0;
 
-                    if (pg.proteinCount() > m_maximumProteinAmbiguity) {
-                        continue peploop;
+        CountOccurence<String> fdrPSMGroupCounts = new CountOccurence<String>();
+
+        ArrayList<PSM> psms = new ArrayList<PSM>(result.psmFDR.getResultCount());
+        for (SubGroupFdrInfo g : result.psmFDR.getGroups()) {
+            psms.addAll(g.filteredResult);
+        }
+
+        int psmCount = 0;
+        int psmNonCovTT = 0;
+        int psmNonCovTD = 0;
+        int psmNonCovDD = 0;
+        int psmInternalTT = 0;
+        int psmInternalTD = 0;
+        int psmInternalDD = 0;
+        int psmBetweenTT = 0;
+        int psmBetweenTD = 0;
+        int psmBetweenDD = 0;
+
+        int psmLinearT = 0;
+        int psmLinearD = 0;
+
+        for (SubGroupFdrInfo<PSM> g : result.psmFDR.getGroups()) {
+            for (PSM pp : g.filteredResult) {
+                fdrPSMGroupCounts.add(pp.getFDRGroup());
+                if (pp.isLinear()) {
+                    if (pp.isTT()) {
+                        psmLinearT++;
+                    } else if (pp.isTD()) {
+                        psmLinearD++;
                     }
-
-                    pg.addPeptidePair(pp);
-                    groups.add(pg);
+                } else if (pp.isNonCovalent()) {
+                    if (pp.isTT()) {
+                        psmNonCovTT++;
+                    } else if (pp.isTD()) {
+                        psmNonCovTD++;
+                    } else {
+                        psmNonCovDD++;
+                    }
+                } else if (pp.isInternal()) {
+                    if (pp.isTT()) {
+                        psmInternalTT++;
+                    } else if (pp.isTD()) {
+                        psmInternalTD++;
+                    } else {
+                        psmInternalDD++;
+                    }
+                } else {
+                    if (pp.isTT()) {
+                        psmBetweenTT++;
+                    } else if (pp.isTD()) {
+                        psmBetweenTD++;
+                    } else {
+                        psmBetweenDD++;
+                    }
                 }
-
-                for (ProteinGroup pg : groups) {
-                    pepProteinGroups.register(pg);
-                }
-
+                psmCount++;
             }
+        }
 
-        } else {
-            // no we report everything
+        ArrayList<PeptidePair> peps = new ArrayList<PeptidePair>(result.peptidePairFDR.getResultCount());
+        for (SubGroupFdrInfo g : result.peptidePairFDR.getGroups()) {
+            peps.addAll(g.filteredResult);
+        }
 
-            for (PeptidePair pp : forwardPeps) {
-                for (Peptide p : pp.getPeptides()) {
-                    ProteinGroup pg = pepProteinGroups.register(p.getProteinGroup());
-                    pg.addPeptidePair(pp);
+        CountOccurence<String> fdrPepPairGroupCounts = new CountOccurence<String>();
+
+        int pepInternalTT = 0;
+        int pepInternalTD = 0;
+        int pepInternalDD = 0;
+        int pepNonCovTT = 0;
+        int pepNonCovTD = 0;
+        int pepNonCovDD = 0;
+        int pepBetweenTT = 0;
+        int pepBetweenTD = 0;
+        int pepBetweenDD = 0;
+        int pepCount = 0;
+
+        int pepLinearT = 0;
+        int pepLinearD = 0;
+
+        for (PeptidePair pp : peps) {
+            fdrPepPairGroupCounts.add(pp.getFDRGroup());
+
+            if (pp.isLinear() && !pp.isLoop()) {
+
+                if (pp.isTT()) {
+                    pepLinearT++;
+                } else if (pp.isTD()) {
+                    pepLinearD++;
+                }
+            } else {
+                if (pp.isNonCovalent()) {
+                    if (pp.isTT()) {
+                        pepNonCovTT++;
+                    } else if (pp.isTD()) {
+                        pepNonCovTD++;
+                    } else {
+                        pepNonCovDD++;
+                    }
+                } else if (pp.isInternal()) {
+                    if (pp.isTT()) {
+                        pepInternalTT++;
+                    } else if (pp.isTD()) {
+                        pepInternalTD++;
+                    } else {
+                        pepInternalDD++;
+                    }
+                } else {
+                    if (pp.isTT()) {
+                        pepBetweenTT++;
+                    } else if (pp.isTD()) {
+                        pepBetweenTD++;
+                    } else {
+                        pepBetweenDD++;
+                    }
                 }
             }
+            pepCount++;
 
         }
+
+        CountOccurence<String> fdrLinkGroupCounts = new CountOccurence<String>();
+        ArrayList<ProteinGroupLink> links = new ArrayList<ProteinGroupLink>(result.proteinGroupLinkFDR.getResultCount());
+        for (SubGroupFdrInfo g : result.proteinGroupLinkFDR.getGroups()) {
+            links.addAll(g.filteredResult);
+        }
+
+//        if (!isPSMScoreHighBetter())
+//            java.util.Collections.reverse(fdrProtainGroupLinks);
+        int linkInternalTT = 0;
+        int linkInternalTD = 0;
+        int linkInternalDD = 0;
+        int linkBetweenTT = 0;
+        int linkBetweenTD = 0;
+        int linkBetweenDD = 0;
+        int linkCount = 0;
+
+
+        // write out a table of all links
+        for (ProteinGroupLink l : links) {
+            fdrLinkGroupCounts.add(l.getFDRGroup());
+            if (l.isInternal) {
+                if (l.isTT()) {
+                    linkInternalTT++;
+                } else if (l.isTD()) {
+                    linkInternalTD++;
+                } else {
+                    linkInternalDD++;
+                }
+            } else {
+                if (l.isTT()) {
+                    linkBetweenTT++;
+                } else if (l.isTD()) {
+                    linkBetweenTD++;
+                } else {
+                    linkBetweenDD++;
+                }
+            }
+            linkCount++;
+        }
+
+        CountOccurence<String> fdrPPIGroupCounts = new CountOccurence<String>();
+        ArrayList<ProteinGroupPair> ppis = new ArrayList<ProteinGroupPair>(result.proteinGroupPairFDR.getResultCount());
+        for (SubGroupFdrInfo g : result.proteinGroupPairFDR.getGroups()) {
+            ppis.addAll(g.filteredResult);
+        }
+
+        int ppiInternalTT = 0;
+        int ppiInternalTD = 0;
+        int ppiInternalDD = 0;
+        int ppiBetweenTT = 0;
+        int ppiBetweenTD = 0;
+        int ppiBetweenDD = 0;
+        int ppiCount = 0;
+
+
+        for (ProteinGroupPair pgp : ppis) {
+            fdrPPIGroupCounts.add(pgp.getFDRGroup());
+
+            if (pgp.isInternal()) {
+                if (pgp.isTT()) {
+                    ppiInternalTT++;
+                } else if (pgp.isTD()) {
+                    ppiInternalTD++;
+                } else {
+                    ppiInternalDD++;
+                }
+            } else {
+                if (pgp.isTT()) {
+                    ppiBetweenTT++;
+                } else if (pgp.isTD()) {
+                    ppiBetweenTD++;
+                } else {
+                    ppiBetweenDD++;
+                }
+            }
+            ppiCount++;
+        }
+
+        CountOccurence<String> fdrProteinGroupCounts = new CountOccurence<String>();
+        ArrayList<ProteinGroup> pgs = new ArrayList<ProteinGroup>(result.proteinGroupFDR.getResultCount());
+        for (SubGroupFdrInfo g : result.proteinGroupFDR.getGroups()) {
+            pgs.addAll(g.filteredResult);
+        }
+
+        int proteinGroupT = 0;
+        int proteinGroupD = 0;
+        int proteinCount = 0;
+
+
+        for (ProteinGroup pg : pgs) {
+            fdrProteinGroupCounts.add(pg.getFDRGroup());
+            if (pg.isDecoy()) {
+                proteinGroupD++;
+            } else {
+                proteinGroupT++;
+            }
+            proteinCount++;
+
+        }
+        
+        String seperator="\t";
+        CSVRandomAccess csvFormater = new CSVRandomAccess('\t', '"');
+        csvFormater.setLocale(outputlocale);
+
+        StringWriter so = new StringWriter();
+        PrintWriter summaryOut = new PrintWriter(so);
+        summaryOut.println("------------------------------------------------");
+        summaryOut.println("xiFDR Version:" + seperator + OfflineFDR.xiFDRVersion);
+        summaryOut.println("Source:" + seperator + csvFormater.quoteValue(getSource()));
+        summaryOut.println("----------------FDR Filter----------------------");
+        writeOutBasicFDRSettings(summaryOut, seperator, result, false);
+        summaryOut.println("\n\n---------------- Filter applied prior FDR----------------------");
+        //summaryOut.println("\n\"max next level fdr factor (report-factor):\"" + seperator + result.reportFactor);
+        summaryOut.println("\"minimum peptide length\"" + seperator + "" + (m_minPepLength <= 1 ? "unlimited" : m_minPepLength));
+        if (result.uniquePSMs) {
+            summaryOut.println("\"unique PSMs\",, \"(only best scoring CSM/PSM for each peptide + link + charge + modification combination is kept for FDR calculation)\"");
+        } else {
+            summaryOut.println();
+        }
+
+        summaryOut.println("\"minimum peptide coverage >=\"" + seperator + settings.getMinPeptideCoverageFilter());
+        summaryOut.println("\"delta/score >=\"" + seperator + settings.getMinDeltaScoreFilter());
+        summaryOut.println("\"minimum fragments per peptide >=\"" + seperator + settings.getMinPeptideFragmentsFilter());
+        
+        if (settings.getMinPeptideStubFilter() > 0) {
+            summaryOut.println("\"minimum peptide stubs >=\"" + seperator + settings.getMinPeptideStubFilter() + ",\"(peptides seen with at least one crosslinker stub)\"");
+        } else {
+            summaryOut.println();
+        }
+        if (settings.getMinPeptideDoubletFilter()> 0) {
+            summaryOut.println("\"minimum peptide stubs >=\"" + seperator + settings.getMinPeptideDoubletFilter() + ",\"(peptides seen with at least one pair of crosslinker stub)\"");
+        } else {
+            summaryOut.println();
+        }
+        if (settings.filterConsecutivePeptides()) {
+            summaryOut.println("\"ignore potentially consecutive peptides\"");
+        } else {
+            summaryOut.println();
+        }
+
+        summaryOut.println("\n\"Accepted ambiguity:\"");
+        summaryOut.println("\"Links for one peptide pair\"" + seperator + "" + (settings.getMaxLinkAmbiguity() == 0 ? "unlimited" : settings.getMaxLinkAmbiguity()));
+        summaryOut.println("\"Protein pairs for one peptide pair\"" + seperator + "" + (settings.getMaxProteinAmbiguity() == 0 ? "unlimited" : settings.getMaxProteinAmbiguity()));
+        summaryOut.println();
+        summaryOut.println("----------------FDR Filter----------------------");
+        writeOutBasicFDRSettings(summaryOut, seperator, result, true);
+        summaryOut.println("----------------Summary of final FDR result ----------------------");
+//        summaryOut.println("Input PSMs" +seperator + "fdr PSM" +seperator + "fdr peptide pairs" +seperator + "fdr links" +seperator + "fdr ppi");
+        summaryOut.println("\"class\"" + seperator + "\"all\"" + seperator + "\"Self TT\""
+                + seperator + "\"Self TD\"" + seperator + "\"Self DD\""
+                + seperator + "\"Between TT\"" + seperator + "\"Between TD\"" + seperator + "\"Between DD\""
+                + seperator + "\"Non-Covalent TT\"" + seperator + "\"Non-Covalent TD\"" + seperator + "\"Non-Covalent DD\""
+                + seperator + "\"Linear T\"" + seperator + "\"Linear D\"");
+
+        summaryOut.println("\"Input PSMs\"" + seperator + "" + getAllPSMs().size());
+
+        summaryOut.println("\"fdr CSMs\"" + seperator + psmCount + seperator + psmInternalTT + seperator + psmInternalTD + seperator + psmInternalDD
+                + seperator + psmBetweenTT + seperator + psmBetweenTD + seperator + psmBetweenDD
+                + seperator + psmNonCovTT + seperator + psmNonCovTD + seperator + psmNonCovDD
+                + seperator + psmLinearT + seperator + psmLinearD);
+
+        summaryOut.println("\"fdr Peptide Pairs\"" + seperator + pepCount + seperator + pepInternalTT + seperator + pepInternalTD + seperator + pepInternalDD
+                + seperator + pepBetweenTT + seperator + pepBetweenTD + seperator + pepBetweenDD
+                + seperator + pepNonCovTT + seperator + pepNonCovTD + seperator + pepNonCovDD
+                + seperator + pepLinearT + seperator + pepLinearD);
+
+        summaryOut.println("\"fdr Link\"" + seperator + linkCount + seperator + linkInternalTT + seperator + linkInternalTD + seperator + linkInternalDD
+                + seperator + linkBetweenTT + seperator + linkBetweenTD + seperator + linkBetweenDD);
+
+        summaryOut.println("\"fdr Protein Group Pairs\"" + seperator + ppiCount + seperator + ppiInternalTT + seperator + ppiInternalTD + seperator + ppiInternalDD
+                + seperator + ppiBetweenTT + seperator + ppiBetweenTD + seperator + ppiBetweenDD);
+
+        summaryOut.println("\"fdr Protein Groups\"" + seperator + proteinCount + seperator + seperator + seperator
+                + seperator + seperator + seperator
+                + seperator + seperator + seperator
+                + seperator + proteinGroupT + seperator + proteinGroupD);
+
+        summaryOut.println();
+        summaryOut.println();
+        summaryOut.println();
+        summaryOut.println("---------------- FDR process settings----------------------");
+        if (ignoreGroupsSetting) {
+            summaryOut.println("\"Groups Where Ignored \"");
+        } else {
+            summaryOut.println("\"Length-Group:\"" + seperator + "\"" + RArrayUtils.toString(PeptidePair.getLenghtGroup(), seperator) + "\"");
+        }
+        summaryOut.println();
+        if (settings.doOptimize() != null) {
+            summaryOut.println("\"Boost\"" + seperator + "\"" + settings.doOptimize().m_shortname + "\"," );
+            summaryOut.println("\"Primary objective\"" + seperator + (settings.getBoostBetween() ? "\"between\"" : "\"total number\""));
+            summaryOut.println("\"Boost steps\":" + seperator + "" + settings.getBoostingSteps());
+            summaryOut.println("\"Boost Include\"" + seperator + "\""
+                    + (settings.boostDeltaScore() ? "delta score;" : "")
+                    + (settings.boostMinFragments() ? "Min Fragments;" : "")
+                    + (settings.boostPepCoverage() ? "min Coverage;" : "")
+                    + (settings.boostPSMs() ? "PSMs;" : "")
+                    + (settings.boostPeptidePairs() ? "Peptide Pairs;" : "")
+                    + (settings.boostProteins() ? "Protein Groups;" : "")
+                    + (settings.boostLinks() ? "Residue Pairs;" : "")
+                    + "\""
+            );
+            if (settings.twoStepOptimization()) {
+                summaryOut.println("\"Boost prefilter independent of FDR filter\"");
+            } else {
+                summaryOut.println("\"Boost prefilter and FDR filter together\"");
+            }
+        }
+        summaryOut.println();
+
+
+        
+
+        summaryOut.println("\n\n\n\"----------------Detailed summary for each FDR level----------------------\"");
+        summaryOut.println("\"Per level for each group following information are provided:\"");
+        summaryOut.println("Input, \"Number of matches that where considered as input (e.g. the total PSM or the number peptide pairs that passed the PSM-level FDR)\"");
+        summaryOut.println("Input TT, \"Number of target target matches (or just target in case of linear matches)\"");
+        summaryOut.println("Input TD, \"Number of target decoy matches - independent of order (or just decoy in case of linear matches)\"");
+        summaryOut.println("Input DD, \"Number of decoy decoy matches\"");
+        summaryOut.println("passing FDR, \"Number of matches passing the FDR (on this level - final number can be smaller do to higher level filter)\"");
+        summaryOut.println("\"FDR TT\", \"Number of target target matches passing the level FDR - disregarding higher level FDR filter\"");
+        summaryOut.println("\"FDR TD\", \"Number of target decoy matches passing the level FDR - disregarding higher level FDR filter\"");
+        summaryOut.println("\"FDR DD\", \"Number of decoy decoy matches passing the level FDR - disregarding higher level FDR filter\"");
+        summaryOut.println("\"lower FDR\", \"The next FDR < target FDR, that could be calculated (to give an idea of the precision of the FDR calculation)\"");
+        summaryOut.println("\"higher FDR\", \"The next FDR > targetFDR, that could be calculated (to give an idea of the precision of the FDR calculation)\"");
+        summaryOut.println("\"final\", \"The number of matches passing this *AND* the higher level FDR filter\"");
+        
+        summaryOut.println("\n\"--------------------------------------\"");
+//        summaryOut.println("\n\"linear fdr psm\"" + seperator + "" + (psmLinearT + psmLinearD) + "\n\"linear fdr peptide pairs\"" + seperator + "" + (pepLinearT + pepLinearD) + "\n\nfdr protein groups" + seperator + "" + fdrProteinGroups.size());
+        String header = "Petide Spectrum Matches detailed summary";
+//        HashMap<Integer,String> groups = new HashMap<Integer,String>();
+//        for (String k : result.psmFDR.getGroupIDs()) {
+//            groups.put(k,PSM.getFDRGroupName(k));
+//        }
+        FDRResultLevel level = result.psmFDR;
+        levelSummary(summaryOut, header, level, seperator);
+
+        summaryOut.println("\"--------------------------------------\"");
+        header = "Petide Pairs detailed summary";
+//        groups.clear();
+//        for (Integer k : result.peptidePairFDR.getGroupIDs()) {
+//            groups.put(k,PeptidePair.getFDRGroupName(k));
+//        }
+        level = result.peptidePairFDR;
+        levelSummary(summaryOut, header, level, seperator);
+
+        summaryOut.println("\"--------------------------------------\"");
+        header = "Protein groups detailed summary";
+//        groups.clear();
+//        for (Integer k : result.proteinGroupFDR.getGroupIDs()) {
+//            groups.put(k,ProteinGroup.getFDRGroupName(k));
+//        }
+        level = result.proteinGroupFDR;
+        levelSummary(summaryOut, header, level, seperator);
+
+        summaryOut.println("\"--------------------------------------\"");
+        header = "Protein group links detailed summary";
+        level = result.proteinGroupLinkFDR;
+        levelSummary(summaryOut, header, level, seperator);
+
+        summaryOut.println("\"--------------------------------------\"");
+        header = "Protein group pairs detailed summary";
+
+        level = result.proteinGroupPairFDR;
+        levelSummary(summaryOut, header, level, seperator);
+        summaryOut.flush();
+        summaryOut.close();
+        return so.toString();
+    }
+    
+    
+    protected void writeOutBasicFDRSettings(PrintWriter summaryOut, String seperator, FDRResult result, boolean minPep) {
+        summaryOut.println(",\"Target FDRs:\"" + (minPep ? seperator + "Minimum supporting peptides" :""));
+        summaryOut.println("psm" + seperator + " " +
+                (result.psmFDR.getTargetFDR()>1 ? "unrestricted" : "" + result.psmFDR.getTargetFDR()));
+        summaryOut.println("\"peptide pair\"" + seperator + " " +
+                (result.peptidePairFDR.getTargetFDR() > 1 ? "unrestricted" : "" + result.peptidePairFDR.getTargetFDR()));
+        summaryOut.println("\"protein group\"" + seperator + " " +
+                (result.proteinGroupFDR.getTargetFDR() > 1 ? "unrestricted" : "" + result.proteinGroupFDR.getTargetFDR()) +
+                (minPep ? seperator + getMinPepPerProteinGroup() : ""));
+        summaryOut.println("Residue Pair" + seperator + " " +
+                (result.proteinGroupLinkFDR.getTargetFDR() > 1? "unrestricted" : "" + result.proteinGroupLinkFDR.getTargetFDR()) +
+                (minPep ? seperator + getMinPepPerProteinGroupLink() : ""));
+        summaryOut.println("\"Protein Group Pair\"" + seperator + " " +
+                (result.proteinGroupPairFDR.getTargetFDR() >1 ? "unrestricted" : "" + result.proteinGroupPairFDR.getTargetFDR()) +
+                (minPep ? seperator + getMinPepPerProteinGroupPair() : ""));
     }
 
-//    protected ArrayList<PeptidePair> proteinGroupFDR(double ProteinGroupFDR, SelfAddHashSet<ProteinGroup> pepProteinGroups, double safetyFactor, HashSet<ProteinGroup> fdrProteinGroupHS, ArrayList<PeptidePair> forwardPeps, int minPepCount, boolean ignoreGroups) {
-//        // filter out the peptidepairs based on proteins
-////        if (ProteinGroupFDR < 1) {
-//
-//        // we are talking about a purly linear view of things
-//        // but I want to reuse the same function for fdr 
-//        // therefore I need to change the database size, in a way, that 
-//        // the fdr calculation is normalized for linear databses
-//        double tCountMod = targetProtDBSize;
-//        tCountMod = -0.5 - Math.sqrt(1 + 8 * tCountMod) / 2;
-//        double dCountMod = decoyProtDBSize;
-//        dCountMod = dCountMod / tCountMod;
-//
-//
-//        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "ProteinGroup fdr " + pepProteinGroups.size() + " Groups as Input.");
-//
-//        fdrProteinGroups = fdr(ProteinGroupFDR, safetyFactor, pepProteinGroups, nextFdrProteinGroup, protFDRGroupsInput, countFdrProteinGroup, tCountMod, dCountMod, minPepCount, ignoreGroups, true);
-//
-//        fdrProteinGroupHS.addAll(fdrProteinGroups);
-//
-//        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Filter peptidepairs by  " + fdrProteinGroupHS.size() + " proteingroups.");
-//        ArrayList<PeptidePair> pgtopep = new ArrayList<PeptidePair>();
-//        //filter back to peptidepairs
-//        if (ProteinGroupFDR < 1) {
-//            for (PeptidePair pp : forwardPeps) {
-//                boolean found = true;
-//                for (Peptide p : pp.getPeptides()) {
-//                    if (!fdrProteinGroupHS.contains(p.getProteinGroup())) {
-//                        found = false;
-//                        break;
-//                    }
-//                }
-//                if (found) {
-//                    pgtopep.add(pp);
-//                }
-//            }
-//
-//            forwardPeps = pgtopep;
-//        }
-//        Logger.getLogger(this.getClass().getName()).log(Level.INFO, forwardPeps.size() + " peptidepairs made the ProteinGroup fdr cutoff.");
-////        } else {
-////            fdrProteinGroups= new ArrayList<ProteinGroup>(pepProteinGroups);
-////        }
-//        return forwardPeps;
-//    }
-//    protected void PeptidePairsToGroupLinks(ArrayList<PeptidePair> forwardPeps, SelfAddHashSet<ProteinGroupLink> pepProteinGroupLinks, ArrayList<PeptidePair> linearPepPairs) {
-//        // link level fdr
-//        // turn peptide pairs to links
-//        // peptide pairs to links
-//        if (m_maximumLinkAmbiguity > 0) {
-//            for (PeptidePair pp : forwardPeps) {
-//                if (!pp.isLinear()) {
-//                    ProteinGroupLink pgl = pp.getLink();
-//                    if (pgl.getAmbiguity() <= m_maximumLinkAmbiguity) {
-//                        pepProteinGroupLinks.register(pgl);
-//                    }
-//                } else {
-//                    linearPepPairs.add(pp);
-//                }
-//            }
-//        } else {
-//            for (PeptidePair pp : forwardPeps) {
-//                if (!pp.isLinear()) {
-//                    pepProteinGroupLinks.register(pp.getLink());
-//                } else {
-//                    linearPepPairs.add(pp);
-//                }
-//            }
-//        }
-//    }
     /**
      * @return the m_maximumLinkAmbiguity
      */
     public int getMaximumLinkAmbiguity() {
-        return m_maximumLinkAmbiguity;
+        return settings.getMaxLinkAmbiguity();
     }
 
     /**
      * @param m_maximumLinkAmbiguity the m_maximumLinkAmbiguity to set
      */
     public void setMaximumLinkAmbiguity(int m_maximumLinkAmbiguity) {
-        this.m_maximumLinkAmbiguity = m_maximumLinkAmbiguity;
+        settings.setMaxLinkAmbiguity(m_maximumLinkAmbiguity);
     }
 
     /**
@@ -2331,18 +2999,14 @@ public abstract class OfflineFDR {
      * @return the m_maximumProteinAmbiguity
      */
     public int getMaximumProteinAmbiguity() {
-        return m_maximumProteinAmbiguity;
-    }
-
-    public int getMaximumProteinPairAmbiguity() {
-        return m_maximumProteinPairAmbiguity;
+        return settings.getMaxProteinAmbiguity();
     }
 
     /**
      * @param m_maximumProteinAmbiguity the m_maximumProteinAmbiguity to set
      */
     public void setMaximumProteinAmbiguity(int m_maximumProteinAmbiguity) {
-        this.m_maximumProteinAmbiguity = m_maximumProteinAmbiguity;
+        this.settings.setMaxProteinAmbiguity(m_maximumProteinAmbiguity);
     }
 
 //    private <T extends FDRSelfAdd<T>> HashedArrayList<T> fdr(double fdr, double safetyfactor, Collection<T> c, HashMap<Integer, Double> nextFDR, HashMap<Integer, Integer> inputCounts, HashMap<Integer, Integer> resultCounts, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR) {
@@ -2567,1016 +3231,6 @@ public abstract class OfflineFDR {
 
     }
 
-//    private <T extends FDRSelfAdd<T>> HashedArrayList<T> fdr(double fdr, double safetyfactor, Collection<T> c, HashMap<Integer, SubGroupFdrInfo<T>> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups,boolean setElementFDR) {
-    /**
-     * Splits up data into groups and forward each group to
-     * {@link #subFDR(java.util.ArrayList, java.util.ArrayList, boolean, rappsilber.fdr.result.SubGroupFdrInfo) subFDR}.
-     * results will then be collected
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param fdr the target FDR that is supossed to be returned
-     * @param safetyfactor don't report anything if the next higher calculatable
-     * @param fdrInput the input data that should be filtered by FDR
-     * @param groupInfo will hold all the information for the currently
-     * calculated FDRs
-     * @param tCount number of entries in the target database. This is used to
-     * normalise the FDR calculation for imbalenced databases
-     * @param dCount number of entries in the decoy database. This is used to
-     * normalise the FDR calculation for imbalenced databases
-     * @param minPepCount if an entry has less then these number of peptides
-     * supporting it - it will not be considered for the FDR-calculation
-     * @param ignoreGroups should we ignore groups cmpletely and just calculate
-     * a joined FDR?
-     * @param setElementFDR should each element be flaged up with the FDR that
-     * it group has at the given score? - is used to speed up the maximation (by
-     * not setting these)
-     */
-    private <T extends AbstractFDRElement<T>> void fdr(double fdr, FDRSettings settings, Collection<T> fdrInput, FDRResultLevel<T> groupInfo, double tCount, double dCount, int minPepCount, boolean ignoreGroups, boolean setElementFDR, Boolean localFDR, boolean groupByProteinPair) {
-        HashMap<String, ArrayList<T>> groupedList = new HashMap<String, ArrayList<T>>(4);
-        HashMap<String, UpdateableInteger> gTT = new HashMap<String, UpdateableInteger>(8);
-        HashMap<String, UpdateableInteger> gTD = new HashMap<String, UpdateableInteger>(8);
-        HashMap<String, UpdateableInteger> gDD = new HashMap<String, UpdateableInteger>(8);
-        double safetyfactor = settings.getReportFactor();
-        int minTDChance = settings.getMinTD();
-
-        int resultcount = 0;
-//        HashedArrayList<T> ret = new HashedArrayList<T>(c.size());
-        T firstinput = null;
-        boolean countmatches = false;
-        if (!fdrInput.isEmpty()) {
-            firstinput = fdrInput.iterator().next();
-            if (firstinput instanceof PSM) {
-                countmatches = true;
-            }
-        }
-
-        if (fdrInput.isEmpty()) {
-            return;
-        }
-
-        if (fdr == 1) {
-            fdr = 1000;
-            safetyfactor = 1000;
-        }
-        //HashMap<String,Integer> protpairToID = new HashMap<>();
-        int maxID = 2;
-
-        // split the data up into fdr-groups
-        for (T e : fdrInput) {
-            if (e.getPeptidePairCount() >= minPepCount) {
-                String fdrgroup = null;
-                if (ignoreGroups) { // don't do any grouping
-                    fdrgroup = "ALL";
-                } else {
-                    if (groupByProteinPair) {
-                        // do group by protein pairs to begin with
-                        ProteinGroup pg1 = e.getProteinGroup1();
-                        ProteinGroup pg2 = e.getProteinGroup2();
-                        // make sure we always get the same key
-                        String pgs1 = pg1.accessionsNoDecoy();
-                        String pgs2 = pg2.accessionsNoDecoy();
-
-                        String k1 = pgs1 + "_xl_" + pgs2;
-                        String k2 = pgs2 + "_xl_" + pgs1;
-                        Integer id = protpairToID.get(k1);
-                        if (id == null) // not found with key 1 -> try reversed key
-                        {
-                            id = protpairToID.get(k2);
-                        }
-                        // new protein pair
-                        if (id == null) {
-                            // assign id
-                            id = maxID++;
-//                            if (pgs1.contentEquals(pgs2)) {
-//                                id=-id;
-//                            }
-                            protpairToID.put(k1, id);
-                            protpairToID.put(k2, id);
-                            protpairToSize.put(id, new UpdateableInteger(1));
-                        } else if (countmatches) {
-                            protpairToSize.get(id).value++;
-                        }
-                        // set the id as fdr group
-                        fdrgroup = "" + id;
-                        // and write it to the 
-                        e.setFDRGroup("" + id);
-                    } else {
-                        fdrgroup = e.getFDRGroup();
-                    }
-                }
-                // get the right list of matches
-                ArrayList<T> gl = groupedList.get(fdrgroup);
-                if (gl == null) {
-                    // does not exist yet - so make a new one
-                    gl = new ArrayList<T>();
-                    groupedList.put(fdrgroup, gl);
-                    // start counting the types
-                    if (e.isTT()) {
-                        gTT.put(fdrgroup, new UpdateableInteger(1));
-                        gTD.put(fdrgroup, new UpdateableInteger(0));
-                        gDD.put(fdrgroup, new UpdateableInteger(0));
-                    } else if (e.isTD()) {
-                        gTT.put(fdrgroup, new UpdateableInteger(0));
-                        gTD.put(fdrgroup, new UpdateableInteger(1));
-                        gDD.put(fdrgroup, new UpdateableInteger(0));
-                    } else {
-                        gTT.put(fdrgroup, new UpdateableInteger(0));
-                        gTD.put(fdrgroup, new UpdateableInteger(0));
-                        gDD.put(fdrgroup, new UpdateableInteger(1));
-                    }
-                } else {
-                    if (e.isTT()) {
-                        gTT.get(fdrgroup).value++;
-                    } else if (e.isTD()) {
-                        gTD.get(fdrgroup).value++;
-                    } else {
-                        gDD.get(fdrgroup).value++;
-                    }
-                }
-                gl.add(e);
-            }
-        }
-
-        // join groups with similare number of PSMs
-        if (groupByProteinPair) {
-            UpdateableInteger max = RArrayUtils.max(protpairToSize.values());
-            HashMap<String, ArrayList<T>> groupedListNew = new HashMap<String, ArrayList<T>>(4);
-            HashMap<String, UpdateableInteger> gTTNew = new HashMap<String, UpdateableInteger>(8);
-            HashMap<String, UpdateableInteger> gTDNew = new HashMap<String, UpdateableInteger>(8);
-            HashMap<String, UpdateableInteger> gDDNew = new HashMap<String, UpdateableInteger>(8);
-            for (Map.Entry<String, ArrayList<T>> glOldE : groupedList.entrySet()) {
-                ArrayList<T> glOld = glOldE.getValue();
-                String oldgroup = glOldE.getKey();
-                UpdateableInteger protpairsize = protpairToSize.get(oldgroup);
-                String sizekey = "" + (glOld.size() + 100);
-                if (protpairsize != null) {
-                    sizekey = "" + protpairsize.value;
-                }
-                int oldTT = gTT.get(oldgroup).value;
-                int oldTD = gTD.get(oldgroup).value;
-                int oldDD = gDD.get(oldgroup).value;
-                ArrayList<T> glNew = groupedListNew.get(sizekey);
-                if (glNew == null) {
-                    groupedListNew.put("" + sizekey, glOld);
-
-                    gTTNew.put(sizekey, new UpdateableInteger(oldTT));
-                    gTDNew.put(sizekey, new UpdateableInteger(oldTD));
-                    gDDNew.put(sizekey, new UpdateableInteger(oldDD));
-                } else {
-                    glNew.addAll(glOld);
-                    gTTNew.get(sizekey).value += gTT.get(oldgroup).value;
-                    gTDNew.get(sizekey).value += gTD.get(oldgroup).value;
-                    gDDNew.get(sizekey).value += gDD.get(oldgroup).value;
-                }
-            }
-            groupedList = groupedListNew;
-            gTT = gTTNew;
-            gTD = gTDNew;
-            gDD = gDDNew;
-        }
-
-        // collect all subgroups that have to small number of results
-        ArrayList<String> toosmall = new ArrayList<>();
-        ArrayList<String> toosmallWithin = new ArrayList<>();
-        int toosmallsum = 0;
-        int toosmallsumWithin = 0;
-        HashSet<String> collectedToSmallNames = new HashSet<String>();
-        HashSet<String> collectedToSmallWithinNames = new HashSet<String>();
-        SubGroupFdrInfo<T> collectedToSmall = new SubGroupFdrInfo<T>();
-        SubGroupFdrInfo<T> collectedToSmallWithin = new SubGroupFdrInfo<T>();
-        ArrayList<T> tooSmallGroup = new ArrayList<>();
-        ArrayList<T> tooSmallGroupWithin = new ArrayList<>();
-
-        for (String fdrgroup : groupedList.keySet()) {
-            SubGroupFdrInfo<T> info = new SubGroupFdrInfo<T>();
-            info.TT = gTT.get(fdrgroup).value;
-            info.TD = gTD.get(fdrgroup).value;
-            info.DD = gDD.get(fdrgroup).value;
-            ArrayList<T> group = groupedList.get(fdrgroup);
-
-            info.DCount = dCount;
-            info.TCount = tCount;
-
-            ArrayList<T> groupResult = new ArrayList<T>();
-            info.inputCount = group.size();
-            info.targteFDR = fdr;
-            info.saftyfactor = safetyfactor;
-            info.fdrGroup = fdrgroup;
-            subFDR(group, groupResult, setElementFDR, info);
-            if (localFDR == null || localFDR) {
-                subFDRLocal(group, info);
-            }
-            if (localFDR != null && localFDR) {
-                ArrayList<T> filtered = new ArrayList<>();
-                for (T e : groupResult) {
-                    if (e.getPEP() <= fdr) {
-                        filtered.add(e);
-                    } else {
-                        if (e.isTT()) {
-                            info.resultTT--;
-                        } else if (e.isTD()) {
-                            info.resultTD--;
-                        } else {
-                            info.resultDD--;
-                        }
-                    }
-                }
-                groupResult = filtered;
-            }
-            String valid = checkValid(info, 0, minTDChance);
-//            if (info.resultTT*fdr<getMinDecoys())  {
-            if (valid != null) {
-                if ((!settings.ignoreValidityChecks())) {
-                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Discarded group {0}->{1}({2})", new Object[]{group.get(0).getClass(), fdrgroup, group.get(0).getFDRGroup()});
-                    //between
-                    if (fdrgroup.toLowerCase().contains("between")) {
-                        toosmallsum += groupResult.size();
-                        toosmall.add(fdrgroup);
-                        collectedToSmallNames.add(fdrgroup);
-                        collectedToSmall.TT += info.TT;
-                        collectedToSmall.TD += info.TD;
-                        collectedToSmall.DD += info.DD;
-                        collectedToSmall.DCount += info.DCount;
-                        collectedToSmall.TCount += info.TCount;
-                        collectedToSmall.inputCount += info.inputCount;
-                        tooSmallGroup.addAll(group);
-                        groupResult.clear();
-                    } else {
-                        // within group
-                        collectedToSmallWithinNames.add(fdrgroup);
-                        toosmallsumWithin += groupResult.size();
-                        toosmallWithin.add(fdrgroup);
-                        collectedToSmallWithin.TT += info.TT;
-                        collectedToSmallWithin.TD += info.TD;
-                        collectedToSmallWithin.DD += info.DD;
-                        collectedToSmallWithin.DCount += info.DCount;
-                        collectedToSmallWithin.TCount += info.TCount;
-                        collectedToSmallWithin.inputCount += info.inputCount;
-                        tooSmallGroupWithin.addAll(group);
-                        groupResult.clear();
-
-                    }
-                    info.filteredResult = new HashedArrayList<>();
-                } else {
-                    Logger.getLogger(this.getClass().getName()).log(Level.FINE, "FDR-Group {0}->{1}({2}) deemed unreliable - be carefull", new Object[]{group.get(0).getClass(), fdrgroup, group.get(0).getFDRGroup()});
-                }
-                info.didntPassCheck = valid;
-            } //else {
-            groupInfo.addGroup(fdrgroup, info);
-            //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
-            //            nextFDR.put(fdrgroup, prevFDR);
-            //            ret.addAll(groupResult);
-            resultcount += groupResult.size();
-            groupInfo.setLinear(groupInfo.getLinear() + info.linear);
-            groupInfo.setWithin(groupInfo.getWithin() + info.within);
-            groupInfo.setBetween(groupInfo.getBetween() + info.between);
-            //            resultCounts.put(fdrgroup, groupResult.size());
-            //}
-
-        }
-
-        // did we collect some subgroups with to small numbers?
-        if (toosmallsum + toosmallsumWithin > getMinDecoys() / fdr) {
-            Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Join up discarded groups to try and get some more results");
-            if (tooSmallGroup.size() > 0) {
-                ArrayList<T> groupResult = new ArrayList<T>();
-                collectedToSmall.targteFDR = fdr;
-                collectedToSmall.saftyfactor = safetyfactor;
-                collectedToSmall.fdrGroup = "CollectedSmallResults [" + RArrayUtils.toString(collectedToSmallNames, ",") + "]";
-                subFDR(tooSmallGroup, groupResult, setElementFDR, collectedToSmall);
-                if (localFDR == null || localFDR) {
-                    subFDRLocal(tooSmallGroup, collectedToSmall);
-                    if (localFDR != null) {
-                        ArrayList<T> filtered = new ArrayList<>();
-                        for (T e : groupResult) {
-                            if (e.getPEP() <= fdr) {
-                                filtered.add(e);
-                            } else {
-                                if (e.isTT()) {
-                                    collectedToSmall.resultTT--;
-                                } else if (e.isTD()) {
-                                    collectedToSmall.resultTD--;
-                                } else {
-                                    collectedToSmall.resultDD--;
-                                }
-                            }
-                        }
-                        groupResult = filtered;
-                    }
-                }
-                if (settings.ignoreValidityChecks() || checkValid(collectedToSmall, 0, minTDChance) == null) {
-                    groupInfo.addGroup(collectedToSmall.fdrGroup, collectedToSmall);
-                    //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
-                    //            nextFDR.put(fdrgroup, prevFDR);
-                    //            ret.addAll(groupResult);
-                    resultcount += groupResult.size();
-                    groupInfo.setLinear(groupInfo.getLinear() + collectedToSmall.linear);
-                    groupInfo.setWithin(groupInfo.getWithin() + collectedToSmall.within);
-                    groupInfo.setBetween(groupInfo.getBetween() + collectedToSmall.between);
-                }
-            }
-
-            if (tooSmallGroupWithin.size() > 0) {
-                ArrayList<T> groupResultwithin = new ArrayList<T>();
-
-                collectedToSmallWithin.targteFDR = fdr;
-                collectedToSmallWithin.saftyfactor = safetyfactor;
-                collectedToSmallWithin.fdrGroup = "CollectedSmallResultsWithin  [" + RArrayUtils.toString(collectedToSmallWithinNames, ",") + "]";
-                subFDR(tooSmallGroupWithin, groupResultwithin, setElementFDR, collectedToSmallWithin);
-                if (localFDR == null || localFDR) {
-                    subFDRLocal(tooSmallGroupWithin, collectedToSmallWithin);
-                    if (localFDR != null) {
-                        ArrayList<T> filtered = new ArrayList<>();
-                        for (T e : groupResultwithin) {
-                            if (e.getPEP() <= fdr) {
-                                filtered.add(e);
-                            } else {
-                                if (e.isTT()) {
-                                    collectedToSmallWithin.resultTT--;
-                                } else if (e.isTD()) {
-                                    collectedToSmallWithin.resultTD--;
-                                } else {
-                                    collectedToSmallWithin.resultDD--;
-                                }
-                            }
-                        }
-                        groupResultwithin = filtered;
-                    }
-                }
-                if (settings.ignoreValidityChecks() || checkValid(collectedToSmallWithin, 0, minTDChance) == null) {
-                    groupInfo.addGroup(collectedToSmallWithin.fdrGroup, collectedToSmallWithin);
-                    //                    group, fdr, safetyfactor, groupResult, tCount, dCount,setElementFDR);
-                    //            nextFDR.put(fdrgroup, prevFDR);
-                    //            ret.addAll(groupResult);
-                    resultcount += groupResultwithin.size();
-                    groupInfo.setLinear(groupInfo.getLinear() + collectedToSmallWithin.linear);
-                    groupInfo.setWithin(groupInfo.getWithin() + collectedToSmallWithin.within);
-                    groupInfo.setBetween(groupInfo.getBetween() + collectedToSmallWithin.between);
-                }
-            }
-        }
-
-        if (resultcount == 0 && fdrInput.size() > 100) {
-            // we didn't get any results through. try a non grouped
-            SubGroupFdrInfo info = new SubGroupFdrInfo();
-            info.fdrGroup = "NoSubResults";
-            for (String fdrgroup : groupedList.keySet()) {
-                info.TT += gTT.get(fdrgroup).value;
-                info.TD += gTD.get(fdrgroup).value;
-                info.DD += gDD.get(fdrgroup).value;
-            }
-
-            info.inputCount = fdrInput.size();
-
-            ArrayList<T> allResult = new ArrayList<T>();
-
-            ArrayList<T> all = new ArrayList<T>(fdrInput);
-            subFDR(all, allResult, setElementFDR, info);
-            if (localFDR == null || localFDR) {
-                subFDRLocal(all, info);
-                if (localFDR != null) {
-                    ArrayList<T> filtered = new ArrayList<>();
-                    for (T e : allResult) {
-                        if (e.getPEP() <= fdr) {
-                            filtered.add(e);
-                        } else {
-
-                            if (e.isTT()) {
-                                info.resultTT--;
-                            } else if (e.isTD()) {
-                                info.resultTD--;
-                            } else {
-                                info.resultDD--;
-                            }
-                        }
-                    }
-                    allResult = filtered;
-                }
-            }
-            if (settings.ignoreValidityChecks() || checkValid(info, 0, minTDChance) == null) {
-                groupInfo.addGroup(info.fdrGroup, info);
-                groupInfo.setLinear(groupInfo.getLinear() + info.linear);
-                groupInfo.setWithin(groupInfo.getWithin() + info.within);
-                groupInfo.setBetween(groupInfo.getBetween() + info.between);
-            } else {
-                allResult.clear();
-            } 
-        }
-
-//        return ret;
-    }
-
-//    /**
-//     * takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-//     * @param <T>       What type of Information is the FDR to be applied
-//     * @param TD
-//     * @param DD
-//     * @param TT
-//     * @param group     All entri
-//     * @param fdr       the target FDR that is supossed to be returned
-//     * @param safetyfactor  don't report anything if the next higher calculatable
-//     * @param results
-//     * @param TCount
-//     * @param DCount
-//     * @param setElementFDR
-//     * @return
-//     */
-//    protected <T extends FDRSelfAdd<T>> double subFDR(int TD, int DD, int TT, ArrayList<T> group, double fdr, double saftyfactor, ArrayList<T> results, double TCount, double DCount,boolean setElementFDR) {
-//        
-//        ArrayList<T> ret = new ArrayList<T>();
-//        double TTfactor = 1;
-//        double DDfactor = (TCount*TCount+TCount)/(DCount*DCount+DCount);
-//        double TDfactor = TCount / DCount;
-//        double normTT = TT *TTfactor;
-//        double normTD = TD * TDfactor;
-//        double normDD = DD * DDfactor;
-//
-//        // total fdr rate
-//        double prevFDR = 0;
-//        if (normTD!=0)
-//            prevFDR = ((normTD+1) + normDD*(1-2*normTD/((normTD)+Math.sqrt(normTD))))/normTT;
-//        
-//        if (fdr >= 1) {
-//            fdr = Double.POSITIVE_INFINITY;
-//        }
-//
-//        // check whether the fdr to reach the fdr in this dataset we would need at least the minimum number of decoys
-//        // if not we assume the fdr-calculation does not make sense
-//        if ((TT + TD + DD) * fdr < MINIMUM_POSSIBLE_DECOY && fdr < 1) {
-//            return prevFDR;
-//        }
-//
-//        // all the elements within this group
-//        int groupSize = group.size();
-//
-//        // sort them by score
-//        Collections.sort(group);
-//
-////        if (!isPSMScoreHighBetter())
-////            Collections.reverse(group);
-//
-//        int fdrSwitch = groupSize - 1;
-//        double highFDR = prevFDR;
-//        // now we can just go through and find the cut-off
-//        for (int i = groupSize - 1; i >= 0; i--) {
-//            //double efdr = (TD / TDfactor - DD / DDfactor) * TTfactor / (double) TT;
-//            normTT = TT *TTfactor;
-//            normTD = TD * TDfactor;
-//            normDD = DD * DDfactor;
-//            
-//            double efdr = 0;
-//            
-//            if (normTD>0)
-//                efdr=(normTD + normDD*(1-2*normTD/((normTD)+Math.sqrt(normTD))))/normTT;
-//            
-//            if (efdr <= fdr && efdr<prevFDR &&  prevFDR / fdr < saftyfactor) {
-//                
-//                // as a safty meassure only accept things, if we don't have a to big a jump in fdr
-////                if (prevFDR / fdr < saftyfactor) {
-//                    double lastFDR = prevFDR;
-//                    double setFDR = efdr;
-//                    if (setElementFDR) {
-//                        for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            e.setFDR(setFDR);
-//                            ret.add(e);
-//                            if (e.isTT()) {
-//                                TT--;
-//                            } else if (e.isTD()) {
-//                                TD--;
-//                            } else if (e.isDD()) {
-//                                DD--;
-//                            }
-//
-//                            normTT = TT * TTfactor;
-//                            normTD = TD * TDfactor;
-//                            normDD = DD * DDfactor;
-//            
-//                            
-//                            if (TD > 0) {
-//                                setFDR = Math.min(setFDR, (normTD + normDD*(1-2*normTD/((normTD)+Math.sqrt(normTD))))/normTT);
-//                            } else
-//                                setFDR = 0;
-//                        }
-//                    } else {
-//                         for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            ret.add(e);                             
-//                         }
-//                    }
-////                }
-//                if (fdr >=1 || ret.size() >=MINIMUM_POSSIBLE_RESULT)
-//                    results.addAll(ret);
-//                return prevFDR;
-//            }
-//            prevFDR = Math.min(efdr, prevFDR);
-//
-//            T e = group.get(i);
-//            if (e.isTT()) {
-//                TT--;
-//            } else if (e.isTD()) {
-//                TD--;
-//            } else if (e.isDD()) {
-//                DD--;
-//            } else {
-//                Logger l = Logger.getLogger(FDRCalculation.class.getName());
-//                l.log(Level.SEVERE, "Something is wrong here!", new Exception(""));
-//                System.exit(-1);
-//            }
-//
-//        }
-//        return prevFDR;
-//    }
-    /**
-     * Takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-     * <p>
-     * The assumption is that we have a symmetric cross-linker. <br/>Therefore:
-     * <p>
-     * {@code FP(TT)=TD+DD*(1-TDdb/DDdb)}</p>
-     * </p><p>
-     * If TCount and DCount are of different size then the false positive
-     * estimation gets scaled accordingly.</p
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param TD total number of TD matches
-     * @param DD total number of DD matches
-     * @param TT total number of TT matches
-     * @param group All entries for which the target FDR should be calculated
-     * @param fdr the target FDR that is supposed to be returned
-     * @param safetyfactor don't report anything if the next higher calculable
-     * exceeds the target-FDR by the given factor
-     * @param results the passing results will be added to this ArrayList
-     * @param TCount Size of the target database
-     * @param DCount size of the decoy database
-     * @param isSymmetric do we calculate an FDR for a symmetric or an
-     * asymmetric experiment
-     * @param setElementFDR
-     * @return
-     */
-//    protected <T extends FDRSelfAdd<T>> double subFDR(int TD, int DD, int TT, ArrayList<T> group, double fdr, double safetyfactor, ArrayList<T> results, double TCount, double DCount,boolean setElementFDR, boolean isSymmetric) {
-//        
-//        ArrayList<T> ret = new ArrayList<T>();
-//        
-//        double TTSize;
-//        double TDSize;
-//        double DDSize;
-//        double k;
-//        
-//        if (isSymmetric) {
-//            TDSize = TCount*DCount;
-//            DDSize = (DCount*DCount+DCount)/2;
-//            k=TDSize/DDSize;
-//            TTSize = (TCount*TCount+TCount)/2;
-//        } else {
-//            TDSize = 2*TCount*DCount;
-//            DDSize = DCount*DCount;
-//            TTSize = TCount*TCount;
-//            k=TDSize/DDSize;
-//        }
-//        double TTfactor = 1;
-//        double DDfactor = TTSize/DDSize;
-//        double TDfactor = k*TTSize/TDSize;
-//
-//        double normTT = TT * TTfactor;
-//        double normTD = TD * TDfactor;
-//        double normDD = DD * DDfactor;
-//        
-//
-//        // total fdr rate
-//        double prevFDR = 0;
-//        if (normTD!=0)
-//            prevFDR = (normTD + normDD*(1-k))/normTT;
-//        
-//        if (fdr >= 1) {
-//            fdr = Double.POSITIVE_INFINITY;
-//        }
-//
-//        // check whether the fdr to reach the fdr in this dataset we would need at least the minimum number of decoys
-//        // if not we assume the fdr-calculation does not make sense
-//        if ((TT + TD + DD) * fdr < MINIMUM_POSSIBLE_DECOY && fdr < 1) {
-//            return prevFDR;
-//        }
-//
-//        // all the elements within this group
-//        int groupSize = group.size();
-//
-//        // sort them by score
-//        Collections.sort(group);
-//
-////        if (!isPSMScoreHighBetter())
-////            Collections.reverse(group);
-//
-//        int fdrSwitch = groupSize - 1;
-//        double highFDR = prevFDR;
-//        // now we can just go through and find the cut-off
-//        for (int i = groupSize - 1; i >= 0; i--) {
-//            //double efdr = (TD / TDfactor - DD / DDfactor) * TTfactor / (double) TT;
-//            normTT = TT *TTfactor;
-//            normTD = TD * TDfactor;
-//            normDD = DD * DDfactor;
-//            
-//            double efdr = 0;
-//            
-//            if (normTD>0)
-//                efdr=(normTD + normDD*(1-k))/normTT;
-//            
-//            if (efdr <= fdr && efdr<prevFDR &&  prevFDR / fdr < safetyfactor) {
-//                
-//                // as a safty meassure only accept things, if we don't have a to big a jump in fdr
-////                if (prevFDR / fdr < safetyfactor) {
-//                    double lastFDR = prevFDR;
-//                    double setFDR = efdr;
-//                    if (setElementFDR) {
-//                        for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            e.setFDR(setFDR);
-//                            ret.add(e);
-//                            if (e.isTT()) {
-//                                TT--;
-//                            } else if (e.isTD()) {
-//                                TD--;
-//                            } else if (e.isDD()) {
-//                                DD--;
-//                            }
-//
-//                            normTT = TT * TTfactor;
-//                            normTD = TD * TDfactor;
-//                            normDD = DD * DDfactor;
-//            
-//                            
-//                            if (TD > 0) {
-//                                setFDR = Math.min(setFDR, (normTD + normDD*(1-k))/normTT);
-//                            } else
-//                                setFDR = 0;
-//                        }
-//                    } else {
-//                         for (; i >= 0; i--) {
-//                            T e = group.get(i);
-//                            ret.add(e);                             
-//                         }
-//                    }
-////                }
-//                if (fdr >=1 || ret.size() >=MINIMUM_POSSIBLE_RESULT)
-//                    results.addAll(ret);
-//                return prevFDR;
-//            }
-//            prevFDR = Math.min(efdr, prevFDR);
-//
-//            T e = group.get(i);
-//            if (e.isTT()) {
-//                TT--;
-//            } else if (e.isTD()) {
-//                TD--;
-//            } else if (e.isDD()) {
-//                DD--;
-//            } else {
-//                Logger l = Logger.getLogger(FDRCalculation.class.getName());
-//                l.log(Level.SEVERE, "Something is wrong here!", new Exception(""));
-//                System.exit(-1);
-//            }
-//
-//        }
-//        return prevFDR;
-//    }
-    /**
-     * Takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-     * <p>
-     * The assumption is that we have a symmetric cross-linker. <br/>Therefore:
-     * <p>
-     * {@code FP(TT)=TD+DD*(1-TDdb/DDdb)}</p>
-     * </p><p>
-     * If TCount and DCount are of different size then the false positive
-     * estimation gets scaled accordingly.</p
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param group All entries for which the target FDR should be calculated
-     * @param fdr the target FDR that is supposed to be returned
-     * @param safetyfactor don't report anything if the next higher calculable
-     * exceeds the target-FDR by the given factor
-     * @param results the passing results will be added to this ArrayList
-     * @param TCount Size of the target database
-     * @param DCount size of the decoy database
-     * @param info all informations needed for this sub group
-     * @param isSymmetric do we calculate an FDR for a symmetric or an
-     * asymmetric experiment
-     * @param setElementFDR
-     * @return
-     */
-    protected <T extends AbstractFDRElement<T>> double subFDR(ArrayList<T> group, ArrayList<T> results, boolean setElementFDR, SubGroupFdrInfo info) {
-
-        HashedArrayList<T> ret = new HashedArrayList<T>();
-        info.results = ret;
-        info.filteredResult = ret;
-
-        double TT = info.TT;
-        int TD = info.TD;
-        int DD = info.DD;
-
-        double fdr = info.targteFDR;
-
-        if (fdr >= 1) {
-            fdr = Double.POSITIVE_INFINITY;
-        }
-
-        // all the elements within this group
-        int groupSize = group.size();
-
-        // sort them by score
-        Collections.sort(group, new Comparator<T>() {
-
-            public int compare(T o1, T o2) {
-                return Double.compare(o2.getScore() * o2.getLinkedSupport(), o1.getScore() * o1.getLinkedSupport());
-            }
-        });
-
-        // total fdr rate
-        double prevFDR = (TD - DD) / TT;
-        int prevTDIndex = groupSize - 1;
-
-//        if (!isPSMScoreHighBetter())
-//            Collections.reverse(group);
-        int fdrSwitch = groupSize - 1;
-        double highFDR = prevFDR;
-        // now we can just go through and find the cut-off
-        for (int i = groupSize - 1; i >= 0; i--) {
-
-            double efdr = (TD - DD) / TT;
-            double efdr_n = ((TD - 1) - DD) / TT;
-            double efdr_p = ((TD + 1) - DD) / TT;
-            if (efdr_n < 0 && DD == 0) {
-                efdr_n = 0;
-            }
-
-            T e = group.get(i);
-            double score = e.getScore();
-
-            // we steped below the target fdr (efdr<= fdr) 
-            if (efdr <= fdr) {
-                //did we just pas an fdr-step
-                if ((efdr < prevFDR || prevFDR <= 0.0 || prevFDR == Double.POSITIVE_INFINITY) || fdr == Double.POSITIVE_INFINITY) {
-                    // does it fullfill the saftyfactor
-                    if ((efdr_p / fdr < info.saftyfactor || info.saftyfactor > 1000 || info.saftyfactor == 0) || fdr == Double.POSITIVE_INFINITY) {
-                        //if ((efdr_p / fdr < info.saftyfactor && efdr_n >= 0) || fdr == Double.POSITIVE_INFINITY)  {
-                        if (info.firstPassingFDR == 0) {
-                            info.firstPassingFDR = prevFDR;
-                        }
-
-                        info.higherFDR = prevFDR;
-                        info.worstAcceptedScore
-                                = info.lowerFDR = efdr;
-                        info.resultCount = i;
-                        int lastFDRIndex = i;
-
-                        double lastFDR = prevFDR;
-                        int lastTDIndex = prevTDIndex;
-                        T lastTDElement = group.get(lastTDIndex);
-                        double setFDR = efdr;
-                        info.resultTT = (int) TT;
-                        info.resultTD = TD;
-                        info.resultDD = DD;
-                        if (setElementFDR) {
-                            for (; i >= 0; i--) {
-
-                                e = group.get(i);
-                                e.setFDR(setFDR);
-                                e.setHigherFDR(lastFDR);
-                                e.setHigherTD(lastTDElement);
-                                ret.add(e);
-
-                                if (e.isTT()) {
-                                    TT--;
-                                    if (e.isLinear()) {
-                                        info.linear++;
-                                    }
-
-                                    if (e.isInternal()) {
-                                        info.within++;
-                                    } else if (e.isBetween()) {
-                                        info.between++;
-                                    }
-
-                                } else if (e.isTD()) {
-                                    TD--;
-                                    info.resultTD++;
-                                    for (int l = i + 1; l <= lastTDIndex; l++) {
-                                        group.get(l).setLowerTD(e);
-                                    }
-                                    lastTDIndex = i;
-                                    lastTDElement = e;
-                                } else if (e.isDD()) {
-                                    DD--;
-                                    info.resultDD++;
-                                }
-
-                                double currfdr = 0;
-                                if (TD > 0) {
-                                    currfdr = (TD - DD) / TT;
-                                }
-
-                                if (currfdr < setFDR) {
-                                    lastFDR = setFDR;
-                                    // we reached a new lower fdr
-                                    setFDR = currfdr;
-
-                                    // set the lower fdr values for the previous data
-                                    for (int li = lastFDRIndex; li <= i; li++) {
-                                        group.get(li).setLowerFDR(currfdr);
-                                    }
-                                    lastFDRIndex = i - 1;
-                                }
-
-                            }
-                            for (int li = lastFDRIndex; li <= i && li >= 0; li++) {
-                                group.get(li).setLowerFDR(0);
-                            }
-
-                            T best = group.get(0);
-                            for (int l = 0; l <= lastTDIndex; l++) {
-                                group.get(l).setLowerTD(best);
-                            }
-
-                        } else {
-                            for (; i >= 0; i--) {
-                                e = group.get(i);
-                                if (e.isTT()) {
-                                    if (e.isLinear()) {
-                                        info.linear++;
-                                    }
-
-                                    if (e.isInternal()) {
-                                        info.within++;
-                                    } else if (e.isBetween()) {
-                                        info.between++;
-                                    }
-                                }
-                                ret.add(e);
-                            }
-                        }
-                        //                }
-
-                        //  info.results = ret;
-                        //  info.filteredResult = ret;
-                        //                if (fdr >=1 || ret.size() >=MINIMUM_POSSIBLE_RESULT)
-                        results.addAll(ret);
-                        info.results = ret;
-                        info.filteredResult = ret;
-                        info.worstAcceptedScore = score;
-
-                        return prevFDR;
-                    } else {
-                        info.firstPassingFDR = prevFDR;
-                    }
-                }
-            }
-
-            if (efdr < prevFDR) {
-                prevFDR = efdr;
-            }
-
-            if (e.isTT()) {
-                TT--;
-            } else if (e.isTD()) {
-                TD--;
-                prevTDIndex = i;
-            } else if (e.isDD()) {
-                DD--;
-            } else {
-                Logger l = Logger.getLogger(this.getClass().getName());
-                l.log(Level.SEVERE, "Something is wrong here!", new Exception(""));
-                System.exit(-1);
-            }
-
-        }
-        return prevFDR;
-    }
-
-    /**
-     * Takes a sub-set of entries and does the actual FDR-estimation/cutoff.
-     * <p>
-     * The assumption is that we have a symmetric cross-linker. <br/>Therefore:
-     * <p>
-     * {@code FP(TT)=TD+DD*(1-TDdb/DDdb)}</p>
-     * </p><p>
-     * If TCount and DCount are of different size then the false positive
-     * estimation gets scaled accordingly.</p
-     *
-     * @param <T> What type of Information is the FDR to be applied
-     * @param group All entries for which the target FDR should be calculated
-     * @param fdr the target FDR that is supposed to be returned
-     * @param safetyfactor don't report anything if the next higher calculable
-     * exceeds the target-FDR by the given factor
-     * @param results the passing results will be added to this ArrayList
-     * @param TCount Size of the target database
-     * @param DCount size of the decoy database
-     * @param info all informations needed for this sub group
-     * @param isSymmetric do we calculate an FDR for a symmetric or an
-     * asymmetric experiment
-     * @param setElementFDR
-     * @return
-     */
-    protected <T extends AbstractFDRElement<T>> void subFDRLocal(ArrayList<T> group, SubGroupFdrInfo info) {
-
-        int TT = info.TT;
-        int TD = info.TD;
-        int DD = info.DD;
-
-        double TTSize;
-        double TDSize;
-        double DDSize;
-        double k;
-
-        // all the elements within this group
-        int groupSize = group.size();
-
-        // sort them by score
-        Collections.sort(group, new Comparator<T>() {
-
-            public int compare(T o1, T o2) {
-                return Double.compare(o1.getScore(), o2.getScore());
-            }
-        });
-
-        int prevTDIndex = groupSize - 1;
-
-        int minTD = 2;
-        double minWindow = Math.abs(group.get(0).getScore() - group.get(prevTDIndex).getScore()) / 10.0;
-
-        int lastMin = 0;
-        T lastMinE = group.get(0);
-        double lastMinScore = lastMinE.getScore();
-        int lastMax = 0;
-        T lastMaxE = lastMinE;
-        double lastMaxScore = lastMinScore;
-
-        // count within the window
-        int wTT = lastMinE.isTT() ? 1 : 0;
-        int wTD = lastMinE.isTD() ? 1 : 0;
-        int wDD = lastMinE.isDD() ? 1 : 0;
-        for (T e : group) {
-
-            double centerscore = e.getScore();
-            double minscore = centerscore - minWindow;
-            double maxscore = centerscore + minWindow;
-
-            // find the highest to be included eleemnt
-            while (lastMax < groupSize - 1 && maxscore > group.get(lastMax + 1).getScore()) {
-                lastMax++;
-                lastMaxE = group.get(lastMax);
-                lastMaxScore = lastMaxE.getScore();
-                if (lastMaxE.isTT()) {
-                    wTT++;
-                } else if (lastMaxE.isTD()) {
-                    wTD++;
-                } else {
-                    wDD++;
-                }
-            }
-
-            // shift to the lowest to be included eleemnt
-            while (minscore > lastMinScore
-                    && wTD >= minTD
-                    && // expand the window until we have more then the required TD
-                    wDD * 1.1 < wTD
-                    && // also we want some more TD the DD
-                    wDD * 1.1 < wTT) {  // and more TT then DD
-                lastMin++;
-                if (lastMinE.isTT()) {
-                    wTT--;
-                } else if (lastMinE.isTD()) {
-                    wTD--;
-                } else {
-                    wDD--;
-                }
-                lastMinE = group.get(lastMin);
-                lastMinScore = lastMinE.getScore();
-            }
-            // do we need to readjust the highest score?
-            if (minscore > lastMinScore) {
-                double targetMaxScore = lastMinScore - minscore + maxscore;
-                while (lastMax < groupSize - 1) {
-                    T nextMaxE = group.get(lastMax + 1);
-                    double nextScore = nextMaxE.getScore();
-                    if (nextScore < targetMaxScore) {
-                        lastMax++;
-                        lastMaxE = nextMaxE;
-                        lastMaxScore = nextScore;
-                        if (lastMaxE.isTT()) {
-                            wTT++;
-                        } else if (lastMaxE.isTD()) {
-                            wTD++;
-                        } else {
-                            wDD++;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-            e.setPEP((wTD - wDD) / (double) wTT);
-
-        }
-    }
-
     /**
      * is a higher score better than a lower score?
      *
@@ -3751,7 +3405,18 @@ public abstract class OfflineFDR {
                 + "--singleSummary "
                 + "--uniquePSMs= "
                 + "--outputlocale= "
-                + "--boost= ";
+                + "--boost= "
+                + "--boostbetween "
+                + "--single-step-boost"
+                + "--filter-consecutives"
+                + "--mzidfirst"
+                + "--mzidlast"
+                + "--mzidemail"
+                + "--mzidorg"
+                + "--mzidaddr"
+                + "--validitycheck"
+                + "--validitymindecoy"
+                ;
 
     }
 
@@ -3805,7 +3470,25 @@ public abstract class OfflineFDR {
                 + "                         options are true,false,1,0\n"
                 + "--outputlocale=          numbers in csv-files are writen \n"
                 + "                         according to this locale\n"
-                + "--boost=(pep|link|prot)  boost results on the given level\n";
+                + "--boost=(pep|link|prot)  boost results on the given level\n"
+                + "--boost-between          when boosting try to maximize betweens\n"
+                + "--validitycheck          only accept subgroups that pass the validity check\n"
+                + "--validitymindecoy=X     sub groups are considered invalid if "
+                + "                         not at least X(default: 2) TD macthes "
+                + "                         would be possible\n"
+                + "--single-step-boost      if certain columns are found these are\n"
+                + "                         used boosting as well. By default they\n"
+                + "                         get used in a second round of boosting\n"
+                + "                         everything is bossted together\n"
+                + "--filter-consecutives    ignore any peptide pair that that could\n"
+                + "                         be consecutive in a protein sequence\n"
+                + "--ec-filter              currected version of mi-filter\n"
+                + "--mzidfirst              mzIdentML Document Owner first name\n"
+                + "--mzidlast               mzIdentML Document Owner last name\n"
+                + "--mzidemail              mzIdentML Document email address\n"
+                + "--mzidorg                mzIdentML Document Owner Organisation\n"
+                + "--mzidaddr               mzIdentML Document Owner address\n"
+                ;
 
     }
 
@@ -3841,9 +3524,18 @@ public abstract class OfflineFDR {
         this.outputlocale = locale;
         this.numberFormat = NumberFormat.getInstance(locale);
         numberFormat = NumberFormat.getNumberInstance(locale);
+        String envsetting = System.getenv("XIFDR_PRECISION");
+        int maxDigits = (int)(envsetting == null ? 6.0 : Double.parseDouble(envsetting));
+        numberFormat.setMaximumFractionDigits(maxDigits);
+        // make sure we are not writing 1234 as 1,234
+        numberFormat.setGroupingUsed(false);
         DecimalFormat fformat = (DecimalFormat) numberFormat;
         fformat.setGroupingUsed(false);
-//        DecimalFormatSymbols symbols=fformat.getDecimalFormatSymbols();
+        DecimalFormatSymbols symbols=fformat.getDecimalFormatSymbols();
+        // prevent some odd unicode errors
+        symbols.setNaN("NaN");
+        symbols.setInfinity("inf");
+        fformat.setDecimalFormatSymbols(symbols);
 //        fformat.setMaximumFractionDigits(6);
 //        localNumberDecimalSeparator= ""+symbols.getDecimalSeparator();
     }
@@ -4005,24 +3697,27 @@ public abstract class OfflineFDR {
 
     public String[] parseArgs(String[] argv, FDRSettings settings) {
         ArrayList<String> unknown = new ArrayList<String>();
-        int[] lengthgroups = new int[]{4};
+        FDRSettingsImpl defaults = new FDRSettingsImpl();
+        int[] lengthgroups = new int[]{0};
         double[] psmFDR = new double[]{1, 1, 1};
         double[] pepFDR = new double[]{1, 1, 1};
         double[] protFDR = new double[]{1, 1, 1};
         double[] linkFDR = new double[]{1, 1, 1};
         double[] ppiFDR = new double[]{1, 1, 1};
-        int maxLinkAmbiguity = 0;
-        int maxProteinGroupAmbiguity = 0;
-        int minPepPerLink = 1;
-        int minPepPerProtein = 1;
-        int minPepPerPPI = 1;
-        int minPepLength = 6;
+        int maxLinkAmbiguity = defaults.MaxLinkAmbiguity;
+        int maxProteinGroupAmbiguity = defaults.MaxProteinAmbiguity;
+        int minPepPerLink = defaults.MinLinkPepCount;
+        int minPepPerProtein = defaults.MinProteinPepCount;
+        int minPepPerPPI = defaults.MinPPIPepCount;
+        int minPepLength = defaults.MinPeptideLength;
         boolean ignoreGroups = false;
         boolean csvsummaryonly = false;
         boolean csvsinglesummary = false;
         String csvdir = null;
         String csvBase = null;
         int fdrDigits = commandlineFDRDigits;
+        FDRLevel maximizeWhat = null;
+        settings.doOptimize(null);
 
         for (String arg : argv) {
 
@@ -4035,25 +3730,48 @@ public abstract class OfflineFDR {
                     lengthgroups[i] = Integer.parseInt(slen[i]);
                 }
 
+            } else if (arg.toLowerCase().startsWith("--decoyprefix=")) {
+                String what = arg.substring("--decoyprefix=".length()).trim().toLowerCase();
+                Protein.DECOY_PREFIX = what;
             } else if (arg.toLowerCase().startsWith("--boost=")) {
                 String what = arg.substring("--boost=".length()).trim().toLowerCase();
                 if (what.endsWith("s")) {
                     what = what.substring(0, what.length() - 1);
                 }
-                if (what.contentEquals("pep")
+                
+                if (what.contentEquals("csm")
+                        || what.contentEquals("psm")
+                        || what.contentEquals("spectrum")) {
+                    maximizeWhat = FDRLevel.PSM;
+                } else if (what.contentEquals("pep")
                         || what.contentEquals("peptidepair")
                         || what.contentEquals("peppair")) {
-                    this.maximizeWhat = FDRLevel.PEPTIDE_PAIR;
+                    maximizeWhat = FDRLevel.PEPTIDE_PAIR;
                 } else if (what.contentEquals("link")
                         || what.contentEquals("residuepair")) {
-                    this.maximizeWhat = FDRLevel.PROTEINGROUPLINK;
+                    maximizeWhat = FDRLevel.PROTEINGROUPLINK;
                 } else if (what.contentEquals("prot")
                         || what.contentEquals("protein")
                         || what.contentEquals("proteinpair")
                         || what.contentEquals("ppi")) {
-                    this.maximizeWhat = FDRLevel.PROTEINGROUPPAIR;
+                    maximizeWhat = FDRLevel.PROTEINGROUPPAIR;
+                } else {
+                    throw new UnsupportedOperationException("Can't boost on " + what);
                 }
+                settings.doOptimize(maximizeWhat);
+            } else if (arg.toLowerCase().equals("--boost-between")) {
+                settings.setBoostBetween(true);
+            } else if (arg.toLowerCase().equals("--single-step-boost")) {
+                settings.twoStepOptimization(false);
 
+            } else if (arg.toLowerCase().equals("--csvcharset=")) {
+                this.csvcharset = Charset.forName(arg.substring(arg.indexOf("=")+1));
+            } else if (arg.toLowerCase().equals("--filter-consecutives") || arg.toLowerCase().equals("-C")) {
+                settings.setFilterConsecutivePeptides(true);
+
+            } else if (arg.toLowerCase().equals("--ec-filter")) {
+                settings.setfilterBySelfAndMono(true);
+                System.err.println("Enabling self and modified Filter (BETA-FEATURE)");
             } else if (arg.startsWith("--reportfactor=")) {
 
             } else if (arg.startsWith("--psmfdr=")) {
@@ -4242,12 +3960,23 @@ public abstract class OfflineFDR {
                 String l = arg.substring(arg.indexOf("=") + 1).trim();
                 setOutputLocale(l);
 
+            } else if (arg.contentEquals("--validitychecks")) {
+                String l = arg.substring(arg.indexOf("=") + 1).trim();
+                settings.ignoreValidityChecks(false);
+
+            } else if (arg.contentEquals("--validitymindecoy=")) {
+                String m = arg.substring(arg.indexOf("=") + 1).trim();
+                settings.setMinTD(Integer.parseInt(m));
+                settings.ignoreValidityChecks(true);
+
             } else if (arg.startsWith("--uniquePSMs=")) {
                 String bool = arg.substring(arg.indexOf("=") + 1).trim();
                 boolean filter = bool.matches("(?i)^(T|1(\\.0*)?|-1(\\.0*)?|TRUE|Y|YES|\\+)$");
                 settings.setFilterToUniquePSM(filter);
-                setFilterUniquePSMs(filter);
+            } else if (arg.contentEquals("--got-restarted")) {
+                System.out.println("got restarted");
             } else {
+                System.out.println(arg);
                 unknown.add(arg);
             }
 
@@ -4273,9 +4002,7 @@ public abstract class OfflineFDR {
         setCsvOutBaseSetting(csvBase);
         setCsvOutDirSetting(csvdir);
 
-        setMaximumLinkAmbiguity(maxLinkAmbiguity);
         settings.setMaxLinkAmbiguity(maxLinkAmbiguity);
-        setMaximumProteinAmbiguity(maxProteinGroupAmbiguity);
         settings.setMaxProteinAmbiguity(maxProteinGroupAmbiguity);
         setMinPepPerProteinGroup(minPepPerProtein);
         settings.setMinProteinPepCount(minPepPerProtein);
@@ -4358,21 +4085,25 @@ public abstract class OfflineFDR {
         String pepSeq2 = getPeptideSequence(pep2);
 
         StringBuilder sbaccessions = new StringBuilder();
+        StringBuilder sbnames = new StringBuilder();
         StringBuilder sbdescriptions = new StringBuilder();
         StringBuilder sbPositions = new StringBuilder();
         StringBuilder sbProtLink = new StringBuilder();
-        peptidePositionsToPSMOutString(pep1.getPositions(), sbaccessions, sbdescriptions, sbPositions, sbProtLink, pepLink1);
+        peptidePositionsToPSMOutString(pep1.getPositions(), sbaccessions, sbnames, sbdescriptions, sbPositions, sbProtLink, pepLink1);
         String accessions1 = sbaccessions.toString();
+        String names1 = sbnames.toString();
         String descriptions1 = sbdescriptions.toString();
         String positons1 = sbPositions.toString();
         String proteinLinkPositons1 = pepLink1 > 0 ? sbProtLink.toString() : "";
 
         sbaccessions.setLength(0);
+        sbnames.setLength(0);
         sbdescriptions.setLength(0);
         sbPositions.setLength(0);
         sbProtLink.setLength(0);
-        peptidePositionsToPSMOutString(pep2.getPositions(), sbaccessions, sbdescriptions, sbPositions, sbProtLink, pepLink2);
+        peptidePositionsToPSMOutString(pep2.getPositions(), sbaccessions, sbnames, sbdescriptions, sbPositions, sbProtLink, pepLink2);
         String accessions2 = sbaccessions.toString();
+        String names2 = sbaccessions.toString();
         String descriptions2 = sbdescriptions.toString();
         String positons2 = sbPositions.toString();
         String proteinLinkPositons2 = pepLink2 > 0 ? sbProtLink.toString() : "";
@@ -4392,9 +4123,11 @@ public abstract class OfflineFDR {
         ret.add(pp.getPeakListName() == null ? "" : pp.getPeakListName());
         ret.add(pp.getFileScanIndex() == null ? "" : i2s(pp.getFileScanIndex()));
         ret.add(accessions1);
+        ret.add(names1);
         ret.add(descriptions1);
         ret.add(Boolean.toString(pep1.isDecoy()));
         ret.add(accessions2);
+        ret.add(names2);
         ret.add(descriptions2);
         ret.add(Boolean.toString(pep2.isDecoy()));
         ret.add(pepSeq1);
@@ -4416,9 +4149,36 @@ public abstract class OfflineFDR {
                 ret.add("");
             } else if (v instanceof Number) {
                 ret.add(d2s(((Number) v).doubleValue()));
+            } else  if (v.getClass().isArray()) {
+                // if we have an array - try to expand that
+                System.err.println(v.getClass().getComponentType());
+                if (Number.class.isAssignableFrom(v.getClass().getComponentType())) {
+                    // numeric ones we just filter convert to double values
+                    StringBuilder sb = new StringBuilder();
+                    for (Number n : (Number[])v) {
+                        sb.append(";").append(d2s(n.doubleValue()));
+                    }
+                    if (sb.length()>0)
+                        ret.add(sb.substring(1));
+                    else
+                        ret.add("");
+                } else {
+                    // everything else we filter through Object.toString()
+                    StringBuilder sb = new StringBuilder();
+                    for (Object n : (Object[])v) {
+                        sb.append(";").append(n.toString());
+                    }
+                    if (sb.length()>0)
+                        ret.add(sb.substring(1));
+                    else
+                        ret.add("");
+                }
             } else {
                 ret.add(v.toString());
             }
+        }
+        if (isNormalized() != Normalisation.None) {
+            ret.add(d2s(pp.getOriginalScore()));
         }
         ret.add(d2s(pp.getScore()));
         ret.add(Boolean.toString(pp.isDecoy()));
@@ -4443,16 +4203,18 @@ public abstract class OfflineFDR {
         return ret;
     }
 
-    protected void peptidePositionsToPSMOutString(HashMap<Protein, IntArrayList> positions, StringBuilder sbaccessions, StringBuilder sbdescriptions, StringBuilder sbPositions, StringBuilder sbProtLink, int peplink) {
+    protected void peptidePositionsToPSMOutString(HashMap<Protein, HashSet<Integer>> positions, StringBuilder sbaccessions, StringBuilder sbnames, StringBuilder sbdescriptions, StringBuilder sbPositions, StringBuilder sbProtLink, int peplink) {
         for (Protein p : positions.keySet()) {
             for (int i : positions.get(p)) {
-                sbaccessions.append(";").append((p.isDecoy()?"decoy:":"")+ p.getAccession());
-                sbdescriptions.append(";").append(p.isDecoy()?"decoy":p.getDescription());
+                sbaccessions.append(";").append((p.isDecoy() ? "decoy:" : "") + p.getAccession());
+                sbnames.append(";").append((p.isDecoy() ? "decoy:" : "")).append((p.getName() == null? "": p.getName()));
+                sbdescriptions.append(";").append(p.isDecoy() ? "decoy" : p.getDescription());
                 sbPositions.append(";").append(i2s(i));
                 sbProtLink.append(";").append(i2s(i + peplink - 1));
             }
         }
         sbaccessions.deleteCharAt(0);
+        sbnames.deleteCharAt(0);
         sbdescriptions.deleteCharAt(0);
         sbPositions.deleteCharAt(0);
         sbProtLink.deleteCharAt(0);
@@ -4463,8 +4225,8 @@ public abstract class OfflineFDR {
     }
 
     protected <T extends RandomAccess & Collection> ArrayList<String> getPSMHeader() {
-        ArrayList<String> ret = new ArrayList<String>(RArrayUtils.toCollection(new String[]{"PSMID", "run", "scan", "PeakListFileName", "ScanId", "Protein1", "Description1",
-            "Decoy1", "Protein2", "Description2", "Decoy2",
+        ArrayList<String> ret = new ArrayList<String>(RArrayUtils.toCollection(new String[]{"PSMID", "run", "scan", "PeakListFileName", "ScanId", "Protein1", "Name1", "Description1",
+            "Decoy1", "Protein2", "Name2", "Description2", "Decoy2",
             "PepSeq1", "PepSeq2", "PepPos1", "PepPos2",
             "PeptideLength1", "PeptideLength2", "LinkPos1", "LinkPos2",
             "ProteinLinkPos1", "ProteinLinkPos2", "Charge", "Crosslinker", "CrosslinkerModMass"}));
@@ -4482,6 +4244,10 @@ public abstract class OfflineFDR {
             extraColumns = new ArrayList<>(0);
         }
 
+        if (isNormalized() != Normalisation.None) {
+            ret.add("Orignal Score");
+        }
+
         ret.addAll(RArrayUtils.toCollection(new String[]{"Score",
             "isDecoy", "isTT", "isTD", "isDD", "fdrGroup", "fdr", "ifdr", "PEP",
             "", "PeptidePairFDR", "Protein1FDR", "Protein2FDR",
@@ -4489,15 +4255,17 @@ public abstract class OfflineFDR {
             "peptide pair id", "link id", "ppi id", "info"}));
         return ret;
     }
-
+    
     protected ArrayList<String> getXLPepsHeader() {
         ArrayList<String> ret = new ArrayList<String>(RArrayUtils.toCollection(new String[]{
             "PeptidePairID",
             "PSMIDs",
             "Protein1",
+            "Name1",
             "Description1",
             "Decoy1",
             "Protein2",
+            "Name2",
             "Description2",
             "Decoy2",
             "Peptide1",
@@ -4527,10 +4295,142 @@ public abstract class OfflineFDR {
             "",
             "link id",
             "ppi id"}));
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
         return ret;
+    }
+    
+
+    protected ArrayList<String> getXiViewHeader() {
+        ArrayList<String> ret = new ArrayList<String>(RArrayUtils.toCollection(new String[]{
+            "PSMID",
+            "RunName",
+            "ScanNumber",
+            "PeakListFileName",
+            "ScanId",
+            "Protein1",
+            "Name1",
+            "Description1",
+            "Decoy 1",
+            "Protein2",
+            "Name2",
+            "Description2",
+            "Decoy 2",
+            "PepSeq1",
+            "PepSeq2",
+            "PepPos1",
+            "PepPos2",
+            "LinkPos1",
+            "LinkPos2",
+            "ProteinSite1",
+            "ProteinSite2",
+            "Crosslinker",
+            "CrosslinkerModMass",
+            "Charge",
+            "ExpMz",
+            "CalcMz",
+            "Score"
+        }));
+        for (String r : foundRuns.keySet()) {
+            ret.add(r);
+        }
+        return ret;
+    }
+
+    protected String getXiViewHeader(String seperator) {
+        return RArrayUtils.toString(getXiViewHeader(), seperator);
+    }
+
+    protected ArrayList<String> getXiViewOutputLine(PSM pp) {
+        
+        PeptidePair pep = pp.getFdrPeptidePair();
+        ProteinGroupLink l = pep != null ? pep.getFdrLink() : null;
+        ProteinGroupPair ppi = l != null ? l.getFdrPPI() : null;
+
+        Peptide pep1 = pp.getPeptide1();
+        Peptide pep2 = pp.getPeptide2();
+
+        ProteinGroup pg1 = pep1.getProteinGroup();
+        ProteinGroup pg2 = pep2.getProteinGroup();
+
+        int pepLink1 = pp.getPeptideLinkSite1();
+        int pepLink2 = pp.getPeptideLinkSite2();
+
+        int pepLength1 = pp.getPeptideLength1();
+        int pepLength2 = pp.getPeptideLength2();
+
+        String pepSeq1 = getPeptideSequence(pep1);
+        String pepSeq2 = getPeptideSequence(pep2);
+
+        StringBuilder sbaccessions = new StringBuilder();
+        StringBuilder sbnames = new StringBuilder();
+        StringBuilder sbdescriptions = new StringBuilder();
+        StringBuilder sbPositions = new StringBuilder();
+        StringBuilder sbProtLink = new StringBuilder();
+        peptidePositionsToPSMOutString(pep1.getPositions(), sbaccessions, sbnames, sbdescriptions, sbPositions, sbProtLink, pepLink1);
+        String accessions1 = sbaccessions.toString();
+        String names1 = sbnames.toString();
+        String descriptions1 = sbdescriptions.toString();
+        String positons1 = sbPositions.toString();
+        String proteinLinkPositons1 = pepLink1 > 0 ? sbProtLink.toString() : "";
+
+        sbaccessions.setLength(0);
+        sbnames.setLength(0);
+        sbdescriptions.setLength(0);
+        sbPositions.setLength(0);
+        sbProtLink.setLength(0);
+        peptidePositionsToPSMOutString(pep2.getPositions(), sbaccessions, sbnames, sbdescriptions, sbPositions, sbProtLink, pepLink2);
+        String accessions2 = sbaccessions.toString();
+        String names2 = sbaccessions.toString();
+        String descriptions2 = sbdescriptions.toString();
+        String positons2 = sbPositions.toString();
+        String proteinLinkPositons2 = pepLink2 > 0 ? sbProtLink.toString() : "";
+
+        String run = pp.getRun();
+        String scan = pp.getScan();
+        if (run == null) {
+            run = "";
+        }
+        if (scan == null) {
+            scan = "";
+        }
+        ArrayList<String> ret = new ArrayList<>(37);
+        ret.add(pp.getPsmID());
+        ret.add(run);
+        ret.add(scan);
+        ret.add(pp.getPeakListName() == null ? "" : pp.getPeakListName());
+        ret.add(pp.getFileScanIndex() == null ? "" : i2s(pp.getFileScanIndex()));
+        ret.add(accessions1);
+        ret.add(pep1.isDecoy() ? "decoy" : names1 );
+        ret.add(pep1.isDecoy() ? "decoy" : descriptions1);
+        ret.add(Boolean.toString(pep1.isDecoy()));
+        ret.add(accessions2);
+        ret.add(pep2.isDecoy() ? "decoy" : names2);
+        ret.add(pep2.isDecoy() ? "decoy" : descriptions2);
+        ret.add(Boolean.toString(pep2.isDecoy()));
+        ret.add(pepSeq1);
+        ret.add(pepSeq2);
+        ret.add(positons1);
+        ret.add(positons2);
+        //ret.add((pepLength1 == 0 ? "" : i2s(pepLength1)));
+        //ret.add((pepLength2 == 0 ? "" : i2s(pepLength2)));
+        ret.add(i2s(pepLink1));
+        ret.add(i2s(pepLink2));
+        ret.add(proteinLinkPositons1);
+        ret.add(proteinLinkPositons2);
+        ret.add(pp.getCrosslinker());
+        ret.add(Double.isNaN(pp.getCrosslinkerModMass()) ? "" : d2s(pp.getCrosslinkerModMass()));
+        ret.add(i2s(pp.getCharge()));
+        ret.add(d2s(pp.getExperimentalMZ()));
+        ret.add(d2s((pp.getCalcMass()/pp.getCharge()) + rappsilber.utils.Util.PROTON_MASS));
+        ret.add(d2s(pp.getScore()));
+
+        return ret;
+    }
+    
+    protected String getXiViewOutputLine(PSM psm, String seperator) {
+        return RArrayUtils.toString(getXiViewOutputLine(psm), seperator);
     }
 
     protected String getXLPepsHeader(String seperator) {
@@ -4546,6 +4446,7 @@ public abstract class OfflineFDR {
         ret.add("PeptidePairID");
         ret.add("PSMIDs");
         ret.add("Protein");
+        ret.add("Name");
         ret.add("Description");
         ret.add("Decoy");
         ret.add("Peptide");
@@ -4558,7 +4459,7 @@ public abstract class OfflineFDR {
         ret.add("PEP");
         ret.add("");
         ret.add("ProteinFDR");
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
 
@@ -4578,6 +4479,7 @@ public abstract class OfflineFDR {
         ret.add(i2s(pp.getPeptidePairID()));
         ret.add(RArrayUtils.toString(psmids, ";"));
         ret.add(pg1.accessions());
+        ret.add(pg1.names());
         ret.add(pg1.descriptions());
         ret.add(Boolean.toString(pp.getPeptide1().isDecoy()));
         ret.add(getPeptideSequence(pp.getPeptide1()));
@@ -4600,7 +4502,7 @@ public abstract class OfflineFDR {
             }
         }
 
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -4617,27 +4519,31 @@ public abstract class OfflineFDR {
 
     protected ArrayList<String> getXlPepeptideOutputLine(PeptidePair pp) {
         ProteinGroupLink l = pp.getFdrLink();
-        ProteinGroupPair ppi = l.getFdrPPI();
+        ProteinGroupPair ppi = l == null ? null : l.getFdrPPI();
         String[] psmids = pp.getPSMids();
         ProteinGroup pg1 = pp.getPeptide1().getProteinGroup();
         ProteinGroup pg2 = pp.getPeptide2().getProteinGroup();
         ArrayList<String> ret = new ArrayList<String>();
         StringBuilder sbaccessions = new StringBuilder();
+        StringBuilder sbnames = new StringBuilder();
         StringBuilder sbdescriptions = new StringBuilder();
         StringBuilder sbPositions = new StringBuilder();
         StringBuilder sbProtLink = new StringBuilder();
-        peptidePositionsToPSMOutString(pp.getPeptide1().getPositions(), sbaccessions, sbdescriptions, sbPositions, sbProtLink, pp.getPeptideLinkSite1());
+        peptidePositionsToPSMOutString(pp.getPeptide1().getPositions(), sbaccessions, sbnames, sbdescriptions, sbPositions, sbProtLink, pp.getPeptideLinkSite1());
         String accessions1 = sbaccessions.toString();
+        String names1 = sbnames.toString();
         String descriptions1 = sbdescriptions.toString();
         String positons1 = sbPositions.toString();
         String proteinLinkPositons1 = pp.getPeptideLinkSite1() > 0 ? sbProtLink.toString() : "";
 
+        sbnames.setLength(0);
         sbaccessions.setLength(0);
         sbdescriptions.setLength(0);
         sbPositions.setLength(0);
         sbProtLink.setLength(0);
-        peptidePositionsToPSMOutString(pp.getPeptide2().getPositions(), sbaccessions, sbdescriptions, sbPositions, sbProtLink, pp.getPeptideLinkSite2());
+        peptidePositionsToPSMOutString(pp.getPeptide2().getPositions(), sbaccessions, sbnames, sbdescriptions, sbPositions, sbProtLink, pp.getPeptideLinkSite2());
         String accessions2 = sbaccessions.toString();
+        String names2 = sbaccessions.toString();
         String descriptions2 = sbdescriptions.toString();
         String positons2 = sbPositions.toString();
         String proteinLinkPositons2 = pp.getPeptideLinkSite2() > 0 ? sbProtLink.toString() : "";
@@ -4645,9 +4551,11 @@ public abstract class OfflineFDR {
         ret.add(i2s(pp.getPeptidePairID()));
         ret.add(RArrayUtils.toString(psmids, ";"));
         ret.add(accessions1);
+        ret.add(names1);
         ret.add(descriptions1);
         ret.add("" + pp.getPeptide1().isDecoy());
         ret.add(accessions2);
+        ret.add(names2);
         ret.add(descriptions2);
         ret.add("" + pp.getPeptide2().isDecoy());
         ret.add(getPeptideSequence(pp.getPeptide1()));
@@ -4672,22 +4580,22 @@ public abstract class OfflineFDR {
         ret.add("");
         ret.add((pp.getFdrProteinGroup1() == null ? "" : d2s(pp.getFdrProteinGroup1().getFDR())));
         ret.add((pp.getFdrProteinGroup2() == null ? "" : d2s(pp.getFdrProteinGroup2().getFDR())));
-        ret.add(d2s(l.getFDR()));
-        ret.add(d2s(ppi.getFDR()));
+        ret.add(l == null ? "" : d2s(l.getFDR()));
+        ret.add(ppi == null ? "" : d2s(ppi.getFDR()));
         ret.add("");
-        ret.add(i2s(l.getLinkID()));
-        ret.add(i2s(ppi.getProteinGroupPairID()));
+        ret.add(l == null ? "" : i2s(l.getLinkID()));
+        ret.add(ppi == null ? "" : i2s(ppi.getProteinGroupPairID()));
 
-        HashSet<String> linkRuns = new HashSet<>();
+        HashSet<String> pepRuns = new HashSet<>();
         HashMap<String, Double> runScore = new HashMap<>();
 
         for (PSM psm : pp.getAllPSMs()) {
             for (PSM upsm : psm.getRepresented()) {
-                psmToRun(upsm, linkRuns, runScore);
+                psmToRun(upsm, pepRuns, runScore);
             }
         }
 
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -4737,9 +4645,11 @@ public abstract class OfflineFDR {
         ret.add(RArrayUtils.toString(pepids, ";", numberFormat));
         ret.add(RArrayUtils.toString(psmids, ";"));
         ret.add(l.site1Accessions());
+        ret.add(pg1.names());
         ret.add(l.site1Descriptions());
         ret.add("" + pg1.isDecoy());
         ret.add(l.site2Accessions());
+        ret.add(pg2.names());
         ret.add(l.site2Descriptions());
         ret.add("" + pg2.isDecoy());
         ret.add(RArrayUtils.toString(l.site1Sites(), ";", numberFormat));
@@ -4756,7 +4666,7 @@ public abstract class OfflineFDR {
         ret.add(d2s(l.getFDR()));
         ret.add(d2s(l.getEstimatedFDR()));
         ret.add(d2s(l.getPEP()));
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -4795,9 +4705,11 @@ public abstract class OfflineFDR {
         ret.add("PeptidePairIDs");
         ret.add("PSMIDs");
         ret.add("Protein1");
+        ret.add("Name1");
         ret.add("Description1");
         ret.add("Decoy1");
         ret.add("Protein2");
+        ret.add("Name2");
         ret.add("Description2");
         ret.add("Decoy2");
         ret.add("fromSite");
@@ -4815,7 +4727,7 @@ public abstract class OfflineFDR {
         ret.add("ifdr");
         ret.add("PEP");
 
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
 
@@ -4842,9 +4754,11 @@ public abstract class OfflineFDR {
         ret.add("PeptidePairIDs");
         ret.add("PSMIDs");
         ret.add("Protein1");
-        ret.add("Descriptions1");
+        ret.add("Name1");
+        ret.add("Description1");
         ret.add("isDecoy1");
         ret.add("Protein2");
+        ret.add("Name2");
         ret.add("Description2");
         ret.add("isDecoy2");
         ret.add("Crosslinker");
@@ -4864,6 +4778,9 @@ public abstract class OfflineFDR {
         ret.add("top link fdr");
         ret.add("top peptide fdr");
         ret.add("top psm_fdr");
+        for (String run : foundRuns.keySet()) {
+            ret.add(run);
+        }
         return ret;
     }
 
@@ -4879,6 +4796,9 @@ public abstract class OfflineFDR {
         double top_pepfdr = Double.MAX_VALUE;
         double top_psmfdr = Double.MAX_VALUE;
         HashSet<String> xl = new HashSet<>();
+        HashMap<String, Double> runScore = new HashMap<>();
+        HashSet<String> ppiRuns = new HashSet<>();
+        
         for (ProteinGroupLink l : pgp.getLinks()) {
             if (l.getFDR() < top_linkfdr) {
                 top_linkfdr = l.getFDR();
@@ -4893,6 +4813,11 @@ public abstract class OfflineFDR {
                     }
                 }
                 xl.add(pp.getCrosslinker());
+                for (PSM psm : pp.getAllPSMs()) {
+                    for (PSM upsm : psm.getRepresented()) {
+                        psmToRun(upsm, ppiRuns, runScore);
+                    }
+                }
             }
         }
         ArrayList<String> ret = new ArrayList<String>();
@@ -4902,9 +4827,11 @@ public abstract class OfflineFDR {
         ret.add(RArrayUtils.toString(pepids, ";", numberFormat));
         ret.add(RArrayUtils.toString(psmids, ";"));
         ret.add(pgp.getProtein1().accessions());
+        ret.add(pgp.getProtein1().names());
         ret.add(pgp.getProtein1().descriptions());
         ret.add("" + pgp.getProtein1().isDecoy());
         ret.add(pgp.getProtein2().accessions());
+        ret.add(pgp.getProtein2().names());
         ret.add(pgp.getProtein2().descriptions());
         ret.add("" + pgp.getProtein2().isDecoy());
         ret.add(RArrayUtils.toString(xl, ";"));
@@ -4924,6 +4851,16 @@ public abstract class OfflineFDR {
         ret.add(d2s(top_linkfdr));
         ret.add(d2s(top_pepfdr));
         ret.add(d2s(top_psmfdr));
+        
+        for (String r : foundRuns.keySet()) {
+            Double d = runScore.get(r);
+            if (d == null) {
+                ret.add("");
+            } else {
+                ret.add(d2s(d));
+            }
+        }
+        
         return ret;
     }
 
@@ -4931,6 +4868,7 @@ public abstract class OfflineFDR {
         ArrayList<String> ret = new ArrayList<String>();
         ret.add("ProteinGroupID");
         ret.add("ProteinGroup");
+        ret.add("Names");
         ret.add("Descriptions");
         ret.add("Sequence");
         ret.add("Crosslinker");
@@ -4944,7 +4882,7 @@ public abstract class OfflineFDR {
         ret.add("fdr");
         ret.add("ifdr");
         ret.add("PEP");
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             ret.add(r);
         }
         return ret;
@@ -4986,6 +4924,7 @@ public abstract class OfflineFDR {
         ArrayList<String> ret = new ArrayList<String>();
         ret.add(pg.ids());
         ret.add(pg.accessions());
+        ret.add(pg.names());
         ret.add(pg.descriptions());
         ret.add(RArrayUtils.toString(sequences, ";"));
         ret.add(RArrayUtils.toString(crosslinker, ";"));
@@ -4999,7 +4938,7 @@ public abstract class OfflineFDR {
         ret.add(pg.getFDR() + "");
         ret.add(pg.getEstimatedFDR() + "");
         ret.add(pg.getPEP() + "");
-        for (String r : runs) {
+        for (String r : foundRuns.keySet()) {
             Double d = runScore.get(r);
             if (d == null) {
                 ret.add("");
@@ -5025,9 +4964,15 @@ public abstract class OfflineFDR {
     }
 
     public PSM addMatch(String psmID, Long pepid1, Long pepid2, String pepSeq1, String pepSeq2, int peplen1, int peplen2, int site1, int site2, boolean isDecoy1, boolean isDecoy2, int charge, double score, Long protid1, String accession1, String description1, Long protid2, String accession2, String description2, int pepPosition1, int pepPosition2, String Protein1Sequence, String Protein2Sequence, double peptide1score, double peptide2score, String isSpecialCase, String crosslinker, String run, String Scan) {
-//    public PSM addMatch(String pepSeq2, String pepSeq1, String accession1, String accession2, int protid1, String description2, boolean isDecoy1, int pepid1, int pepPosition1, int peplen1, int protid2, boolean isDecoy2, int pepid2, int pepPosition2, int peplen2, String psmID, int site1, int site2, int charge, double score, double scoreRatio, boolean isSpecialCase) {
         boolean linear = pepSeq2 == null || pepSeq2.isEmpty() || pepSeq1 == null || pepSeq1.isEmpty();
-        boolean internal = (!linear) && (accession1.contentEquals(accession2) || ("REV_" + accession1).contentEquals(accession2) || accession1.contentEquals("REV_" + accession2));
+        boolean internal = (!linear) && (accession1.contentEquals(accession2) || 
+                ("REV_" + accession1).contentEquals(accession2) || accession1.contentEquals("REV_" + accession2) || 
+                ("REVERSE_" + accession1).contentEquals(accession2) || accession1.contentEquals("REVERSE_" + accession2) || 
+                ("DECOY_" + accession1).contentEquals(accession2) || accession1.contentEquals("DECOY_" + accession2) || 
+                ("DECOY:" + accession1).contentEquals(accession2) || accession1.contentEquals("DECOY:" + accession2) || 
+                ("RANDOM_" + accession1).contentEquals(accession2) || accession1.contentEquals("RANDOM_" + accession2) || 
+                ("RAN_" + accession1).contentEquals(accession2) || accession1.contentEquals("RAN_" + accession2) ||
+                (Protein.DECOY_PREFIX != null && (Protein.DECOY_PREFIX + accession1).contentEquals(accession2) || accession1.contentEquals(Protein.DECOY_PREFIX + accession2)));
         boolean between = !(linear || internal);
         Protein p1 = new Protein(protid1, accession1, description1, isDecoy1, linear, internal, between);
 
@@ -5076,7 +5021,7 @@ public abstract class OfflineFDR {
      *
      * @return the isNormalized
      */
-    public boolean isNormalized() {
+    public Normalisation isNormalized() {
         return isNormalized;
     }
 
@@ -5085,29 +5030,7 @@ public abstract class OfflineFDR {
      *
      * @param isNormalized the isNormalized to set
      */
-    public void setNormalized(boolean isNormalized) {
-        this.isNormalized = isNormalized;
-    }
-
-    /**
-     * indicates, whether the psms went through a score normalisation
-     *
-     * @param isNormalized the isNormalized to set
-     */
-    public void setDecoyNormalized() {
-        setNormalized(true);
-        this.isNormalizedByDecoy = true;
-        this.isNormalized = isNormalized;
-    }
-
-    /**
-     * indicates, whether the psms went through a score normalisation
-     *
-     * @param isNormalized the isNormalized to set
-     */
-    public void setOveralNormalized() {
-        setNormalized(true);
-        this.isNormalizedByDecoy = false;
+    public void setNormalised(Normalisation isNormalized) {
         this.isNormalized = isNormalized;
     }
 
@@ -5155,24 +5078,6 @@ public abstract class OfflineFDR {
     }
 
     /**
-     * group matches by protein pairs
-     *
-     * @return the groupByProteinPair
-     */
-    public boolean isGroupByProteinPair() {
-        return groupByProteinPair;
-    }
-
-    /**
-     * group matches by protein pairs
-     *
-     * @param groupByProteinPair the groupByProteinPair to set
-     */
-    public void setGroupByProteinPair(boolean groupByProteinPair) {
-        this.groupByProteinPair = groupByProteinPair;
-    }
-
-    /**
      * how many decoys does a fdr group need to have to be reported as result
      *
      * @return the minDecoys
@@ -5187,13 +5092,68 @@ public abstract class OfflineFDR {
      * @param minDecoys the minDecoys to set
      */
     public void setMinDecoys(Integer minDecoys) {
+        check = new ValidityCheckImplement(0, minDecoys);
+        calc.setValidityCheck(check);
         this.minTDChance = minDecoys;
     }
 
     public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate) {
+        return maximise(fdrSettings, level, between, stateUpdate, fdrSettings.twoStepOptimization());
+    }
+
+    public MaximisingStatus maximise(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate, boolean twoStep) {
+        if (twoStep
+                && (fdrSettings.boostDeltaScore() || fdrSettings.boostMinFragments() || fdrSettings.boostPepCoverage())
+                && (fdrSettings.boostPSMs() || fdrSettings.boostPeptidePairs() || fdrSettings.boostProteins() || fdrSettings.boostLinks()) 
+                && level != FDRLevel.PSM) {
+            FDRSettingsImpl step = new FDRSettingsImpl();
+            step.setAll(fdrSettings);
+            step.boostDeltaScore(false);
+            step.boostMinFragments(false);
+            step.boostPepCoverage(false);
+            step.boostPeptideStubs(false);
+            step.boostPeptideDoublets(false);
+
+            MaximisingStatus res = maximiseInner(step, level, between, stateUpdate, Integer.MAX_VALUE);
+            
+            
+            step.setPSMFDR(res.showPSMFDR);
+            step.boostPSMs(false);
+            step.setPeptidePairFDR(res.showPepFDR);
+            step.boostPeptidePairs(false);
+            step.setProteinGroupFDR(res.showProtFDR);
+            step.boostProteins(false);
+            step.setProteinGroupLinkFDR(res.showLinkFDR);
+            step.boostLinks(false);
+            step.boostMinScore(false);
+            step.boostDeltaScore(fdrSettings.boostDeltaScore());
+            step.boostMinFragments(fdrSettings.boostMinFragments());
+            step.boostPepCoverage(fdrSettings.boostPepCoverage());
+            step.boostPeptideStubs(fdrSettings.boostPeptideStubs());
+            step.boostPeptideDoublets(fdrSettings.boostPeptideDoublets());
+            res = maximiseInner(step, level, between, stateUpdate, Integer.MAX_VALUE);
+
+            this.settings.boostMinScore(fdrSettings.boostMinScore());
+            this.settings.boostPSMs(fdrSettings.boostPSMs());
+            this.settings.boostPeptidePairs(fdrSettings.boostPeptidePairs());
+            this.settings.boostProteins(fdrSettings.boostProteins());
+            this.settings.boostLinks(fdrSettings.boostLinks());
+            this.settings.boostDeltaScore(fdrSettings.boostDeltaScore());
+            this.settings.boostMinFragments(fdrSettings.boostMinFragments());
+            this.settings.boostPepCoverage(fdrSettings.boostPepCoverage());
+            this.settings.boostPeptideStubs(fdrSettings.boostPeptideStubs());
+            this.settings.boostPeptideDoublets(fdrSettings.boostPeptideDoublets());
+            return res;
+        } else {
+            return maximiseInner(fdrSettings, level, between, stateUpdate,  Integer.MAX_VALUE);
+        }
+    }
+
+    public MaximisingStatus maximiseInner(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate, int maxrounds) {
 
         final FDRSettingsImpl settings = new FDRSettingsImpl();
         settings.setAll(fdrSettings);
+        int maxCountDown = 4;
 
         try {
             int steps = settings.getBoostingSteps();
@@ -5220,8 +5180,23 @@ public abstract class OfflineFDR {
                     maxDelta = 0.7;
                 }
             }
+            
+            double maxscore = maxscore = -Double.MAX_VALUE;
+            if (settings.boostMinScore()) {
+                for (PSM psm : allPSMs) {
+                    double psmScore = psm.getScore();
+                    if (maxscore < psmScore && !Double.isInfinite(psmScore)) {
+                        maxscore = psmScore;
+                    }
+                }
+            } else {
+                maxscore = settings.minScore();
+            }
 
-            final MaximizeLevelInfo absPepCover = new MaximizeLevelInfoInteger(10, true, steps);
+            final MaximizeLevelInfo minScore = new MaximizeLevelInfo(maxscore-settings.minScore(), settings.boostMinScore(), Math.min(steps,3));
+            final MaximizeLevelInfo pepStubs = new MaximizeLevelInfoInteger(2-settings.getMinPeptideStubFilter(), settings.boostPeptideStubs(), Math.min(steps,3));
+            final MaximizeLevelInfo pepDoublets = new MaximizeLevelInfoInteger(2-settings.getMinPeptideDoubletFilter(), settings.boostPeptideDoublets(), Math.min(steps,3));
+            final MaximizeLevelInfo absPepCover = new MaximizeLevelInfoInteger(10-settings.getMinPeptideFragmentsFilter(), settings.boostMinFragments(), steps);
             final MaximizeLevelInfo deltaScore = new MaximizeLevelInfo(1 - settings.getMinDeltaScoreFilter(), 1 - maxDelta, settings.boostDeltaScore(), steps);
             final MaximizeLevelInfo pepCoverage = new MaximizeLevelInfo(1 - settings.getMinPeptideCoverageFilter(), 1 - maxPeptideCoverage, settings.boostPepCoverage(), steps);
             final MaximizeLevelInfo psmFDRInfo = new MaximizeLevelInfo(settings.getPSMFDR(), settings.boostPSMs(), steps);
@@ -5233,6 +5208,9 @@ public abstract class OfflineFDR {
             MaximizeLevelInfo targetInfoFirst;
 
             switch (level) {
+                case PSM:
+                    targetInfoFirst = psmFDRInfo;
+                    break;
                 case PEPTIDE_PAIR:
                     targetInfoFirst = pepFDRInfo;
                     break;
@@ -5260,7 +5238,7 @@ public abstract class OfflineFDR {
             int maxCount = 0;
             int maxCountBetween = 0;
 
-            int countDown = 5;
+            int countDown = maxCountDown;
 
             int optimizingRound = 1;
 
@@ -5268,15 +5246,18 @@ public abstract class OfflineFDR {
                 int lastMaxCount = maxCount;
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Round " + optimizingRound++);
 
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                        (deltaScore.boost ? "deltaFilter from  :        " + (1 - deltaScore.fromFDR) + " to " + (1 - deltaScore.toFDR) + "\n" : "")
-                        + (pepCoverage.boost ? "PepCoverage from  :        " + (1 - pepCoverage.fromFDR) + " to " + (1 - pepCoverage.toFDR) + "\n" : "")
-                        + (absPepCover.boost ? "Min Pep Frags from  :        " + (10 - absPepCover.fromFDR) + " to " + (10 - absPepCover.toFDR) + "\n" : "")
-                        + (psmFDRInfo.boost ? "PSM fdr from  :        " + psmFDRInfo.fromFDR + " to " + psmFDRInfo.toFDR + "\n" : "")
-                        + (pepFDRInfo.boost ? "Peptide pair fdr from  " + pepFDRInfo.fromFDR + " to " + pepFDRInfo.toFDR + "\n" : "")
-                        + (protFDRInfo.boost ? "Protein-groupfdr from  " + protFDRInfo.fromFDR + " to " + protFDRInfo.toFDR + "\n" : "")
-                        + (linkFDRInfo.boost ? "linkfdr from  " + linkFDRInfo.fromFDR + " to " + linkFDRInfo.toFDR + "\n" : "")
-                        + "Steps : " + psmFDRInfo.steps);
+                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "{0}{1}{2}{3}{4}{5}{6}{7}{8}Steps : {9}{10}", new Object[]{
+                    pepStubs.boost ? "stubs from  :        " + (2 - pepStubs.fromFDR) + " to " + (2 - pepStubs.toFDR) + "\n" : "",
+                    pepDoublets.boost ? "doublets from  :        " + (2 - pepDoublets.fromFDR) + " to " + (2 - pepDoublets.toFDR) + "\n" : "",
+                    minScore.boost ? "minScoreFilter from  :        " + (maxscore - minScore.fromFDR) + " to " + (maxscore - minScore.toFDR) + "\n" : "",
+                    deltaScore.boost ? "deltaFilter from  :        " + (1 - deltaScore.fromFDR) + " to " + (1 - deltaScore.toFDR) + "\n" : "",
+                    pepCoverage.boost ? "PepCoverage from  :        " + (1 - pepCoverage.fromFDR) + " to " + (1 - pepCoverage.toFDR) + "\n" : "",
+                    absPepCover.boost ? "Min Pep Frags from  :        " + (10 - absPepCover.fromFDR) + " to " + (10 - absPepCover.toFDR) + "\n" : "",
+                    psmFDRInfo.boost ? "PSM fdr from  :        " + psmFDRInfo.fromFDR + " to " + psmFDRInfo.toFDR + "\n" : "",
+                    pepFDRInfo.boost ? "Peptide pair fdr from  " + pepFDRInfo.fromFDR + " to " + pepFDRInfo.toFDR + "\n" : "",
+                    protFDRInfo.boost ? "Protein-groupfdr from  " + protFDRInfo.fromFDR + " to " + protFDRInfo.toFDR + "\n" : "",
+                    linkFDRInfo.boost ? "linkfdr from  " + linkFDRInfo.fromFDR + " to " + linkFDRInfo.toFDR + "\n" : "",
+                    psmFDRInfo.steps + psmFDRInfo.stepChange, ""});
                 FDRResult result = new FDRResult();
 
                 // initialise subscore filter
@@ -5288,263 +5269,247 @@ public abstract class OfflineFDR {
                 boolean optimzeSubScores = true;
 
                 // find the combinations with the maximum number of ppis
-                deltaScoreloop:
-                for (deltaScore.firstStep(); deltaScore.doThisStep(); deltaScore.nextStep()) {
-                    settings.setMinDeltaScoreFilter(1 - deltaScore.getCurrentFDR());
-                    pepFragsloop:
-                    for (absPepCover.firstStep(); absPepCover.doThisStep(); absPepCover.nextStep()) {
-                        settings.setMinPeptideFragmentsFilter(10 - (int) Math.round(absPepCover.getCurrentFDR()));
-                        pepCoverageloop:
-                        for (pepCoverage.firstStep(); pepCoverage.doThisStep(); pepCoverage.nextStep()) {
-                            settings.setMinPeptideCoverageFilter(1 - pepCoverage.getCurrentFDR());
+                pepMinScoreLoop:
+                for (minScore.firstStep(); minScore.doThisStep(); minScore.nextStep()) {
+                    settings.minScore(maxscore - minScore.getCurrentFDR());
+                    pepDoubletLoop:
+                    for (pepDoublets.firstStep(); pepDoublets.doThisStep(); pepDoublets.nextStep()) {
+                        settings.setMinPeptideDoubletFilter(2 - (int) Math.round(pepDoublets.getCurrentFDR()));
+                        pepStubsLoop:
+                        for (pepStubs.firstStep(); pepStubs.doThisStep(); pepStubs.nextStep()) {
+                            settings.setMinPeptideStubFilter(2 - (int) Math.round(pepStubs.getCurrentFDR()));
+                            deltaScoreloop:
+                            for (deltaScore.firstStep(); deltaScore.doThisStep(); deltaScore.nextStep()) {
+                                settings.setMinDeltaScoreFilter(1 - deltaScore.getCurrentFDR());
+                                pepFragsloop:
+                                for (absPepCover.firstStep(); absPepCover.doThisStep(); absPepCover.nextStep()) {
+                                    settings.setMinPeptideFragmentsFilter(10 - (int) Math.round(absPepCover.getCurrentFDR()));
+                                    pepCoverageloop:
+                                    for (pepCoverage.firstStep(); pepCoverage.doThisStep(); pepCoverage.nextStep()) {
+                                        settings.setMinPeptideCoverageFilter(1 - pepCoverage.getCurrentFDR());
 
-//                        double highestPSMFDR = Double.POSITIVE_INFINITY;
-//                        boolean firstPSMFDR = true;
-                            psmloop:
-                            for (psmFDRInfo.firstStep(); psmFDRInfo.doThisStep(); psmFDRInfo.nextStep()) {
-//                            if (highestPSMFDR < psmFDRInfo.currentFDR)
-//                                continue;
+                                        psmloop:
+                                        for (psmFDRInfo.firstStep(); psmFDRInfo.doThisStep(); psmFDRInfo.nextStep()) {
 
-                                settings.setPSMFDR(psmFDRInfo.getCurrentFDR());
-                                this.calculatePSMFDR(true, ignoreGroups, result, settings);
-                                psmFDRInfo.setCountsPrefilter(result.psmFDR);
-//                            if ( firstPSMFDR) {
-//                                firstPSMFDR  =false;
-//                                double maxInFDR = 0;
-//                                highestPSMFDR = getHighestSubGroupInputFDR(result.psmFDR.getGroups());
-//                            }
-
-                                if (stopMaximizing) {
-                                    break deltaScoreloop;
-                                }
-                                // if we don't get PSM - stop looking at later stages
-                                if (result.psmFDR.getResultCount() == 0) {
-                                    break psmloop;
-                                }
-
-//                            double highestPepFDR = Double.POSITIVE_INFINITY;
-//                            boolean firstPepPairFDR = true;
-                                peploop:
-                                for (pepFDRInfo.firstStep(); pepFDRInfo.doThisStep(); pepFDRInfo.nextStep()) {
-                                    // we can skip any steps that would not reduce the peptide FDR below what is already in the input
-                                    // calculate peptide level fdr
-//                                if (highestPepFDR < pepFDRInfo.currentFDR)
-//                                    continue;
-
-                                    //double highestProtFDR = Double.POSITIVE_INFINITY;
-                                    //boolean firstProtFDR = true;
-                                    protloop:
-                                    for (protFDRInfo.firstStep(); protFDRInfo.doThisStep(); protFDRInfo.nextStep()) {
-                                        // we can skip any steps that would not reduce the peptide FDR below what is already in the input
-                                        // calculate peptide level fdr
-//                                    if (highestProtFDR < protFDRInfo.currentFDR)
-//                                        continue;
-
-                                        settings.setPeptidePairFDR(pepFDRInfo.getCurrentFDR());
-                                        this.calculatePeptidePairFDR(true, result, settings, ignoreGroups);
-
-//                                    if ( firstPepPairFDR) {
-//                                        firstPepPairFDR  =false;
-//                                        double maxInFDR = 0;
-//                                        highestPepFDR = getHighestSubGroupInputFDR(result.peptidePairFDR.getGroups());
-//                                    }
-//                                    
-                                        // if we don't get peptide pairs - stop looking at later stages
-                                        if (result.peptidePairFDR.getResultCount() == 0) {
-                                            break peploop;
-                                        }
-                                        pepFDRInfo.setCountsPrefilter(result.peptidePairFDR);
-
-                                        if (stopMaximizing) {
-                                            break deltaScoreloop;
-                                        }
-
-                                        // calculate protein level fdr
-                                        settings.setProteinGroupFDR(protFDRInfo.getCurrentFDR());
-                                        this.calculateProteinGroupFDR(ignoreGroups, true, settings, result);
-
-//                                    if ( firstProtFDR) {
-//                                        firstProtFDR  =false;
-//                                        double maxInFDR = 0;
-//                                        highestProtFDR = getHighestSubGroupInputFDR(result.proteinGroupFDR.getGroups());
-//                                    }
-                                        if (result.proteinGroupFDR.getResultCount() == 0) {
-                                            break protloop;
-                                        }
-                                        protFDRInfo.setCountsPrefilter(result.proteinGroupFDR);
-
-                                        // cut down the peptides by proteins                           
-                                        this.filterFDRPeptidePairsByFDRProteinGroups(result);
-
-                                        if (stopMaximizing) {
-                                            break deltaScoreloop;
-                                        }
-
-//                                    double highestLinkFDR = Double.POSITIVE_INFINITY;
-//                                    boolean firstLinkFDR = true;
-                                        linkloop:
-                                        for (linkFDRInfo.firstStep(); linkFDRInfo.doThisStep(); linkFDRInfo.nextStep()) {
-                                            // we can skip any steps that would not reduce the peptide FDR below what is already in the input
-                                            // calculate peptide level fdr
-//                                        if (highestLinkFDR < linkFDRInfo.currentFDR)
-//                                            continue;
-
-                                            // calculate links
-                                            settings.setProteinGroupLinkFDR(linkFDRInfo.getCurrentFDR());
-                                            this.calculateLinkFDR(ignoreGroups, true, settings, result);
-                                            linkFDRInfo.setCountsPrefilter(result.proteinGroupLinkFDR);
-
-//                                        if ( firstLinkFDR && linkFDRInfo.boost) {
-//                                            Collection<SubGroupFdrInfo<ProteinGroupLink>> c = result.proteinGroupLinkFDR.getGroups();
-//                                            firstLinkFDR  =false;
-//                                            // detect the highest fdr that we can see - filtering for anything higher is pointless
-//                                            highestLinkFDR = getHighestSubGroupInputFDR(c);
-//                                        }
-                                            if (result.proteinGroupLinkFDR.getResultCount() == 0) {
-                                                break linkloop;
-                                            }
+                                            settings.setPSMFDR(psmFDRInfo.getCurrentFDR());
+                                            this.calculatePSMFDR(true, ignoreGroups, result, settings);
+                                            psmFDRInfo.setCountsPrefilter(result.psmFDR);
 
                                             if (stopMaximizing) {
-                                                break deltaScoreloop;
+                                                break pepMinScoreLoop;
+                                            }
+                                            // if we don't get PSM - stop looking at later stages
+                                            if (result.psmFDR.getResultCount() == 0) {
+                                                break psmloop;
                                             }
 
-                                            settings.setProteinGroupPairFDR(ppiFDRInfo.getCurrentFDR());
-                                            this.calculateProteinGroupPairFDR(ignoreGroups, true, settings, result);
+                                            peploop:
+                                            for (pepFDRInfo.firstStep(); pepFDRInfo.doThisStep(); pepFDRInfo.nextStep()) {
+                                                // we can skip any steps that would not reduce the peptide FDR below what is already in the input
+                                                // calculate peptide level fdr
+                                                protloop:
+                                                for (protFDRInfo.firstStep(); protFDRInfo.doThisStep(); protFDRInfo.nextStep()) {
 
-                                            if (result.proteinGroupPairFDR.getResultCount() == 0) {
-                                                break linkloop;
+                                                    settings.setPeptidePairFDR(pepFDRInfo.getCurrentFDR());
+                                                    this.calculatePeptidePairFDR(true, result, settings, ignoreGroups);
+
+                                                    // if we don't get peptide pairs - stop looking at later stages
+                                                    if (result.peptidePairFDR.getResultCount() == 0) {
+                                                        break peploop;
+                                                    }
+                                                    pepFDRInfo.setCountsPrefilter(result.peptidePairFDR);
+
+                                                    if (stopMaximizing) {
+                                                        break pepMinScoreLoop;
+                                                    }
+
+                                                    // calculate protein level fdr
+                                                    settings.setProteinGroupFDR(protFDRInfo.getCurrentFDR());
+                                                    this.calculateProteinGroupFDR(ignoreGroups, true, settings, result);
+
+                                                    if (result.proteinGroupFDR.getResultCount() == 0) {
+                                                        break protloop;
+                                                    }
+                                                    protFDRInfo.setCountsPrefilter(result.proteinGroupFDR);
+
+                                                    // cut down the peptides by proteins                           
+                                                    this.filterFDRPeptidePairsByFDRProteinGroups(result);
+
+                                                    if (stopMaximizing) {
+                                                        break pepMinScoreLoop;
+                                                    }
+
+                                                    linkloop:
+                                                    for (linkFDRInfo.firstStep(); linkFDRInfo.doThisStep(); linkFDRInfo.nextStep()) {
+
+                                                        // calculate links
+                                                        settings.setProteinGroupLinkFDR(linkFDRInfo.getCurrentFDR());
+                                                        this.calculateLinkFDR(ignoreGroups, true, settings, result);
+                                                        linkFDRInfo.setCountsPrefilter(result.proteinGroupLinkFDR);
+
+                                                        if (result.proteinGroupLinkFDR.getResultCount() == 0) {
+                                                            break linkloop;
+                                                        }
+
+                                                        if (stopMaximizing) {
+                                                            break pepMinScoreLoop;
+                                                        }
+
+                                                        settings.setProteinGroupPairFDR(ppiFDRInfo.getCurrentFDR());
+                                                        this.calculateProteinGroupPairFDR(ignoreGroups, true, settings, result);
+
+                                                        if (result.proteinGroupPairFDR.getResultCount() == 0) {
+                                                            break linkloop;
+                                                        }
+                                                        // now we need to filter down to the required level
+                                                        this.filterFDRLinksByFDRProteinGroupPairs(result);
+                                                        this.filterFDRPeptidePairsByFDRProteinGroupLinks(result);
+                                                        this.filterFDRProteinGroupsByFDRPeptidePairs(result);
+
+                                                        // how many links do we now have?
+                                                        pepCoverage.setCounts(result.psmFDR);
+                                                        absPepCover.setCounts(result.psmFDR);
+                                                        deltaScore.setCounts(result.psmFDR);
+                                                        minScore.setCounts(result.psmFDR);
+                                                        psmFDRInfo.setCounts(result.psmFDR);
+                                                        pepFDRInfo.setCounts(result.peptidePairFDR);
+                                                        protFDRInfo.setCounts(result.proteinGroupFDR);
+                                                        linkFDRInfo.setCounts(result.proteinGroupLinkFDR);
+                                                        ppiFDRInfo.setCounts(result.proteinGroupPairFDR);
+
+                                                        int count = targetInfo.count;
+                                                        int countBetween = targetInfo.countBetween;
+                                                        if (count == 0 && maxCount <= targetInfo.countPreFilter) {
+                                                            count = targetInfo.countPreFilter;
+                                                        }
+                                                        if (countBetween == 0 && maxCountBetween <= targetInfo.countBetweenPreFilter) {
+                                                            countBetween = targetInfo.countBetweenPreFilter;
+                                                        }
+
+                                                        // is it a new best?
+                                                        if (((between
+                                                                && ((countBetween > maxCountBetween && (count - countBetween > 0 || maxCount - maxCountBetween == 0)))
+                                                                || (countBetween == maxCountBetween && count > maxCount)))
+                                                                || (!between && count > maxCount)) {
+                                                            maxCount = count;
+                                                            maxCountBetween = countBetween;
+
+                                                            minScore.setNewMaxFDR();
+                                                            deltaScore.setNewMaxFDR();
+                                                            absPepCover.setNewMaxFDR();
+                                                            pepCoverage.setNewMaxFDR();
+                                                            psmFDRInfo.setNewMaxFDR();
+                                                            pepFDRInfo.setNewMaxFDR();
+                                                            protFDRInfo.setNewMaxFDR();
+                                                            linkFDRInfo.setNewMaxFDR();
+                                                            protFDRInfo.setNewMaxFDR();
+
+                                                            // record that we found a new top
+                                                            String message = "link count, " + linkFDRInfo.count + "(" + linkFDRInfo.countBetween + " between), Protein Pairs, " + ppiFDRInfo.count + "(" + ppiFDRInfo.countBetween + " between)";
+                                                            if (linkFDRInfo.boost) {
+                                                                message = "link fdr, " + (linkFDRInfo.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (protFDRInfo.boost) {
+                                                                message = "prot fdr, " + (protFDRInfo.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (pepFDRInfo.boost) {
+                                                                message = "pep fdr, " + (pepFDRInfo.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (psmFDRInfo.boost) {
+                                                                message = "psm fdr, " + (psmFDRInfo.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (pepCoverage.boost) {
+                                                                message = "PepCoverage, " + (1 - pepCoverage.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (absPepCover.boost) {
+                                                                message = "min Fragmenst, " + (10 - absPepCover.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (deltaScore.boost) {
+                                                                message = "deltascore, " + (1 - deltaScore.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (minScore.boost) {
+                                                                message = "minscore, " + (maxscore - minScore.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (pepDoublets.boost) {
+                                                                message = "min peptides with doublets, " + (2 - pepDoublets.getCurrentFDR()) + ", " + message;
+                                                            }
+                                                            if (pepStubs.boost) {
+                                                                message = "min peptides with Stubs, " + (2 - pepStubs.getCurrentFDR()) + ", " + message;
+                                                            }
+
+                                                            // String message = "psmfdr, " + psmFDRInfo.currentFDR + " , pepfdr, " + pepFDRInfo.currentFDR + " ,protfdr, " + protFDRInfo.currentFDR + ", link count, " + linkFDRInfo.count + "(" + linkFDRInfo.countBetween + " between), Protein Pairs, " + ppiFDRInfo.count + "(" + ppiFDRInfo.countBetween + " between)";
+                                                            sb.append(message + "\n");
+                                                            Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
+
+                                                            // forward the values to the gui
+                                                            final double showDelta = (1 - deltaScore.getCurrentFDR());
+                                                            final double showMinScore = (maxscore - minScore.getCurrentFDR());
+                                                            final double showPepCoverage = (1 - pepCoverage.getCurrentFDR());
+                                                            final int showMinFrags = (int) Math.round((10 - absPepCover.getCurrentFDR()));
+                                                            final int showMinStubs = (int) Math.round((2 - pepStubs.getCurrentFDR()));
+                                                            final int showMinDoublets = (int) Math.round((2 - pepDoublets.getCurrentFDR()));
+                                                            final double showPSMFDR = psmFDRInfo.getCurrentFDR();
+                                                            final double showPepFDR = pepFDRInfo.getCurrentFDR();
+                                                            final double showProtFDR = protFDRInfo.getCurrentFDR();
+                                                            final double showLinkFDR = linkFDRInfo.getCurrentFDR();
+                                                            final double showPSMCount = psmFDRInfo.count;
+                                                            final double showPepCount = pepFDRInfo.count;
+                                                            final double showProtCount = protFDRInfo.countLinear;
+                                                            final double showLinkCount = linkFDRInfo.count;
+                                                            final double showPPICount = ppiFDRInfo.count;
+                                                            final double showLinkCountBetween = linkFDRInfo.countBetween;
+                                                            final double showPPICountBetween = ppiFDRInfo.countBetween;
+                                                            final double showLinkCountBetweenPreFilter = linkFDRInfo.countBetweenPreFilter;
+                                                            final double showLinkCountPreFilter = linkFDRInfo.countPreFilter;
+                                                            final MaximisingStatus state = new MaximisingStatus();
+                                                            state.showMinScore = showMinScore;
+                                                            state.showDelta = showDelta;
+                                                            state.showMinFrags = showMinFrags;
+                                                            state.showMinStubs = showMinStubs;
+                                                            state.showMinDoublets = showMinDoublets;
+                                                            state.showPepCoverage = showPepCoverage;
+                                                            state.showPSMFDR = showPSMFDR;
+                                                            state.showPepFDR = showPepFDR;
+                                                            state.showProtFDR = showProtFDR;
+                                                            state.showLinkFDR = showLinkFDR;
+
+                                                            state.showPSMCount = showPSMCount + "";
+                                                            state.showPepCount = showPepCount + "";
+                                                            state.showProtCount = showProtCount + "";
+                                                            state.showLinkCount = showLinkCount + (showLinkCount == 0 ? "(before PPI:" + showLinkCountPreFilter + ")" : "");
+                                                            state.showLinkCountBetween = showLinkCountBetween + (showLinkCountBetween == 0 ? "(before PPI:" + showLinkCountBetweenPreFilter + ")" : "");
+
+                                                            state.showPPICount = showPPICount + "";
+                                                            state.showPPICountBetween = showPPICountBetween + "";
+                                                            state.resultCount = maxCount;
+                                                            state.resultCountBetween = maxCountBetween;
+                                                            stateUpdate.setStatus(state);
+                                                        } else if (count == maxCount || (between && countBetween == maxCountBetween)) {
+                                                            minScore.setEqualFDR();
+                                                            deltaScore.setEqualFDR();
+                                                            pepStubs.setEqualFDR();
+                                                            pepDoublets.setEqualFDR();
+                                                            absPepCover.setEqualFDR();
+                                                            pepCoverage.setEqualFDR();
+                                                            psmFDRInfo.setEqualFDR();
+                                                            pepFDRInfo.setEqualFDR();
+                                                            protFDRInfo.setEqualFDR();
+                                                            linkFDRInfo.setEqualFDR();
+                                                            ppiFDRInfo.setEqualFDR();
+                                                        }
+
+                                                        if (stopMaximizing) {
+                                                            break deltaScoreloop;
+                                                        }
+                                                    }
+
+                                                }
+
                                             }
-                                            // now we need to filter down to the required level
-                                            //                                if (level.compareTo(level.PROTEINGROUPPAIR)!=0) {
-                                            this.filterFDRLinksByFDRProteinGroupPairs(result);
-                                            //                                }
-                                            //                                if (level.compareTo(level.PROTEINGROUPLINK)!=0){
-                                            this.filterFDRPeptidePairsByFDRProteinGroupLinks(result);
-                                            //                                }
 
-                                            //                                if (level.compareTo(level.PROTEINGROUP)==0){
-                                            this.filterFDRProteinGroupsByFDRPeptidePairs(result);
-                                            //                                }
-
-                                            // how many links do we now have?
-                                            pepCoverage.setCounts(result.psmFDR);
-                                            absPepCover.setCounts(result.psmFDR);
-                                            deltaScore.setCounts(result.psmFDR);
-                                            psmFDRInfo.setCounts(result.psmFDR);
-                                            pepFDRInfo.setCounts(result.peptidePairFDR);
-                                            protFDRInfo.setCounts(result.proteinGroupFDR);
-                                            linkFDRInfo.setCounts(result.proteinGroupLinkFDR);
-                                            ppiFDRInfo.setCounts(result.proteinGroupPairFDR);
-
-                                            int count = targetInfo.count;
-                                            int countBetween = targetInfo.countBetween;
-                                            if (count == 0 && maxCount <= targetInfo.countPreFilter) {
-                                                count = targetInfo.countPreFilter;
-                                            }
-                                            if (countBetween == 0 && maxCountBetween <= targetInfo.countBetweenPreFilter) {
-                                                countBetween = targetInfo.countBetweenPreFilter;
-                                            }
-
-                                            // is it a new best?
-                                            if (((between && (countBetween > maxCountBetween || (countBetween == maxCountBetween && count > maxCount)))
-                                                    || (!between && count > maxCount))) {
-                                                maxCount = count;
-                                                maxCountBetween = countBetween;
-
-                                                deltaScore.setNewMaxFDR();
-                                                absPepCover.setNewMaxFDR();
-                                                pepCoverage.setNewMaxFDR();
-                                                psmFDRInfo.setNewMaxFDR();
-                                                pepFDRInfo.setNewMaxFDR();
-                                                protFDRInfo.setNewMaxFDR();
-                                                linkFDRInfo.setNewMaxFDR();
-                                                protFDRInfo.setNewMaxFDR();
-
-                                                // record that we found a new top
-                                                String message = "link count, " + linkFDRInfo.count + "(" + linkFDRInfo.countBetween + " between), Protein Pairs, " + ppiFDRInfo.count + "(" + ppiFDRInfo.countBetween + " between)";
-                                                if (linkFDRInfo.boost) {
-                                                    message = "link fdr, " + (linkFDRInfo.getCurrentFDR()) + ", " + message;
-                                                }
-                                                if (protFDRInfo.boost) {
-                                                    message = "prot fdr, " + (protFDRInfo.getCurrentFDR()) + ", " + message;
-                                                }
-                                                if (pepFDRInfo.boost) {
-                                                    message = "pep fdr, " + (pepFDRInfo.getCurrentFDR()) + ", " + message;
-                                                }
-                                                if (psmFDRInfo.boost) {
-                                                    message = "psm fdr, " + (psmFDRInfo.getCurrentFDR()) + ", " + message;
-                                                }
-                                                if (pepCoverage.boost) {
-                                                    message = "PepCoverage, " + (1 - pepCoverage.getCurrentFDR()) + ", " + message;
-                                                }
-                                                if (absPepCover.boost) {
-                                                    message = "min Fragmenst, " + (10 - absPepCover.getCurrentFDR()) + ", " + message;
-                                                }
-                                                if (deltaScore.boost) {
-                                                    message = "deltascore, " + (1 - deltaScore.getCurrentFDR()) + ", " + message;
-                                                }
-
-                                                // String message = "psmfdr, " + psmFDRInfo.currentFDR + " , pepfdr, " + pepFDRInfo.currentFDR + " ,protfdr, " + protFDRInfo.currentFDR + ", link count, " + linkFDRInfo.count + "(" + linkFDRInfo.countBetween + " between), Protein Pairs, " + ppiFDRInfo.count + "(" + ppiFDRInfo.countBetween + " between)";
-                                                sb.append(message + "\n");
-                                                Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
-
-                                                // forward the values to the gui
-                                                final double showDelta = (1 - deltaScore.getCurrentFDR());
-                                                final double showPepCoverage = (1 - pepCoverage.getCurrentFDR());
-                                                final int showMinFrags = (int) Math.round((10 - absPepCover.getCurrentFDR()));
-                                                final double showPSMFDR = psmFDRInfo.getCurrentFDR();
-                                                final double showPepFDR = pepFDRInfo.getCurrentFDR();
-                                                final double showProtFDR = protFDRInfo.getCurrentFDR();
-                                                final double showLinkFDR = linkFDRInfo.getCurrentFDR();
-                                                final double showPSMCount = psmFDRInfo.count;
-                                                final double showPepCount = pepFDRInfo.count;
-                                                final double showProtCount = protFDRInfo.countLinear;
-                                                final double showLinkCount = linkFDRInfo.count;
-                                                final double showPPICount = ppiFDRInfo.count;
-                                                final double showLinkCountBetween = linkFDRInfo.countBetween;
-                                                final double showPPICountBetween = ppiFDRInfo.countBetween;
-                                                final double showLinkCountBetweenPreFilter = linkFDRInfo.countBetweenPreFilter;
-                                                final double showLinkCountPreFilter = linkFDRInfo.countPreFilter;
-                                                final MaximisingStatus state = new MaximisingStatus();
-                                                state.showDelta = showDelta;
-                                                state.showMinFrags = showMinFrags;
-                                                state.showPepCoverage = showPepCoverage;
-                                                state.showPSMFDR = showPSMFDR;
-                                                state.showPepFDR = showPepFDR;
-                                                state.showProtFDR = showProtFDR;
-                                                state.showLinkFDR = showLinkFDR;
-
-                                                state.showPSMCount = showPSMCount + "";
-                                                state.showPepCount = showPepCount + "";
-                                                state.showProtCount = showProtCount + "";
-                                                state.showLinkCount = showLinkCount + (showLinkCount == 0 ? "(before PPI:" + showLinkCountPreFilter + ")" : "");
-                                                state.showLinkCountBetween = showLinkCountBetween + (showLinkCountBetween == 0 ? "(before PPI:" + showLinkCountBetweenPreFilter + ")" : "");
-
-                                                state.showPPICount = showPPICount + "";
-                                                state.showPPICountBetween = showPPICountBetween + "";
-                                                state.resultCount = maxCount;
-                                                state.resultCountBetween = maxCountBetween;
-                                                stateUpdate.setStatus(state);
-                                            } else if (count == maxCount || (between && countBetween == maxCountBetween)) {
-                                                deltaScore.setEqualFDR();
-                                                absPepCover.setEqualFDR();
-                                                pepCoverage.setEqualFDR();
-                                                psmFDRInfo.setEqualFDR();
-                                                pepFDRInfo.setEqualFDR();
-                                                protFDRInfo.setEqualFDR();
-                                                linkFDRInfo.setEqualFDR();
-                                                ppiFDRInfo.setEqualFDR();
-                                            }
-
-                                            if (stopMaximizing) {
-                                                break deltaScoreloop;
-                                            }
                                         }
-
                                     }
-
                                 }
-
                             }
                         }
                     }
@@ -5553,13 +5518,16 @@ public abstract class OfflineFDR {
                 stateUpdate.setStatusText("Max Round: " + optimizingRound + " - " + maxCount + " matches");
 
                 // no improvement for the last few rounds?
-                if ((maxCount == lastMaxCount && --countDown == 0) || stopMaximizing) {
+                if ((maxCount == lastMaxCount && --countDown == 0) || stopMaximizing || optimizingRound > maxrounds) {
                     optimizing = false;
                     Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
 //                    FDRResult ret = this.calculateFDR(psmFDRInfo.maximumFDR, pepFDRInfo.maximumFDR, protFDRInfo.maximumFDR, linkFDRInfo.maximumFDR, ppiFDRInfo.maximumFDR, 10000, ignoreGroups, true, filterToUniquePSM);
+                    settings.minScore(maxscore - minScore.maximumFDR);
                     settings.setMinDeltaScoreFilter(1 - deltaScore.maximumFDR);
                     settings.setMinPeptideCoverageFilter(1 - pepCoverage.maximumFDR);
                     settings.setMinPeptideFragmentsFilter(10 - (int) Math.round(absPepCover.maximumFDR));
+                    settings.setMinPeptideStubFilter(2 - (int) Math.round(pepStubs.maximumFDR));
+                    settings.setMinPeptideDoubletFilter(2 - (int) Math.round(pepDoublets.maximumFDR));
                     settings.setPSMFDR(psmFDRInfo.maximumFDR);
                     settings.setPeptidePairFDR(pepFDRInfo.maximumFDR);
                     settings.setProteinGroupFDR(protFDRInfo.maximumFDR);
@@ -5569,8 +5537,11 @@ public abstract class OfflineFDR {
 
                     final int foundCount = maxCount;
                     MaximisingStatus res = new MaximisingStatus();
+                    res.showMinScore = (maxscore - minScore.maximumFDR);
                     res.showDelta = (1 - deltaScore.maximumFDR);
                     res.showMinFrags = (10 - (int) Math.round(absPepCover.maximumFDR));
+                    res.showMinStubs = (2 - (int) Math.round(pepStubs.maximumFDR));
+                    res.showMinDoublets = (2 - (int) Math.round(pepDoublets.maximumFDR));
                     res.showPepCoverage = (1 - pepCoverage.maximumFDR);
                     res.showPSMFDR = psmFDRInfo.maximumFDR;
                     res.showPepFDR = pepFDRInfo.maximumFDR;
@@ -5582,12 +5553,12 @@ public abstract class OfflineFDR {
 
                     if (pepCoverage.maximumFDR < 1) {
                         PSMFilter f = new SingleSubScoreFilter("minPepCoverage", 1 - pepCoverage.maximumFDR, true);
-                        prefilteredPSMs = f.filter(getAllPSMs());
-                        if (prefilteredPSMs.size() < 50) {
+                        setPrefilteredPSMs(f.filter(getAllPSMs()));
+                        if (getPrefilteredPSMs().size() < 50) {
                             break;
                         }
                     } else {
-                        prefilteredPSMs = null;
+                        setPrefilteredPSMs(null);
                     }
 
                     stopMaximizing = false;
@@ -5599,7 +5570,7 @@ public abstract class OfflineFDR {
                 } else {
                     if (maxCount > lastMaxCount) {
                         // yes we improved
-                        countDown = 5;
+                        countDown = maxCountDown;
                     } else {
                         stateUpdate.setStatusText("Max Link Round: " + optimizingRound + " - " + maxCount + " links - count down: " + countDown);
 
@@ -5615,8 +5586,11 @@ public abstract class OfflineFDR {
                     if (countDown == 1) {
                         stepChange = 1;
                     }
+                    minScore.calcNextFDRRange(startLow, stepChange);
                     deltaScore.calcNextFDRRange(startLow, stepChange);
                     absPepCover.calcNextFDRRange(startLow, stepChange);
+                    pepStubs.calcNextFDRRange(startLow, stepChange);
+                    pepDoublets.calcNextFDRRange(startLow, stepChange);
                     pepCoverage.calcNextFDRRange(startLow, stepChange);
                     psmFDRInfo.calcNextFDRRange(startLow, stepChange);
                     pepFDRInfo.calcNextFDRRange(startLow, stepChange);
@@ -5627,368 +5601,6 @@ public abstract class OfflineFDR {
                 }
 
             }
-        } catch (Exception ex) {
-            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error maximizing links", ex);
-            stateUpdate.reportError("Error maximizing", ex);
-        }
-        return null;
-
-    }
-
-    public MaximisingStatus maximiseSequential(FDRSettings fdrSettings, OfflineFDR.FDRLevel level, final boolean between, final MaximizingUpdate stateUpdate) {
-
-        final FDRSettingsImpl settings = new FDRSettingsImpl();
-        settings.setAll(fdrSettings);
-
-        try {
-            int steps = settings.getBoostingSteps();
-            StringBuffer sb = new StringBuffer();
-            double maxDelta = 1;
-            double maxPeptideCoverage = 1;
-
-            // get some settings, that are constant for all calculations
-            boolean ignoreGroups = this.ignoreGroupsSetting;
-
-            // if minpepcoverage is 0 and we boost on it we can probably savly start ad 0.1
-            if (settings.getMinPeptideCoverageFilter() == 0 && settings.boostPepCoverage()) {
-//                settings.setMinPeptideCoverageFilter(0.01);
-                maxPeptideCoverage = 0.8;
-            }
-
-            // also for delta score we can probably savly start as 0.05
-            if (settings.boostDeltaScore()) {
-//                if (settings.getMinDeltaScoreFilter() == 0) {
-//                    settings.setMinDeltaScoreFilter(0.01);
-//                }
-                // there is probably no point in being more restrictive then 0.7 (even that is overkill)
-                if (settings.getMinDeltaScoreFilter() < 0.6) {
-                    maxDelta = 0.7;
-                }
-            }
-
-            final MaximizeLevelInfo absPepCover = new MaximizeLevelInfoInteger(10, true, steps);
-            final MaximizeLevelInfo deltaScore = new MaximizeLevelInfo(1 - settings.getMinDeltaScoreFilter(), 1 - maxDelta, settings.boostDeltaScore(), steps);
-            final MaximizeLevelInfo pepCoverage = new MaximizeLevelInfo(1 - settings.getMinPeptideCoverageFilter(), 1 - maxPeptideCoverage, settings.boostPepCoverage(), steps);
-            final MaximizeLevelInfo psmFDRInfo = new MaximizeLevelInfo(settings.getPSMFDR(), settings.boostPSMs(), steps);
-            final MaximizeLevelInfo pepFDRInfo = new MaximizeLevelInfo(settings.getPeptidePairFDR(), settings.boostPeptidePairs() && level.compareTo(OfflineFDR.FDRLevel.PEPTIDE_PAIR) > 0, steps);
-            final MaximizeLevelInfo protFDRInfo = new MaximizeLevelInfo(settings.getProteinGroupFDR(), settings.boostProteins() && level.compareTo(OfflineFDR.FDRLevel.PROTEINGROUP) > 0, steps);
-            final MaximizeLevelInfo linkFDRInfo = new MaximizeLevelInfo(settings.getProteinGroupLinkFDR(), settings.boostLinks() && level.compareTo(OfflineFDR.FDRLevel.PROTEINGROUPLINK) > 0, steps);
-            final MaximizeLevelInfo ppiFDRInfo = new MaximizeLevelInfo(settings.getProteinGroupPairFDR(), false, steps);
-            absPepCover.name = "min frags";
-            deltaScore.name = "delta";
-            pepCoverage.name = "pep coverage";
-            psmFDRInfo.name = "psm";
-            pepFDRInfo.name = "pep";
-            protFDRInfo.name = "prot";
-            linkFDRInfo.name = "link";
-            ppiFDRInfo.name = "ppi";
-
-            final ArrayList<MaximizeLevelInfo> subScoreFilter = new ArrayList<>();
-            MaximizeLevelInfo targetInfoFirst;
-
-            ArrayList<MaximizeLevelInfo> boostLevels = new ArrayList<>();
-            if (settings.boostMinFragments()) {
-                boostLevels.add(absPepCover);
-            }
-            if (settings.boostPepCoverage()) {
-                boostLevels.add(pepCoverage);
-            }
-            if (settings.boostDeltaScore()) {
-                boostLevels.add(deltaScore);
-            }
-            switch (level) {
-                case PROTEINGROUPPAIR:
-                    if (settings.boostLinks()) {
-                        boostLevels.add(linkFDRInfo);
-                    }
-                case PROTEINGROUPLINK:
-                    if (settings.boostProteins()) {
-                        boostLevels.add(protFDRInfo);
-                    }
-                    if (settings.boostPeptidePairs()) {
-                        boostLevels.add(pepFDRInfo);
-                    }
-                case PEPTIDE_PAIR:
-                    if (settings.boostPSMs()) {
-                        boostLevels.add(psmFDRInfo);
-                    }
-            }
-
-            switch (level) {
-                case PSM:
-                    targetInfoFirst = psmFDRInfo;
-                    break;
-                case PEPTIDE_PAIR:
-                    targetInfoFirst = pepFDRInfo;
-                    break;
-                case PROTEINGROUP:
-                    targetInfoFirst = protFDRInfo;
-                    break;
-                case PROTEINGROUPLINK:
-                    targetInfoFirst = linkFDRInfo;
-                    break;
-                case PROTEINGROUPPAIR:
-                    targetInfoFirst = ppiFDRInfo;
-                    break;
-                default:
-                    targetInfoFirst = null;
-                    break;
-            }
-            final MaximizeLevelInfo targetInfo = targetInfoFirst;
-
-            boolean filterToUniquePSM = settings.filterToUniquePSM();
-
-            MaximisingStatus res = new MaximisingStatus();
-
-            int maxCount = 0;
-            int maxCountBetween = 0;
-
-
-            for (int i = 2; i>0;i--) {
-                for (MaximizeLevelInfo ml : boostLevels) {
-                    ml.fromFDR = ml.minimumFDR;
-                    boolean optimizing = true;
-
-                    int countDown = 5;
-
-                    int optimizingRound = 0;
-                    if (ml == absPepCover) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "Min Pep Frags from  :        " + (10 - ml.fromFDR) + " to " + (10 - ml.toFDR));
-                    } else if (ml == pepCoverage) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "Min Pep Coverage from  :        " + (1 - ml.fromFDR) + " to " + (1 - ml.toFDR));
-                    } else if (ml == deltaScore) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "delta score from  :        " + (1 - ml.fromFDR) + "*score to " + (1 - ml.toFDR) + "*score");
-                    } else if (ml == psmFDRInfo) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "psmFDR from  :        " + ml.fromFDR + " to " + ml.toFDR);
-                    } else if (ml == pepFDRInfo) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "pep FDR from  :        " + ml.fromFDR + " to " + ml.toFDR);
-                    } else if (ml == protFDRInfo) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "prot FDR from  :        " + ml.fromFDR + " to " + ml.toFDR);
-                    } else if (ml == linkFDRInfo) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                "link FDR from  :        " + ml.fromFDR + " to " + ml.toFDR);
-                    }
-                    while (optimizing && !stopMaximizing) {
-                        optimizingRound++;
-                        int lastMaxCount = maxCount;
-                        for (ml.firstStep(); ml.doThisStep(); ml.nextStep()) {
-                            FDRResult result = new FDRResult();
-                            settings.setMinDeltaScoreFilter(1 - deltaScore.getCurrentFDR());
-                            settings.setMinPeptideFragmentsFilter(10 - (int) Math.round(absPepCover.getCurrentFDR()));
-                            settings.setMinPeptideCoverageFilter(1 - pepCoverage.getCurrentFDR());
-                            settings.setPeptidePairFDR(pepFDRInfo.getCurrentFDR());
-                            settings.setProteinGroupFDR(protFDRInfo.getCurrentFDR());
-                            settings.setProteinGroupLinkFDR(linkFDRInfo.getCurrentFDR());
-                            this.calculatePSMFDR(true, ignoreGroups, result, settings);
-                            if (result.psmFDR.getResultCount() == 0 || stopMaximizing) {
-                                break;
-                            }
-                            psmFDRInfo.setCountsPrefilter(result.psmFDR);
-
-                            this.calculatePeptidePairFDR(true, result, settings, ignoreGroups);
-                            if (result.peptidePairFDR.getResultCount() == 0 || stopMaximizing) {
-                                break;
-                            }
-                            pepFDRInfo.setCountsPrefilter(result.peptidePairFDR);
-                            this.calculateProteinGroupFDR(ignoreGroups, true, settings, result);
-                            if (result.proteinGroupFDR.getResultCount() == 0 || stopMaximizing) {
-                                break;
-                            }
-                            protFDRInfo.setCountsPrefilter(result.proteinGroupFDR);
-                            // cut down the peptides by proteins                           
-                            this.filterFDRPeptidePairsByFDRProteinGroups(result);
-                            this.calculateLinkFDR(ignoreGroups, true, settings, result);
-                            linkFDRInfo.setCountsPrefilter(result.proteinGroupLinkFDR);
-                            if (result.proteinGroupLinkFDR.getResultCount() == 0 || stopMaximizing) {
-                                break;
-                            }
-                            settings.setProteinGroupPairFDR(ppiFDRInfo.getCurrentFDR());
-                            this.calculateProteinGroupPairFDR(ignoreGroups, true, settings, result);
-
-                            if (result.proteinGroupPairFDR.getResultCount() == 0 || stopMaximizing) {
-                                break;
-                            }
-                            // now we need to filter down 
-                            this.filterFDRLinksByFDRProteinGroupPairs(result);
-                            if (stopMaximizing) {
-                                break;
-                            }
-                            this.filterFDRPeptidePairsByFDRProteinGroupLinks(result);
-                            if (stopMaximizing) {
-                                break;
-                            }
-                            this.filterFDRProteinGroupsByFDRPeptidePairs(result);
-                            if (stopMaximizing) {
-                                break;
-                            }
-                            this.filterFDRPSMByFDRPeptidePairs(result);
-
-                            // how many links do we now have?
-                            pepCoverage.setCounts(result.psmFDR);
-                            absPepCover.setCounts(result.psmFDR);
-                            deltaScore.setCounts(result.psmFDR);
-                            psmFDRInfo.setCounts(result.psmFDR);
-                            pepFDRInfo.setCounts(result.peptidePairFDR);
-                            protFDRInfo.setCounts(result.proteinGroupFDR);
-                            linkFDRInfo.setCounts(result.proteinGroupLinkFDR);
-                            ppiFDRInfo.setCounts(result.proteinGroupPairFDR);
-
-                            int count = targetInfo.count;
-                            int countBetween = targetInfo.countBetween;
-                            if (count == 0 && maxCount <= targetInfo.countPreFilter) {
-                                count = targetInfo.countPreFilter;
-                            }
-                            if (countBetween == 0 && maxCountBetween <= targetInfo.countBetweenPreFilter) {
-                                countBetween = targetInfo.countBetweenPreFilter;
-                            }
-
-                            // is it a new best?
-                            if (((between && (countBetween > maxCountBetween || (countBetween == maxCountBetween && count > maxCount)))
-                                    || (!between && count > maxCount))) {
-                                maxCount = count;
-                                maxCountBetween = countBetween;
-                                ml.setNewMaxFDR();
-                                String message = " , counts: " + count + ", of wich between : " + countBetween;
-                                if (ml == absPepCover) {
-                                    message = "Min Pep Frags : " + (10 - ml.getCurrentFDR()) + " , counts: " + count + ", of wich between : " + countBetween;
-                                } else if (ml == pepCoverage) {
-                                    message = "Min Pep Coverage : " + (1 - ml.getCurrentFDR()) + " , counts: " + count + ", of wich between : " + countBetween;
-                                } else if (ml == deltaScore) {
-                                    message = "min delta score : " + (1 - ml.getCurrentFDR()) + "*score , counts: " + count + ", of wich between : " + countBetween;
-                                } else if (ml == psmFDRInfo) {
-                                    message = "psmFDR : " + ml.getCurrentFDR() + "*score , counts: " + count + ", of wich between : " + countBetween;
-                                } else if (ml == pepFDRInfo) {
-                                    message = "peptide pair FDR : " + ml.getCurrentFDR() + "*score , counts: " + count + ", of wich between : " + countBetween;
-                                    Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-                                            "pep FDR from  :        " + ml.fromFDR + " to " + ml.toFDR);
-                                } else if (ml == protFDRInfo) {
-                                    message = "protein FDR : " + ml.getCurrentFDR() + "*score , counts: " + count + ", of wich between : " + countBetween;
-                                } else if (ml == linkFDRInfo) {
-                                    message = "link FDR : " + ml.getCurrentFDR() + "*score , counts: " + count + ", of wich between : " + countBetween;
-                                }
-                                Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
-
-                                // forward the values to the gui
-                                final double showDelta = (1 - deltaScore.getCurrentFDR());
-                                final double showPepCoverage = (1 - pepCoverage.getCurrentFDR());
-                                final int showMinFrags = (int) Math.round((10 - absPepCover.getCurrentFDR()));
-                                final double showPSMFDR = psmFDRInfo.getCurrentFDR();
-                                final double showPepFDR = pepFDRInfo.getCurrentFDR();
-                                final double showProtFDR = protFDRInfo.getCurrentFDR();
-                                final double showLinkFDR = linkFDRInfo.getCurrentFDR();
-                                final double showPSMCount = psmFDRInfo.count;
-                                final double showPepCount = pepFDRInfo.count;
-                                final double showProtCount = protFDRInfo.countLinear;
-                                final double showLinkCount = linkFDRInfo.count;
-                                final double showPPICount = ppiFDRInfo.count;
-                                final double showLinkCountBetween = linkFDRInfo.countBetween;
-                                final double showPPICountBetween = ppiFDRInfo.countBetween;
-                                final double showLinkCountBetweenPreFilter = linkFDRInfo.countBetweenPreFilter;
-                                final double showLinkCountPreFilter = linkFDRInfo.countPreFilter;
-                                final MaximisingStatus state = new MaximisingStatus();
-                                state.showDelta = showDelta;
-                                state.showMinFrags = showMinFrags;
-                                state.showPepCoverage = showPepCoverage;
-                                state.showPSMFDR = showPSMFDR;
-                                state.showPepFDR = showPepFDR;
-                                state.showProtFDR = showProtFDR;
-                                state.showLinkFDR = showLinkFDR;
-
-                                state.showPSMCount = showPSMCount + "";
-                                state.showPepCount = showPepCount + "";
-                                state.showProtCount = showProtCount + "";
-                                state.showLinkCount = showLinkCount + (showLinkCount == 0 ? "(before PPI:" + showLinkCountPreFilter + ")" : "");
-                                state.showLinkCountBetween = showLinkCountBetween + (showLinkCountBetween == 0 ? "(before PPI:" + showLinkCountBetweenPreFilter + ")" : "");
-
-                                state.showPPICount = showPPICount + "";
-                                state.showPPICountBetween = showPPICountBetween + "";
-                                state.resultCount = maxCount;
-                                state.resultCountBetween = maxCountBetween;
-                                stateUpdate.setStatus(state);
-                            } else if (count == maxCount || (between && countBetween == maxCountBetween)) {
-                                ml.setEqualFDR();
-                            }
-
-                        }
-
-                        stateUpdate.setStatusText("Max Round: " + optimizingRound + " ("+ ml.name+") - " + maxCount + " matches");
-
-                        // no improvement for the last few rounds?
-                        if ((maxCount == lastMaxCount && --countDown == 0) || stopMaximizing) {
-                            optimizing = false;
-                            Logger.getLogger(this.getClass().getName()).log(Level.INFO, sb.toString());
-                            //                    FDRResult ret = this.calculateFDR(psmFDRInfo.maximumFDR, pepFDRInfo.maximumFDR, protFDRInfo.maximumFDR, linkFDRInfo.maximumFDR, ppiFDRInfo.maximumFDR, 10000, ignoreGroups, true, filterToUniquePSM);
-                            settings.setMinDeltaScoreFilter(1 - deltaScore.maximumFDR);
-                            settings.setMinPeptideCoverageFilter(1 - pepCoverage.maximumFDR);
-                            settings.setMinPeptideFragmentsFilter(10 - (int) Math.round(absPepCover.maximumFDR));
-                            settings.setPSMFDR(psmFDRInfo.maximumFDR);
-                            settings.setPeptidePairFDR(pepFDRInfo.maximumFDR);
-                            settings.setProteinGroupFDR(protFDRInfo.maximumFDR);
-                            settings.setProteinGroupLinkFDR(linkFDRInfo.maximumFDR);
-                            //settings.setProteinGroupPairFDR(settings.getProteinGroupPairFDR());
-                            res.showDelta = (1 - deltaScore.maximumFDR);
-                            res.showMinFrags = (10 - (int) Math.round(absPepCover.maximumFDR));
-                            res.showPepCoverage = (1 - pepCoverage.maximumFDR);
-                            res.showPSMFDR = psmFDRInfo.maximumFDR;
-                            res.showPepFDR = pepFDRInfo.maximumFDR;
-                            res.showProtFDR = protFDRInfo.maximumFDR;
-                            res.showLinkFDR = linkFDRInfo.maximumFDR;
-                            res.resultCount = maxCount;
-                            res.resultCountBetween = maxCountBetween;
-
-                            if (pepCoverage.maximumFDR < 1) {
-                                PSMFilter f = new SingleSubScoreFilter("minPepCoverage", 1 - pepCoverage.maximumFDR, true);
-                                prefilteredPSMs = f.filter(getAllPSMs());
-                                if (prefilteredPSMs.size() < 50) {
-                                    break;
-                                }
-                            } else {
-                                prefilteredPSMs = null;
-                            }
-
-                            stateUpdate.setStatus(res);
-                            optimizing = false;
-                        } else {
-                            if (maxCount > lastMaxCount) {
-                                // yes we improved
-                                countDown = 5;
-                            } else {
-                                stateUpdate.setStatusText("Max Link Round: " + optimizingRound + " - " + maxCount + " links - count down: " + countDown);
-
-                            }
-                            // so see if we make the resoltuion finer
-                            // can we get a better result?
-                            boolean startLow = false;
-                            int stepChange = 0;
-                            if (countDown == 2) {
-                                startLow = true;
-                                stepChange = 1;
-                            }
-                            if (countDown == 1) {
-                                stepChange = 1;
-                            }
-                            ml.calcNextFDRRange(startLow, stepChange);
-
-                        }
-
-                    }
-                    ml.setCurrentFDR(ml.maximumFDR);
-
-                }
-            }
-            FDRResult ret = this.calculateFDR(settings, true);
-            res.result = ret;
-
-            final int foundCount = maxCount;
-            
-            stopMaximizing = false;
-            return res;
         } catch (Exception ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Error maximizing links", ex);
             stateUpdate.reportError("Error maximizing", ex);
@@ -6107,8 +5719,9 @@ public abstract class OfflineFDR {
     }
 
     /**
-     * do we have PSMs with crosslinker-stubs.
-     * Basically do we have a ms2 cleavable crosslinker search.
+     * do we have PSMs with crosslinker-stubs. Basically do we have a ms2
+     * cleavable crosslinker search.
+     *
      * @return the stubsFound
      */
     public boolean stubsFound() {
@@ -6116,12 +5729,36 @@ public abstract class OfflineFDR {
     }
 
     /**
-     * do we have PSMs with crosslinker-stubs.
-     * Basically do we have a ms2 cleavable crosslinker search.
+     * do we have PSMs with crosslinker-stubs. Basically do we have a ms2
+     * cleavable crosslinker search.
+     *
      * @param stubsFound the stubsFound to set
      */
     public void stubsFound(boolean stubsFound) {
         this.stubsFound = stubsFound;
     }
 
+    /**
+     * psms that passed some form of prefilter
+     *
+     * @return the prefilteredPSMs
+     */
+    public ArrayList<PSM> getPrefilteredPSMs() {
+        return prefilteredPSMs;
+    }
+
+    /**
+     * psms that passed some form of prefilter
+     *
+     * @param prefilteredPSMs the prefilteredPSMs to set
+     */
+    public void setPrefilteredPSMs(ArrayList<PSM> prefilteredPSMs) {
+        this.prefilteredPSMs = prefilteredPSMs;
+    }
+
+    public MZIdentMLOwner getOwner() {
+        return this.mzid_owner;
+    }
+    
+    
 }

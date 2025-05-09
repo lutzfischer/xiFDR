@@ -17,7 +17,6 @@ package org.rappsilber.fdr.result;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import org.rappsilber.fdr.entities.PSM;
 import org.rappsilber.fdr.entities.PeptidePair;
 import org.rappsilber.fdr.entities.ProteinGroupLink;
@@ -57,5 +56,5 @@ public  class FDRResult {
     }
     
 
-
+    
 }

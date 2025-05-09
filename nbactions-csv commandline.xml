@@ -10,8 +10,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --help --uniquePSMs=F --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/owncloudED/FromMichaelBerlin/3346_hsa_trypsin.csv</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir></exec.workingdir>
+                <exec.appArgs>--dbids=14107 --filter="(scoreP1Coverage &gt;= 4 AND (pepSeq2 is null OR  scoreP2Coverage &gt;= 4 )) AND (deltaScore &gt;= Score/2.5) AND (pepSeq2 is not null) AND (mgxrank &lt;= 3)" --psmfdr=100 --pepfdr=100 --proteinfdr=100 --linkfdr=100 --ppifdr=100 --csvOutDir=/data/rappstore/new_storage/fschimweg/xiSearch/myco-dss --csvBaseName=14107 --connection=jdbc:postgresql://xidb.bioanalytik.tu-berlin.de:5432/xi3 --user=bio_user --password=bio1sTheUs3r</exec.appArgs>
+                <exec.vmArgs>-Dfile.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx4G</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.DBinFDR</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -24,9 +28,13 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --help --uniquePSMs=F --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/owncloudED/FromMichaelBerlin/3346_hsa_trypsin.csv</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
+                <exec.workingdir></exec.workingdir>
+                <exec.appArgs>--dbids=14107 --filter="(scoreP1Coverage &gt;= 4 AND (pepSeq2 is null OR  scoreP2Coverage &gt;= 4 )) AND (deltaScore &gt;= Score/2.5) AND (pepSeq2 is not null) AND (mgxrank &lt;= 3)" --psmfdr=100 --pepfdr=100 --proteinfdr=100 --linkfdr=100 --ppifdr=100 --csvOutDir=/data/rappstore/new_storage/fschimweg/xiSearch/myco-dss --csvBaseName=14107 --connection=jdbc:postgresql://xidb.bioanalytik.tu-berlin.de:5432/xi3 --user=bio_user --password=bio1sTheUs3r</exec.appArgs>
+                <exec.vmArgs>-Dfile.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx4G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.DBinFDR</exec.mainClass>
             </properties>
         </action>
         <action>
@@ -39,8 +47,12 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xms1g -classpath %classpath org.rappsilber.fdr.CSVinFDR --help --uniquePSMs=F --csvOutDir=/home/lfischer/temp --csvBaseName=fdrcsvtest /home/lfischer/owncloudED/FromMichaelBerlin/3346_hsa_trypsin.csv</exec.args>
+                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
+                <exec.workingdir></exec.workingdir>
+                <exec.appArgs>--dbids=14107 --filter="(scoreP1Coverage &gt;= 4 AND (pepSeq2 is null OR  scoreP2Coverage &gt;= 4 )) AND (deltaScore &gt;= Score/2.5) AND (pepSeq2 is not null) AND (mgxrank &lt;= 3)" --psmfdr=100 --pepfdr=100 --proteinfdr=100 --linkfdr=100 --ppifdr=100 --csvOutDir=/data/rappstore/new_storage/fschimweg/xiSearch/myco-dss --csvBaseName=14107 --connection=jdbc:postgresql://xidb.bioanalytik.tu-berlin.de:5432/xi3 --user=bio_user --password=bio1sTheUs3r</exec.appArgs>
+                <exec.vmArgs>-Dfile.encoding=UTF-8 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Xmx4G</exec.vmArgs>
+                <exec.mainClass>org.rappsilber.fdr.DBinFDR</exec.mainClass>
             </properties>
         </action>
     </actions>

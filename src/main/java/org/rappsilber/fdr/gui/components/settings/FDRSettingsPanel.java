@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import org.rappsilber.fdr.FDRSettings;
 import java.awt.Component;
@@ -21,9 +21,14 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JSpinner;
+import javax.swing.SwingUtilities;
 import org.rappsilber.fdr.FDRSettingsImpl;
+import org.rappsilber.fdr.gui.components.BoostIncludes;
+import org.rappsilber.fdr.gui.components.FDRSpinnerModel;
 
 /**
  *
@@ -50,6 +55,15 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     private boolean boostPepDeltaScore = true;
     private boolean boostMinFragments = false;
     private boolean groubByCrosslinkerStubs;
+    private boolean twoStepBoost;
+    private boolean boostPeptideDoublets;
+    private boolean boostPeptideStubs;
+    private double minMinPeptideDoubpletFilter;
+    private double minPeptideStubFilter;
+    private boolean filterBySelfAndMono = false;
+    private boolean boostMinScore;
+    private Double minScore = 0d;
+    private Integer scoreTopNAggregate;
 
     /**
      * Creates new form FDRSettingsPanel
@@ -191,6 +205,39 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     public void setAll(FDRSettings settings) {
         FDRSettingsImpl.transferSettings(settings, this);
     }
+
+
+    protected static void setFDRLater(final JSpinner sp, final double value) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ((FDRSpinnerModel)sp.getModel()).setFDR(value);
+            }
+        });
+            
+    }
+
+    protected void setValueLater(final JSpinner sp, final Object value) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                sp.setValue(value);
+            }
+        });
+            
+    }
+    
+    protected void setValueLater(final JCheckBox ck, final boolean value) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ck.setSelected(value);
+            }
+        });
+        
+    }
+    
+    
     
 //    public abstract void setEnabled(boolean e);
 //
@@ -275,6 +322,100 @@ public abstract class FDRSettingsPanel extends javax.swing.JPanel implements FDR
     @Override
     public boolean getGroupByCrosslinkerStubs() {
         return this.groubByCrosslinkerStubs;
+    }
+
+    @Override
+    public boolean twoStepOptimization() {
+        return this.twoStepBoost;
+    }
+
+    @Override
+    public void twoStepOptimization(boolean stepped) {
+        this.twoStepBoost = stepped;
+    }
+
+    @Override
+    public boolean boostPeptideStubs(){
+        return this.boostPeptideStubs;
+    }
+
+    @Override
+    public void boostPeptideStubs(boolean boost){
+        this.boostPeptideStubs = boost;
+    }
+    
+    @Override
+    public boolean boostPeptideDoublets(){
+        return this.boostPeptideDoublets;
+    }
+
+    @Override
+    public void boostPeptideDoublets(boolean boost){
+        this.boostPeptideDoublets = boost;
+    }
+
+
+    @Override
+    public double getMinPeptideStubFilter() {
+        return this.minPeptideStubFilter;
+    }
+    
+    @Override
+    public void setMinPeptideStubFilter(double d) {
+        this.minPeptideStubFilter = d;
+    }
+    
+    @Override
+    public double getMinPeptideDoubletFilter() {
+        return this.minMinPeptideDoubpletFilter;
+    }
+    
+    @Override
+    public void setMinPeptideDoubletFilter(double d) {
+        this.minMinPeptideDoubpletFilter = d;
+    }
+
+    @Override
+    public boolean filterBySelfAndMono() {
+        return filterBySelfAndMono;
+    }
+
+    @Override
+    public void setfilterBySelfAndMono(boolean filter) {
+        filterBySelfAndMono = filter;
+    }
+
+    
+    
+    @Override
+    public boolean boostMinScore(){
+        return this.boostMinScore;
+    }
+
+    @Override
+    public void boostMinScore(boolean boost){
+        this.boostMinScore = boost;
+    }
+
+    
+    @Override
+    public Double minScore(){
+        return this.minScore;
+    }
+
+    @Override
+    public void minScore(Double minScore){
+        this.minScore = minScore;
+    }
+
+    @Override
+    public Integer getScoreTopNAggregate() {
+        return this.scoreTopNAggregate;
+    }
+
+    @Override
+    public void setScoreTopNAggregate(Integer n) {
+        this.scoreTopNAggregate = n;
     }
     
 }

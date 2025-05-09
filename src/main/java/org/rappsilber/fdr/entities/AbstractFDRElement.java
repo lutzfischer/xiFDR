@@ -34,11 +34,11 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     /**
      * The next Target-Decoy match with a lower FDR
      */
-    private AbstractFDRElement<T> m_lowerTD;
+    private AbstractFDRElement<T> m_lowerFDRTD;
     /**
      * The next Target-Decoy match with a higher FDR
      */
-    private AbstractFDRElement<T> m_higherTD;
+    private AbstractFDRElement<T> m_HigherFDRTD;
     
     protected double m_linkedSupport = 1;
     protected HashSet<String> m_negativeGroups;
@@ -151,22 +151,26 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
     }
     
     
-    public void addFDRGroups(AbstractFDRElement e) {
+    public boolean addFDRGroups(AbstractFDRElement e) {
+        boolean changed = false;
         if (this.m_negativeGroups != null) {
             if (e.m_negativeGroups == null) {
                 this.m_negativeGroups = null;
             } else {
                 m_negativeGroups.retainAll(e.m_negativeGroups);
+                changed = true;
             }
         }
         if (e.hasPositiveGrouping()) {
             if (this.m_positiveGroups == null) {
                 this.m_positiveGroups = e.getPositiveGrouping();
+                changed = true;
             } else if (!this.m_positiveGroups.containsAll(e.getPositiveGrouping())) {
                 this.m_positiveGroups.addAll(e.getPositiveGrouping());
+                changed = true;
             }
         }
-        
+        return changed;
     }
 
     public abstract Collection<PeptidePair> getPeptidePairs();
@@ -183,46 +187,53 @@ public abstract class AbstractFDRElement<T extends SelfAdd<T>> implements FDRSel
      * The next Target-Decoy match with a lower FDR
      * @return the m_lowerTD
      */
-    public AbstractFDRElement<T> getLowerTD() {
-        return m_lowerTD;
+    public AbstractFDRElement<T> getLowerFDRTD() {
+        return m_lowerFDRTD;
     }
 
     /**
      * The next Target-Decoy match with a lower FDR
      * @param m_lowerTD the m_lowerTD to set
      */
-    public void setLowerTD(AbstractFDRElement<T> TD) {
-        this.m_lowerTD = TD;
+    public void setLowerFDRTD(AbstractFDRElement<T> TD) {
+        this.m_lowerFDRTD = TD;
     }
 
     /**
      * The next Target-Decoy match with a higher FDR
      * @return the m_higherTD
      */
-    public AbstractFDRElement<T> getHigherTD() {
-        return m_higherTD;
+    public AbstractFDRElement<T> getHigherFDRTD() {
+        return m_HigherFDRTD;
     }
 
     /**
      * The next Target-Decoy match with a higher FDR
      * @param m_higherTD the m_higherTD to set
      */
-    public void setHigherTD(AbstractFDRElement<T> TD) {
-        this.m_higherTD = TD;
+    public void setHigherFDRTD(AbstractFDRElement<T> TD) {
+        this.m_HigherFDRTD = TD;
     }    
     
     
     public double getEstimatedFDR() {
-        if (isTD())
-            return getFDR();
-        double lowerScore = this.getLowerTD().getOriginalScore();
-        double higherScore = this.getHigherTD().getOriginalScore();
-        double lowerFDR = this.getLowerTD().getFDR();
-        double higherFDR = this.getHigherTD().getFDR();
-        double stepScore = higherScore - lowerScore;
-        double stepFDR = higherFDR - lowerFDR;
-        double myStepScore = this.getOriginalScore() - lowerScore;
-        return lowerFDR + stepFDR*(myStepScore/stepScore);
+        if (this.getLowerFDRTD() == null || this.getHigherFDRTD() == null) {
+            return Double.NaN;
+        }
+        double lowerFDRScore = this.getLowerFDRTD().getScore();
+        double higherFDRScore = this.getHigherFDRTD().getScore();
+        double lowerFDR = this.getLowerFDRTD().getFDR();
+        double higherFDR = Math.max(this.getHigherFDRTD().getFDR(), lowerFDR);
+        double stepScore = lowerFDRScore - higherFDRScore;
+        double myStepScore = lowerFDRScore - getScore();
+        if (stepScore == 0) {
+            return lowerFDR + (higherFDR-lowerFDR)/2;
+        } else {
+            double stepScoreRatio = myStepScore/stepScore;
+            double stepFDR = higherFDR - lowerFDR;
+            double myStepFDR = stepFDR*stepScoreRatio;
+            return lowerFDR + myStepFDR;
+        }
         
     }
 

@@ -18,7 +18,10 @@ package org.rappsilber.fdr.entities;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.rappsilber.fdr.utils.FDRGroupNames;
+import org.rappsilber.utils.DoubleArrayList;
 
 /**
  * Represents a single protein. 
@@ -26,20 +29,31 @@ import org.rappsilber.fdr.utils.FDRGroupNames;
  */
 public class Protein extends AbstractFDRElement<Protein> {//implements Comparable<Protein> {
     private long id;
+    private String searchId;
     private String accession;
+    private String name;
     private String description;
     private String sequence="";
     //private HashSet<PeptidePair> peps = new HashSet<PeptidePair>();
     private HashSet<Peptide> peps = new HashSet<Peptide>();
     private HashSet<PeptidePair> peppairs = new HashSet<PeptidePair>();
     private double score = 0;
+    private DoubleArrayList scores = new DoubleArrayList(2);
+    private boolean scoresSorted = true;
     private boolean isDecoy;
     private boolean linearSupport = false;
     private boolean internalSupport = false;
     private boolean betweenSupport = false;
+    private boolean crosslinkerModSupport = false;
     //private boolean isAmbigious = true;
     private double m_fdr = -1;
     private int size = -1;
+    private Protein decoy_complement = null;
+    
+    public static String DECOY_PREFIX = null;
+    String zero = ""+(char)0;
+    private Pattern zerosplit = Pattern.compile(zero);
+    private Pattern spacesplit = Pattern.compile(" ");
     
     
     
@@ -61,26 +75,70 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      * @param internal
      * @param between 
      */
+    public Protein(long id, String accession, String name, String description, boolean isDecoy, boolean linear, boolean internal, boolean between, String decoyprefix) {
+        this(id, accession, description, isDecoy, linear, internal, between, decoyprefix);
+        this.name = name;
+    }
+
+    /**
+     * Constructor
+     * @param id
+     * @param accession
+     * @param description
+     * @param isDecoy
+     * @param linear
+     * @param internal
+     * @param between 
+     */
+    public Protein(long id, String accession, String name, String description, boolean isDecoy, boolean linear, boolean internal, boolean between) {
+        this(id, accession, name, description, isDecoy, linear, internal, between, DECOY_PREFIX);
+    }    
+
+    /**
+     * Constructor
+     * @param id
+     * @param accession
+     * @param description
+     * @param isDecoy
+     * @param linear
+     * @param internal
+     * @param between 
+     */
     public Protein(long id, String accession, String description, boolean isDecoy, boolean linear, boolean internal, boolean between) {
+        this(id, accession, description, isDecoy, linear, internal, between, DECOY_PREFIX);
+    }    
+    /**
+     * Constructor
+     * @param id
+     * @param accession
+     * @param description
+     * @param isDecoy
+     * @param linear
+     * @param internal
+     * @param between 
+     */
+    public Protein(long id, String accession, String description, boolean isDecoy, boolean linear, boolean internal, boolean between, String decoyPrefix) {
         this.id = id;
-        // at some points we consider decoy and non decoy proteins the same. So 
-        // both get the same accession to make my life easier
-        if (accession.toUpperCase().startsWith("REV_") || accession.toUpperCase().startsWith("RAN_"))
-            this.accession = accession.substring(4);
-        else if (accession.toUpperCase().startsWith("DECOY:"))
-            this.accession = accession.substring(6);
-        else
-            this.accession = accession;
+        setAccession(accession, decoyPrefix);
         
         this.description = description;
         this.isDecoy = isDecoy;
         this.linearSupport = linear;
         this.internalSupport = internal;
         this.betweenSupport = between;
+        
+        if (description != null && description.length() > 0) {
+            if (description.indexOf(zero)>=0) {
+                this.name = zerosplit.split(description)[1];
+                this.description = zerosplit.split(description)[0];
+            } else {
+                this.name = spacesplit.split(description)[0];
+            }
+        }
+        
     }
     
      
-
     @Override
     public int hashCode() {
         return accession.hashCode();
@@ -119,10 +177,15 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         if (o == this)
             return;
         this.score = Math.sqrt(this.score*this.score + o.score*o.score);
+        scores.add(o.score);
+        scoresSorted = false;
+        this.scoresSorted = false;
         peps.addAll(o.peps);
         linearSupport |= o.linearSupport;
         internalSupport |= o.internalSupport;
         this.betweenSupport |= o.betweenSupport;
+        if (this.description == null || this.description.length()==0)
+            this.description = o.description;
         //setFDRGroup();
        //isAmbigious &= o.isAmbigious;        
         //            score+= o.score;
@@ -146,6 +209,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         peppairs.add(pp);
         
         this.score = Math.sqrt(this.score*this.score + score*score);
+        scoresSorted = false;
         this.internalSupport |= pp.isInternal();
         this.betweenSupport |= !(pp.isInternal() || pp.isLinear);
         this.linearSupport |= pp.isLinear;
@@ -165,7 +229,26 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
         return score;
     }
 
-
+    @Override
+    public double getScore(int topN) {
+        if (!scoresSorted) {
+            java.util.Collections.sort(scores);
+            scoresSorted = true;
+        }
+        
+        int i = 0;
+        double score = 0;
+        double lastScore = Double.NaN;
+        for (double s : this.scores) {
+            if (lastScore != s) {
+                lastScore = s;
+                if (i++>topN)
+                    break;
+            }
+            score+= s;
+        }
+        return score;
+    }    
 
     public int compare(Protein p) {
         if (p.equals(this)) {
@@ -195,6 +278,13 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     }
 
     /**
+     * @return the search id
+     */
+    public String getSearchId() {
+        return searchId;
+    }
+    
+    /**
      * @return the accession
      */
     public String getAccession() {
@@ -206,6 +296,85 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
      */
     public String getDescription() {
         return description;
+    }
+
+    /**
+     * @return the description
+     */
+    public String getName() {
+        return this.name;
+    }
+    
+    Pattern sptr_regex = Pattern.compile("^(?:sp|tr)\\|([^\\|]*)\\|([^ ]*)?.*");
+    
+    /**
+     * @return the accession
+     */
+    public void setAccession(String a, String decoy_prefix) {
+        accession = a;
+        Matcher m = sptr_regex.matcher(a);
+        if (m.matches()) {
+            accession = m.group(1);
+            //if (m.groupCount()>1 && m.group(2) != null && m.group(2).trim().length()>0)
+            //    this.setName(m.group(2));
+        }
+            
+        if (decoy_prefix == null) {
+            // at some points we consider decoy and non decoy proteins the same. So 
+            // both get the same accession to make my life easier
+            if (accession.toUpperCase().startsWith("REV_") || accession.toUpperCase().startsWith("RAN_")) {
+                this.accession = accession.substring(4);
+                this.isDecoy = true;
+            } else if (accession.toUpperCase().startsWith("DECOY:")) {
+                this.isDecoy = true;
+                this.accession = accession.substring(6);
+            } else if (accession.toUpperCase().startsWith("REVERSE_")) {
+                this.isDecoy = true;
+                this.accession = accession.substring(8);
+            } else if (accession.toUpperCase().startsWith("RANDOM_")) {
+                this.isDecoy = true;
+                this.accession = accession.substring(7);
+            } else if (accession.toUpperCase().startsWith("SHUFFLE_")) {
+                this.isDecoy = true;
+                this.accession = accession.substring(8);
+            }
+        } else {
+            if (accession.toUpperCase().startsWith(decoy_prefix.toUpperCase())) {
+                this.isDecoy = true;
+                this.accession = accession.substring(decoy_prefix.length());
+            }
+        }
+        this.decoy_complement = null;        
+    }
+
+    /**
+     * @return the accession
+     */
+    public void setAccession(String a) {
+        setAccession(a,null);
+    }
+    
+    /**
+     * @return the accession
+     */
+    public void setName(String n) {
+        name = n;
+        this.decoy_complement = null;
+
+    }
+    
+    /**
+     * @return the description
+     */
+    public void setDescription(String d) {
+        description = d;
+        if (description != null && description.length() > 0) {
+            if (description.indexOf(zero)>=0) {
+                this.name = zerosplit.split(description)[1];
+                this.description = zerosplit.split(description)[0];
+            }
+        }
+        this.decoy_complement = null;
     }
 
     /**
@@ -323,8 +492,10 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     }    
     
     public Protein decoyComplement() {
-        Protein p = new Protein(id, accession, description, !isDecoy, linearSupport, internalSupport, betweenSupport);
-        return p;
+        if (this.decoy_complement == null) {
+            this.decoy_complement = new Protein(id, accession, name, description, !isDecoy, linearSupport, internalSupport, betweenSupport);
+        }
+        return this.decoy_complement;
     }
     
     public int support() {
@@ -362,7 +533,7 @@ public class Protein extends AbstractFDRElement<Protein> {//implements Comparabl
     public boolean hasBetweenSupport() {
         return betweenSupport;
     }
-
+    
     /**
      * @param betweenSupport the betweenSupport to set
      */

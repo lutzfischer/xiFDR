@@ -169,15 +169,15 @@ public class MZIdentXLFDR extends OfflineFDR {
 //    }
 //    
 
-    public void readMzIdentML(File f) throws FileNotFoundException, IOException, ParseException {
+    public void readMzIdentML(File f, boolean passThreshHoldOnly) throws FileNotFoundException, IOException, ParseException {
         MzIdentMLUnmarshaller mzIdentMLUnmarshaller = new MzIdentMLUnmarshaller(f);
         //MZIdentXLFDR mzidToCsv = new MZIdentXLFDR();
         this.unmarshaller = mzIdentMLUnmarshaller;
-        this.init();
+        this.init(passThreshHoldOnly);
     }
 
 
-    private void init() {
+    private void init(boolean passThreshHoldOnly) {
 
         try {
 
@@ -330,7 +330,8 @@ public class MZIdentXLFDR extends OfflineFDR {
                         }
                     }
                     if (!isCrosslinked) {
-                        linearPSM.add(sii);
+                        if (sii.isPassThreshold() || !passThreshHoldOnly)
+                            linearPSM.add(sii);
                     }
                 }
             }

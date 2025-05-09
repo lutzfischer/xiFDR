@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.rappsilber.fdr.gui.components;
+package org.rappsilber.fdr.gui.components.settings;
 
 import javax.swing.JCheckBox;
 import javax.swing.JSpinner;
@@ -21,6 +21,7 @@ import javax.swing.SpinnerModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rappsilber.fdr.FDRSettingsImpl;
 import org.rappsilber.fdr.OfflineFDR;
 
 /**
@@ -78,26 +79,6 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
 
     
     
-    private void setValueLater(final JSpinner sp, final Object value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                sp.setValue(value);
-            }
-        });
-            
-    }
-
-    private void setValueLater(final JCheckBox ck, final boolean value) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                ck.setSelected(value);
-            }
-        });
-        
-    }
-    
     /**
      * Creates new form FDRSettingsComplete
      */
@@ -114,7 +95,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
         spFDR.getModel().addChangeListener(max100Listener);
         spReportFactor.setVisible(false);
         lblReportFactor.setVisible(false);
-                
+        this.setAll(new FDRSettingsImpl());
     }
     
     private void doCalc() {
@@ -475,15 +456,12 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
                     .addComponent(jLabel1)
                     .addComponent(spFDR, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cbFDRLevel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(ckMaximize)
-                            .addComponent(lblBoost)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(ckBoostBetween)))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(ckMaximize)
+                        .addComponent(lblBoost))
+                    .addComponent(ckBoostBetween, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblReportFactor)
@@ -605,6 +583,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     public double getMinPeptideCoverageFilter() {
         return this.minPeptideCoverageFilter;
     }
+
     @Override
     public void setMinPeptideCoverageFilter(double d) {
         this.minPeptideCoverageFilter = d;
@@ -639,7 +618,7 @@ public class FDRSettingsSimple extends FDRSettingsPanel  {
     public void ignoreValidityChecks(boolean ignore) {
         this.ignoreValidityChecks = ignore;
     }
-    
+
     
     
 }

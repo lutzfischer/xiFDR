@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
 import org.rappsilber.utils.IntArrayList;
 import org.rappsilber.utils.RArrayUtils;
 
@@ -44,7 +46,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     /** peptide pairs that this peptide is part of */
     HashSet<PeptidePair> m_peppairs = new HashSet<PeptidePair>();
     /** where in which proteins can this peptide be found */
-    private HashMap<Protein,IntArrayList> m_positions = new HashMap<Protein, IntArrayList>();
+    private HashMap<Protein,HashSet<Integer>> m_positions = new HashMap<Protein, HashSet<Integer>>();
     //int posSize = 0;
     /** unique ID for this peptide */
     private long id;
@@ -87,13 +89,20 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
         this.id = id;
                 
         if (protein.length == 1) {
-            m_positions.put(protein[0], new IntArrayList(pos));
+            HashSet<Integer> ppos = new HashSet<>();
+            ppos.addAll(RArrayUtils.toCollection(pos));
+            m_positions.put(protein[0], ppos);
         } else {
             if (pos.length != protein.length) {
                 throw new UnsupportedOperationException("Cant handle entries with non-matching peptide positions and proteins");
             }
             for (int p = 0; p < protein.length; p++) {
-                m_positions.put(protein[p], new IntArrayList(new int[]{pos[p]}));
+                HashSet<Integer> ppos = m_positions.get(protein[p]);
+                if (ppos == null) {
+                    ppos = new HashSet<>();
+                    m_positions.put(protein[p], ppos);
+                }
+                ppos.add(pos[p]);
             }
             
         }
@@ -112,7 +121,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
     
     @Override
     public int hashCode() {
-        return sequence.hashCode();
+        return Boolean.hashCode(isDecoy) +  31 * sequence.hashCode();
     }
 
     /**
@@ -124,7 +133,7 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      */
     @Override
     public boolean equals(Object o) {
-        return ((Peptide) o).sequence.equals(sequence) && ((Peptide) o).isDecoy == isDecoy;
+        return ((Peptide) o).id == id || (((Peptide) o).sequence.equals(sequence) && ((Peptide) o).isDecoy == isDecoy);
     }
 
 //    public int compareTo(Peptide o) {
@@ -158,6 +167,14 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * Currently not considered for peptides outside peptide pairs
+     * @return 
+     */
+    @Override
+    public double getScore(int topN) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }    
     /**
      * Currently not considered for peptides outside peptide pairs
      * @return 
@@ -214,44 +231,27 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
         m_peppairs.addAll(o.m_peppairs);
         for (Protein p : o.m_positions.keySet()) {
             for (int pos : o.m_positions.get(p)) {
-                addNew(p,pos);
+                add(p,pos);
             }
         }
     }
 
     /**
-     * add a new source for the peptide - does not test, whether the peptide 
+     * add a new source for the peptide 
      * position was already registered for a protein
      * @param p
      * @param pos 
      */
     public void add(Protein p, int pos) {
-        IntArrayList positions = m_positions.get(p);
+        HashSet<Integer> positions = m_positions.get(p);
         if (positions == null) {
-            positions = new IntArrayList(1);
+            positions = new HashSet<Integer>(1);
             m_positions.put(p, positions);
         }
         positions.add(pos);
 //        posSize++;
     }
 
-    /**
-     * add a new source for the peptide
-     * @param p
-     * @param pos 
-     */    
-    public void addNew(Protein p, int pos) {
-        IntArrayList positions = m_positions.get(p);
-        if (positions == null) {
-            positions = new IntArrayList(1);
-            m_positions.put(p, positions);
-            positions.add(pos);
-        } else if (!positions.contains(pos)) {
-            positions.add(pos);
-        }
-//        posSize++;
-    }
-    
     /**
      * add a peptidepair to the matches supporting this peptide
      * @param o 
@@ -406,8 +406,16 @@ public class Peptide extends AbstractFDRElement<Peptide>  { //implements Compara
      * All positions of the peptide in proteins
      * @return the m_positions
      */
-    public HashMap<Protein,IntArrayList> getPositions() {
+    public HashMap<Protein,HashSet<Integer>> getPositions() {
         return m_positions;
+    }
+
+    public void renewPositions() {
+        HashMap<Protein, HashSet<Integer>> newpp = new HashMap<>();
+        for (Map.Entry<Protein, HashSet<Integer>> e : m_positions.entrySet()) {
+            newpp.put(e.getKey(),e.getValue());
+        }
+        m_positions = newpp;
     }
     
     /**

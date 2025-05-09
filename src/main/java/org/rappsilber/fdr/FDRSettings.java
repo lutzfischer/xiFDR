@@ -24,6 +24,13 @@ import java.awt.event.ActionListener;
 public interface FDRSettings {
     public static int DEFAULT_MIN_TD_COUNT=2;
     
+    /**
+     * should the boosting be done in two steps (lower-FDR and non-FDR filters).
+     * @return 
+     */
+    boolean twoStepOptimization();
+    void twoStepOptimization(boolean stepped);
+    
     void addCalcListener(ActionListener al);
 
     OfflineFDR.FDRLevel doOptimize();
@@ -113,6 +120,9 @@ public interface FDRSettings {
     
     void setFilterConsecutivePeptides(boolean filterConsecutive);
 
+    boolean filterBySelfAndMono();
+    
+    void setfilterBySelfAndMono(boolean filter);
     
     public void setAll(FDRSettings settings);
     
@@ -128,6 +138,18 @@ public interface FDRSettings {
     public boolean boostDeltaScore();
     public void boostDeltaScore(boolean boost);
 
+    public boolean boostPeptideStubs();
+    public void boostPeptideStubs(boolean boost);
+
+    public boolean boostPeptideDoublets();
+    public void boostPeptideDoublets(boolean boost);
+
+    public boolean boostMinScore();
+    public void boostMinScore(boolean boost);
+
+    public Double minScore();
+    public void minScore(Double minScore);
+    
     public boolean boostPSMs();
     public void boostPSMs(boolean boost);
 //    public boolean boostSubScores();
@@ -148,6 +170,12 @@ public interface FDRSettings {
 
     public double getMinDeltaScoreFilter();
     public void setMinDeltaScoreFilter(double d);
+    
+    public double getMinPeptideStubFilter();    
+    public void setMinPeptideStubFilter(double d);
+    
+    public double getMinPeptideDoubletFilter();
+    public void setMinPeptideDoubletFilter(double d);
     
     public void setMinTD(Integer c) ;
 
@@ -171,5 +199,8 @@ public interface FDRSettings {
 //    public void setSubScoreCutOff(double localfdr);
     public void setGroupByCrosslinkerStubs(boolean group);
     public boolean getGroupByCrosslinkerStubs();
+    
+    public Integer getScoreTopNAggregate();
+    public void setScoreTopNAggregate(Integer n);
     
 }

@@ -40,6 +40,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     HashSet<PeptidePair> peppairs = new HashSet<PeptidePair>();
     private double score = Double.POSITIVE_INFINITY;
     private boolean hasInternalSupport = false;
+    private boolean hasXLModSupport = false;
     private boolean hasBetweenSupport = false;
     private boolean hasLinearSupport = false;
     int hashcode = 5;
@@ -48,6 +49,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     private static final String NOFDRGROUPDEFINED = "NOFDRGROUPDEFINED";
     private volatile String fdrgroup;
     private boolean isDecoy = true;
+    private HashSet<String> accessionset = new HashSet<>();
 
 //    static {
 //        NOPROTEINGROUP = Peptide.NOPEPTIDE.getProteinGroup();
@@ -78,6 +80,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
             groupproteins.add(p);
             hashcode+= p.hashCode();
             this.isDecoy &= p.isDecoy();
+            accessionset.add(p.getAccession());
         }
         if (peps.size() > 0) {
             PeptidePair first = peps.iterator().next();
@@ -117,6 +120,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         isDecoy &= p.isDecoy();
         //setFDRGroup();
         fdrgroup = null;
+        accessionset.add(p.getAccession());
     }
 
     
@@ -135,7 +139,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         if (hasLinearSupport)
             fdrgroup="Linear";
         if (hasInternalSupport) 
-            fdrgroup="LinearInternal";
+            fdrgroup=fdrgroup+"Self";
         if (fdrgroup.isEmpty())
             fdrgroup = "Between only";
         if (hasNegativeGrouping()) 
@@ -159,6 +163,27 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return score;
     }
 
+    public void setScore(double s) {
+        this.score = s;
+    }
+    /**
+     * @return the score
+     */
+    @Override
+    public double getScore(int topN) {
+        int i = 0;
+        double score = Double.NEGATIVE_INFINITY;
+        for (Protein p : this.groupproteins) {
+            if (score != p.getScore()) {
+                score = p.getScore();
+                if (i++>topN)
+                    break;
+            }
+            score+= p.getScore()*p.getScore();
+        }
+        return score;
+    }    
+     
     @Override
     public int hashCode() {
         return hashcode;
@@ -262,9 +287,12 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         hasInternalSupport |= o.hasInternalSupport();
         hasLinearSupport |= o.hasLinearSupport();
         hasBetweenSupport |= o.hasBetweenSupport();
+        hasXLModSupport |= o.hasXLModSupport();
         isDecoy &= o.isDecoy();
         fdrgroup = null;
         addFDRGroups(o);
+        for (Protein p : o.getProteins())
+            accessionset.add(p.getAccession());
 
     }
 
@@ -297,10 +325,7 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
     }
 
     public Collection<PeptidePair> getPeptidePairs() {
-        HashSet<PeptidePair> ret = new HashSet<PeptidePair>();
-        for (Protein p : getProteins()) {
-            ret.addAll(p.getPeptidePairs());
-        }
+        HashSet<PeptidePair> ret = new HashSet<PeptidePair>(this.peppairs);
         return ret;
     }
 
@@ -343,6 +368,24 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         }
         return sb.substring(0,sb.length() - 1);
     }
+    
+    public HashSet<String> accessionsSet() {
+        return accessionset;
+    }
+
+    public String names() {
+        StringBuffer sb = new StringBuffer();
+
+        for (Protein p : groupproteins) {
+            if (p.getName()==null) {
+                sb.append((p.isDecoy()?"decoy":""));
+            }
+            sb.append((p.isDecoy()?"decoy:":"")).append(p.getName());
+            sb.append(";");
+        }
+        return sb.substring(0,sb.length() - 1);
+    }
+
 
     public String accessionsNoDecoy() {
         StringBuffer sb = new StringBuffer();
@@ -457,6 +500,17 @@ public class ProteinGroup extends AbstractFDRElement<ProteinGroup> implements  I
         return groupproteins.iterator();
     }
 
+    public boolean hasXLModSupport() {
+        return hasXLModSupport;
+    }
+
+    /**
+     * @param internalSupport the internalSupport to set
+     */
+    public void setXLModSupport(boolean hasXLModSupport) {
+        this.hasXLModSupport = hasXLModSupport;
+    }
+    
     /**
      * @return the internalSupport
      */

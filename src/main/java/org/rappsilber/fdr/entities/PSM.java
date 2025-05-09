@@ -33,6 +33,8 @@ import org.rappsilber.utils.SelfAddHashSet;
 public class PSM extends AbstractFDRElement<PSM> { 
 
     private double deltaScore = Double.POSITIVE_INFINITY;
+    public int peptidesWithStubs = 0;
+    public int peptidesWithDoublets = 0;
     
     /**
      * unique id for the PSM.
@@ -53,9 +55,9 @@ public class PSM extends AbstractFDRElement<PSM> {
     
 
     /** link-site in peptide1 */
-    private byte pepsite1;
+    private short pepsite1;
     /** link-site in peptide2 */
-    private byte pepsite2;
+    private short pepsite2;
     /** positions of peptide1 */
     Peptide peptide1;
     /** positions of peptide2 */
@@ -179,8 +181,8 @@ public class PSM extends AbstractFDRElement<PSM> {
     private static boolean peakListNameFound = false;
     
     private DoubleArrayList numericInfo = new DoubleArrayList();
-    private static Object2IntOpenHashMap<String> numericInfoColumn = new Object2IntOpenHashMap<String>();
-    private static Object2IntOpenHashMap<String> allInfoColumn = new Object2IntOpenHashMap<String>();
+    public static Object2IntOpenHashMap<String> numericInfoColumn = new Object2IntOpenHashMap<String>();
+    public static Object2IntOpenHashMap<String> allInfoColumn = new Object2IntOpenHashMap<String>();
     /**
      * store arbitrary information
      */
@@ -192,6 +194,16 @@ public class PSM extends AbstractFDRElement<PSM> {
     private static ArrayList<Class> otherInfoType  = new ArrayList<>();
 
     private static Object2IntOpenHashMap<String> otherInfoColumn = new Object2IntOpenHashMap<String>();
+    
+    public static HashMap<String,Object> nonPublicFlags = new HashMap<>();
+    
+    protected String searchID;
+    protected String scanID;
+    private boolean isAutoValidated;
+    private boolean hasVarMods;
+    private boolean hasFixedMods;
+    private boolean hasXLMods;
+    
     
     static {
         numericInfoColumn.defaultReturnValue​(-1);
@@ -229,8 +241,8 @@ public class PSM extends AbstractFDRElement<PSM> {
         this.run = run;
         this.scan = scan;
     }
-    
-    
+
+
     /**
      * creates a new instance of a PSM.
      * @param psmID a unique ID for the PSM (e.g. used when a CSV-file contains 
@@ -247,7 +259,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param scoreRatio how to split the score between the peptides - this is 
      * only used, if a protein FDR (each single protein) is to be calculated.
      */
-    public PSM(String psmID, Peptide peptide1, Peptide peptide2, byte site1, byte site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
+    public PSM(String psmID, Peptide peptide1, Peptide peptide2, short site1, short site2, boolean isDecoy1, boolean isDecoy2, byte charge, double score, double peptide1Score, double peptide2Score) {
         this.psmID = psmID;
 //        this.id1 = id1;
 //        this.id2 = id2;
@@ -327,9 +339,9 @@ public class PSM extends AbstractFDRElement<PSM> {
             return false;
         
 //        return this.score == c.score && this.charge == c.charge &&  this.psmID.contentEquals(c.psmID);
-        return ((((c.peptide1Score == this.peptide1Score &&c.peptide2Score == this.peptide2Score)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
+        return ((((Double.compare(c.peptide1Score, this.peptide1Score) == 0 && Double.compare(c.peptide2Score, this.peptide2Score) == 0)) && c.peptide1.equals(this.peptide1) && c.peptide2.equals(this.peptide2) && c.pepsite1 == pepsite1 && c.pepsite2 == pepsite2) 
                 || /* to be safe from binary inaccuracy we make an integer-comparison*/
-                ((c.peptide1Score == this.peptide2Score &&c.peptide2Score == this.peptide1Score) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
+                ((Double.compare(c.peptide1Score, this.peptide2Score) == 0 && Double.compare(c.peptide2Score, this.peptide1Score) == 0) && c.peptide2.equals(this.peptide1) && c.peptide1.equals(this.peptide2) && c.pepsite2 == pepsite1 && c.pepsite1 == pepsite2));
     }
 
     /**
@@ -361,21 +373,6 @@ public class PSM extends AbstractFDRElement<PSM> {
         prots.addAll(peptide1.getProteins());
         prots.addAll(peptide2.getProteins());
         ArrayList<Protein> ret = new ArrayList<Protein>(prots);
-        return ret;
-    }
-    
-    /**
-     * get the proteingroups for both peptides
-     * @return 
-     */
-    public ArrayList<ProteinGroup> getProteinGroupss() {
-        HashSet<ProteinGroup> prots = new HashSet<ProteinGroup>();
-        for (Peptide p : getPeptides()) {
-            if (p != Peptide.NOPEPTIDE) {
-                prots.add(p.getProteinGroup());
-            }
-        }
-        ArrayList<ProteinGroup> ret = new ArrayList<ProteinGroup>(prots);
         return ret;
     }
     
@@ -412,6 +409,9 @@ public class PSM extends AbstractFDRElement<PSM> {
             isInternal = true;
           //  setFDRGroup();
         }
+        for (Map.Entry<String,Object> e : p.nonPublicFlags.entrySet()) {
+            nonPublicFlags.put(e.getKey(), e.getValue());
+        }
     }
 
     /**
@@ -441,14 +441,14 @@ public class PSM extends AbstractFDRElement<PSM> {
     /**
      * @return the link site of the first peptide
      */
-    public byte getPeptideLinkSite1() {
+    public short getPeptideLinkSite1() {
         return pepsite1;
     }
 
     /**
      * @return the link site of the second peptide
      */
-    public byte getPeptideLinkSite2() {
+    public short getPeptideLinkSite2() {
         return pepsite2;
     }
 
@@ -456,7 +456,7 @@ public class PSM extends AbstractFDRElement<PSM> {
      * @param peptide
      * @return the link site of the given peptide
      */
-    public byte getPeptideLinkSite(int peptide) {
+    public short getPeptideLinkSite(int peptide) {
         return peptide == 0 ? pepsite1 : pepsite2;
     }
     
@@ -467,6 +467,14 @@ public class PSM extends AbstractFDRElement<PSM> {
     @Override
     public double getScore() {
         return score==null?origScore:score;
+    }
+
+    /**
+     * @return the score
+     */
+    @Override
+    public double getScore(int topN) {
+        return getScore();
     }
 
     
@@ -744,6 +752,7 @@ public class PSM extends AbstractFDRElement<PSM> {
         represents.add(this);
         this.m_fdr = -1;
         this.setPEP(Double.NaN);
+        //reTestInternal();
     }
     
     /**
@@ -1133,13 +1142,13 @@ public class PSM extends AbstractFDRElement<PSM> {
             if (!isInternal()) {
                 isConsecutive = false;
             } else {
-                HashMap<Protein,IntArrayList> pep1pos =  this.peptide1.getPositions();
+                HashMap<Protein,HashSet<Integer>> pep1pos =  this.peptide1.getPositions();
                 int peplen1 = this.peptide1.length;
-                HashMap<Protein,IntArrayList> pep2pos =  this.peptide2.getPositions();
+                HashMap<Protein,HashSet<Integer>> pep2pos =  this.peptide2.getPositions();
                 int peplen2 = this.peptide2.length;
                 
-                for (Map.Entry<Protein,IntArrayList> e : pep1pos.entrySet()) {
-                    IntArrayList pos2 = pep2pos.get(e.getKey());
+                for (Map.Entry<Protein,HashSet<Integer>> e : pep1pos.entrySet()) {
+                    HashSet<Integer> pos2 = pep2pos.get(e.getKey());
                     if (pos2 != null) {
                         for (int p2 : pos2) {
                             for (int p1 : e.getValue()) {
@@ -1209,8 +1218,15 @@ public class PSM extends AbstractFDRElement<PSM> {
         int column = allInfoColumn.getInt(name);
         if (column == -1)
             return null;
-        if (column >= 1000)
+        if (column >= 1000) {
+            if (numericInfo.size() <=column - 1000)
+                return Double.NaN;
             return numericInfo.get(column - 1000);
+        }
+        
+        if (otherInfo.size() <= column)
+            return "";
+        
         return otherInfo.get(column);
     }
 
@@ -1221,6 +1237,8 @@ public class PSM extends AbstractFDRElement<PSM> {
     public double getDoubleInfo(String name) {
         int column = numericInfoColumn.getInt(name);
         if (column == -1)
+            return Double.NaN;
+        if (numericInfo.size() <=column)
             return Double.NaN;
         return numericInfo.getDouble(column);
     }
@@ -1233,6 +1251,9 @@ public class PSM extends AbstractFDRElement<PSM> {
                 column = numericInfoColumn.size();
                 numericInfoColumn.put(name, column);
                 allInfoColumn.put(name, column+1000);
+            }
+            while (column >= numericInfo.size()-1) {
+                numericInfo.add(Double.NaN);
             }
             numericInfo.add(column, d);
         } else {
@@ -1259,7 +1280,99 @@ public class PSM extends AbstractFDRElement<PSM> {
         } if (col >=1000) {
             return Double.class;
         }
+        if (otherInfoType.size() - 1 < col )
+            return null;
         return otherInfoType.get(col);
+    }
+
+    public static void resetAdditionalColumnNames() {
+        numericInfoColumn.clear();
+        allInfoColumn.clear();
+    }
+
+    public void reTestInternal() {
+        this.isInternal = peptide1.sameProtein(peptide2);
+    }
+ 
+    
+    /**
+     * @return the searchID
+     */
+    public String getSearchID() {
+        return searchID;
+    }
+
+    /**
+     * @param searchID the searchID to set
+     */
+    public void setSearchID(String searchID) {
+        this.searchID = searchID;
+    }
+
+    /**
+     * @return the scanID
+     */
+    public String getScanID() {
+        return scanID;
+    }
+
+    /**
+     * @param scanID the scanID to set
+     */
+    public void setScanID(String scanID) {
+        this.scanID = scanID;
+    }
+
+    
+    /**
+     * @return the hasVarMods
+     */
+    public boolean hasVarMods() {
+        return hasVarMods;
+    }
+
+
+    public void setHasXLMods(boolean hxlm) {
+        hasXLMods=hxlm;
+    }
+
+    public boolean hasXLMods() {
+        return hasXLMods;
+    }
+
+    /**
+     * @param hasVarMods the hasVarMods to set
+     */
+    public void setHasVarMods(boolean hasVarMods) {
+        this.hasVarMods = hasVarMods;
+    }
+
+    /**
+     * @return the hasFixedMods
+     */
+    public boolean hasFixedMods() {
+        return hasFixedMods;
+    }
+
+    /**
+     * @param hasFixedMods the hasFixedMods to set
+     */
+    public void setHasFixedMods(boolean hasFixedMods) {
+        this.hasFixedMods = hasFixedMods;
+    }
+
+    /**
+     * @return the isAutoValidated
+     */
+    public boolean isAutoValidated() {
+        return isAutoValidated;
+    }
+
+    /**
+     * @param isAutoValidated the isAutoValidated to set
+     */
+    public void setAutoValidated(boolean isAutoValidated) {
+        this.isAutoValidated = isAutoValidated;
     }
     
 }
