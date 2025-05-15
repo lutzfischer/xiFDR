@@ -1935,6 +1935,7 @@ public abstract class OfflineFDR {
             psmOut = NullOutputStream.NULLPRINTWRITER;
             psmLinearOut = NullOutputStream.NULLPRINTWRITER;
             psmNAPSOut = NullOutputStream.NULLPRINTWRITER;
+            xiviewOut = NullOutputStream.NULLPRINTWRITER;
         }
 
         ArrayList<PSM> psms = new ArrayList<PSM>(result.psmFDR.getResultCount());
@@ -2021,6 +2022,8 @@ public abstract class OfflineFDR {
             psmLinearOut.close();
             psmNAPSOut.flush();
             psmNAPSOut.close();
+            xiviewOut.flush();
+            xiviewOut.close();
             // if we had no linears we just delete the linear file again
             if (psmLinearT+psmLinearD == 0) {
                 new File(outNameLinear).delete();
